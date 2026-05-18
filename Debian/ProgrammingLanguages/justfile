@@ -1,0 +1,21 @@
+# Gestor de runtimes Mise
+mise:
+    ./mise.sh
+
+# Node
+node:
+    ./nodejs.sh
+
+# Python
+python:
+    ./python.sh
+
+# Rust
+rust:
+    ./rust.sh
+
+# AI
+
+gemini:
+    ./gemini.sh
+
