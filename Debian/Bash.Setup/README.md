@@ -40,7 +40,7 @@ Luego, puedes crear enlaces simbólicos de los scripts de este repositorio a esa
 
 ```bash
 mkdir -p ~/.bashrc.d
-ln -s ~/Workspace/Repositorios/Environment-Configuration/Debian/Bash.Setup/*.sh ~/.bashrc.d/
+ln -s ~/Workspace/Repositorios/Debian/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
 *Nota: Asegúrate de ajustar la ruta al directorio donde hayas clonado el repositorio.*
