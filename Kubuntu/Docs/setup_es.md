@@ -2,9 +2,9 @@
 sidebar_position: 2
 ---
 
-# Configuración del Sistema en Debian 13
+# Configuración del Sistema en Kubuntu 26.04 LTS
 
-Esta guía detalla el proceso de configuración base, optimización de la terminal, instalación de herramientas esenciales, soporte multimedia y personalización del entorno de usuario aplicados a un sistema Debian 13 (Trixie).
+Esta guía detalla el proceso de configuración base, optimización de la terminal, instalación de herramientas esenciales, soporte multimedia y personalización del entorno de usuario aplicados a un sistema Kubuntu 26.04 LTS.
 
 Las configuraciones están automatizadas a través de los scripts ubicados en la carpeta `Setup`.
 
@@ -19,12 +19,11 @@ Prepara el sistema base configurando repositorios oficiales adicionales, instala
    sudo apt update && sudo apt upgrade -y
    ```
 
-2. **Habilitación de repositorios Extra** (Contrib, Non-Free, Non-Free-Firmware y Backports):
+2. **Habilitación de repositorios Extra** (Universe, Multiverse y Restricted):
    ```bash
-   sudo apt-add-repository -y contrib non-free non-free-firmware
-   # Añadir repositorio de Backports
-   CODENAME=$(grep '^VERSION_CODENAME=' /etc/os-release | cut -d= -f2)
-   echo "deb http://deb.debian.org/debian ${CODENAME}-backports main contrib non-free non-free-firmware" | sudo tee /etc/apt/sources.list.d/backports.list
+   sudo add-apt-repository -y universe
+   sudo add-apt-repository -y multiverse
+   sudo add-apt-repository -y restricted
    sudo apt update
    ```
 
@@ -60,7 +59,7 @@ Se instalan alternativas modernas a comandos clásicos:
 - `du-dust` (`dust`, visualizador de espacio en disco)
 - `procs` (reemplazo moderno de `ps`)
 
-En Debian, para evitar conflictos de nombres, se configuran enlaces simbólicos:
+En Kubuntu/Ubuntu, para evitar conflictos de nombres, se configuran enlaces simbólicos:
 ```bash
 mkdir -p ~/.local/bin
 ln -sf /usr/bin/batcat ~/.local/bin/bat
@@ -119,11 +118,9 @@ Instala Cockpit para administrar el servidor o máquina local mediante una cómo
 
 Configura las herramientas para descargas de video y procesamiento de audio digital.
 
-1. **Instalación de yt-dlp (Backports) y FFMPEG**:
-   Se requiere la versión de Backports para que `yt-dlp` esté al día con los cambios constantes en plataformas de streaming:
+1. **Instalación de yt-dlp y FFMPEG**:
    ```bash
-   sudo apt install -y -t trixie-backports yt-dlp
-   sudo apt install -y ffmpeg
+   sudo apt install -y yt-dlp ffmpeg
    ```
 
 2. **Motor de descifrado rápido JS**:
@@ -150,4 +147,4 @@ Aplica paquetes de diseño para un entorno visual limpio y homogéneo.
 Para comprobar que los componentes principales se instalaron y configuraron correctamente:
 
 - **Terminal y Utilidades**: Abre una nueva terminal. Deberías ver el prompt de **Starship** cargado y el resumen de **Fastfetch** en pantalla. Prueba utilidades ejecutando `eza` o `bat --version`.
-- **Cockpit**: Abre tu navegador e ingresa a [https://localhost:9090](https://localhost:9090). Inicia sesión con tus credenciales de usuario del sistema Debian.
+- **Cockpit**: Abre tu navegador e ingresa a [https://localhost:9090](https://localhost:9090). Inicia sesión con tus credenciales de usuario del sistema Kubuntu.

@@ -2,9 +2,9 @@
 sidebar_position: 1
 ---
 
-# Debian 13 Security Hardening
+# Kubuntu Security Hardening
 
-This guide details the security hardening process applied to a Debian 13 system, as automated in the security setup script.
+This guide details the security hardening process applied to a Kubuntu system, as automated in the security setup script.
 
 The process covers firewall configuration, DNS privacy, and critical permissions auditing.
 

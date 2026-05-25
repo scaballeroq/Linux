@@ -2,7 +2,7 @@
 sidebar_position: 8
 ---
 
-# Container Management with Podman on Debian 13
+# Container Management with Podman on Kubuntu
 
 This guide details the installation of the **Podman** container platform and the list of pre-configured services inside the `Podman` folder.
 
@@ -12,7 +12,7 @@ Unlike Docker, Podman runs by default in a secure, **daemonless**, and **rootles
 
 ## 1. Configuring Podman Core (`podman.sh`)
 
-Installs Podman, its `compose` orchestration helper, and modern network stacks native to Debian 13:
+Installs Podman, its `compose` orchestration helper, and modern network stacks native to Kubuntu/Ubuntu:
 
 1. **Component Installation**:
    ```bash
@@ -21,7 +21,7 @@ Installs Podman, its `compose` orchestration helper, and modern network stacks n
    ```
    * **`podman-docker`**: Installs a symlink helper to automatically forward `docker` commands directly to `podman`.
    * **`uidmap`**: Critical for mapping sub-UIDs and sub-GIDs in user space to execute secure rootless containers.
-   * **`passt` / `pasta`**: High-performance network stack for rootless containers, built-in by default starting with Podman 5 (standard in Debian 13).
+   * **`passt` / `pasta`**: High-performance network stack for rootless containers, built-in by default starting with Podman 5 (standard in Kubuntu/Ubuntu).
 
 2. **User Session Persistence (Linger)**:
    Configures systemd to keep user containers running in the background even after the terminal session closes:

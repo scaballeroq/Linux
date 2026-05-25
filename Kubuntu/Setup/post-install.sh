@@ -32,7 +32,7 @@ sudo apt install -y build-essential linux-headers-$(uname -r) cmake curl btop ht
 
 # 4. Multimedia Codecs
 echo "ℹ️ Instalando codecs multimedia (Kubuntu Restricted Extras)..."
-# Se usa DEBIAN_FRONTEND=noninteractive para evitar prompts
+# Se configura la instalación no interactiva de apt para evitar prompts
 sudo DEBIAN_FRONTEND=noninteractive apt install -y kubuntu-restricted-extras libavcodec-extra ffmpeg
 
 # 5. Aceleración HW

@@ -2,9 +2,9 @@
 sidebar_position: 2
 ---
 
-# Debian 13 System Configuration
+# Configuración del Sistema en Kubuntu 26.04 LTS
 
-This guide details the base system setup, terminal optimization, essential software installation, multimedia support, and desktop user environment customization applied to a Debian 13 (Trixie) system.
+This guide details the base system setup, terminal optimization, essential software installation, multimedia support, and desktop user environment customization applied to a Kubuntu 26.04 LTS system.
 
 These settings are automated through the scripts located in the `Setup` folder.
 
@@ -19,12 +19,11 @@ Prepares the base system by configuring additional official repositories, instal
    sudo apt update && sudo apt upgrade -y
    ```
 
-2. **Enabling Extra Repositories** (Contrib, Non-Free, Non-Free-Firmware, and Backports):
+2. **Enabling Extra Repositories** (Universe, Multiverse, and Restricted):
    ```bash
-   sudo apt-add-repository -y contrib non-free non-free-firmware
-   # Add Backports repository
-   CODENAME=$(grep '^VERSION_CODENAME=' /etc/os-release | cut -d= -f2)
-   echo "deb http://deb.debian.org/debian ${CODENAME}-backports main contrib non-free non-free-firmware" | sudo tee /etc/apt/sources.list.d/backports.list
+   sudo add-apt-repository -y universe
+   sudo add-apt-repository -y multiverse
+   sudo add-apt-repository -y restricted
    sudo apt update
    ```
 
@@ -60,7 +59,7 @@ Modern alternatives to classic commands are installed:
 - `du-dust` (`dust`, disk space visualizer)
 - `procs` (modern replacement for `ps`)
 
-To avoid naming conflicts in Debian, symbolic links are configured:
+To avoid naming conflicts in Kubuntu/Ubuntu, symbolic links are configured:
 ```bash
 mkdir -p ~/.local/bin
 ln -sf /usr/bin/batcat ~/.local/bin/bat
@@ -119,11 +118,9 @@ Installs Cockpit to administer the server or local machine via a convenient web 
 
 Configures tools for video downloads and digital audio processing.
 
-1. **yt-dlp (Backports) and FFMPEG Installation**:
-   The Backports version is required so that `yt-dlp` stays updated with constant changes on streaming platforms:
+1. **yt-dlp and FFMPEG Installation**:
    ```bash
-   sudo apt install -y -t trixie-backports yt-dlp
-   sudo apt install -y ffmpeg
+   sudo apt install -y yt-dlp ffmpeg
    ```
 
 2. **Fast JS Decryption Engine**:
@@ -150,4 +147,4 @@ Applies design packages for a clean and cohesive visual environment.
 To verify that the main components have been installed and configured correctly:
 
 - **Terminal and Utilities**: Open a new terminal. You should see the **Starship** prompt loaded and the **Fastfetch** summary displayed. Test utilities by running `eza` or `bat --version`.
-- **Cockpit**: Open your browser and go to [https://localhost:9090](https://localhost:9090). Log in with your Debian system user credentials.
+- **Cockpit**: Open your browser and go to [https://localhost:9090](https://localhost:9090). Log in with your Kubuntu system user credentials.

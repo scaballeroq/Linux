@@ -2,7 +2,7 @@
 sidebar_position: 5
 ---
 
-# Entornos de Desarrollo (IDEs) en Debian 13
+# Entornos de Desarrollo (IDEs) en Kubuntu
 
 Esta guía detalla la instalación y configuración de los editores y entornos de desarrollo integrados presentes en la carpeta `IDE`.
 
@@ -22,7 +22,7 @@ Instala y configura un entorno de edición ultrarrápido y modular en la termina
    *(Nota: Se instalan compiladores de C/C++ y ripgrep/fd, esenciales para el funcionamiento de buscadores difusos y servidores de lenguaje LSP dentro de Neovim).*
 
 2. **Compatibilidad de Comandos**:
-   Se asegura de mapear `fdfind` (nombre del comando de `fd` en Debian) como `fd` en el path local del usuario:
+   Se asegura de mapear `fdfind` (nombre del comando de `fd` en Kubuntu/Ubuntu) como `fd` en el path local del usuario:
    ```bash
    mkdir -p ~/.local/bin
    [ -f /usr/bin/fdfind ] && ln -sf /usr/bin/fdfind ~/.local/bin/fd
@@ -69,7 +69,7 @@ Automatiza la instalación del popular editor Visual Studio Code desde los repos
 
 ## 3. Google Antigravity CLI (`antigravity.sh`)
 
-Instala la herramienta corporativa de inteligencia artificial y desarrollo de Google Antigravity para Debian.
+Instala la herramienta corporativa de inteligencia artificial y desarrollo de Google Antigravity para Kubuntu/Ubuntu.
 
 1. **Configuración de Llaveros e Importación de GPG**:
    ```bash

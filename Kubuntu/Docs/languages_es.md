@@ -105,7 +105,7 @@ Rust se gestiona mediante su herramienta estándar e independiente **Rustup**.
 
 ## 4. OpenJDK Java compatible con AutoFirma (`java.sh`)
 
-AutoFirma requiere interactuar con el almacén de claves NSS y la máquina virtual Java de Debian. Se instala a nivel de sistema APT:
+AutoFirma requiere interactuar con el almacén de claves NSS y la máquina virtual Java de Kubuntu/Ubuntu. Se instala a nivel de sistema APT:
 ```bash
 sudo apt install -y default-jre default-jdk libnss3-tools
 ```

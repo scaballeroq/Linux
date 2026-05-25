@@ -1,5 +1,5 @@
 #!/bin/bash
-# cockpit.sh - Instalación y configuración de Cockpit para administración web en Debian
+# cockpit.sh - Instalación y configuración de Cockpit para administración web en Kubuntu
 
 set -e
 

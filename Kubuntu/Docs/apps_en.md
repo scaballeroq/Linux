@@ -2,11 +2,11 @@
 sidebar_position: 9
 ---
 
-# Applications and Games on Debian 13
+# Applications and Games on Kubuntu
 
 This guide details the installation of desktop applications, utility tools, and digital gaming platforms managed in the `Apps` and `Juegos` folders.
 
-The Debian 13 (Trixie) ecosystem allows installing system utilities through traditional package managers (APT) and application environments like gaming platforms in sandbox environments using universal formats (Flatpak).
+The Kubuntu ecosystem allows installing system utilities through traditional package managers (APT) and application environments like gaming platforms in sandbox environments using universal formats (Flatpak).
 
 ---
 
@@ -44,4 +44,4 @@ To ensure the host operating system remains stable and avoid adding 32-bit (i386
 To verify that the applications are correctly installed:
 
 - **Meld**: Run `meld` in the terminal or launch it from your desktop application menu.
-- **Steam**: Open Steam from your desktop environment launcher (e.g. GNOME Dash). Once logged in, you can activate Proton-GE in Steam's compatibility settings (Steam > Settings > Compatibility > Enable Steam Play).
+- **Steam**: Open Steam from your desktop environment launcher (e.g. KDE Application Launcher). Once logged in, you can activate Proton-GE in Steam's compatibility settings (Steam > Settings > Compatibility > Enable Steam Play).

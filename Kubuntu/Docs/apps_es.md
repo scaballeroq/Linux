@@ -2,11 +2,11 @@
 sidebar_position: 9
 ---
 
-# Aplicaciones y Juegos en Debian 13
+# Aplicaciones y Juegos en Kubuntu
 
 Esta guía detalla la instalación de software y herramientas de escritorio, así como plataformas de ocio digital descritas en las carpetas `Apps` y `Juegos`.
 
-El ecosistema de Debian 13 (Trixie) permite instalar tanto herramientas visuales del sistema mediante gestores de paquetes tradicionales (APT) como software de ocio de forma aislada a través de formatos universales (Flatpak).
+El ecosistema de Kubuntu permite instalar tanto herramientas visuales del sistema mediante gestores de paquetes tradicionales (APT) como software de ocio de forma aislada a través de formatos universales (Flatpak).
 
 ---
 
@@ -44,4 +44,4 @@ Para garantizar que el sistema mantenga su estabilidad sin mezclar librerías de
 Para comprobar que las herramientas se han instalado correctamente:
 
 - **Meld**: Ejecuta `meld` en consola o ábrelo desde tu lanzador de aplicaciones del escritorio.
-- **Steam**: Lanza Steam desde el menú de aplicaciones de tu escritorio GNOME. Al iniciar sesión, puedes habilitar Proton-GE en los ajustes de compatibilidad de Steam (Steam > Parámetros > Compatibilidad > Habilitar Steam Play).
+- **Steam**: Lanza Steam desde el menú de aplicaciones de tu escritorio KDE Plasma. Al iniciar sesión, puedes habilitar Proton-GE en los ajustes de compatibilidad de Steam (Steam > Parámetros > Compatibilidad > Habilitar Steam Play).

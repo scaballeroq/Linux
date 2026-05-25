@@ -2,7 +2,7 @@
 sidebar_position: 3
 ---
 
-# Bash Configuration on Debian 13
+# Bash Configuration on Kubuntu
 
 This guide details the terminal environment (Bash) setup and built-in utilities provided in the modular scripts under the `Bash.Setup` folder.
 
@@ -27,7 +27,7 @@ fi
 You can enable them by creating symbolic links in `~/.bashrc.d/`:
 ```bash
 mkdir -p ~/.bashrc.d
-ln -s /home/caballero/Workspace/Repositorios/Debian/Bash.Setup/*.sh ~/.bashrc.d/
+ln -s /home/caballero/Workspace/Repositorios/Kubuntu/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
 ---
@@ -109,14 +109,11 @@ Utilities to automate media extraction:
 - `ytaudio <URL>`: Downloads and converts stream to high-fidelity MP3.
 - `ytlista-audio <URL>`: Downloads complete playlists converted to MP3.
 
----
+## 7. Desktop Environment (`desktop_settings.sh`)
 
-## 7. GNOME Environment (`gnome_settings.sh`)
-
-Applies automatic configurations for the GNOME desktop environment:
-- Enables Night Light (blue-light filter).
-- Configures 24-hour time format and full date on the top panel.
-- Optimizes animation speeds and quick extension management.
+Applies settings and defines automated shortcuts/aliases detecting the active desktop environment (KDE Plasma or GNOME):
+- **KDE Plasma**: Configures Night Color and prevents system suspend on AC power using `kwriteconfig5`/`kwriteconfig6`, and adds aliases for Night Color toggles and theme switches.
+- **GNOME**: Configures Night Light, 24h clock format, battery percentage visibility, and window control buttons using `gsettings`.
 
 ---
 

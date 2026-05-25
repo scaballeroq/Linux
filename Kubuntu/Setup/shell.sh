@@ -38,7 +38,7 @@ sudo apt install -y \
     procs
 
 # 2. Configurar enlaces simbólicos (Symlinks) para bat y fd
-# En distribuciones Debian/Ubuntu, los ejecutables de 'bat' y 'fd' se instalan
+# En distribuciones Kubuntu/Ubuntu, los ejecutables de 'bat' y 'fd' se instalan
 # como 'batcat' y 'fdfind' para evitar colisiones de nombres históricos.
 # Creamos enlaces simbólicos en ~/.local/bin para poder usarlos como 'bat' y 'fd'.
 echo "ℹ️ Configurando symlinks para bat y fd en ~/.local/bin..."

@@ -2,7 +2,7 @@
 sidebar_position: 4
 ---
 
-# Git Configuration on Debian 13
+# Git Configuration on Kubuntu
 
 This guide details the version control environment and optimized tools configured via the scripts in the `Git` folder.
 

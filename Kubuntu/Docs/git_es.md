@@ -2,7 +2,7 @@
 sidebar_position: 4
 ---
 
-# Configuración de Git en Debian 13
+# Configuración de Git en Kubuntu
 
 Esta guía detalla el entorno de control de versiones y el conjunto de herramientas optimizadas en la carpeta `Git`.
 

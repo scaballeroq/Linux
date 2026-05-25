@@ -2,7 +2,7 @@
 sidebar_position: 8
 ---
 
-# Gestión de Contenedores con Podman en Debian 13
+# Gestión de Contenedores con Podman en Kubuntu
 
 Esta guía detalla la instalación de la plataforma de contenedores **Podman** y el listado de servicios preconfigurados en la carpeta `Podman`.
 
@@ -12,7 +12,7 @@ A diferencia de Docker, Podman funciona por defecto de manera segura **sin demon
 
 ## 1. Configuración de Podman Core (`podman.sh`)
 
-Instala Podman, su herramienta de orquestación `compose` y las dependencias de red avanzadas nativas de Debian 13:
+Instala Podman, su herramienta de orquestación `compose` y las dependencias de red avanzadas nativas de Kubuntu/Ubuntu:
 
 1. **Instalación de Componentes**:
    ```bash
@@ -21,7 +21,7 @@ Instala Podman, su herramienta de orquestación `compose` y las dependencias de 
    ```
    * **`podman-docker`**: Instala un script de enlace para responder de manera automática al comando `docker` traduciéndolo a `podman`.
    * **`uidmap`**: Esencial para mapear sub-UIDs y sub-GIDs en el sistema, permitiendo contenedores rootless seguros.
-   * **`passt` / `pasta`**: Pila de red de alto rendimiento para contenedores rootless, integrada por defecto a partir de Podman 5 (estándar en Debian 13).
+   * **`passt` / `pasta`**: Pila de red de alto rendimiento para contenedores rootless, integrada por defecto a partir de Podman 5 (estándar en Kubuntu/Ubuntu).
 
 2. **Persistencia del Usuario (Linger)**:
    Se configura el sistema para que los contenedores del usuario sigan ejecutándose en segundo plano incluso cuando el usuario cierre su sesión de terminal:

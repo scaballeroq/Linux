@@ -2,9 +2,9 @@
 sidebar_position: 1
 ---
 
-# Configuración de Seguridad en Debian 13
+# Configuración de Seguridad en Kubuntu
 
-Esta guía detalla el proceso de endurecimiento de seguridad (hardening) aplicado a un sistema Debian 13, tal y como se automatiza en el script de seguridad.
+Esta guía detalla el proceso de endurecimiento de seguridad (hardening) aplicado a un sistema Kubuntu, tal y como se automatiza en el script de seguridad.
 
 El proceso cubre la configuración del firewall, privacidad DNS y auditoría de permisos.
 
