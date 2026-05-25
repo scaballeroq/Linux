@@ -28,20 +28,14 @@ Scripts to install and deploy services in isolated Podman containers:
 - **Infrastructure**: `podman-nginx.sh`, `podman-keycloak.sh`, `podman-rabbitmq.sh`, `podman-minio.sh`, `podman-mailhog.sh`, `podman-browserless.sh`
 - **Frameworks/CMS**: `podman-wordpress.sh`, `podman-storybook.sh`
 
-### 🖥️ [Virtualizacion](./Virtualizacion/)
-- **`virtualization.sh`**: Installation and configuration of Virtualization (KVM/QEMU, libvirtd) optimized for Kubuntu.
-
 ### ⚙️ [Setup](./Setup/)
 Scripts for operating system configuration, customization, and hardening:
 - **`post-install.sh`**: Master post-installation script for Kubuntu.
 - **`apariencia.sh`**: Installation of themes and icons.
-- **`kde-settings.sh`**: Configuration of the KDE Plasma desktop environment.
 - **`cockpit.sh`**: Installation and configuration of Cockpit (web administration).
 - **`fastfetch.sh`**: Aesthetic system information on startup (Fastfetch).
-- **`firefox.sh`**: Installation and configuration of Mozilla Firefox.
 - **`fonts.sh`**: Automated installation of development fonts (Nerd Fonts).
-- **`ptyxis.sh`**: Installation of the modern Ptyxis terminal emulator.
-- **`seguridad.sh`**: System hardening, UFW, and Fail2ban configuration.
+- **`seguridad.sh`**: System hardening and UFW configuration.
 - **`shell.sh`**: Modern terminal tools and prompt (Starship).
 - **`yt-dlp-setup.sh`**: Dependencies for multimedia handling (yt-dlp, ffmpeg).
 
@@ -101,7 +95,7 @@ fi
 ### 3. Run System Setup Scripts
 You can run specific scripts according to your needs (make sure to give them execution permissions):
 ```bash
-chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/*.sh Git/*.sh
+chmod +x Setup/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/*.sh Git/*.sh
 ./Setup/fonts.sh       # Install Fonts
 ./ProgrammingLanguages/mise.sh # Install Mise
 ```

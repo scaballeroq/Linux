@@ -92,70 +92,7 @@ Displays system information in an aesthetic and visual way upon terminal startup
 
 ---
 
-## 3. Modern Terminal Ptyxis (`ptyxis.sh`)
-
-Installs and optimizes **Ptyxis**, a modern terminal emulator designed for GNOME, along with integration in the Nautilus file manager.
-
-1. **Installation**:
-   ```bash
-   sudo apt install -y ptyxis python3-nautilus gir1.2-gtk-4.0 gettext build-essential git make
-   ```
-
-2. **"Nautilus Open Any Terminal" Extension**:
-   Allows opening terminals in the current directory directly from Nautilus. Cloned and compiled from its official repository:
-   ```bash
-   git clone https://github.com/Stunkymonkey/nautilus-open-any-terminal.git
-   cd nautilus-open-any-terminal
-   make && sudo make install schema
-   sudo glib-compile-schemas /usr/share/glib-2.0/schemas
-   # Configure ptyxis as the default terminal for the extension
-   gsettings set com.github.stunkymonkey.nautilus-open-any-terminal terminal ptyxis
-   gsettings set com.github.stunkymonkey.nautilus-open-any-terminal new-tab true
-   ```
-
-3. **Global Keyboard Shortcut (Ctrl + Alt + T)**:
-   Registers a keyboard shortcut in GNOME to launch Ptyxis automatically.
-
-4. **Aesthetic Styling**:
-   Configures opacity to 85% for a modern transparency effect, enables the dark interface by default, and hides the side scrollbar:
-   ```bash
-   PROFILE_UUID=$(gsettings get org.gnome.Ptyxis default-profile-uuid | tr -d "'")
-   gsettings set "org.gnome.Ptyxis.Profile:/org/gnome/Ptyxis/Profiles/${PROFILE_UUID}/" opacity 0.85
-   gsettings set org.gnome.Ptyxis interface-style 'dark'
-   gsettings set org.gnome.Ptyxis scrollbar-policy 'never'
-   ```
-
----
-
-## 4. Official Firefox Installation (`firefox.sh`)
-
-Replaces the default Debian ESR (Extended Support Release) version with Mozilla's official stable and development versions.
-
-1. **GPG Key and Mozilla Repository Import**:
-   ```bash
-   sudo mkdir -p /etc/apt/keyrings
-   wget -q https://packages.mozilla.org/apt/repo-signing-key.gpg -O- | sudo tee /etc/apt/keyrings/packages.mozilla.org.asc > /dev/null
-   echo "deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main" | sudo tee /etc/apt/sources.list.d/mozilla.list > /dev/null
-   ```
-
-2. **Package Pinning Configuration (APT Pinning)**:
-   Creates `/etc/apt/preferences.d/mozilla` to prioritize Mozilla repository packages over Debian packages:
-   ```ini
-   Package: *
-   Pin: origin packages.mozilla.org
-   Pin-Priority: 1000
-   ```
-
-3. **Firefox ESR Purge and Official Firefox Installation**:
-   ```bash
-   sudo apt purge -y firefox-esr firefox-esr-l10n-*
-   sudo apt update
-   sudo apt install -y firefox firefox-l10n-es-es firefox-nightly firefox-nightly-l10n-es-es
-   ```
-
----
-
-## 5. Web Administration Panel Cockpit (`cockpit.sh`)
+## 3. Web Administration Panel Cockpit (`cockpit.sh`)
 
 Installs Cockpit to administer the server or local machine via a convenient web interface.
 
@@ -178,7 +115,7 @@ Installs Cockpit to administer the server or local machine via a convenient web 
 
 ---
 
-## 6. Multimedia Support and yt-dlp (`yt-dlp-setup.sh`)
+## 4. Multimedia Support and yt-dlp (`yt-dlp-setup.sh`)
 
 Configures tools for video downloads and digital audio processing.
 
@@ -197,13 +134,13 @@ Configures tools for video downloads and digital audio processing.
 
 ---
 
-## 7. Desktop Themes and Icons (`apariencia.sh`)
+## 5. Desktop Themes and Icons (`apariencia.sh`)
 
 Applies design packages for a clean and cohesive visual environment.
 
 1. **Icon Themes Installation**:
    ```bash
-   sudo apt install -y papirus-icon-theme adwaita-icon-theme adwaita-icon-theme-legacy gnome-themes-extra
+   sudo apt install -y papirus-icon-theme
    ```
 
 ---
@@ -213,6 +150,4 @@ Applies design packages for a clean and cohesive visual environment.
 To verify that the main components have been installed and configured correctly:
 
 - **Terminal and Utilities**: Open a new terminal. You should see the **Starship** prompt loaded and the **Fastfetch** summary displayed. Test utilities by running `eza` or `bat --version`.
-- **Nautilus and Terminal**: Right-click inside any folder in Nautilus. You should see the "Open terminal here" option, which should launch **Ptyxis** with transparency.
-- **Firefox**: Run `firefox --version` (it should display Mozilla's official release, not ESR).
 - **Cockpit**: Open your browser and go to [https://localhost:9090](https://localhost:9090). Log in with your Debian system user credentials.
