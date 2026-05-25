@@ -19,9 +19,6 @@ fi
 
 $SUDO apt-get update
 $SUDO apt-get install -y \
-    papirus-icon-theme \
-    adwaita-icon-theme \
-    adwaita-icon-theme-legacy \
-    gnome-themes-extra
+    papirus-icon-theme 
 
 echo "✅ Temas e iconos instalados correctamente."
