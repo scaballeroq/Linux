@@ -1,7 +1,7 @@
-# Ubuntu Environment Configuration Justfile
+# Kubuntu Environment Configuration Justfile
 
 # Instala todo el entorno (Post-install, Shell, Virtualización, Mise, Cockpit, etc.)
-setup-all: post-install shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome
+setup-all: post-install shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch kde
     echo "🚀 Entorno completo configurado. Por favor, reinicia el sistema."
 
 # Administración Web
@@ -32,9 +32,13 @@ security:
 fonts:
     ./Setup/fonts.sh
 
-# Personalización de GNOME
+# Personalización de KDE Plasma
+kde:
+    ./Setup/kde-settings.sh
+
+# Personalización de GNOME (Compatibilidad)
 gnome:
-    ./Setup/gnome-settings.sh
+    echo "ℹ️ Kubuntu utiliza KDE Plasma. Ejecuta 'just kde' para aplicar las configuraciones de KDE."
 
 # Información estética del sistema
 fastfetch:

@@ -1,6 +1,6 @@
-# 🔧 Debian Environment Configuration
+# 🔧 Kubuntu Environment Configuration
 
-This repository contains an organized and modular collection of configuration scripts for **Debian** systems (focused on 13 LTS and newer). The goal is to automate the setup of a professional, optimized, and aesthetically pleasing development environment.
+This repository contains an organized and modular collection of configuration scripts for **Kubuntu** systems (focused on 26.04 LTS and newer). The goal is to automate the setup of a professional, optimized, and aesthetically pleasing development environment.
 
 ---
 
@@ -13,7 +13,7 @@ The core of the Bash terminal configuration.
 - **`aliases.sh`**: Common shortcuts for frequently used commands.
 - **`environment.sh`**: Global environment variables that affect shell behavior.
 - **`functions.sh`**: Collection of advanced functions and utilities.
-- **`gnome_settings.sh`**: Environment configurations for GNOME and aliases.
+- **`desktop_settings.sh`**: Environment configurations for GNOME/KDE and aliases.
 - **`history.sh`**: Controls how bash remembers commands.
 - **`options.sh`**: Configures internal Bash behavior using 'shopt' and 'bind'.
 - **`podman-functions.sh`**: Functions for simplified Podman container management.
@@ -22,19 +22,20 @@ The core of the Bash terminal configuration.
 
 ### 🐳 [Podman](./Podman/)
 Scripts to install and deploy services in isolated Podman containers:
-- **Core**: `podman.sh` (Main installation for Debian 13)
+- **Core**: `podman.sh` (Main installation for Kubuntu)
 - **Databases**: `podman-postgres.sh`, `podman-mysql.sh`, `podman-mongodb.sh`, `podman-redis.sh`
 - **Management & Monitoring**: `podman-portainer.sh`, `podman-adminer.sh`, `podman-dozzle.sh`, `podman-grafana.sh`, `podman-prometheus.sh`, `podman-jaeger.sh`
 - **Infrastructure**: `podman-nginx.sh`, `podman-keycloak.sh`, `podman-rabbitmq.sh`, `podman-minio.sh`, `podman-mailhog.sh`, `podman-browserless.sh`
 - **Frameworks/CMS**: `podman-wordpress.sh`, `podman-storybook.sh`
 
 ### 🖥️ [Virtualizacion](./Virtualizacion/)
-- **`virtualization.sh`**: Installation and configuration of Virtualization (KVM/QEMU, libvirtd) optimized for Debian.
+- **`virtualization.sh`**: Installation and configuration of Virtualization (KVM/QEMU, libvirtd) optimized for Kubuntu.
 
 ### ⚙️ [Setup](./Setup/)
 Scripts for operating system configuration, customization, and hardening:
-- **`post-install.sh`**: Master post-installation script for Debian.
+- **`post-install.sh`**: Master post-installation script for Kubuntu.
 - **`apariencia.sh`**: Installation of themes and icons.
+- **`kde-settings.sh`**: Configuration of the KDE Plasma desktop environment.
 - **`cockpit.sh`**: Installation and configuration of Cockpit (web administration).
 - **`fastfetch.sh`**: Aesthetic system information on startup (Fastfetch).
 - **`firefox.sh`**: Installation and configuration of Mozilla Firefox.
@@ -74,8 +75,8 @@ Language environment and runtime management using **mise**.
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/scaballeroq/Environment-Configuration.git
-cd Environment-Configuration/Debian
+git clone https://github.com/scaballeroq/Kubuntu.git
+cd Kubuntu
 ```
 
 ### 2. Configure the Shell (Bash)
@@ -109,7 +110,7 @@ chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podma
 
 ## ✨ Key Features
 - **Modularity**: Each component and script is independent.
-- **Debian Standards**: Use of official repositories, `apt`, and native configurations.
+- **Kubuntu Standards**: Use of official repositories, `apt`, and native Ubuntu configurations.
 - **Productivity**: Multiple pre-loaded aliases and functions (Podman, Git, Rclone).
 - **Up-to-date**: Modern tools like Fastfetch, Starship, Lazygit, and Mise.
 

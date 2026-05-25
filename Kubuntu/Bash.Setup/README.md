@@ -18,7 +18,7 @@ Este repositorio organiza de forma modular tus alias, variables de entorno, util
 | `history.sh` | Configuración optimizada del historial de Bash (10k/20k líneas, sin duplicados). |
 | `environment.sh` | Definición de variables globales (`EDITOR`, `PATH`) y personalización visual de `less` y `man`. |
 | `options.sh` | Configuración del comportamiento de Bash (`autocd`, `globstar`, corrección de typos). |
-| `gnome_settings.sh` | [NUEVO] Optimizaciones del entorno GNOME (luz nocturna, formato 24h, gestión de extensiones). |
+| `desktop_settings.sh` | [NUEVO] Optimizaciones de escritorio GNOME y KDE Plasma (luz nocturna, ahorro de energía, etc.). |
 
 ---
 
@@ -40,7 +40,7 @@ Luego, puedes crear enlaces simbólicos de los scripts de este repositorio a esa
 
 ```bash
 mkdir -p ~/.bashrc.d
-ln -s ~/Workspace/Repositorios/Debian/Bash.Setup/*.sh ~/.bashrc.d/
+ln -s ~/Workspace/Repositorios/Kubuntu/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
 *Nota: Asegúrate de ajustar la ruta al directorio donde hayas clonado el repositorio.*
@@ -56,7 +56,7 @@ ln -s ~/Workspace/Repositorios/Debian/Bash.Setup/*.sh ~/.bashrc.d/
 - `dclean` / `pclean`: Limpieza profunda del sistema de contenedores.
 
 ### 🎬 Multimedia (FFMPEG & ImageMagick)
-- `webm2mp4`: Convierte grabaciones de GNOME a MP4 compatible.
+- `webm2mp4`: Convierte grabaciones de pantalla a MP4 compatible.
 - `img2jpg` / `img2png`: Optimiza imágenes para web o almacenamiento.
 - `transcode-video-1080p`: Optimización rápida de video.
 

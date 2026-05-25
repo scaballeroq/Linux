@@ -1,5 +1,5 @@
 #!/bin/bash
-# meld.sh - Instalación de Meld para Debian
+# meld.sh - Instalación de Meld para Kubuntu
 
 set -e
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# podman.sh - Podman Installation for Debian 13
+# podman.sh - Podman Installation for Kubuntu / Ubuntu
 
 set -euo pipefail
 
@@ -10,7 +10,7 @@ if ! command -v podman &> /dev/null; then
     # - podman-docker: Provee un alias automático de 'docker' -> 'podman'
     # - uidmap: Requerido para mapear subuid/subgid en contenedores rootless
     # - slirp4netns: Stack de red rootless tradicional (compatibilidad hacia atrás)
-    # - passt: Nuevo stack de red ('pasta') de altísimo rendimiento, estándar en Podman 5+ (Debian 13)
+    # - passt: Nuevo stack de red ('pasta') de altísimo rendimiento, estándar en Podman 5+
     sudo apt install -y podman podman-compose podman-docker uidmap slirp4netns passt
 else
     echo "✅ Podman ya está instalado."

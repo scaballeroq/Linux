@@ -1,5 +1,5 @@
 #!/bin/bash
-# virtualization.sh - Instalación de Virtualización (KVM/QEMU) para Debian 13 (Optimizado)
+# virtualization.sh - Instalación de Virtualización (KVM/QEMU) para Kubuntu (Optimizado)
 
 set -e
 
@@ -22,7 +22,7 @@ echo "ℹ️ Verificando capacidades de virtualización del host..."
 virt-host-validate qemu || echo "⚠️ Advertencia: Algunas validaciones fallaron. Revisa tu BIOS/UEFI (Intel VT-x / AMD-V)."
 
 echo "ℹ️ Configurando servicios..."
-# En Debian libvirtd sigue siendo el estándar, se habilita y arranca:
+# En Kubuntu libvirtd sigue siendo el estándar, se habilita y arranca:
 sudo systemctl enable --now libvirtd
 
 echo "ℹ️ Configurando red virtual por defecto..."

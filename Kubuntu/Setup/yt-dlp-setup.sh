@@ -1,13 +1,12 @@
 #!/bin/bash
-# yt-dlp-setup.sh - Instalación de dependencias para yt-dlp y multimedia para Debian
+# yt-dlp-setup.sh - Instalación de dependencias para yt-dlp y multimedia para Kubuntu
 
 set -e
 
-echo "ℹ️ Instalando yt-dlp (desde backports) y FFMPEG vía APT..."
+echo "ℹ️ Instalando yt-dlp y FFMPEG vía APT..."
 # ffmpeg es esencial para la mezcla de streams y conversión de audio
 sudo apt update
-sudo apt install -y -t trixie-backports yt-dlp
-sudo apt install -y ffmpeg
+sudo apt install -y yt-dlp ffmpeg
 
 echo "ℹ️ Configurando motor JavaScript (Deno) vía Mise..."
 # yt-dlp utiliza motores JS para descifrar algoritmos de YouTube (n-challenge).

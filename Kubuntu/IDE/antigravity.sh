@@ -1,9 +1,9 @@
 #!/bin/bash
-# antigravity.sh - Google Antigravity installation for Debian
+# antigravity.sh - Google Antigravity installation for Kubuntu/Ubuntu
 
 set -e
 
-echo "ℹ️ Configurando repositorio de Google Antigravity para Debian..."
+echo "ℹ️ Configurando repositorio de Google Antigravity para Kubuntu/Ubuntu..."
 
 # 1. Crear directorio para keyrings si no existe
 sudo mkdir -p /etc/apt/keyrings

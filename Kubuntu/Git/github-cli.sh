@@ -1,5 +1,5 @@
 #!/bin/bash
-# github-cli.sh - GitHub CLI Installation for Debian
+# github-cli.sh - GitHub CLI Installation for Kubuntu/Ubuntu
 
 set -e
 

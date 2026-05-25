@@ -1,5 +1,5 @@
 #!/bin/bash
-# mise.sh - Instalador de Mise (Gestor de Versiones) para Debian 13
+# mise.sh - Instalador de Mise (Gestor de Versiones) para Kubuntu
 
 set -euo pipefail
 

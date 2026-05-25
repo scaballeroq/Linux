@@ -1,5 +1,5 @@
 #!/bin/bash
-# apariencia.sh - Instalación de temas e iconos para Debian 13
+# apariencia.sh - Instalación de temas e iconos para Kubuntu
 
 set -e
 

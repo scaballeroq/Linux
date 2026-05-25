@@ -1,9 +1,9 @@
 #!/bin/bash
 # ==============================================================================
-# MANUAL PASO A PASO: ENDURECIMIENTO DE SEGURIDAD (Debian 13)
+# MANUAL PASO A PASO: ENDURECIMIENTO DE SEGURIDAD (Kubuntu 26.04 LTS)
 # ==============================================================================
 # Este script aplica una serie de configuraciones para mejorar la seguridad
-# de una instalación de Debian 13. A continuación se detalla cada paso.
+# de una instalación de Kubuntu 26.04 LTS. A continuación se detalla cada paso.
 # ==============================================================================
 
 # 'set -e' hace que el script se detenga inmediatamente si algún comando falla.
@@ -90,7 +90,7 @@ sudo systemctl enable --now fail2ban
 # ==============================================================================
 echo "ℹ️ Paso 3: Configurando DNS cifrado y seguro (DNS-over-TLS)..."
 
-# 3.1 Instalar el gestor de red systemd-resolved (en Debian no siempre viene por defecto)
+# 3.1 Instalar el gestor de red systemd-resolved (si no viene por defecto)
 if ! systemctl list-unit-files | grep -q systemd-resolved; then
     echo "   - systemd-resolved no detectado. Procediendo a la instalación..."
     sudo apt install -y systemd-resolved

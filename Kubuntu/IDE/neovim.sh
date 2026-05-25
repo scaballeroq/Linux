@@ -1,5 +1,5 @@
 #!/bin/bash
-# neovim.sh - Instalación de Neovim y LazyVim para Debian
+# neovim.sh - Instalación de Neovim y LazyVim para Kubuntu
 
 set -e
 

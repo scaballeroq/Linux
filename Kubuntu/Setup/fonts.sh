@@ -1,5 +1,5 @@
 #!/bin/bash
-# fonts.sh - Instalación de Fuentes de Desarrollo (Optimizado) para Debian
+# fonts.sh - Instalación de Fuentes de Desarrollo (Optimizado) para Kubuntu
 
 set -e
 

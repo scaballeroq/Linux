@@ -147,7 +147,7 @@ hg() {
 iso2sd() {
   if [ $# -ne 2 ]; then
     echo "Uso: iso2sd <archivo_iso> <dispositivo_salida>"
-    echo "Ejemplo: iso2sd ~/Debian.iso /dev/sda"
+    echo "Ejemplo: iso2sd ~/Kubuntu.iso /dev/sda"
     echo -e "\nDispositivos disponibles:"
     lsblk -d -o NAME | grep -E '^sd[a-z]' | awk '{print "/dev/"$1}'
     return 1
@@ -203,7 +203,7 @@ format-drive() {
 # webm2mp4: Convertir WebM a MP4
 # Uso: webm2mp4 <archivo.webm>
 # -----------------------------------------------------------------------------
-# Útil para convertir grabaciones de pantalla de GNOME a un formato más compatible.
+# Útil para convertir grabaciones de pantalla del sistema a un formato más compatible.
 webm2mp4() {
   if [ $# -ne 1 ]; then echo "Uso: webm2mp4 <archivo.webm>"; return 1; fi
   if ! command -v ffmpeg &> /dev/null; then echo "❌ Faltan dependencias: ffmpeg"; return 1; fi

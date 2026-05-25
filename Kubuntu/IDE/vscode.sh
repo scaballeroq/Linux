@@ -1,5 +1,5 @@
 #!/bin/bash
-# vscode.sh - Instalación de Visual Studio Code para Debian
+# vscode.sh - Instalación de Visual Studio Code para Kubuntu
 
 set -e
 

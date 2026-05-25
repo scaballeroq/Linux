@@ -1,5 +1,5 @@
 #!/bin/bash
-# rust.sh - Rust Installation (Optimized for Debian 13)
+# rust.sh - Rust Installation (Optimized for Kubuntu)
 
 set -euo pipefail
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# python.sh - Python Installation via Mise for Debian 13
+# python.sh - Python Installation via Mise for Kubuntu
 
 set -euo pipefail
 
@@ -18,7 +18,7 @@ sudo apt install -y build-essential libssl-dev zlib1g-dev \
     libffi-dev liblzma-dev
 
 echo "ℹ️ Instalando Python 3.12..."
-# En Debian 13 y con versiones recientes de mise, el plugin nativo de python descarga
+# En Kubuntu y con versiones recientes de mise, el plugin nativo de python descarga
 # binarios pre-compilados (via uv o python-build) si están disponibles, ahorrando mucho tiempo de compilación.
 # Se eliminó MISE_PYTHON_COMPILE=1 para aprovechar esto.
 mise use --global python@3.12

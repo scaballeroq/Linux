@@ -1,5 +1,5 @@
 # =============================================================================
-# ARCHIVO DE ALIASES (aliases.sh) - Adaptado para Debian
+# ARCHIVO DE ALIASES (aliases.sh) - Adaptado para Kubuntu
 # =============================================================================
 # Este archivo contiene atajos (aliases) para comandos utilizados frecuentemente.
 

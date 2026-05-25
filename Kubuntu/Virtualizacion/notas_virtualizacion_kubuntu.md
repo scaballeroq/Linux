@@ -1,6 +1,6 @@
-# Instalación y Configuración de Virtualización (KVM/QEMU) en Debian
+# Instalación y Configuración de Virtualización (KVM/QEMU) en Kubuntu
 
-Este manual está optimizado para versiones modernas de Debian (como Debian 13 LTS). Utiliza el esquema estándar de `libvirtd` integrado con el sistema.
+Este manual está optimizado para versiones modernas de Kubuntu (como Kubuntu 26.04 LTS). Utiliza el esquema estándar de `libvirtd` integrado con el sistema.
 
 ## 1. Instalación de Paquetes
 Instalamos KVM, libvirt, virt-manager, y utilidades asociadas.
@@ -11,14 +11,14 @@ sudo apt install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils 
 ```
 
 ## 2. Controladores de Windows (VirtIO)
-En Debian, los controladores VirtIO no están en el repositorio oficial como un paquete RPM. Debes descargar la ISO manualmente desde el proyecto Fedora:
+En Kubuntu, los controladores VirtIO no están en el repositorio oficial de Ubuntu de forma predeterminada como un paquete nativo. Debes descargar la ISO manualmente desde el proyecto Fedora:
 
 - [Descargar virtio-win.iso](https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso)
 
-Adunta esta ISO a tu máquina virtual Windows como un segundo CD-ROM para instalar los drivers.
+Adjunta esta ISO a tu máquina virtual Windows como un segundo CD-ROM para instalar los drivers.
 
 ## 3. Configuración de Servicios
-Debian utiliza el demonio `libvirtd` monolítico por defecto. Asegúrate de que esté activo:
+Kubuntu utiliza el demonio `libvirtd`. Asegúrate de que esté activo:
 
 ```bash
 sudo systemctl enable --now libvirtd

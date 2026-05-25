@@ -1,5 +1,5 @@
 #!/bin/bash
-# nodejs.sh - Node.js Installation via Mise for Debian 13
+# nodejs.sh - Node.js Installation via Mise for Kubuntu
 
 set -euo pipefail
 

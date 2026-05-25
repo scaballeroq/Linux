@@ -1,10 +1,10 @@
 #!/bin/bash
-# fastfetch.sh - Instalación y configuración de Fastfetch (Optimizado) para Debian
+# fastfetch.sh - Instalación y configuración de Fastfetch (Optimizado) para Kubuntu
 
 set -e
 
 echo "ℹ️ Instalando Fastfetch..."
-# Fastfetch está disponible en los repositorios oficiales de Debian 13 Trixie
+# Fastfetch está disponible en los repositorios oficiales de Kubuntu 26.04 LTS
 sudo apt update
 sudo apt install -y fastfetch
 

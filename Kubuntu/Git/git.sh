@@ -1,5 +1,5 @@
 #!/bin/bash
-# git.sh - Instalación de Git, Delta y Lazygit (Optimizado) para Debian
+# git.sh - Instalación de Git, Delta y Lazygit (Optimizado) para Kubuntu
 
 set -e
 
