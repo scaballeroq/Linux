@@ -2,7 +2,7 @@
 sidebar_position: 6
 ---
 
-# Gestión de Lenguajes de Programación en Debian 13
+# Gestión de Lenguajes de Programación en Kubuntu / Ubuntu
 
 Esta guía detalla la instalación, control y mantenimiento de lenguajes de programación y sus herramientas de desarrollo en la carpeta `ProgrammingLanguages`.
 
@@ -37,13 +37,14 @@ Mise es una herramienta de terminal moderna que reemplaza a herramientas como `a
 
 Una vez instalado Mise, se despliegan de forma global los siguientes lenguajes:
 
-### Node.js (`nodejs.sh` y `angular.sh`)
+### Node.js y pnpm (`nodejs.sh` y `angular.sh`)
 * **Dependencias**: Instala `build-essential`, `python3`, `g++` y `make` vía APT, necesarios para compilar dependencias nativas de npm (`node-gyp`).
 * **Instalación**: Configura la versión LTS 22 global:
   ```bash
   mise use --global node@22
   ```
-* **Actualización segura de NPM**: Se aplica una limpieza de caché de npm e instalación previa de `promise-retry` para evadir errores clásicos del instalador de npm en Debian antes de subir a la versión más reciente (`npm install -g npm@latest`).
+* **Actualización segura de NPM**: Se aplica una limpieza de caché de npm e instalación previa de `promise-retry` para evadir errores clásicos del instalador de npm antes de subir a la versión más reciente (`npm install -g npm@latest`).
+* **Gestor de paquetes pnpm**: Activa de forma integrada **Corepack** e instala la versión más reciente de **pnpm**, un gestor de paquetes alternativo mucho más rápido y seguro que npm gracias al uso de un store global y su estructura no plana de dependencias.
 * **Angular CLI**: Se instala globalmente el CLI oficial utilizando npm manejado por Mise:
   ```bash
   mise use --global npm:@angular/cli@latest

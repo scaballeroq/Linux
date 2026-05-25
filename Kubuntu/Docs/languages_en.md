@@ -2,7 +2,7 @@
 sidebar_position: 6
 ---
 
-# Programming Languages Management on Debian 13
+# Programming Languages Management on Kubuntu / Ubuntu
 
 This guide details the installation, control, and maintenance of programming languages and their development environments managed in the `ProgrammingLanguages` folder.
 
@@ -37,16 +37,17 @@ Mise is a modern CLI version manager that replaces older tools like `asdf`, `nvm
 
 Once Mise is installed, the following development environments are deployed globally:
 
-### Node.js (`nodejs.sh` and `angular.sh`)
+### Node.js and pnpm (`nodejs.sh` and `angular.sh`)
 * **Dependencies**: Installs `build-essential`, `python3`, `g++`, and `make` via APT, which are required to build native npm dependencies (`node-gyp`).
 * **Installation**: Configures the global Node.js LTS 22 release:
   ```bash
   mise use --global node@22
   ```
-* **Safe NPM Updates**: Cleans npm cache and pre-installs the `promise-retry` package to bypass common npm registry upgrade errors on Debian, then updates NPM:
+* **Safe NPM Updates**: Cleans npm cache and pre-installs the `promise-retry` package to bypass common npm registry upgrade errors, then updates NPM:
   ```bash
   mise exec node@22 -- npm install -g npm@latest
   ```
+* **pnpm Package Manager**: Enables **Corepack** natively and configures the latest release of **pnpm**. PNPM is a faster, disk-space efficient, and more secure alternative to traditional npm due to its content-addressable storage structure and non-flat node_modules layout.
 * **Angular CLI**: Installs the official Angular CLI globally:
   ```bash
   mise use --global npm:@angular/cli@latest
