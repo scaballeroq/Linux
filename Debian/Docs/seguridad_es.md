@@ -6,7 +6,7 @@ sidebar_position: 1
 
 Esta guía detalla el proceso de endurecimiento de seguridad (hardening) aplicado a un sistema Debian 13, tal y como se automatiza en el script de seguridad.
 
-El proceso cubre la configuración del firewall, protección contra fuerza bruta, privacidad DNS y auditoría de permisos.
+El proceso cubre la configuración del firewall, privacidad DNS y auditoría de permisos.
 
 ## 1. Configuración de Firewall (UFW)
 
@@ -35,21 +35,7 @@ Se utiliza Uncomplicated Firewall (UFW) para definir políticas estrictas de red
    sudo ufw --force enable
    ```
 
-## 2. Protección contra Fuerza Bruta (Fail2Ban)
-
-Fail2Ban monitoriza los registros del sistema y bloquea automáticamente las direcciones IP que muestran comportamientos maliciosos.
-
-1. Instala Fail2Ban:
-   ```bash
-   sudo apt install -y fail2ban
-   ```
-
-2. Habilita y arranca el servicio para que funcione continuamente:
-   ```bash
-   sudo systemctl enable --now fail2ban
-   ```
-
-## 3. Privacidad DNS (DNS-over-TLS)
+## 2. Privacidad DNS (DNS-over-TLS)
 
 Para evitar que tu proveedor de internet espíe tus consultas web, se cifra el tráfico DNS mediante `systemd-resolved` utilizando Cloudflare.
 
@@ -81,7 +67,7 @@ Para evitar que tu proveedor de internet espíe tus consultas web, se cifra el t
    sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
    ```
 
-## 4. Auditoría de Permisos Críticos
+## 3. Auditoría de Permisos Críticos
 
 Se restringen los permisos de archivos y carpetas vitales del sistema operativo para evitar que programas o usuarios sin privilegios los modifiquen.
 

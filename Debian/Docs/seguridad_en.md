@@ -6,7 +6,7 @@ sidebar_position: 1
 
 This guide details the security hardening process applied to a Debian 13 system, as automated in the security setup script.
 
-The process covers firewall configuration, brute-force protection, DNS privacy, and critical permissions auditing.
+The process covers firewall configuration, DNS privacy, and critical permissions auditing.
 
 ## 1. Firewall Configuration (UFW)
 
@@ -35,21 +35,7 @@ Uncomplicated Firewall (UFW) is used to define strict network policies.
    sudo ufw --force enable
    ```
 
-## 2. Brute-Force Protection (Fail2Ban)
-
-Fail2Ban monitors system logs and automatically blocks IP addresses that exhibit malicious behaviors.
-
-1. Install Fail2Ban:
-   ```bash
-   sudo apt install -y fail2ban
-   ```
-
-2. Enable and start the service to run continuously:
-   ```bash
-   sudo systemctl enable --now fail2ban
-   ```
-
-## 3. DNS Privacy (DNS-over-TLS)
+## 2. DNS Privacy (DNS-over-TLS)
 
 To prevent ISPs from spying on your web queries, DNS traffic is encrypted via `systemd-resolved` using Cloudflare.
 
@@ -81,7 +67,7 @@ To prevent ISPs from spying on your web queries, DNS traffic is encrypted via `s
    sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
    ```
 
-## 4. Critical Permissions Auditing
+## 3. Critical Permissions Auditing
 
 Permissions for vital OS files and folders are restricted to prevent unprivileged programs or users from modifying them.
 
