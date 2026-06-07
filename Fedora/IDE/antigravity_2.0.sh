@@ -79,7 +79,7 @@ read -r VERSION DOWNLOAD_URL <<< "$DOWNLOAD_FIELDS"
 # 3. Comprobar si ya está instalado
 if [ -f "$INSTALL_ROOT/.version" ] && [ "$(cat "$INSTALL_ROOT/.version")" = "$VERSION" ]; then
     echo "✅ Antigravity $VERSION ya está actualizado."
-    if [ -n "$SCRIPT_PATH" ] && [ -f "$SCRIPT_PATH" ]; then
+    if [ -n "$SCRIPT_PATH" ] && [ -f "$SCRIPT_PATH" ] && [ "$SCRIPT_PATH" != "/usr/local/bin/update-antigravity" ]; then
         echo "ℹ️ Asegurando registro del script de actualización global..."
         sudo cp "$SCRIPT_PATH" /usr/local/bin/update-antigravity
         sudo chmod +x /usr/local/bin/update-antigravity
@@ -132,7 +132,7 @@ sudo ln -sfn "$INSTALL_ROOT/antigravity" "$COMMAND_LINK"
 sudo mkdir -p "$(dirname "$ICON_FILE")"
 sudo install -m 0644 "$ICON_STAGED" "$ICON_FILE"
 
-if [ -n "$SCRIPT_PATH" ] && [ -f "$SCRIPT_PATH" ]; then
+if [ -n "$SCRIPT_PATH" ] && [ -f "$SCRIPT_PATH" ] && [ "$SCRIPT_PATH" != "/usr/local/bin/update-antigravity" ]; then
     echo "ℹ️ Registrando script de actualización global..."
     sudo cp "$SCRIPT_PATH" /usr/local/bin/update-antigravity
     sudo chmod +x /usr/local/bin/update-antigravity
