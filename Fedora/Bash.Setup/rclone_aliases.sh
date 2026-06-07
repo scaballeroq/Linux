@@ -23,6 +23,7 @@ alias gdrive-videos="rclone sync \"\$HOME/Vídeos\" \"GoogleDrive:Vídeos\" $RCL
 alias gdrive-musica="rclone sync \"\$HOME/Música\" \"GoogleDrive:Música\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_musica.log\""
 alias gdrive-software="rclone sync \"/run/media/caballero/NVME_EXT/Software\" \"GoogleDrive:Workspace/Software\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_software.log\""
 alias gdrive-kdenlive="rclone sync \"\$HOME/Workspace/Kdenlive/\" \"GoogleDrive:Workspace/Kdenlive\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_kdenlive.log\""
+alias gdrive-repos="rclone sync \"\$HOME/Workspace/Repositorios\" \"GoogleDrive:Workspace/Repositorios\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos.log\""
 
 # -----------------------------------------------------------------------------
 # 4. GOOGLE DRIVE (DOWNLOAD) - BAJAR DE LA NUBE
