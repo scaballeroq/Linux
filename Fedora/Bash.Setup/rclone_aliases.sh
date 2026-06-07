@@ -4,144 +4,41 @@
 # Este archivo contiene atajos para comandos de rclone, facilitando la
 # sincronización con servicios en la nube como Google Drive.
 
-# -----------------------------------------------------------------------------
-# 1. GOOGLE DRIVE
-# -----------------------------------------------------------------------------
+# 1. Asegurar que el directorio de logs existe
+RCLONE_LOG_DIR="$HOME/Workspace/rclone_logs"
+mkdir -p "$RCLONE_LOG_DIR"
 
-# Sincronización de BingWallpaper con Google Drive
-alias gdrive-bingwallpaper='rclone sync /home/caballero/Imágenes/BingWallpaper GoogleDrive:Imágenes/BingWallpaper \
-  --fast-list \
-  --transfers 8 \
-  --checkers 16 \
-  --tpslimit 10 \
-  --verbose \
-  --log-file /home/caballero/Workspace/rclone_logs/rclone_bing.log \
-  -P'
-
-# Sincronización de Wallpaper con Google Drive
-alias gdrive-wallpaper='rclone sync /home/caballero/Imágenes/Wallpaper GoogleDrive:Imágenes/Wallpaper \
-  --fast-list \
-  --transfers 8 \
-  --checkers 16 \
-  --tpslimit 10 \
-  --verbose \
-  --log-file /home/caballero/Workspace/rclone_logs/rclone_wallpaper.log \
-  -P'
-
-# Sincronización de Documentos con Google Drive
-alias gdrive-documentos='rclone sync "/home/caballero/Documentos/" "GoogleDrive:Documentos" \
-  --fast-list \
-  --transfers 8 \
-  --checkers 16 \
-  --tpslimit 10 \
-  --verbose \
-  --log-file /home/caballero/Workspace/rclone_logs/rclone_linuxhowto.log \
-  -P'
-
-# Sincronización de Avatar con Google Drive
-alias gdrive-avatar='rclone sync /home/caballero/Imágenes/Avatar GoogleDrive:Avatar \
-  --fast-list \
-  --transfers 8 \
-  --checkers 16 \
-  --tpslimit 10 \
-  --verbose \
-  --log-file /home/caballero/Workspace/rclone_logs/rclone_avatar.log \
-  -P'
-
-# Sincronización de Vídeos con Google Drive
-alias gdrive-videos='rclone sync /home/caballero/Vídeos GoogleDrive:Vídeos \
-  --fast-list \
-  --transfers 8 \
-  --checkers 16 \
-  --tpslimit 10 \
-  --verbose \
-  --log-file /home/caballero/Workspace/rclone_logs/rclone_videos.log \
-  -P'
-
-# Sincronización de Música con Google Drive
-alias gdrive-musica='rclone sync /home/caballero/Música GoogleDrive:Música \
-  --fast-list \
-  --transfers 8 \
-  --checkers 16 \
-  --tpslimit 10 \
-  --verbose \
-  --log-file /home/caballero/Workspace/rclone_logs/rclone_musica.log \
-  -P'
-
-# Sincronizar Carpeta Software disco externo NVME
-alias gdrive-software='rclone sync /media/caballero/NVME_EXT/Software GoogleDrive:Software \
-  --fast-list \
-  --transfers 8 \
-  --checkers 16 \
-  --tpslimit 10 \
-  --verbose \
-  --log-file /home/caballero/Workspace/rclone_logs/rclone_software.log \
-  -P'
+# 2. Opciones comunes optimizadas para Google Drive
+# - tpslimit 10: Evita errores de límite de tasa (Rate Limit / User Rate Limit Exceeded) de la API de Google.
+# - fast-list: Reduce drásticamente el número de llamadas a la API de Google, acelerando el escaneo.
+RCLONE_OPTS="--fast-list --transfers 8 --checkers 16 --tpslimit 10 --verbose -P"
 
 # -----------------------------------------------------------------------------
-# 2. GOOGLE DRIVE (DOWNLOAD) - BAJAR DE LA NUBE
+# 3. GOOGLE DRIVE (UPLOAD) - SUBIR A LA NUBE
 # -----------------------------------------------------------------------------
 
-# Bajada de BingWallpaper de Google Drive a local
-alias gdrive-bingwallpaper-down='rclone sync GoogleDrive:Imágenes/BingWallpaper /home/caballero/Imágenes/BingWallpaper \
-  --fast-list \
-  --transfers 8 \
-  --checkers 16 \
-  --tpslimit 10 \
-  --verbose \
-  --log-file /home/caballero/Workspace/rclone_logs/rclone_bing_down.log \
-  -P'
+alias gdrive-bingwallpaper='rclone sync "$HOME/Imágenes/BingWallpaper" "GoogleDrive:Imágenes/BingWallpaper" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_bing.log"'
+alias gdrive-wallpaper='rclone sync "$HOME/Imágenes/Wallpaper" "GoogleDrive:Imágenes/Wallpaper" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_wallpaper.log"'
+alias gdrive-documentos='rclone sync "$HOME/Documentos/" "GoogleDrive:Documentos" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_linuxhowto.log"'
+alias gdrive-avatar='rclone sync "$HOME/Imágenes/Avatar" "GoogleDrive:Avatar" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_avatar.log"'
+alias gdrive-videos='rclone sync "$HOME/Vídeos" "GoogleDrive:Vídeos" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_videos.log"'
+alias gdrive-musica='rclone sync "$HOME/Música" "GoogleDrive:Música" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_musica.log"'
+alias gdrive-software='rclone sync "/media/caballero/NVME_EXT/Software" "GoogleDrive:Software" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_software.log"'
 
-# Bajada de Wallpaper de Google Drive a local
-alias gdrive-wallpaper-down='rclone sync GoogleDrive:Imágenes/Wallpaper /home/caballero/Imágenes/Wallpaper \
-  --fast-list \
-  --transfers 8 \
-  --checkers 16 \
-  --tpslimit 10 \
-  --verbose \
-  --log-file /home/caballero/Workspace/rclone_logs/rclone_wallpaper_down.log \
-  -P'
+# -----------------------------------------------------------------------------
+# 4. GOOGLE DRIVE (DOWNLOAD) - BAJAR DE LA NUBE
+# -----------------------------------------------------------------------------
 
-# Bajada de Documentos de Google Drive a local
-alias gdrive-documentos-down='rclone sync "GoogleDrive:Documentos" "/home/caballero/Documentos/" \
-  --fast-list \
-  --transfers 8 \
-  --checkers 16 \
-  --tpslimit 10 \
-  --verbose \
-  --log-file /home/caballero/Workspace/rclone_logs/rclone_linuxhowto_down.log \
-  -P'
+alias gdrive-bingwallpaper-down='rclone sync "GoogleDrive:Imágenes/BingWallpaper" "$HOME/Imágenes/BingWallpaper" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_bing_down.log"'
+alias gdrive-wallpaper-down='rclone sync "GoogleDrive:Imágenes/Wallpaper" "$HOME/Imágenes/Wallpaper" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_wallpaper_down.log"'
+alias gdrive-documentos-down='rclone sync "GoogleDrive:Documentos" "$HOME/Documentos/" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_linuxhowto_down.log"'
+alias gdrive-avatar-down='rclone sync "GoogleDrive:Avatar" "$HOME/Imágenes/Avatar" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_avatar_down.log"'
+alias gdrive-videos-down='rclone sync "GoogleDrive:Vídeos" "$HOME/Vídeos" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_videos_down.log"'
+alias gdrive-musica-down='rclone sync "GoogleDrive:Música" "$HOME/Música" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_musica_down.log"'
 
-# Bajada de Avatar de Google Drive a local
-alias gdrive-avatar-down='rclone sync GoogleDrive:Avatar /home/caballero/Imágenes/Avatar \
-  --fast-list \
-  --transfers 8 \
-  --checkers 16 \
-  --tpslimit 10 \
-  --verbose \
-  --log-file /home/caballero/Workspace/rclone_logs/rclone_avatar_down.log \
-  -P'
-
-# Bajada de Vídeos de Google Drive a local
-alias gdrive-videos-down='rclone sync GoogleDrive:Vídeos /home/caballero/Vídeos \
-  --fast-list \
-  --transfers 8 \
-  --checkers 16 \
-  --tpslimit 10 \
-  --verbose \
-  --log-file /home/caballero/Workspace/rclone_logs/rclone_videos_down.log \
-  -P'
-
-# Bajada de Música de Google Drive a local
-alias gdrive-musica-down='rclone sync GoogleDrive:Música /home/caballero/Música \
-  --fast-list \
-  --transfers 8 \
-  --checkers 16 \
-  --tpslimit 10 \
-  --verbose \
-  --log-file /home/caballero/Workspace/rclone_logs/rclone_musica_down.log \
-  -P'
-
+# 5. Limpieza de variables temporales para evitar contaminar la shell
+unset RCLONE_LOG_DIR
+unset RCLONE_OPTS
 
 # =============================================================================
 # MENSAJE DE CARGA
