@@ -17,8 +17,7 @@ RCLONE_OPTS="--fast-list --transfers 8 --checkers 16 --tpslimit 10 --verbose -P"
 # 3. GOOGLE DRIVE (UPLOAD) - SUBIR A LA NUBE
 # -----------------------------------------------------------------------------
 
-alias gdrive-bingwallpaper='rclone sync "$HOME/Imágenes/BingWallpaper" "GoogleDrive:Imágenes/BingWallpaper" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_bing.log"'
-alias gdrive-wallpaper='rclone sync "$HOME/Imágenes/Wallpaper" "GoogleDrive:Imágenes/Wallpaper" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_wallpaper.log"'
+alias gdrive-imagenes='rclone sync "$HOME/Imágenes" "GoogleDrive:Imágenes" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_imagenes.log"'
 alias gdrive-documentos='rclone sync "$HOME/Documentos/" "GoogleDrive:Documentos" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_linuxhowto.log"'
 alias gdrive-avatar='rclone sync "$HOME/Imágenes/Avatar" "GoogleDrive:Avatar" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_avatar.log"'
 alias gdrive-videos='rclone sync "$HOME/Vídeos" "GoogleDrive:Vídeos" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_videos.log"'
@@ -29,8 +28,7 @@ alias gdrive-software='rclone sync "/media/caballero/NVME_EXT/Software" "GoogleD
 # 4. GOOGLE DRIVE (DOWNLOAD) - BAJAR DE LA NUBE
 # -----------------------------------------------------------------------------
 
-alias gdrive-bingwallpaper-down='rclone sync "GoogleDrive:Imágenes/BingWallpaper" "$HOME/Imágenes/BingWallpaper" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_bing_down.log"'
-alias gdrive-wallpaper-down='rclone sync "GoogleDrive:Imágenes/Wallpaper" "$HOME/Imágenes/Wallpaper" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_wallpaper_down.log"'
+alias gdrive-imagenes-down='rclone sync "GoogleDrive:Imágenes" "$HOME/Imágenes" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_imagenes_down.log"'
 alias gdrive-documentos-down='rclone sync "GoogleDrive:Documentos" "$HOME/Documentos/" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_linuxhowto_down.log"'
 alias gdrive-avatar-down='rclone sync "GoogleDrive:Avatar" "$HOME/Imágenes/Avatar" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_avatar_down.log"'
 alias gdrive-videos-down='rclone sync "GoogleDrive:Vídeos" "$HOME/Vídeos" $RCLONE_OPTS --log-file "$RCLONE_LOG_DIR/rclone_videos_down.log"'
