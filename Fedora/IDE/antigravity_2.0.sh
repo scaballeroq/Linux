@@ -3,6 +3,12 @@
 
 set -e
 
+# Determinar la ruta absoluta del script al inicio
+SCRIPT_PATH=""
+if [ -n "${BASH_SOURCE[0]}" ]; then
+    SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}" 2>/dev/null || readlink -f "${BASH_SOURCE[0]}")"
+fi
+
 echo "ℹ️ Instalando dependencias necesarias..."
 sudo dnf5 install -y curl tar desktop-file-utils python3
 
@@ -73,6 +79,11 @@ read -r VERSION DOWNLOAD_URL <<< "$DOWNLOAD_FIELDS"
 # 3. Comprobar si ya está instalado
 if [ -f "$INSTALL_ROOT/.version" ] && [ "$(cat "$INSTALL_ROOT/.version")" = "$VERSION" ]; then
     echo "✅ Antigravity $VERSION ya está actualizado."
+    if [ -n "$SCRIPT_PATH" ] && [ -f "$SCRIPT_PATH" ]; then
+        echo "ℹ️ Asegurando registro del script de actualización global..."
+        sudo cp "$SCRIPT_PATH" /usr/local/bin/update-antigravity
+        sudo chmod +x /usr/local/bin/update-antigravity
+    fi
     exit 0
 fi
 
@@ -121,9 +132,9 @@ sudo ln -sfn "$INSTALL_ROOT/antigravity" "$COMMAND_LINK"
 sudo mkdir -p "$(dirname "$ICON_FILE")"
 sudo install -m 0644 "$ICON_STAGED" "$ICON_FILE"
 
-if [ -f "$0" ]; then
+if [ -n "$SCRIPT_PATH" ] && [ -f "$SCRIPT_PATH" ]; then
     echo "ℹ️ Registrando script de actualización global..."
-    sudo cp "$0" /usr/local/bin/update-antigravity
+    sudo cp "$SCRIPT_PATH" /usr/local/bin/update-antigravity
     sudo chmod +x /usr/local/bin/update-antigravity
 fi
 
