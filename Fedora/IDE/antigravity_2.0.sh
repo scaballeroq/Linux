@@ -121,6 +121,12 @@ sudo ln -sfn "$INSTALL_ROOT/antigravity" "$COMMAND_LINK"
 sudo mkdir -p "$(dirname "$ICON_FILE")"
 sudo install -m 0644 "$ICON_STAGED" "$ICON_FILE"
 
+if [ -f "$0" ]; then
+    echo "ℹ️ Registrando script de actualización global..."
+    sudo cp "$0" /usr/local/bin/update-antigravity
+    sudo chmod +x /usr/local/bin/update-antigravity
+fi
+
 echo "ℹ️ Creando acceso directo de escritorio..."
 sudo tee "$DESKTOP_FILE" > /dev/null <<EOF
 [Desktop Entry]
