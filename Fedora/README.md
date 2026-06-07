@@ -32,10 +32,12 @@ Configuración de bajo nivel para **KVM/QEMU** en Fedora 44.
 - **`fonts.sh`**: Instalación automatizada de **Nerd Fonts**.
 - **`seguridad.sh`**: Ajustes de endurecimiento del sistema.
 - **`neovim.sh`**, **`vscode.sh`**: Configuración de editores (LazyVim, extensiones).
+- **`antigravity_2.0.sh`**, **`antigravity_2.0-IDE.sh`**: Instalación y auto-actualización automática de Google Antigravity 2.0 y Antigravity IDE 2.0 (mediante comandos locales `/usr/local/bin/update-antigravity*`).
 - **`fastfetch.sh`**: Información estética del sistema al inicio.
 
 ### 🛠️ Otros Directorios
-- **`Git/`**: Configuración global de Git (`git.sh`) e instalación de **GitHub CLI** (`github-cli.sh`).
+- **`Git/`**: Configuración global de Git (`git.sh`) con mejores prácticas modernas (rama por defecto `develop`, editor por defecto `kate --block` para KDE, visor de diferencias `git-delta`) e instalación de **Lazygit** y **GitHub CLI** (`github-cli.sh`).
+- **`AI/`**: Herramientas de Inteligencia Artificial como **Antigravity CLI** (`antigravity-CLI.sh`) que configura la herramienta de terminal oficial `agy` y su actualizador local.
 - **`ProgrammingLanguages/`**: Gestión de runtimes con **mise** (`mise.sh`) y scripts para Node.js, Python, Rust, .NET y Angular.
 - **`Apps/`**: Scripts para aplicaciones específicas como **Meld** (comparación de archivos).
 
