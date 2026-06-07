@@ -12,9 +12,9 @@ git config --global user.name "Sergio Caballero"
 git config --global user.email "scaballeroq@gmail.com"
 
 # Mejores prácticas modernas
-git config --global init.defaultBranch main
+git config --global init.defaultBranch develop
 git config --global pull.rebase true
-git config --global core.editor "nvim"
+git config --global core.editor "kate --block"
 
 # Configuración de Git-Delta (Diferencias mucho más legibles)
 git config --global core.pager "delta"
