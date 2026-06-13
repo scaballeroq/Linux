@@ -17,13 +17,13 @@ sudo apt upgrade -y
 echo "ℹ️ Habilitando repositorios contrib, non-free y non-free-firmware..."
 sudo apt-add-repository -y contrib non-free non-free-firmware
 
-echo "ℹ️ Configurando repositorio de Backports para $CODENAME..."
-BACKPORTS_REPO="deb http://deb.debian.org/debian ${CODENAME}-backports main contrib non-free non-free-firmware"
-BACKPORTS_FILE="/etc/apt/sources.list.d/backports.list"
-
-if ! grep -q "${CODENAME}-backports" /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
-    echo "$BACKPORTS_REPO" | sudo tee "$BACKPORTS_FILE"
-fi
+# echo "ℹ️ Configurando repositorio de Backports para $CODENAME..."
+# BACKPORTS_REPO="deb http://deb.debian.org/debian ${CODENAME}-backports main contrib non-free non-free-firmware"
+# BACKPORTS_FILE="/etc/apt/sources.list.d/backports.list"
+# 
+# if ! grep -q "${CODENAME}-backports" /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
+#     echo "$BACKPORTS_REPO" | sudo tee "$BACKPORTS_FILE"
+# fi
 
 sudo apt update
 
