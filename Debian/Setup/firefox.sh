@@ -27,4 +27,4 @@ sudo apt update
 sudo apt purge -y firefox-esr firefox-esr-l10n-es-ar firefox-esr-l10n-es-cl firefox-esr-l10n-es-es firefox-esr-l10n-es-mx
 
 # Instalar firefox y firefox-nightly
-sudo apt install -y firefox firefox-l10n-es-es firefox-nightly firefox-nightly-l10n-es-es
+sudo apt install -y firefox firefox-l10n-es-es #firefox-nightly firefox-nightly-l10n-es-es
