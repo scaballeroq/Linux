@@ -113,28 +113,28 @@ fi
 # Si los permisos de estos archivos son incorrectos, un usuario normal o un 
 # programa malicioso podría leerlos o modificarlos.
 # ==============================================================================
-echo "ℹ️ Paso 3: Verificando permisos de archivos críticos del sistema..."
-
-# 3.1 Proteger el directorio del superusuario (root)
-# chmod 700: Solo el propio usuario 'root' tiene acceso total (leer, escribir, ejecutar).
-# Nadie más puede asomarse a su carpeta personal.
-sudo chmod 700 /root
-
-# 3.2 Proteger lista de usuarios y grupos
-# /etc/passwd: Lista todos los usuarios del sistema.
-# /etc/group: Lista todos los grupos del sistema.
-# chmod 644: El dueño (root) puede modificarlo. El resto del mundo solo puede LEERLO.
-# (Es necesario que el resto pueda leerlo para saber quién es dueño de los archivos).
-sudo chmod 644 /etc/passwd
-sudo chmod 644 /etc/group
-
-# 3.3 Proteger las contraseñas cifradas
-# /etc/shadow: Contiene las contraseñas cifradas de los usuarios.
-# /etc/gshadow: Contiene las contraseñas cifradas de los grupos.
-# chmod 600: ABSOLUTAMENTE NADIE salvo el superusuario (root) puede leer o modificar
-# estos archivos. Así se evitan ataques de extracción de contraseñas.
-sudo chmod 600 /etc/shadow
-sudo chmod 600 /etc/gshadow
+# echo "ℹ️ Paso 3: Verificando permisos de archivos críticos del sistema..."
+# 
+# # 3.1 Proteger el directorio del superusuario (root)
+# # chmod 700: Solo el propio usuario 'root' tiene acceso total (leer, escribir, ejecutar).
+# # Nadie más puede asomarse a su carpeta personal.
+# # sudo chmod 700 /root
+# 
+# # 3.2 Proteger lista de usuarios y grupos
+# # /etc/passwd: Lista todos los usuarios del sistema.
+# # /etc/group: Lista todos los grupos del sistema.
+# # chmod 644: El dueño (root) puede modificarlo. El resto del mundo solo puede LEERLO.
+# # (Es necesario que el resto pueda leerlo para saber quién es dueño de los archivos).
+# # sudo chmod 644 /etc/passwd
+# # sudo chmod 644 /etc/group
+# 
+# # 3.3 Proteger las contraseñas cifradas
+# # /etc/shadow: Contiene las contraseñas cifradas de los usuarios.
+# # /etc/gshadow: Contiene las contraseñas cifradas de los grupos.
+# # chmod 600: ABSOLUTAMENTE NADIE salvo el superusuario (root) puede leer o modificar
+# # estos archivos. Así se evitan ataques de extracción de contraseñas.
+# # sudo chmod 600 /etc/shadow
+# # sudo chmod 600 /etc/gshadow
 
 # ==============================================================================
 # FIN DEL PROCESO
