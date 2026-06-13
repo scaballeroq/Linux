@@ -6,7 +6,8 @@ set -e
 echo "ℹ️ Instalando yt-dlp (desde backports) y FFMPEG vía APT..."
 # ffmpeg es esencial para la mezcla de streams y conversión de audio
 sudo apt update
-sudo apt install -y -t trixie-backports yt-dlp
+# sudo apt install -y -t trixie-backports yt-dlp
+sudo apt install -y yt-dlp
 sudo apt install -y ffmpeg
 
 echo "ℹ️ Configurando motor JavaScript (Deno) vía Mise..."
