@@ -30,8 +30,7 @@ sudo apt update
 # 3. Software Esencial
 echo "ℹ️ Instalando utilidades esenciales..."
 sudo apt install -y build-essential linux-headers-$(uname -r) cmake curl btop htop inxi \
-    fuse3 libfuse2t64 exfatprogs vlc gimp gparted p7zip unrar zip unzip bzip2 xz-utils \
-    flatpak gnome-software-plugin-flatpak ca-certificates gnupg
+    fuse3 exfatprogs p7zip  xz-utils ca-certificates gnupg
 
 # 4. Multimedia Codecs
 echo "ℹ️ Instalando codecs multimedia (Debian Restricted Extras)..."
