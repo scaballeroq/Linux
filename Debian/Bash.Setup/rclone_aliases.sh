@@ -38,8 +38,12 @@ alias gdrive-videos-down="rclone sync \"GoogleDrive:Vídeos\" \"\$HOME/Vídeos\"
 alias gdrive-musica-down="rclone sync \"GoogleDrive:Música\" \"\$HOME/Música\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_musica_down.log\""
 alias gdrive-kdenlive-down="rclone sync \"GoogleDrive:Workspace/Kdenlive\" \"\$HOME/Workspace/Kdenlive\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_kdenlive_down.log\""
 
+# -----------------------------------------------------------------------------
+# 5. ONEDRIVE (DOWNLOAD) - BAJAR DE LA NUBE
+# -----------------------------------------------------------------------------
+alias lola-onedrive-documentos-down="rclone sync \"OneDrive:Documentos\" \"/home/caballero/Workspace/loladelacamara/Documentos\" \$RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_lola_onedrive_documentos_down.log\""
 
-# 5. Limpieza de variables temporales para evitar contaminar la shell
+# 6. Limpieza de variables temporales para evitar contaminar la shell
 unset RCLONE_LOG_DIR
 unset RCLONE_OPTS
 
