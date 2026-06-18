@@ -9,15 +9,16 @@ echo "🚀 Configurando seguridad del sistema..."
 echo "ℹ️ Configurando Firewalld..."
 sudo systemctl enable --now firewalld
 
-# Establecer zona 'work' como predeterminada (más segura que 'public')
-sudo firewall-cmd --set-default-zone=work
+# Mantener la zona predeterminada (en Fedora Workstation es 'FedoraWorkstation', optimizada para desarrolladores)
+# Si te conectas a una red pública (cafetería, hotel), puedes cambiarla manualmente a 'work' o 'public'.
+# sudo firewall-cmd --set-default-zone=work
 
-# Eliminar servicios innecesarios
-sudo firewall-cmd --permanent --zone=work --remove-service=mdns 2>/dev/null || true
-sudo firewall-cmd --permanent --zone=work --remove-service=samba-client 2>/dev/null || true
-# SSH suele venir habilitado por defecto en algunas zonas. Lo removemos por seguridad,
-# a menos que planees conectarte REMOTAMENTE a esta máquina.
-sudo firewall-cmd --permanent --zone=work --remove-service=ssh 2>/dev/null || true
+# Eliminar servicios innecesarios en la zona predeterminada FedoraWorkstation
+sudo firewall-cmd --permanent --zone=FedoraWorkstation --remove-service=samba-client 2>/dev/null || true
+# Mantener mdns habilitado para resolución de nombres locales (.local)
+
+# Permitir KDE Connect (esencial para integración con móvil en KDE)
+sudo firewall-cmd --permanent --zone=FedoraWorkstation --add-service=kdeconnect 2>/dev/null || true
 
 # Aplicar cambios
 sudo firewall-cmd --reload
@@ -27,10 +28,10 @@ echo "ℹ️ Configurando DNS seguro (Systemd-resolved)..."
 sudo mkdir -p /etc/systemd/resolved.conf.d/
 cat <<EOF | sudo tee /etc/systemd/resolved.conf.d/dot.conf
 [Resolve]
-DNS=1.1.1.1 1.0.0.1
-DNSOverTLS=yes
+# No hardcodeamos IPs fijas para no interferir con la resolución de nombres internos de VPNs.
+# 'opportunity' permite cifrar DNS si los servidores DNS de la red o la VPN lo soportan.
+DNSOverTLS=opportunity
 DNSSEC=allow-downgrade
-FallbackDNS=8.8.8.8
 EOF
 sudo systemctl restart systemd-resolved
 
@@ -69,4 +70,4 @@ sudo chmod 700 /root
 # por defecto. Cambiarlos a 600 degrada la seguridad, por lo que se omite.
 
 echo "✅ Configuración de seguridad completada."
-echo "💡 Nota: DNS-over-TLS configurado con Cloudflare (1.1.1.1)."
+echo "💡 Nota: DNS-over-TLS configurado en modo oportuno (adaptable para redes y VPNs)."
