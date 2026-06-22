@@ -70,6 +70,10 @@ export GPG_TTY=$(tty)
 # -----------------------------------------------------------------------------
 # Zona horaria (descomentar si es necesario forzarla)
 # export TZ='Europe/Madrid'
+
+# Rutas para actualización de Antigravity
+export UPDATE_ANTIGRAVITY_PATH="/usr/local/bin/update-antigravity"
+export UPDATE_ANTIGRAVITY_IDE_PATH="/usr/local/bin/update-antigravity-ide"
 # =============================================================================
 # MENSAJE DE CARGA
 # =============================================================================

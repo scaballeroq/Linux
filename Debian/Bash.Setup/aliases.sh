@@ -75,7 +75,7 @@ alias vminfo='virsh dominfo'
 
 
 #8. IDEs
-alias update-antigravity="sudo /usr/local/bin/update-antigravity"
-alias update-antigravity-ide="sudo /usr/local/bin/update-antigravity-ide"
+alias update-antigravity='sudo "$UPDATE_ANTIGRAVITY_PATH"'
+alias update-antigravity-ide='sudo "$UPDATE_ANTIGRAVITY_IDE_PATH"'
 
 echo "✅ Aliases modernizados cargados (APT, Rust tools, Git, Seguridad)"
