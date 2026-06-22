@@ -1,7 +1,7 @@
 #!/bin/bash
 # cockpit.sh - Instalación y configuración de Cockpit para administración web en Debian
 
-set -e
+set -euo pipefail
 
 echo "🚀 Configurando Cockpit (Panel de Administración Web)..."
 

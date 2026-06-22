@@ -1,7 +1,7 @@
 #!/bin/bash
 # apariencia.sh - Instalación de temas e iconos para Debian 13
 
-set -e
+set -euo pipefail
 
 echo "ℹ️ Instalando temas e iconos (Papirus y Adwaita completos con tema Dark)..."
 

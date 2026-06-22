@@ -1,7 +1,7 @@
 #!/bin/bash
 # java.sh - Instalación de OpenJDK y dependencias para AutoFirma
 
-set -e
+set -euo pipefail
 
 echo "ℹ️ Instalando OpenJDK y dependencias para AutoFirma (libnss3-tools)..."
 

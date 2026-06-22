@@ -89,8 +89,8 @@ alias ps='podman ps --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}
 alias psa='podman ps -a'
 alias pi='podman images'
 alias pv='podman volume ls'
-alias pstop-all='podman stop $(podman ps -q)'
-alias prm-all='podman rm $(podman ps -aq)'
-alias prmi-all='podman rmi $(podman images -q)'
+pstop-all() { podman stop $(podman ps -q); }
+prm-all() { podman rm $(podman ps -aq); }
+prmi-all() { podman rmi $(podman images -q); }
 
 echo "✅ Funciones de Podman cargadas"

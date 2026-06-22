@@ -1,7 +1,7 @@
 #!/bin/bash
 # neovim.sh - Instalación de Neovim y LazyVim para Debian
 
-set -e
+set -euo pipefail
 
 echo "ℹ️ Instalando Neovim y dependencias vía APT..."
 sudo apt update

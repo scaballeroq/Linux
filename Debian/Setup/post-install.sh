@@ -14,8 +14,8 @@ echo "ℹ️ Actualizando sistema..."
 sudo apt upgrade -y
 
 # 2. Habilitar Repositorios Extra (Contrib, Non-Free y Backports)
-echo "ℹ️ Habilitando repositorios contrib, non-free y non-free-firmware..."
-sudo apt-add-repository -y contrib non-free non-free-firmware
+# echo "ℹ️ Habilitando repositorios contrib, non-free y non-free-firmware..."
+#sudo apt-add-repository -y contrib non-free non-free-firmware
 
 # echo "ℹ️ Configurando repositorio de Backports para $CODENAME..."
 # BACKPORTS_REPO="deb http://deb.debian.org/debian ${CODENAME}-backports main contrib non-free non-free-firmware"

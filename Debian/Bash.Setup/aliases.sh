@@ -73,4 +73,9 @@ alias vmstart='virsh start'
 alias vmstop='virsh shutdown'
 alias vminfo='virsh dominfo'
 
+
+#8. IDEs
+alias update-antigravity="sudo /usr/local/bin/update-antigravity"
+alias update-antigravity-ide="sudo /usr/local/bin/update-antigravity-ide"
+
 echo "✅ Aliases modernizados cargados (APT, Rust tools, Git, Seguridad)"

@@ -1,7 +1,7 @@
 #!/bin/bash
 # meld.sh - Instalación de Meld para Debian
 
-set -e
+set -euo pipefail
 
 echo "ℹ️ Instalando Meld..."
 sudo apt update
