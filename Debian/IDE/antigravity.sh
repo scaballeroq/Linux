@@ -1,7 +1,7 @@
 #!/bin/bash
 # antigravity.sh - Google Antigravity installation for Debian
 
-set -e
+set -euo pipefail
 
 echo "ℹ️ Configurando repositorio de Google Antigravity para Debian..."
 

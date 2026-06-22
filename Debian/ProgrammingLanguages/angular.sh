@@ -1,7 +1,7 @@
 #!/bin/bash
 # angular.sh - Angular CLI Installation via Mise
 
-set -e
+set -euo pipefail
 
 if ! command -v mise &> /dev/null; then
     echo "❌ Error: 'mise' no está instalado."

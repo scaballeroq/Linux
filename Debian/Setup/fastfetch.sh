@@ -1,7 +1,7 @@
 #!/bin/bash
 # fastfetch.sh - Instalación y configuración de Fastfetch (Optimizado) para Debian
 
-set -e
+set -euo pipefail
 
 echo "ℹ️ Instalando Fastfetch..."
 # Fastfetch está disponible en los repositorios oficiales de Debian 13 Trixie

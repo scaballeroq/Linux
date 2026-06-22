@@ -8,21 +8,19 @@
 # 
 # También configura un atajo de teclado global (Ctrl+Alt+T) para abrir Ptyxis.
 
-# Salir inmediatamente si un comando falla
-set -e
+set -euo pipefail
 
 echo "==========================================================="
 echo "Iniciando instalación y configuración de Ptyxis en Debian 13"
 echo "==========================================================="
 
 # 1. Actualizar repositorios e instalar actualizaciones
-echo "[1/6] Actualizando el sistema..."
-sudo apt update && sudo DEBIAN_FRONTEND=noninteractive apt upgrade -y
+echo "[1/7] Actualizando el sistema..."
+sudo apt update && sudo apt upgrade -y
 
 # 2. Instalar dependencias necesarias y el paquete ptyxis
-# En Debian 13 (Trixie), 'ptyxis' está disponible en los repositorios oficiales.
-echo "[2/6] Instalando dependencias y Ptyxis..."
-sudo DEBIAN_FRONTEND=noninteractive apt install -y \
+echo "[2/7] Instalando dependencias y Ptyxis..."
+sudo apt install -y \
     git \
     make \
     python3-nautilus \
@@ -32,9 +30,9 @@ sudo DEBIAN_FRONTEND=noninteractive apt install -y \
     ptyxis
 
 # 3. Descargar e instalar la extensión "Nautilus Open Any Terminal"
-echo "[3/6] Instalando extensión Nautilus Open Any Terminal..."
-# Creamos un directorio temporal seguro para la clonación
+echo "[3/7] Instalando extensión Nautilus Open Any Terminal..."
 TMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TMP_DIR"' EXIT
 cd "$TMP_DIR"
 
 git clone https://github.com/Stunkymonkey/nautilus-open-any-terminal.git
@@ -43,19 +41,13 @@ make
 sudo make install schema
 sudo glib-compile-schemas /usr/share/glib-2.0/schemas
 
-# Limpiar directorio temporal
-cd /tmp
-rm -rf "$TMP_DIR"
-
 # 4. Establecer Ptyxis como terminal por defecto en Nautilus
-echo "[4/6] Configurando Ptyxis como terminal por defecto en Nautilus..."
+echo "[4/7] Configurando Ptyxis como terminal por defecto en Nautilus..."
 gsettings set com.github.stunkymonkey.nautilus-open-any-terminal terminal ptyxis
-# Opcional: configurar para que abra en una nueva pestaña
 gsettings set com.github.stunkymonkey.nautilus-open-any-terminal new-tab true
 
 # 5. Configurar atajo de teclado para abrir Ptyxis (Ctrl + Alt + T)
-echo "[5/6] Configurando atajo de teclado (Ctrl+Alt+T)..."
-# Para evitar sobrescribir otros atajos personalizados, leemos los actuales y añadimos el de Ptyxis
+echo "[5/7] Configurando atajo de teclado (Ctrl+Alt+T)..."
 KEYBINDINGS=$(gsettings get org.gnome.settings-daemon.plugins.media-keys custom-keybindings 2>/dev/null || echo "@as []")
 NEW_BINDING="'/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/ptyxis/'"
 
