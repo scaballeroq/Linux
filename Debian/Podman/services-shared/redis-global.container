@@ -1,0 +1,22 @@
+[Unit]
+Description=Redis Global Compartido
+After=podman-network-proxy-net.service
+
+[Container]
+ContainerName=redis-global
+Image=docker.io/library/redis:7-alpine
+Network=proxy-net
+Volume=redis-global-data:/data
+PublishPort=6379:6379
+Command=redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+HealthCmd=redis-cli ping
+HealthStartPeriod=5s
+HealthInterval=5s
+HealthRetries=3
+HealthTimeout=3s
+
+[Volume]
+VolumeName=redis-global-data
+
+[Install]
+WantedBy=default.target
