@@ -115,4 +115,4 @@ alias vminfo='virsh dominfo'
 # =============================================================================
 # MENSAJE DE CARGA
 # =============================================================================
-echo "✅ Aliases modernizados cargados (Pacman, Yay, Rust tools, Git, Seguridad)"
+echo "✅ Aliases"
