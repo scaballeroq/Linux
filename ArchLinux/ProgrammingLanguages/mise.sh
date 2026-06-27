@@ -3,16 +3,9 @@
 
 set -e
 
-echo "ℹ️ Instalando Mise desde AUR..."
+echo "ℹ️ Instalando Mise desde repositorios oficiales..."
 
-if command -v yay &> /dev/null; then
-    yay -S --noconfirm mise
-elif command -v paru &> /dev/null; then
-    paru -S --noconfirm mise
-else
-    echo "ℹ️ Instalando Mise mediante script oficial..."
-    curl https://mise.run | sh
-fi
+sudo pacman -S --noconfirm mise
 
 mkdir -p ~/.bashrc.d
 
