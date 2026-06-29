@@ -5,7 +5,7 @@
 
 if [[ "$XDG_CURRENT_DESKTOP" == *"GNOME"* ]]; then
     gsettings set org.gnome.settings-daemon.plugins.color night-light-enabled true
-    gsettings set org.gnome.settings-daemon.plugins.color night-light-temperature 3500
+    gsettings set org.gnome.settings-daemon.plugins.color night-light-temperature 6000
 
     gsettings set org.gnome.desktop.interface clock-format '24h'
     gsettings set org.gnome.desktop.interface show-battery-percentage true
@@ -13,6 +13,9 @@ if [[ "$XDG_CURRENT_DESKTOP" == *"GNOME"* ]]; then
     gsettings set org.gnome.desktop.wm.preferences button-layout 'appmenu:minimize,maximize,close'
 
     gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing'
+    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'nothing'
+
+
 fi
 
 # -----------------------------------------------------------------------------

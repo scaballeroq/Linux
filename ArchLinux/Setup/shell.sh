@@ -6,16 +6,29 @@ set -e
 echo "🐚 Instalando utilidades modernas de terminal..."
 
 # Instalar utilidades desde repositorios oficiales
-sudo pacman -S --noconfirm eza bat fzf zoxide ripgrep fd tldr duf dust bottom procs starship
+sudo pacman -S --noconfirm --needed eza bat fzf zoxide ripgrep fd tldr duf dust bottom procs starship lazygit
 
-# Instalar lazygit desde AUR
-echo "ℹ️ Instalando Lazygit desde AUR..."
-if command -v yay &> /dev/null; then
-    yay -S --noconfirm lazygit
-elif command -v paru &> /dev/null; then
-    paru -S --noconfirm lazygit
-else
-    echo "⚠️ No se encontró yay ni paru. Instala lazygit manualmente."
+# Copiar configuración de Starship
+mkdir -p ~/.config
+cp "$(dirname "$0")/starship.toml" ~/.config/starship.toml
+
+# Añadir inicialización de Starship a la shell
+if [ -f ~/.bashrc ]; then
+    if ! grep -q 'starship init' ~/.bashrc 2>/dev/null; then
+        echo '' >> ~/.bashrc
+        echo '# Starship Prompt' >> ~/.bashrc
+        echo 'eval "$(starship init bash)"' >> ~/.bashrc
+        echo "✅ Starship añadido a ~/.bashrc"
+    fi
+fi
+
+if [ -f ~/.zshrc ]; then
+    if ! grep -q 'starship init' ~/.zshrc 2>/dev/null; then
+        echo '' >> ~/.zshrc
+        echo '# Starship Prompt' >> ~/.zshrc
+        echo 'eval "$(starship init zsh)"' >> ~/.zshrc
+        echo "✅ Starship añadido a ~/.zshrc"
+    fi
 fi
 
 echo "✅ Utilidades de terminal instaladas correctamente"

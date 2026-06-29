@@ -13,4 +13,4 @@ export HISTIGNORE="ls:ll:la:cd:pwd:exit:clear:history:bg:fg:..:..."
 # =============================================================================
 # MENSAJE DE CARGA
 # =============================================================================
-echo "✅ Historial configurado (10k/20k líneas, ignorar duplicados)"
+echo "✅ Historial configurado"

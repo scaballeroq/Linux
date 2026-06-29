@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 echo "🖥️ Instalando Kitty Terminal..."
 
 # Instalar Kitty
-sudo pacman -S --noconfirm kitty
+sudo pacman -S --noconfirm --needed kitty
 
 # Configurar Kitty
 echo "ℹ️ Configurando Kitty..."
