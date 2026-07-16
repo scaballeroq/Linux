@@ -22,7 +22,7 @@ Crear enlaces simbólicos en `~/.bashrc.d/`:
 
 ```bash
 mkdir -p ~/.bashrc.d
-ln -s /home/caballero/Workspace/Repositorios/ArchLinux/Bash.Setup/*.sh ~/.bashrc.d/
+ln -s /home/caballero/Workspace/Repositorios/omarchy/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
 Añadir en `~/.bashrc`:
