@@ -1,0 +1,217 @@
+sudo tee /usr/local/bin/update-antigravity-ide > /dev/null <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ "$(id -u)" -ne 0 ]; then
+	echo "Run with sudo: sudo update-antigravity-ide" >&2
+	exit 1
+fi
+
+download_page="https://antigravity.google/download"
+install_root="/opt/antigravity-ide"
+command_link="/usr/local/bin/antigravity-ide"
+desktop_file="/usr/share/applications/antigravity-ide.desktop"
+icon_file="/usr/share/icons/hicolor/512x512/apps/antigravity-ide.png"
+
+case "$(uname -m)" in
+x86_64 | amd64) platform="linux-x64" ;;
+aarch64 | arm64) platform="linux-arm" ;;
+*)
+	echo "Unsupported architecture: $(uname -m)" >&2
+	exit 1
+	;;
+esac
+
+for required_command in curl tar python3; do
+	if ! command -v "$required_command" >/dev/null 2>&1; then
+		echo "$required_command is required to install Antigravity IDE." >&2
+		exit 1
+	fi
+done
+
+if [ -L "$command_link" ]; then
+	command_target=$(readlink -f "$command_link" || true)
+	case "$command_target" in
+	"$install_root"/*) ;;
+	*)
+		echo "$command_link points to $command_target. Move it before rerunning this helper." >&2
+		exit 1
+		;;
+	esac
+elif [ -e "$command_link" ]; then
+	echo "$command_link exists and is not a symlink. Move it before rerunning this helper." >&2
+	exit 1
+fi
+
+tmp_parent="${TMPDIR:-/var/tmp}"
+mkdir -p "$tmp_parent"
+tmpdir=$(mktemp -d "$tmp_parent/antigravity-ide.XXXXXX")
+trap 'rm -rf "$tmpdir"' EXIT
+download_html="$tmpdir/download.html"
+download_js="$tmpdir/download.js"
+archive="$tmpdir/Antigravity-IDE.tar.gz"
+archive_list="$tmpdir/archive-list.txt"
+
+curl -fsSL --compressed --retry 3 -o "$download_html" "$download_page"
+main_js_url=$(
+	python3 - "$download_html" "$download_page" <<'PY'
+import re
+import sys
+from pathlib import Path
+from urllib.parse import urljoin
+
+html = Path(sys.argv[1]).read_text()
+page_url = sys.argv[2]
+matches = re.findall(r'(?:src|href)="([^"]*main-[^"]+\.js)"', html)
+if not matches:
+    raise SystemExit("Could not find the Antigravity download bundle")
+print(urljoin(page_url, matches[-1]))
+PY
+)
+
+curl -fsSL --compressed --retry 3 -o "$download_js" "$main_js_url"
+download_fields=$(
+	python3 - "$download_js" "$platform" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+bundle = Path(sys.argv[1]).read_text(errors="replace")
+platform = sys.argv[2]
+start = bundle.find('id:"antigravity-ide"')
+end = bundle.find('},{name:"download",id:"antigravity-sdk"', start)
+if start == -1 or end == -1:
+    raise SystemExit("Could not find Antigravity IDE downloads")
+
+section = bundle[start:end]
+match = re.search(r'href:"([^"]+/' + re.escape(platform) + r'/Antigravity%20IDE\.tar\.gz)"', section)
+if not match:
+    raise SystemExit(f"Could not find an IDE download for {platform}")
+
+url = match.group(1)
+version_match = re.search(r'/stable/([^/]+)/', url)
+if not version_match:
+    raise SystemExit("Could not parse Antigravity IDE version from download URL")
+
+print(version_match.group(1).split("-", 1)[0], url)
+PY
+)
+read -r version download_url <<<"$download_fields"
+
+if [ -z "$version" ] || [ -z "$download_url" ]; then
+	echo "Could not parse the Antigravity IDE download page." >&2
+	exit 1
+fi
+
+archive_top_dir="Antigravity IDE"
+install_top_dir="Antigravity-IDE"
+expected_target="$install_root/$install_top_dir/antigravity-ide"
+sandbox_path="$install_root/$install_top_dir/chrome-sandbox"
+installed_version=$(cat "$install_root/.linuxcapable-version" 2>/dev/null || true)
+desktop_matches=no
+if [ -f "$desktop_file" ] &&
+	grep -q '^Icon=antigravity-ide$' "$desktop_file" &&
+	grep -q '^StartupWMClass=antigravity-ide$' "$desktop_file"; then
+	desktop_matches=yes
+fi
+if [ "$installed_version" = "$version" ] &&
+	[ -x "$expected_target" ] &&
+	[ -L "$command_link" ] &&
+	[ "$(readlink -f "$command_link")" = "$expected_target" ] &&
+	[ "$desktop_matches" = yes ] &&
+	[ -f "$icon_file" ]; then
+	if [ ! -e "$sandbox_path" ] || [ "$(stat -c '%U:%G:%a' "$sandbox_path")" = "root:root:4755" ]; then
+		printf 'Antigravity IDE %s is already installed at %s\n' "$version" "$install_root/$install_top_dir"
+		exit 0
+	fi
+fi
+
+printf 'Downloading Antigravity IDE %s for %s...\n' "$version" "$platform"
+curl -fsSL --retry 3 -o "$archive" "$download_url"
+tar -tzf "$archive" >"$archive_list"
+top_dir=$(sed -n '1{s#/.*##;p;q}' "$archive_list")
+if [ "$top_dir" != "$archive_top_dir" ]; then
+	echo "Unexpected archive directory: $top_dir" >&2
+	exit 1
+fi
+
+tar -xzf "$archive" -C "$tmpdir"
+if [ ! -x "$tmpdir/$top_dir/antigravity-ide" ]; then
+	echo "The Antigravity IDE launcher was not found in the archive." >&2
+	exit 1
+fi
+
+icon_source="$tmpdir/$top_dir/resources/app/resources/linux/code.png"
+if [ ! -f "$icon_source" ]; then
+	echo "The Antigravity IDE icon was not found in the archive." >&2
+	exit 1
+fi
+
+staging_root=$(mktemp -d "$(dirname "$install_root")/.antigravity-ide-install.XXXXXX")
+chmod 0755 "$staging_root"
+promoted=no
+cleanup_staging() {
+	if [ "$promoted" != yes ]; then
+		rm -rf "$staging_root"
+	fi
+}
+trap 'rm -rf "$tmpdir"; cleanup_staging' EXIT
+
+cp -a "$tmpdir/$top_dir" "$staging_root/$install_top_dir"
+printf '%s\n' "$version" >"$staging_root/.linuxcapable-version"
+if [ -f "$staging_root/$install_top_dir/chrome-sandbox" ]; then
+	chown root:root "$staging_root/$install_top_dir/chrome-sandbox"
+	chmod 4755 "$staging_root/$install_top_dir/chrome-sandbox"
+fi
+if [ -d "$install_root" ]; then
+	rm -rf "${install_root}.previous"
+	mv "$install_root" "${install_root}.previous"
+fi
+mv "$staging_root" "$install_root"
+promoted=yes
+ln -sfn "$install_root/$install_top_dir/antigravity-ide" "$command_link"
+
+mkdir -p "$(dirname "$icon_file")"
+install -m 0644 "$icon_source" "$icon_file"
+
+tee "$desktop_file" >/dev/null <<DESKTOP
+[Desktop Entry]
+Name=Antigravity IDE
+Comment=Google Antigravity IDE
+Exec=$command_link %U
+Icon=antigravity-ide
+Terminal=false
+Type=Application
+Categories=Development;IDE;
+MimeType=x-scheme-handler/antigravity-ide;application/x-antigravity-workspace;
+StartupNotify=true
+StartupWMClass=antigravity-ide
+DESKTOP
+
+if command -v update-desktop-database >/dev/null 2>&1; then
+	update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
+fi
+
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+	gtk-update-icon-cache -q /usr/share/icons/hicolor 2>/dev/null || true
+fi
+
+printf 'Installed Antigravity IDE %s at %s\n' "$version" "$install_root/$install_top_dir"
+EOF
+
+sudo chmod +x /usr/local/bin/update-antigravity-ide
+
+******************************
+
+sudo update-antigravity-ide
+
+******************************
+
+readlink -f /usr/local/bin/antigravity-ide
+test -x "$(readlink -f /usr/local/bin/antigravity-ide)" && echo "Antigravity IDE launcher is installed"
+grep -E '^(Name|Exec|Icon|Categories|StartupWMClass)=' /usr/share/applications/antigravity-ide.desktop
+test -f /usr/share/icons/hicolor/512x512/apps/antigravity-ide.png && echo "Antigravity IDE icon is installed"
+stat -c '%U %G %a %n' /opt/antigravity-ide/Antigravity-IDE/chrome-sandbox
+
+
+
