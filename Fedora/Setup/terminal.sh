@@ -3,8 +3,8 @@
 
 set -e
 
-echo "ℹ️ Instalando Kitty Terminal..."
-sudo dnf5 install -y kitty
+echo "ℹ️ Instalando Kitty Terminal y dependencias de integración..."
+sudo dnf5 install -y kitty nautilus-python
 
 echo "✅ Kitty Terminal instalada correctamente."
 
@@ -84,24 +84,56 @@ if command -v gsettings &> /dev/null; then
     echo "ℹ️ Configurando Kitty como terminal predeterminada en GNOME..."
     gsettings set org.gnome.desktop.default-applications.terminal exec 'kitty' 2>/dev/null || true
     
-    # Agregar la acción "Abrir en Kitty" al menú contextual de Nautilus (Nautilus Scripts)
-    NAUTILUS_SCRIPTS_DIR="$HOME/.local/share/nautilus/scripts"
-    mkdir -p "$NAUTILUS_SCRIPTS_DIR"
+    # Agregar la acción "Abrir en Kitty" al menú contextual principal de Nautilus usando nautilus-python
+    NAUTILUS_PYTHON_DIR="$HOME/.local/share/nautilus-python/extensions"
+    mkdir -p "$NAUTILUS_PYTHON_DIR"
     
-    cat <<'EOF' > "$NAUTILUS_SCRIPTS_DIR/Abrir en Kitty"
-#!/bin/bash
-# Abrir Kitty en el directorio seleccionado o en el actual
-if [ -n "$1" ] && [ -d "$1" ]; then
-    kitty --directory "$1" &
-elif [ -n "$1" ] && [ -f "$1" ]; then
-    kitty --directory "$(dirname "$1")" &
-else
-    kitty &
-fi
+    cat <<'EOF' > "$NAUTILUS_PYTHON_DIR/open-kitty.py"
+import os
+from gi.repository import Nautilus, GObject
+
+class OpenKittyExtension(GObject.GObject, Nautilus.MenuProvider):
+    def _open_kitty(self, file):
+        if file and file.is_directory():
+            path = file.get_location().get_path()
+        elif file:
+            path = file.get_parent_location().get_path()
+        else:
+            path = os.environ.get("PWD", os.path.expanduser("~"))
+            
+        if path:
+            os.system(f"kitty --directory \"{path}\" &")
+        else:
+            os.system("kitty &")
+
+    def menu_activate_cb(self, menu, file):
+        self._open_kitty(file)
+
+    def menu_background_activate_cb(self, menu, file):
+        self._open_kitty(file)
+
+    def get_file_items(self, *args):
+        files = args[-1] if args else []
+        if not files or len(files) != 1 or not files[0].is_directory():
+            return []
+        
+        item = Nautilus.MenuItem(name='KittyExtension::Open_Dir',
+                                 label='Abrir en Kitty',
+                                 tip='Abrir terminal Kitty aquí')
+        item.connect('activate', self.menu_activate_cb, files[0])
+        return [item]
+
+    def get_background_items(self, *args):
+        file = args[-1] if args else None
+        item = Nautilus.MenuItem(name='KittyExtension::Open_Bg',
+                                 label='Abrir en Kitty',
+                                 tip='Abrir terminal Kitty aquí')
+        item.connect('activate', self.menu_background_activate_cb, file)
+        return [item]
 EOF
 
-    chmod +x "$NAUTILUS_SCRIPTS_DIR/Abrir en Kitty"
-    echo "✅ Script 'Abrir en Kitty' instalado para Nautilus."
+    echo "✅ Extensión 'Abrir en Kitty' instalada en el menú principal de Nautilus."
+    echo "⚠️  Nota para GNOME: Es posible que necesites reiniciar Nautilus ejecutando 'nautilus -q' para ver los cambios."
 fi
 
 echo "🎉 Kitty se ha configurado con éxito con transparencia, blur e integración con el entorno de escritorio."
