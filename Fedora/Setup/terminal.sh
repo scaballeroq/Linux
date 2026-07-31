@@ -34,27 +34,31 @@ else
     echo "⚠️ No se encontró el archivo kitty.conf en el repositorio para copiar."
 fi
 
-# --- Configuración de KDE Plasma 6 / Dolphin ---
-# 1. Configurar Kitty como terminal por defecto del sistema KDE
-if command -v kwriteconfig6 &> /dev/null; then
-    echo "ℹ️ Configurando Kitty como terminal predeterminada en KDE Plasma 6..."
-    kwriteconfig6 --file kdeglobals --group General --key TerminalApplication "kitty"
-    kwriteconfig6 --file kdeglobals --group General --key TerminalService "kitty.desktop"
-    
-    # Actualizar atajo de teclado global (Meta+T)
-    kwriteconfig6 --file kglobalshortcutsrc --group kitty.desktop --key "_launch" "Meta+T,none,Kitty"
-    kwriteconfig6 --file kglobalshortcutsrc --group org.kde.konsole.desktop --key "_launch" "none,none,Konsole"
-elif command -v kwriteconfig5 &> /dev/null; then
-    echo "ℹ️ Configurando Kitty como terminal predeterminada en KDE Plasma 5..."
-    kwriteconfig5 --file kdeglobals --group General --key TerminalApplication "kitty"
-    kwriteconfig5 --file kdeglobals --group General --key TerminalService "kitty.desktop"
-fi
+# --- Configuración de Entornos de Escritorio ---
 
-# 2. Agregar la acción "Abrir en Kitty" al menú contextual de Dolphin (Service Menu)
-DOLPHIN_SERVICES_DIR="$HOME/.local/share/kio/servicemenus"
-mkdir -p "$DOLPHIN_SERVICES_DIR"
+# ==========================================
+# KDE Plasma / Dolphin
+# ==========================================
+if command -v kwriteconfig6 &> /dev/null || command -v kwriteconfig5 &> /dev/null; then
+    if command -v kwriteconfig6 &> /dev/null; then
+        echo "ℹ️ Configurando Kitty como terminal predeterminada en KDE Plasma 6..."
+        kwriteconfig6 --file kdeglobals --group General --key TerminalApplication "kitty"
+        kwriteconfig6 --file kdeglobals --group General --key TerminalService "kitty.desktop"
+        
+        # Actualizar atajo de teclado global (Meta+T)
+        kwriteconfig6 --file kglobalshortcutsrc --group kitty.desktop --key "_launch" "Meta+T,none,Kitty"
+        kwriteconfig6 --file kglobalshortcutsrc --group org.kde.konsole.desktop --key "_launch" "none,none,Konsole"
+    elif command -v kwriteconfig5 &> /dev/null; then
+        echo "ℹ️ Configurando Kitty como terminal predeterminada en KDE Plasma 5..."
+        kwriteconfig5 --file kdeglobals --group General --key TerminalApplication "kitty"
+        kwriteconfig5 --file kdeglobals --group General --key TerminalService "kitty.desktop"
+    fi
 
-cat <<EOF > "$DOLPHIN_SERVICES_DIR/openkittyhere.desktop"
+    # 2. Agregar la acción "Abrir en Kitty" al menú contextual de Dolphin (Service Menu)
+    DOLPHIN_SERVICES_DIR="$HOME/.local/share/kio/servicemenus"
+    mkdir -p "$DOLPHIN_SERVICES_DIR"
+
+    cat <<EOF > "$DOLPHIN_SERVICES_DIR/openkittyhere.desktop"
 [Desktop Entry]
 Type=Service
 ServiceTypes=KonqPopupMenu/Plugin
@@ -69,7 +73,35 @@ Icon=kitty
 Exec=kitty --directory %f
 EOF
 
-chmod +x "$DOLPHIN_SERVICES_DIR/openkittyhere.desktop"
-echo "✅ Acción de menú contextual 'Abrir en Kitty' instalada para Dolphin."
+    chmod +x "$DOLPHIN_SERVICES_DIR/openkittyhere.desktop"
+    echo "✅ Acción de menú contextual 'Abrir en Kitty' instalada para Dolphin."
+fi
 
-echo "🎉 Kitty se ha configurado con éxito con transparencia, blur e integración con Dolphin."
+# ==========================================
+# GNOME / Nautilus
+# ==========================================
+if command -v gsettings &> /dev/null; then
+    echo "ℹ️ Configurando Kitty como terminal predeterminada en GNOME..."
+    gsettings set org.gnome.desktop.default-applications.terminal exec 'kitty' 2>/dev/null || true
+    
+    # Agregar la acción "Abrir en Kitty" al menú contextual de Nautilus (Nautilus Scripts)
+    NAUTILUS_SCRIPTS_DIR="$HOME/.local/share/nautilus/scripts"
+    mkdir -p "$NAUTILUS_SCRIPTS_DIR"
+    
+    cat <<'EOF' > "$NAUTILUS_SCRIPTS_DIR/Abrir en Kitty"
+#!/bin/bash
+# Abrir Kitty en el directorio seleccionado o en el actual
+if [ -n "$1" ] && [ -d "$1" ]; then
+    kitty --directory "$1" &
+elif [ -n "$1" ] && [ -f "$1" ]; then
+    kitty --directory "$(dirname "$1")" &
+else
+    kitty &
+fi
+EOF
+
+    chmod +x "$NAUTILUS_SCRIPTS_DIR/Abrir en Kitty"
+    echo "✅ Script 'Abrir en Kitty' instalado para Nautilus."
+fi
+
+echo "🎉 Kitty se ha configurado con éxito con transparencia, blur e integración con el entorno de escritorio."
