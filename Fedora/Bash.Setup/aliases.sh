@@ -123,4 +123,5 @@ alias vminfo='virsh dominfo'
 # =============================================================================
 # MENSAJE DE CARGA
 # =============================================================================
-echo "✅ Aliases modernizados cargados (DNF5, Rust tools, Git, Seguridad)"
+#echo "✅ Aliases modernizados cargados (DNF5, Rust tools, Git, Seguridad)"
+echo "✅ Aliases cargados"

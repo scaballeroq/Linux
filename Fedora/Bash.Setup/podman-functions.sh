@@ -109,4 +109,5 @@ alias pclean-all='podman system prune -af --volumes'
 # =============================================================================
 # MENSAJE DE CARGA
 # =============================================================================
-echo "✅ Funciones Podman cargadas (p, plogs, pstats, gestión contenedores...)"
+#echo "✅ Funciones Podman cargadas (p, plogs, pstats, gestión contenedores...)"
+echo "✅ Funciones Podman cargadas"

@@ -70,4 +70,4 @@ unset RCLONE_OPTS
 # =============================================================================
 # MENSAJE DE CARGA
 # =============================================================================
-echo "✅ Aliases de rclone cargados"
+#echo "✅ Aliases de rclone cargados"
