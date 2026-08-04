@@ -4,13 +4,10 @@
 set -e
 
 echo "ℹ️ Instalando entornos de virtualización (KVM/QEMU/Libvirt) con DNF5..."
-sudo dnf5 group install -y --with-optional virtualization
-sudo dnf5 install -y bridge-utils virt-top virt-install libguestfs-tools guestfs-tools qemu-kvm-core
+sudo dnf5 group install -y --with-optional "Virtualization"
+sudo dnf5 install -y virt-manager virt-top virt-install libguestfs-tools guestfs-tools
 
-echo "ℹ️ Instalando controladores VirtIO para Windows..."
-if [ ! -f /etc/yum.repos.d/virtio-win.repo ]; then
-    sudo curl -o /etc/yum.repos.d/virtio-win.repo https://fedorapeople.org/groups/virt/virtio-win/virtio-win.repo
-fi
+echo "ℹ️ Instalando controladores VirtIO para Windows (desde repos oficiales de Fedora)..."
 sudo dnf5 install -y virtio-win
 
 echo "ℹ️ Configurando servicios modulares (Systemd Socket Activation)..."
@@ -36,11 +33,13 @@ sudo setfacl -R -m u:"$TARGET_USER":rwX /var/lib/libvirt/images || true
 sudo setfacl -d -m u:"$TARGET_USER":rwX /var/lib/libvirt/images || true
 
 # Configuración de rendimiento (Opcional pero recomendada para desarrollo)
-echo "ℹ️ Configurando LIBVIRT_DEFAULT_URI de forma modular..."
-mkdir -p ~/.bashrc.d
-cat <<EOF > ~/.bashrc.d/virtualization.sh
+echo "ℹ️ Configurando LIBVIRT_DEFAULT_URI en ~/.bashrc..."
+if ! grep -q "LIBVIRT_DEFAULT_URI" ~/.bashrc 2>/dev/null; then
+    cat <<EOF >> ~/.bashrc
+
 # Configuración KVM/QEMU conectando al modo de sistema por defecto
 export LIBVIRT_DEFAULT_URI="qemu:///system"
 EOF
+fi
 
 echo "✅ Virtualización configurada correctamente. Cierra sesión para aplicar los cambios de grupo."
