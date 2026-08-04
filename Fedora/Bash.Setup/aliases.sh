@@ -81,7 +81,6 @@ alias install='sudo dnf5 install'               # Instalar (seguro, sin -y)
 alias remove='sudo dnf5 remove'                 # Eliminar paquete
 alias search='dnf5 search'                       # Buscar paquete
 alias clean='sudo dnf5 autoremove -y && sudo dnf5 clean all' # Limpieza
-alias list='sudo dnf5 list updates'              # Listar actualizaciones
 
 # -----------------------------------------------------------------------------
 # 6. SEGURIDAD Y PRECAUCIÓN
