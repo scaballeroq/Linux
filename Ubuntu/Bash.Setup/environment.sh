@@ -73,4 +73,5 @@ export GPG_TTY=$(tty)
 # =============================================================================
 # MENSAJE DE CARGA
 # =============================================================================
-echo "✅ Variables de entorno aplicadas (PATH, EDITOR, LESS...)"
+#echo "✅ Variables de entorno aplicadas (PATH, EDITOR, LESS...)"
+echo "✅ Variables de entorno aplicadas"

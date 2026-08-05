@@ -40,7 +40,7 @@ Luego, puedes crear enlaces simbólicos de los scripts de este repositorio a esa
 
 ```bash
 mkdir -p ~/.bashrc.d
-ln -s ~/Workspace/Repos-Linux/Ubuntu/Bash.Setup/*.sh ~/.bashrc.d/
+ln -s ~/Workspace/Repositorios/Ubuntu/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
 *Nota: Asegúrate de ajustar la ruta al directorio donde hayas clonado el repositorio.*
@@ -67,9 +67,10 @@ ln -s ~/Workspace/Repos-Linux/Ubuntu/Bash.Setup/*.sh ~/.bashrc.d/
 - `duh`: Visualiza el tamaño de carpetas ordenado por peso.
 
 ### ☁️ Sincronización (Rclone)
-- `rclone-documentos`: Sincroniza tu carpeta de documentos con Google Drive.
-- `rclone-videos-down`: Descarga tus vídeos de la nube al equipo local.
-- Configurado con límites de TPS y logs detallados para evitar bloqueos.
+- `gdrive-documentos`: Sincroniza tu carpeta de documentos con Google Drive.
+- `gdrive-videos-down`: Descarga tus vídeos de la nube al equipo local.
+- Optimizado para Google Drive (límites de TPS, carga rápida `--fast-list` y unificación de opciones en variables temporales autolimpiables).
+- Creación automática del directorio de logs (`~/Workspace/rclone_logs`) al cargar el script.
 
 ### 📥 Descargas (YT-DLP)
 - `ytvideo` / `ytaudio`: Descarga directa en MP4 (1080p) o MP3 (alta calidad).
