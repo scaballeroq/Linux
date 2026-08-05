@@ -1,32 +1,59 @@
 #!/bin/bash
+# firefox.sh - Instalar Firefox nativo (.deb) desde el repositorio oficial de Mozilla
+# Compatible con Ubuntu 24.04 LTS y superiores (incluyendo 26.04 LTS)
 
-# Detener la ejecución si ocurre algún error
 set -e
 
-# Crear el directorio para los keyrings si no existe
+echo "🚀 Instalando Firefox nativo (.deb) desde Mozilla..."
+
+# Verificar si se está ejecutando como root o con sudo
+if [[ $EUID -ne 0 ]]; then
+    echo "⚠️ Este script requiere privilegios de root (sudo)."
+    exit 1
+fi
+
+# 1. Crear directorio para keyrings si no existe
 sudo mkdir -p /etc/apt/keyrings
 sudo chmod 755 /etc/apt/keyrings
 
-# Descargar e instalar la clave GPG de Mozilla
+# 2. Descargar e instalar la clave GPG de Mozilla
+echo "ℹ️ Descargando clave GPG de Mozilla..."
 wget -q https://packages.mozilla.org/apt/repo-signing-key.gpg -O- | sudo tee /etc/apt/keyrings/packages.mozilla.org.asc > /dev/null
 
-# Añadir el repositorio
+# 3. Añadir el repositorio oficial de Mozilla
+echo "ℹ️ Añadiendo repositorio de Mozilla..."
 echo "deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main" | sudo tee /etc/apt/sources.list.d/mozilla.list > /dev/null
 
-# Configurar la prioridad (Pinning)
-echo '
+# 4. Configurar prioridad (Pinning) - 900 para no sobrescribir repos de seguridad de Ubuntu
+echo "ℹ️ Configurando prioridad del repositorio (Pin-Priority: 900)..."
+cat <<'EOF' | sudo tee /etc/apt/preferences.d/mozilla > /dev/null
 Package: *
 Pin: origin packages.mozilla.org
-Pin-Priority: 1000
-' | sudo tee /etc/apt/preferences.d/mozilla
+Pin-Priority: 900
+EOF
 
-# Actualizar la lista de paquetes
+# 5. Actualizar lista de paquetes
+echo "ℹ️ Actualizando lista de paquetes..."
 sudo apt update
 
-# Eliminar la versión de Firefox en Snap y Debian ESR si existieran
-sudo snap remove firefox || true
-sudo apt purge -y firefox-esr firefox-esr-l10n-es-ar firefox-esr-l10n-es-cl firefox-esr-l10n-es-es firefox-esr-l10n-es-mx || true
-sudo apt purge -y firefox || true
+# 6. Eliminar versiones previas (Snap, ESR, paquete Ubuntu)
+echo "ℹ️ Eliminando versiones previas de Firefox..."
 
-# Instalar firefox y el paquete de idioma en español de forma nativa (.deb)
+# Eliminar Firefox Snap si está instalado y snap existe
+if command -v snap &>/dev/null && snap list firefox &>/dev/null; then
+    echo "   - Eliminando Firefox Snap..."
+    sudo snap remove firefox || true
+fi
+
+# Eliminar Firefox ESR y paquetes de localización si existen
+sudo apt purge -y firefox-esr firefox-esr-l10n-es-ar firefox-esr-l10n-es-cl firefox-esr-l10n-es-es firefox-esr-l10n-es-mx 2>/dev/null || true
+
+# Eliminar paquete firefox de Ubuntu (si es metapaquete snap o deb antiguo)
+sudo apt purge -y firefox 2>/dev/null || true
+
+# 7. Instalar Firefox nativo (.deb) desde Mozilla
+echo "ℹ️ Instalando Firefox nativo (.deb)..."
 sudo apt install -y firefox firefox-l10n-es-es
+
+echo "✅ Firefox nativo instalado correctamente."
+echo "💡 Verifica la instalación ejecutando: firefox --version"
