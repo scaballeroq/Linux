@@ -1,6 +1,6 @@
 # 🔧 CachyOS Environment Configuration (GNOME Desktop)
 
-Este repositorio contiene una colección organizada y modular de scripts de configuración para sistemas **CachyOS** (basado en Arch Linux y optimizado para alto rendimiento x86-64-v3/v4) con el entorno de escritorio **GNOME**. El objetivo es automatizar la puesta a punto de un entorno de desarrollo profesional, optimizado y estéticamente agradable.
+Este repositorio contiene una colección organizada y modular de scripts de configuración para sistemas **CachyOS** (basado en Arch Linux y optimizado para alto rendimiento x86-64-v3/v4) con el entorno de escritorio **GNOME** (optimizado para PCs y portátiles de desarrollo).
 
 ---
 
@@ -13,7 +13,7 @@ El núcleo de la configuración de la terminal Bash.
 - **`aliases.sh`**: Atajos comunes para comandos frecuentemente utilizados y gestores de paquetes (`pacman` / `paru`).
 - **`environment.sh`**: Variables globales que afectan el comportamiento de la shell.
 - **`functions.sh`**: Colección de funciones avanzadas y utilidades multimedia.
-- **`gnome_settings.sh`**: Configuraciones de entorno para GNOME y aliases.
+- **`gnome_settings.sh`**: Configuraciones de entorno para GNOME, touchpad, energía y HiDPI.
 - **`history.sh`**: Controla cómo bash recuerda los comandos.
 - **`options.sh`**: Configura el comportamiento interno de Bash mediante 'shopt' y 'bind'.
 - **`podman-functions.sh`**: Funciones para gestión simplificada de contenedores.
@@ -35,6 +35,7 @@ Scripts para instalar y desplegar servicios en contenedores Podman de forma aisl
 ### ⚙️ [Setup](./Setup/)
 Scripts de configuración del sistema operativo, personalización y endurecimiento:
 - **`post-install.sh`**: Script maestro de post-instalación para CachyOS (Pacman / repositorios optimizados).
+- **`laptop-setup.sh`**: [NUEVO] Optimización para portátiles de desarrollo (Touchpad, Bluetooth, `power-profiles-daemon`, `switcheroo-control`, HiDPI, VRR).
 - **`apariencia.sh`**: Instalación de temas e iconos (Papirus).
 - **`cockpit.sh`**: Instalación y configuración de Cockpit (administración web).
 - **`fastfetch.sh`**: Información estética del sistema al inicio (Fastfetch).
@@ -80,38 +81,16 @@ cd Repos-Linux/CachyOS
 ```
 
 ### 2. Configurar la Shell (Bash)
-Se recomienda el uso de un directorio `.bashrc.d/` para cargar los scripts de forma modular.
-
 ```bash
 mkdir -p ~/.bashrc.d
 ln -s $(pwd)/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
-Y añade lo siguiente a tu `~/.bashrc`:
-```bash
-# Carga modular de scripts de Bash.Setup
-if [ -d "$HOME/.bashrc.d" ]; then
-    for script in "$HOME/.bashrc.d"/*.sh; do
-        [ -r "$script" ] && source "$script"
-    done
-    unset script
-fi
-```
-
 ### 3. Ejecutar Scripts de System Setup
-Puedes ejecutar scripts específicos o usar `just`:
 ```bash
 chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/*.sh Git/*.sh Apps/*.sh Juegos/*.sh
 just setup-all
 ```
-
----
-
-## ✨ Características Principales
-- **Modularidad**: Cada componente y script es independiente.
-- **Estándares de CachyOS / Arch Linux**: Repositorios oficiales optimizados (v3/v4), `pacman`, `paru` y configuraciones nativas.
-- **Productividad**: Múltiples alias y funciones precargadas (Podman, Git, Rclone).
-- **Actualizado**: Herramientas modernas como Fastfetch, Starship, Lazygit y Mise.
 
 ---
 *Mantenido por [caballero](https://github.com/scaballeroq)*

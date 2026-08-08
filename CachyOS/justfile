@@ -1,7 +1,7 @@
 # CachyOS Environment Configuration Justfile
 
-# Instala todo el entorno (Post-install, Shell, Virtualización, Mise, Cockpit, etc.)
-setup-all: post-install shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome
+# Instala todo el entorno (Post-install, Laptop, Shell, Virtualización, Mise, Cockpit, etc.)
+setup-all: post-install laptop shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome
     echo "🚀 Entorno completo de CachyOS configurado. Por favor, reinicia el sistema."
 
 # Administración Web
@@ -11,6 +11,10 @@ cockpit:
 # Configuración base del sistema (Pacman / CachyOS Repos)
 post-install:
     ./Setup/post-install.sh
+
+# Optimización específica para Portátiles de desarrollo (Touchpad, Batería, Bluetooth, HiDPI)
+laptop:
+    ./Setup/laptop-setup.sh
 
 # Utilidades de terminal y prompt
 shell:
