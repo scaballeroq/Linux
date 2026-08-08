@@ -5,8 +5,13 @@ set -euo pipefail
 
 echo "🚀 Iniciando configuración base de CachyOS..."
 
-# 1. Actualización Base
+# 1. Actualización Base de Repositorios y Sistema
 echo "ℹ️ Actualizando lista de paquetes y sistema..."
+if command -v cachyos-rate-mirrors &> /dev/null; then
+    echo "ℹ️ Optimizando espejos con cachyos-rate-mirrors..."
+    sudo cachyos-rate-mirrors || true
+fi
+
 sudo pacman -Syu --noconfirm
 
 # Detectar AUR helper (paru o yay)
@@ -17,7 +22,7 @@ elif command -v yay &> /dev/null; then
     AUR_HELPER="yay"
 fi
 
-# 2. Software Esencial
+# 2. Software Esencial (7zip reemplaza a p7zip para evitar prompts interactivos)
 echo "ℹ️ Instalando utilidades esenciales para CachyOS..."
 sudo pacman -S --needed --noconfirm \
     base-devel \
@@ -32,14 +37,12 @@ sudo pacman -S --needed --noconfirm \
     vlc \
     gimp \
     gparted \
-    p7zip \
+    7zip \
     unrar \
     zip \
     unzip \
     bzip2 \
     xz \
-    flatpak \
-    gnome-software \
     ca-certificates \
     gnupg
 
@@ -61,15 +64,14 @@ sudo pacman -S --needed --noconfirm \
     gst-libav \
     ffmpeg
 
-# 4. Aceleración HW
-echo "ℹ️ Instalando drivers de aceleración de hardware (Mesa/VA-API)..."
-sudo pacman -S --needed --noconfirm \
-    mesa \
-    libva-mesa-driver \
-    mesa-vdpau
+# 4. Aceleración HW (Mesa / VA-API)
+echo "ℹ️ Verificando aceleración de hardware (VA-API / Mesa)..."
+# Se instala libva-mesa-driver y libva-utils (se omiten mesa-vdpau y mesa explícito para no entrar en conflicto con mesa-git/mesa)
+sudo pacman -S --needed --noconfirm libva-mesa-driver libva-utils mesa-utils || true
 
 # 5. Limpieza Inicial
 echo "ℹ️ Limpiando caché de paquetes innecesarios..."
-sudo pacman -Sc --noconfirm
+sudo rm -f /var/cache/pacman/pkg/download-* 2>/dev/null || true
+sudo pacman -Sc --noconfirm || true
 
 echo "✅ Sistema base configurado correctamente (Se recomienda reiniciar)"

@@ -9,28 +9,28 @@
 # 1. CONFIGURACIONES DE GSETTINGS (Solo si estamos en GNOME)
 # -----------------------------------------------------------------------------
 
-if [[ "$XDG_CURRENT_DESKTOP" == *"GNOME"* ]]; then
+if [[ "${XDG_CURRENT_DESKTOP:-}" == *"GNOME"* ]]; then
     # Luz Nocturna (Night Light) - Activar y configurar temperatura (3500K)
-    gsettings set org.gnome.settings-daemon.plugins.color night-light-enabled true
-    gsettings set org.gnome.settings-daemon.plugins.color night-light-temperature 3500
+    gsettings set org.gnome.settings-daemon.plugins.color night-light-enabled true 2>/dev/null || true
+    gsettings set org.gnome.settings-daemon.plugins.color night-light-temperature uint32 3500 2>/dev/null || gsettings set org.gnome.settings-daemon.plugins.color night-light-temperature 3500 2>/dev/null || true
 
-    # Formato de reloj (24h) y batería
-    gsettings set org.gnome.desktop.interface clock-format '24h'
-    gsettings set org.gnome.desktop.interface show-battery-percentage true
+    # Formato de reloj (24h) y porcentaje de batería
+    gsettings set org.gnome.desktop.interface clock-format '24h' 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface show-battery-percentage true 2>/dev/null || true
 
-    # Mostrar botones de minimizar, maximizar y cerrar
-    gsettings set org.gnome.desktop.wm.preferences button-layout 'appmenu:minimize,maximize,close'
+    # Mostrar botones de minimizar, maximizar y cerrar en la barra de título
+    gsettings set org.gnome.desktop.wm.preferences button-layout ':minimize,maximize,close' 2>/dev/null || true
 
     # Touchpad y gestos para portátil
-    gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true
-    gsettings set org.gnome.desktop.peripherals.touchpad natural-scroll true
-    gsettings set org.gnome.desktop.peripherals.touchpad two-finger-scrolling-enabled true
+    gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true 2>/dev/null || true
+    gsettings set org.gnome.desktop.peripherals.touchpad natural-scroll true 2>/dev/null || true
+    gsettings set org.gnome.desktop.peripherals.touchpad two-finger-scrolling-enabled true 2>/dev/null || true
 
     # Escalado Fraccional y Tasa de Refresco Variable (VRR)
-    gsettings set org.gnome.mutter experimental-features "['scale-monitor-framebuffer', 'variable-refresh-rate']"
+    gsettings set org.gnome.mutter experimental-features "['scale-monitor-framebuffer', 'variable-refresh-rate']" 2>/dev/null || true
 
     # Comportamiento de energía: No suspender cuando está enchufado a la corriente AC
-    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing'
+    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing' 2>/dev/null || true
 fi
 
 # -----------------------------------------------------------------------------

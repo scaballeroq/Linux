@@ -28,21 +28,21 @@ sudo pacman -S --needed --noconfirm \
     gnome-shell-extension-caffeine 2>/dev/null || true
 
 # 3. Configuraciones de GSettings para Portátil (Touchpad, Pantalla y Energía)
-if [[ "$XDG_CURRENT_DESKTOP" == *"GNOME"* ]]; then
+if [[ "${XDG_CURRENT_DESKTOP:-}" == *"GNOME"* ]]; then
     echo "ℹ️ Aplicando configuraciones de Touchpad y pantalla para GNOME..."
 
     # Gestos y Touchpad
-    gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true || true
-    gsettings set org.gnome.desktop.peripherals.touchpad natural-scroll true || true
-    gsettings set org.gnome.desktop.peripherals.touchpad two-finger-scrolling-enabled true || true
+    gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true 2>/dev/null || true
+    gsettings set org.gnome.desktop.peripherals.touchpad natural-scroll true 2>/dev/null || true
+    gsettings set org.gnome.desktop.peripherals.touchpad two-finger-scrolling-enabled true 2>/dev/null || true
 
     # Escalado Fraccional y Tasa de Refresco Variable (VRR)
-    gsettings set org.gnome.mutter experimental-features "['scale-monitor-framebuffer', 'variable-refresh-rate']" || true
+    gsettings set org.gnome.mutter experimental-features "['scale-monitor-framebuffer', 'variable-refresh-rate']" 2>/dev/null || true
 
     # Comportamiento de energía en batería
-    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'suspend' || true
-    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 1200 || true
-    gsettings set org.gnome.desktop.privacy idle-delay 600 || true
+    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'suspend' 2>/dev/null || true
+    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 1200 2>/dev/null || true
+    gsettings set org.gnome.desktop.privacy idle-delay 600 2>/dev/null || true
 fi
 
 echo "✅ Configuración de portátil aplicada correctamente."

@@ -40,7 +40,7 @@ Luego, puedes crear enlaces simbólicos de los scripts de este repositorio a esa
 
 ```bash
 mkdir -p ~/.bashrc.d
-ln -s ~/Workspace/Repositorios/CachyOS/Bash.Setup/*.sh ~/.bashrc.d/
+ln -s ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
 ---
