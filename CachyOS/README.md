@@ -35,7 +35,8 @@ Scripts para instalar y desplegar servicios en contenedores Podman de forma aisl
 ### ⚙️ [Setup](./Setup/)
 Scripts de configuración del sistema operativo, personalización y endurecimiento:
 - **`post-install.sh`**: Script maestro de post-instalación para CachyOS (Pacman / repositorios optimizados).
-- **`laptop-setup.sh`**: [NUEVO] Optimización para portátiles de desarrollo (Touchpad, Bluetooth, `power-profiles-daemon`, `switcheroo-control`, HiDPI, VRR).
+- **`laptop-setup.sh`**: Optimización para portátiles de desarrollo (Touchpad, Bluetooth, `power-profiles-daemon`, `switcheroo-control`, HiDPI, VRR).
+- **`cachyos-tuning.sh`**: [NUEVO] Ajustes de Kernel (`sysctl`), `ananicy-cpp`, `distrobox`, `cachyos-kernel-manager`, `gnome-browser-connector` y descargas automatizadas de tus 17 extensiones personalizadas de GNOME.
 - **`apariencia.sh`**: Instalación de temas e iconos (Papirus).
 - **`cockpit.sh`**: Instalación y configuración de Cockpit (administración web).
 - **`fastfetch.sh`**: Información estética del sistema al inicio (Fastfetch).
@@ -46,48 +47,13 @@ Scripts de configuración del sistema operativo, personalización y endurecimien
 - **`shell.sh`**: Herramientas modernas de terminal (`eza`, `bat`, `fd`, `zoxide`, `ripgrep`) y prompt (`Starship`).
 - **`yt-dlp-setup.sh`**: Dependencias para manejo multimedia (yt-dlp, ffmpeg, deno).
 
-### 💻 [IDE](./IDE/)
-- **`antigravity.sh`**: Instalación de Google Antigravity.
-- **`neovim.sh`**: Instalación de Neovim y LazyVim.
-- **`vscode.sh`**: Instalación de Visual Studio Code.
-
-### 🛠️ [Git](./Git/)
-- **`git.sh`**: Instalación y configuración de Git, Delta y Lazygit.
-- **`github-cli.sh`**: Instalación de GitHub CLI.
-
-### ⚡ [ProgrammingLanguages](./ProgrammingLanguages/)
-Gestión de entornos y runtimes de lenguajes usando **mise**.
-- **`mise.sh`**: Instalador del gestor de versiones Mise via pacman.
-- **`angular.sh`**: Angular CLI.
-- **`dotnet.sh`**: .NET SDK.
-- **`gemini.sh`**: Gemini CLI.
-- **`java.sh`**: OpenJDK y librerías de seguridad.
-- **`nodejs.sh`**: Node.js LTS.
-- **`python.sh`**: Python.
-- **`rust.sh`**: Rust.
-
-### 📦 [Apps](./Apps/) y 🎮 [Juegos](./Juegos/)
-- **`meld.sh`**: Herramienta de diff/merge visual.
-- **`steam.sh`**: Plataforma Steam optimizada con Proton CachyOS.
-
 ---
 
 ## 🚀 Cómo empezar
 
-### 1. Clonar el repositorio
 ```bash
 git clone https://github.com/scaballeroq/Environment-Configuration.git
 cd Repos-Linux/CachyOS
-```
-
-### 2. Configurar la Shell (Bash)
-```bash
-mkdir -p ~/.bashrc.d
-ln -s $(pwd)/Bash.Setup/*.sh ~/.bashrc.d/
-```
-
-### 3. Ejecutar Scripts de System Setup
-```bash
 chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/*.sh Git/*.sh Apps/*.sh Juegos/*.sh
 just setup-all
 ```
