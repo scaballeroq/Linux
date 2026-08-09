@@ -12,7 +12,6 @@ sudo pacman -S --needed --noconfirm \
     libvirt \
     virt-manager \
     virt-viewer \
-    virt-top \
     dnsmasq \
     dmidecode \
     vde2 \
@@ -22,8 +21,10 @@ sudo pacman -S --needed --noconfirm \
     nftables \
     ovmf \
     swtpm \
-    guestfs-tools \
     tuned
+
+# Intentar instalar herramientas de monitoreo/utilidades adicionales si están disponibles
+sudo pacman -S --needed --noconfirm guestfs-tools libguestfs 2>/dev/null || true
 
 # 2. Controladores VirtIO para Windows (Descarga automática del ISO estable más reciente)
 echo "ℹ️ Descargando controladores VirtIO para Windows (virtio-win.iso)..."
