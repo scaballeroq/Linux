@@ -1,57 +1,51 @@
 #!/bin/bash
-# gnome-extensions.sh - Instalación automatizada de conectores y extensiones de GNOME para Debian
+# gnome-extensions.sh - Instalación automatizada y limpia de extensiones de GNOME (con compilación de esquemas GSettings y registro nativo)
 
 set -euo pipefail
 
-echo "🧩 Iniciando instalación automatizada de extensiones de GNOME..."
+echo "🧩 Iniciando instalación limpia y robusta de extensiones de GNOME..."
 
-# 1. Instalación de herramientas base (Browser Connector y Extension Manager)
-echo "ℹ️ Instalando conector de navegador (gnome-browser-connector) y Extension Manager..."
+# 1. Instalación de herramientas base
+echo "ℹ️ Instalando dependencias base (gnome-browser-connector, extension-manager, glib2)..."
 sudo apt update
 sudo apt install -y \
     gnome-browser-connector \
     extension-manager \
-    python3 \
-    python3-pip 2>/dev/null || true
+    libglib2.0-bin \
+    pipx \
+    python3-pip \
+    python3-pip-whl 2>/dev/null || true
 
-# 2. Instalación de paquetes de extensiones desde repositorios nativos (si existen)
-echo "ℹ️ Instalando paquetes nativos de extensiones de GNOME..."
+# Instalar gnome-extensions-cli (gext) si es posible
+pipx install gnome-extensions-cli 2>/dev/null || pip install --break-system-packages gnome-extensions-cli 2>/dev/null || true
+export PATH="$HOME/.local/bin:$PATH"
+
+# 2. Instalación de paquetes de extensiones desde repositorios nativos
+echo "ℹ️ Instalando extensiones nativas del repositorio Debian..."
 sudo apt install -y \
     gnome-shell-extension-appindicator \
     gnome-shell-extension-caffeine \
     gnome-shell-extension-dash-to-dock \
     gnome-shell-extension-dash-to-panel 2>/dev/null || true
 
-# 3. Instalación de tus 17 extensiones personalizadas desde extensions.gnome.org (API)
-echo "ℹ️ Descargando e instalando extensiones desde extensions.gnome.org..."
+# 3. Instalación de tus 17 extensiones personalizadas con compilación de esquemas GSettings
+echo "ℹ️ Instalando y compilando esquemas GSettings desde extensions.gnome.org..."
 
-python3 - <<'PYEOF'
+# IDs de extensiones solicitadas:
+EXTENSION_IDS=(1262 307 36 355 517 5940 779 3960 3193 7065 615 97 6682 3088 5410 1160 2087)
+
+if command -v gext &> /dev/null; then
+    echo "ℹ️ Utilizando gext (herramienta oficial CLI de GNOME) para instalación limpia..."
+    gext install "${EXTENSION_IDS[@]}" || true
+else
+    python3 - <<'PYEOF'
 import json
 import os
 import subprocess
 import urllib.request
-import zipfile
+import shutil
 
-# IDs de extensiones del usuario:
-extension_ids = [
-    1262,  # Bing Wallpaper Changer
-    307,   # Dash to Dock
-    36,    # Lock Keys
-    355,   # Status Area Horizontal Spacing
-    517,   # Caffeine
-    5940,  # Quick Settings Audio Panel
-    779,   # Clipboard Indicator
-    3960,  # Transparent Top Bar - Adjustable Transparency
-    3193,  # Blur my Shell
-    7065,  # Tiling Shell
-    615,   # AppIndicator Support
-    97,    # Coverflow Alt-Tab
-    6682,  # Astra Monitor
-    3088,  # Extension List
-    5410,  # Grand Theft Focus
-    1160,  # Dash to Panel
-    2087   # Desktop Icons NG (DING)
-]
+extension_ids = [1262, 307, 36, 355, 517, 5940, 779, 3960, 3193, 7065, 615, 97, 6682, 3088, 5410, 1160, 2087]
 
 home_dir = os.path.expanduser("~")
 target_base_dir = os.path.join(home_dir, ".local/share/gnome-shell/extensions")
@@ -85,28 +79,36 @@ for ext_id in extension_ids:
             dl_path = data.get('download_url')
             
         if uuid and dl_path:
-            ext_dest = os.path.join(target_base_dir, uuid)
             zip_url = f"https://extensions.gnome.org{dl_path}"
             tmp_zip = f"/tmp/ext_{ext_id}.zip"
             
             print(f"⬇️ Descargando extensión ID {ext_id} ({uuid})...")
             urllib.request.urlretrieve(zip_url, tmp_zip)
             
-            os.makedirs(ext_dest, exist_ok=True)
-            with zipfile.ZipFile(tmp_zip, 'r') as zip_ref:
-                zip_ref.extractall(ext_dest)
-            os.remove(tmp_zip)
+            # Usar el instalador NATIVO de GNOME Shell (Registra el UUID limpiamente en DBus)
+            subprocess.run(["gnome-extensions", "install", "--force", tmp_zip], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if os.path.exists(tmp_zip):
+                os.remove(tmp_zip)
             
+            # CRÍTICO: Compilar esquemas de GSettings para evitar el estado de "Error" o "Incompatible"
+            ext_dir = os.path.join(target_base_dir, uuid)
+            schemas_dir = os.path.join(ext_dir, "schemas")
+            if os.path.isdir(schemas_dir):
+                subprocess.run(["glib-compile-schemas", schemas_dir], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                print(f"  └─ Esquemas GSettings compilados en {schemas_dir}")
+            
+            # Habilitar extensión
             subprocess.run(["gnome-extensions", "enable", uuid], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            print(f"✅ Extensión instalada y habilitada: {uuid}")
+            print(f"✅ Extensión instalada, compilada y registrada: {uuid}")
         else:
             print(f"⚠️ No se pudo obtener información para la extensión ID {ext_id}")
     except Exception as e:
         print(f"⚠️ Error al procesar extensión ID {ext_id}: {e}")
 
 PYEOF
+fi
 
 echo "================================================================="
-echo "✅ Instalación de extensiones de GNOME completada."
-echo "💡 Se recomienda reiniciar la sesión (cerrar e iniciar sesión) para aplicar todos los cambios visuales."
+echo "✅ Instalación limpia de extensiones de GNOME completada."
+echo "💡 Recuerda reiniciar la sesión (o pulsar Alt+F2 y teclear 'r' en X11) para cargar las extensiones en memoria."
 echo "================================================================="
