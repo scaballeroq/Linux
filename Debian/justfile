@@ -1,16 +1,28 @@
-# Ubuntu Environment Configuration Justfile
+# Debian Environment Configuration Justfile
 
-# Instala todo el entorno (Post-install, Shell, Virtualización, Mise, Cockpit, etc.)
-setup-all: post-install shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
-    echo "🚀 Entorno completo configurado. Por favor, reinicia el sistema."
+# Instala todo el entorno (Post-install, Laptop, Fingerprint, Tuning, Shell, Virtualización, Mise, Cockpit, etc.)
+setup-all: post-install laptop fingerprint tuning shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
+    echo "🚀 Entorno completo de Debian configurado. Por favor, reinicia el sistema."
 
 # =============================================================================
 # CONFIGURACIÓN BASE DEL SISTEMA
 # =============================================================================
 
-# Configuración base post-instalación
+# Configuración base post-instalación (Repositorios contrib, non-free, backports)
 post-install:
     ./Setup/post-install.sh
+
+# Optimización para portátiles de desarrollo (Touchpad, Batería, Bluetooth, HiDPI)
+laptop:
+    ./Setup/laptop-setup.sh
+
+# Autenticación y desbloqueo por huella dactilar (fprintd, PAM, sudo, polkit)
+fingerprint:
+    ./Setup/fingerprint-setup.sh
+
+# Optimizaciones avanzadas de Debian (Sysctl, Distrobox, Extensiones GNOME)
+tuning:
+    ./Setup/debian-tuning.sh
 
 # Utilidades de terminal y prompt (eza, bat, fzf, starship)
 shell:
@@ -138,22 +150,18 @@ antigravity:
     ./IDE/antigravity.sh
 
 # =============================================================================
-# NAVEGADORES
+# NAVEGADORES Y JUEGOS
 # =============================================================================
 
 # Firefox nativo (.deb)
 firefox:
     ./Setup/firefox.sh
 
-# =============================================================================
-# APLICACIONES
-# =============================================================================
-
 # Meld (diff viewer)
 meld:
     ./Apps/meld.sh
 
-# Steam (vía Flatpak)
+# Steam y herramientas de juegos
 steam:
     ./Juegos/steam.sh
 
