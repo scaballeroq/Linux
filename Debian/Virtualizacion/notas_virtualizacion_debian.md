@@ -1,6 +1,6 @@
-# Manual de Virtualización de Alto Rendimiento (KVM/QEMU) en Debian
+# Manual de Virtualización de Alto Rendimiento (KVM/QEMU) en Debian 13 (Trixie)
 
-Este manual detalla la configuración y optimización de **KVM / QEMU / virt-manager** para **Debian**, aprovechando al máximo el kernel de Debian, sockets modulares de `libvirt` y aceleración de hardware.
+Este manual detalla la configuración y optimización de **KVM / QEMU / virt-manager** para **Debian 13** con kernel optimizado `x86_64-v3`, audio nativo PipeWire y aceleración de hardware.
 
 ---
 
@@ -20,20 +20,40 @@ sudo apt install -y \
 
 ## 2. Aceleración del Kernel y Virtualización Anidada (Nested KVM)
 
-### Virtualización Anidada (Permite ejecutar contenedores o VMs dentro de una VM):
+### Virtualización Anidada:
 - **Intel**: `/etc/modprobe.d/kvm_intel.conf` -> `options kvm_intel nested=1`
 - **AMD**: `/etc/modprobe.d/kvm_amd.conf` -> `options kvm_amd nested=1`
 
-### Aceleración de Red por Kernel (`vhost_net`):
-Aumenta drásticamente la velocidad de transferencia de red entre el Host y las VMs:
+### Aceleración de Red y Sockets del Kernel (`vhost_net` y `vhost_vsock`):
 ```bash
-echo "vhost_net" | sudo tee /etc/modules-load.d/kvm-vhost.conf
+cat <<EOF | sudo tee /etc/modules-load.d/kvm-vhost.conf
+vhost_net
+vhost_vsock
+EOF
 sudo modprobe vhost_net
+sudo modprobe vhost_vsock
 ```
 
 ---
 
-## 3. Controladores VirtIO para Windows (`virtio-win.iso`)
+## 3. Integración de Sonido Nativo PipeWire (`/etc/libvirt/qemu.conf`)
+Para que las máquinas virtuales (Windows, macOS o Linux) reproduzcan audio directamente por el servidor PipeWire de tu usuario:
+```ini
+user = "caballero"
+group = "kvm"
+```
+
+---
+
+## 4. Backend de Firewall Nftables en Debian 13 (`/etc/libvirt/network.conf`)
+Configurado para usar `nftables` nativo en lugar de legacy iptables:
+```ini
+firewall_backend = "nftables"
+```
+
+---
+
+## 5. Controladores VirtIO para Windows (`virtio-win.iso`)
 Descarga automática de la ISO estable más reciente del proyecto Fedora:
 ```bash
 curl -fsSL -o ~/Descargas/virtio-drivers/virtio-win.iso https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso
@@ -41,47 +61,23 @@ curl -fsSL -o ~/Descargas/virtio-drivers/virtio-win.iso https://fedorapeople.org
 
 ---
 
-## 4. Servicios y Sockets Modulares de `libvirt`
-Habilitar los sockets modulares bajo demanda de `libvirt`:
-
+## 6. Sockets Modulares y Perfil Tuned (`virtual-host`)
 ```bash
 sudo systemctl enable --now virtqemud.socket virtnetworkd.socket virtstoraged.socket
 sudo systemctl enable --now libvirtd.service
-```
-
----
-
-## 5. Optimizaciones de Rendimiento del Host (`tuned`)
-Activa el perfil `virtual-host` para optimizar la gestión de memoria y CPU del kernel durante la ejecución de VMs:
-
-```bash
 sudo systemctl enable --now tuned.service
 sudo tuned-adm profile virtual-host
 ```
 
 ---
 
-## 6. Permisos de Usuario y Directorio de Imágenes (ACL)
+## 7. Permisos de Usuario y Directorio de Imágenes (ACL)
 
 ```bash
-# Añadir usuario a grupos libvirt y kvm
 sudo usermod -aG libvirt,kvm $USER
-
-# Asignar permisos ACL en /var/lib/libvirt/images
 sudo setfacl -R -m u:$USER:rwX /var/lib/libvirt/images
 sudo setfacl -d -m u:$USER:rwX /var/lib/libvirt/images
-
-# Configurar el URI por defecto en Bash
 export LIBVIRT_DEFAULT_URI="qemu:///system"
-```
-
----
-
-## 7. Verificación del Sistema
-```bash
-sudo virt-host-validate qemu
-virsh net-list --all
-virsh uri
 ```
 
 ---
