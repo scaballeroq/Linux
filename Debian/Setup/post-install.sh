@@ -1,5 +1,5 @@
 #!/bin/bash
-# post-install.sh - Script maestro de post-instalación para Debian (GNOME Desktop)
+# post-install.sh - Script maestro de post-instalación para Debian (Modernizado con Backports, Kernel, Mesa y PipeWire)
 
 set -euo pipefail
 
@@ -9,14 +9,13 @@ if [ -z "$CODENAME" ]; then
     CODENAME=$(lsb_release -sc 2>/dev/null || echo "bookworm")
 fi
 
-echo "🚀 Iniciando configuración base de Debian ($CODENAME)..."
+echo "🚀 Iniciando configuración base y modernización de Debian ($CODENAME)..."
 
 # 1. Habilitar Repositorios Extra (Contrib, Non-Free, Non-Free-Firmware y Backports)
 echo "ℹ️ Configurando repositorios contrib, non-free, non-free-firmware y backports para $CODENAME..."
 
-# Asegurar que software-properties-common está instalado para apt-add-repository
 sudo apt update
-sudo apt install -y software-properties-common curl ca-certificates gnupg
+sudo apt install -y software-properties-common curl ca-certificates gnupg lsb-release
 
 # Habilitar contrib, non-free y non-free-firmware en repositorios existentes
 sudo apt-add-repository -y contrib non-free non-free-firmware 2>/dev/null || true
@@ -32,11 +31,53 @@ echo "ℹ️ Actualizando listas de paquetes de todos los repositorios..."
 sudo apt update
 sudo apt upgrade -y
 
-# 2. Software Esencial
+# 2. Actualizar Kernel Linux y Firmware desde Backports (Para hardware y rendimiento moderno)
+echo "ℹ️ Instalando el Kernel Linux más reciente y Firmware desde ${CODENAME}-backports..."
+sudo apt install -y -t ${CODENAME}-backports \
+    linux-image-amd64 \
+    linux-headers-amd64 \
+    firmware-linux \
+    firmware-linux-nonfree \
+    firmware-misc-nonfree \
+    firmware-amd-graphics \
+    firmware-intel-microcode \
+    firmware-amd-ucode 2>/dev/null || sudo apt install -y linux-image-amd64 linux-headers-amd64 firmware-linux-nonfree 2>/dev/null || true
+
+# 3. Stack Gráfico y Aceleración HW (Mesa / VA-API) desde Backports
+echo "ℹ️ Instalando controladores gráficos Mesa y aceleración de hardware (VA-API / VDPAU) desde Backports..."
+sudo apt install -y -t ${CODENAME}-backports \
+    mesa-va-drivers \
+    mesa-vdpau-drivers \
+    mesa-utils \
+    va-driver-all \
+    vainfo 2>/dev/null || sudo apt install -y mesa-va-drivers mesa-vdpau-drivers mesa-utils vainfo || true
+
+# 4. Codecs Multimedia y FFmpeg desde Backports
+echo "ℹ️ Instalando FFmpeg y codecs multimedia de alto rendimiento desde Backports..."
+sudo apt install -y -t ${CODENAME}-backports \
+    ffmpeg \
+    libavcodec-extra \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav 2>/dev/null || sudo apt install -y ffmpeg libavcodec-extra gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav || true
+
+# 5. Sistema de Audio de Alta Fidelidad (PipeWire + WirePlumber)
+echo "ℹ️ Habilitando servidor de audio moderno PipeWire y WirePlumber..."
+sudo apt install -y \
+    pipewire \
+    pipewire-alsa \
+    pipewire-pulse \
+    pipewire-jack \
+    wireplumber
+
+systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
+
+# 6. Software Esencial de Sistema
 echo "ℹ️ Instalando utilidades esenciales para Debian..."
 sudo apt install -y \
     build-essential \
-    linux-headers-$(uname -r) \
     cmake \
     curl \
     btop \
@@ -55,32 +96,14 @@ sudo apt install -y \
     unzip \
     bzip2 \
     xz-utils \
-    ca-certificates \
-    gnupg
+    fastfetch 2>/dev/null || true
 
-# 3. Codecs Multimedia
-echo "ℹ️ Instalando codecs multimedia para Debian..."
-sudo apt install -y \
-    gstreamer1.0-plugins-base \
-    gstreamer1.0-plugins-good \
-    gstreamer1.0-plugins-bad \
-    gstreamer1.0-plugins-ugly \
-    gstreamer1.0-libav \
-    libavcodec-extra \
-    ffmpeg
-
-# 4. Aceleración HW (Mesa / VA-API)
-echo "ℹ️ Instalando controladores de aceleración de hardware (VA-API / Mesa)..."
-sudo apt install -y \
-    mesa-va-drivers \
-    mesa-vdpau-drivers \
-    va-driver-all \
-    vainfo \
-    mesa-utils 2>/dev/null || true
-
-# 5. Limpieza Inicial
-echo "ℹ️ Limpiando paquetes innecesarios..."
+# 7. Limpieza de Paquetes Antiguos
+echo "ℹ️ Limpiando paquetes obsoletos..."
 sudo apt autoremove -y
 sudo apt clean
 
-echo "✅ Sistema base de Debian ($CODENAME) configurado correctamente (Se recomienda reiniciar)."
+echo "================================================================="
+echo "✅ Debian ($CODENAME) ha sido actualizado y modernizado con éxito."
+echo "💡 Se recomienda reiniciar el equipo para arrancar con el nuevo Kernel Linux y Mesa."
+echo "================================================================="

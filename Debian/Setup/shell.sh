@@ -1,35 +1,34 @@
 #!/bin/bash
 # shell.sh - Instalación de herramientas modernas de terminal y prompt Starship para Debian
 
-set -e
+set -euo pipefail
 
-echo "ℹ️ Instalando utilidades de terminal modernas..."
+# Detectar codename de Debian
+CODENAME=$(grep '^VERSION_CODENAME=' /etc/os-release | cut -d= -f2 || echo "bookworm")
+
+echo "ℹ️ Instalando utilidades de terminal modernas desde repositorios y backports..."
 sudo apt update
-sudo apt install -y \
+sudo apt install -y -t ${CODENAME}-backports \
     eza \
     bat \
     fzf \
     zoxide \
     ripgrep \
     fd-find \
-    tealdeer \
-    duf \
-    du-dust \
-    procs
+    duf 2>/dev/null || sudo apt install -y eza bat fzf zoxide ripgrep fd-find duf tealdeer || true
 
-# En Debian, bat y fd tienen nombres diferentes para evitar conflictos
-echo "ℹ️ Configurando symlinks para bat y fd..."
+# En Debian, bat y fd se instalan como batcat y fdfind
+echo "ℹ️ Configurando symlinks locales para bat y fd..."
 mkdir -p ~/.local/bin
 [ -f /usr/bin/batcat ] && ln -sf /usr/bin/batcat ~/.local/bin/bat
 [ -f /usr/bin/fdfind ] && ln -sf /usr/bin/fdfind ~/.local/bin/fd
 
 echo "✅ Utilidades de terminal instaladas correctamente."
 
-echo "ℹ️ Instalando Starship..."
-# El método más fiable en Debian para tener la última versión
+echo "ℹ️ Instalando prompt ultra-rápido Starship..."
 curl -sS https://starship.rs/install.sh | sh -s -- -y
 
-# Configuración Modular (Siguiendo el estilo de Fedora)
+# Configuración Modular
 if [ -d "/etc/bashrc.d" ] || [ -d "$HOME/.bashrc.d" ]; then
     mkdir -p ~/.bashrc.d
     cat <<EOF > ~/.bashrc.d/starship.sh
@@ -38,7 +37,6 @@ eval "\$(starship init bash)"
 EOF
     echo "✅ Configuración modular de Starship creada en ~/.bashrc.d/starship.sh"
 else
-    # Si no hay soporte para .bashrc.d, lo añadimos a .bashrc
     if ! grep -q "starship init bash" ~/.bashrc; then
         echo '' >> ~/.bashrc
         echo '# Starship Prompt' >> ~/.bashrc
@@ -46,14 +44,12 @@ else
     fi
 fi
 
-# Asegurar que existe el directorio de configuración
+# Copiar tema personalizado de Starship
 mkdir -p ~/.config
-
-# Copiar config predeterminada si existe
 if [ -f "starship.toml" ]; then
     cp starship.toml ~/.config/starship.toml
 elif [ -f "Setup/starship.toml" ]; then
     cp Setup/starship.toml ~/.config/starship.toml
 fi
 
-echo "✅ Instalación y configuración completadas. Reinicia la terminal."
+echo "✅ Instalación de shell moderna completada en Debian."
