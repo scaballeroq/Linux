@@ -16,6 +16,10 @@ post-install:
 workspace:
     ./Setup/mount-workspace.sh
 
+# Compilador de Kernel Linux optimizado para x86_64-v3 y ajustado a tu portátil
+build-kernel:
+    ./Setup/build-custom-kernel.sh
+
 # Optimización para portátiles de desarrollo (Touchpad, Batería, Bluetooth, HiDPI)
 laptop:
     ./Setup/laptop-setup.sh
