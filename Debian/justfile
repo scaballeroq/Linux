@@ -1,7 +1,7 @@
 # Debian Environment Configuration Justfile
 
-# Instala todo el entorno (Post-install, Laptop, Fingerprint, Tuning, Shell, Virtualización, Mise, Cockpit, etc.)
-setup-all: post-install laptop fingerprint tuning shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
+# Instala todo el entorno (Post-install, Laptop, Fingerprint, Tuning, Workspace, Shell, Virtualización, Mise, Cockpit, etc.)
+setup-all: post-install workspace laptop fingerprint tuning shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
     echo "🚀 Entorno completo de Debian configurado. Por favor, reinicia el sistema."
 
 # =============================================================================
@@ -11,6 +11,10 @@ setup-all: post-install laptop fingerprint tuning shell security fonts virtualiz
 # Configuración base post-instalación (Repositorios contrib, non-free, backports)
 post-install:
     ./Setup/post-install.sh
+
+# Automontaje permanente de la partición Workspace (/home/caballero/Workspace) en /etc/fstab
+workspace:
+    ./Setup/mount-workspace.sh
 
 # Optimización para portátiles de desarrollo (Touchpad, Batería, Bluetooth, HiDPI)
 laptop:
