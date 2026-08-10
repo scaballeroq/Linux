@@ -161,9 +161,17 @@ nvim:
 vscode:
     ./IDE/vscode.sh
 
-# Google Antigravity
+# Google Antigravity Desktop 2.0 (Completo)
 antigravity:
     ./IDE/antigravity.sh
+
+# Google Antigravity CLI
+antigravity-cli:
+    ./IDE/antigravity-cli.sh
+
+# Google Antigravity IDE Engine
+antigravity-ide:
+    ./IDE/antigravity-ide.sh
 
 # OpenCode AI CLI/Editor
 opencode:
