@@ -1,7 +1,7 @@
 # Debian Environment Configuration Justfile
 
-# Instala todo el entorno (Post-install, Workspace, Laptop, Fingerprint, Tuning, Extensions, Shell, Virtualización, Mise, Cockpit, etc.)
-setup-all: post-install workspace laptop fingerprint tuning extensions shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
+# Instala todo el entorno (Post-install, Workspace, Laptop, Fingerprint, Tuning, Extensions, Screensaver, Shell, Virtualización, Mise, Cockpit, etc.)
+setup-all: post-install workspace laptop fingerprint tuning extensions screensaver shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
     echo "🚀 Entorno completo de Debian configurado. Por favor, reinicia el sistema."
 
 # =============================================================================
@@ -35,6 +35,10 @@ tuning:
 # Instalación automatizada de conectores y las 17 extensiones de GNOME
 extensions:
     ./Setup/gnome-extensions.sh
+
+# Configuración de salvapantallas 3D/Matrix al bloquear la pantalla
+screensaver:
+    ./Setup/screensaver-setup.sh
 
 # Utilidades de terminal y prompt (eza, bat, fzf, starship)
 shell:
