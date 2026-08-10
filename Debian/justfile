@@ -150,7 +150,7 @@ angular:
 # =============================================================================
 
 # Todos los IDEs
-ides: nvim vscode antigravity
+ides: nvim vscode antigravity opencode
     echo "✅ IDEs instalados."
 
 # Neovim + LazyVim
@@ -164,6 +164,10 @@ vscode:
 # Google Antigravity
 antigravity:
     ./IDE/antigravity.sh
+
+# OpenCode AI CLI/Editor
+opencode:
+    ./IDE/opencode.sh
 
 # =============================================================================
 # NAVEGADORES Y JUEGOS
