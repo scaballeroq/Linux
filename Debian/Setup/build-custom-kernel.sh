@@ -138,6 +138,13 @@ scripts/config --set-str CONFIG_SYSTEM_TRUSTED_KEYS ""
 scripts/config --set-str CONFIG_SYSTEM_REVOCATION_KEYS ""
 scripts/config --set-str CONFIG_MODULE_SIG_KEY ""
 
+# Desactivar símbolos de depuración para acelerar la compilación y evitar paquetes -dbg gigantes con conflictos de instalación
+scripts/config --disable CONFIG_DEBUG_INFO
+scripts/config --disable CONFIG_DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT
+scripts/config --disable CONFIG_DEBUG_INFO_DWARF4
+scripts/config --disable CONFIG_DEBUG_INFO_DWARF5
+scripts/config --enable CONFIG_DEBUG_INFO_NONE
+
 # Asegurar soporte para discos externos USB y puertos USB-C / Type-C / UAS
 scripts/config --module CONFIG_USB_STORAGE
 scripts/config --module CONFIG_USB_UAS
@@ -183,9 +190,24 @@ if command -v apt &> /dev/null; then
     
     read -rp "¿Deseas instalar el nuevo Kernel v${KERNEL_VER}-v3 personalizado ahora mismo? (s/N): " INSTALL_NOW || true
     if [[ "${INSTALL_NOW:-n}" =~ ^[Ss]$ ]]; then
-        sudo dpkg -i "$KERNEL_BUILD_DIR"/linux-image-*"${KERNEL_VER}-v3"*.deb "$KERNEL_BUILD_DIR"/linux-headers-*"${KERNEL_VER}-v3"*.deb 2>/dev/null || sudo dpkg -i "$KERNEL_BUILD_DIR"/linux-image-*.deb "$KERNEL_BUILD_DIR"/linux-headers-*.deb
-        sudo update-grub
-        echo "🎉 ¡Kernel v${KERNEL_VER}-v3 instalado! Reinicia el equipo para arrancar con tu nuevo kernel x86_64-v3."
+        IMAGE_DEB=$(ls -1 "$KERNEL_BUILD_DIR"/linux-image-"${KERNEL_VER}-v3"_"${KERNEL_VER}"*.deb 2>/dev/null | grep -v '\-dbg' | head -n1 || true)
+        HEADERS_DEB=$(ls -1 "$KERNEL_BUILD_DIR"/linux-headers-"${KERNEL_VER}-v3"_"${KERNEL_VER}"*.deb 2>/dev/null | grep -v '\-dbg' | head -n1 || true)
+        
+        DEBS_TO_INSTALL=()
+        [ -n "$IMAGE_DEB" ] && DEBS_TO_INSTALL+=("$IMAGE_DEB")
+        [ -n "$HEADERS_DEB" ] && DEBS_TO_INSTALL+=("$HEADERS_DEB")
+
+        if [ ${#DEBS_TO_INSTALL[@]} -gt 0 ]; then
+            echo "📦 Instalando:"
+            for deb in "${DEBS_TO_INSTALL[@]}"; do
+                echo "   - $(basename "$deb")"
+            done
+            sudo dpkg -i "${DEBS_TO_INSTALL[@]}"
+            sudo update-grub
+            echo "🎉 ¡Kernel v${KERNEL_VER}-v3 instalado! Reinicia el equipo para arrancar con tu nuevo kernel x86_64-v3."
+        else
+            echo "⚠️ No se encontraron los paquetes .deb para v${KERNEL_VER}-v3 en $KERNEL_BUILD_DIR"
+        fi
     fi
 else
     make -j"$CPU_CORES" KCFLAGS="-march=x86-64-v3 -O3 -pipe"
