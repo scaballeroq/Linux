@@ -38,7 +38,7 @@ Scripts de configuración del sistema operativo, personalización y endurecimien
 - **`laptop-setup.sh`**: Optimización para portátiles de desarrollo (Touchpad, Bluetooth, `power-profiles-daemon`, `switcheroo-control`, HiDPI, VRR).
 - **`fingerprint-setup.sh`**: Configuración de desbloqueo y autenticación admin por huella dactilar (`fprintd`, PAM `sudo`, `polkit-1`, `pam-auth-update`).
 - **`debian-tuning.sh`**: Ajustes de Kernel (`sysctl`) y `distrobox`.
-- **`gnome-extensions.sh`**: Instalación automatizada de `gnome-browser-connector`, `extension-manager` y descarga limpia de 17 extensiones personalizadas de GNOME.
+- **`gnome-extensions.sh`**: Instalación automatizada de `gnome-browser-connector`, `extension-manager` y descarga limpia de 17 extensiones personalizadas de GNOME (ver [Guía de Extensiones GNOME](./Docs/gnome_extensions_es.md)).
 - **`apariencia.sh`**: Instalación de temas e iconos.
 - **`cockpit.sh`**: Instalación y configuración de Cockpit (administración web).
 - **`fastfetch.sh`**: Información estética del sistema al inicio (Fastfetch).
