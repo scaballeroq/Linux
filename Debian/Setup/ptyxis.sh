@@ -6,20 +6,21 @@
 # diseñada para GNOME, junto con la extensión "Nautilus Open Any Terminal" 
 # para integrarlo directamente en el gestor de archivos Nautilus.
 # 
-# También configura un atajo de teclado global (Ctrl+Alt+T) para abrir Ptyxis.
+# También configura un atajo de teclado global (Ctrl+Alt+T) para abrir Ptyxis
+# y aplica la configuración estética (tema oscuro, transparencia y ocultamiento de scrollbar).
 
 set -euo pipefail
 
 echo "==========================================================="
-echo "Iniciando instalación y configuración de Ptyxis en Debian 13"
+echo "🚀 Iniciando instalación y configuración estética de Ptyxis en Debian 13"
 echo "==========================================================="
 
 # 1. Actualizar repositorios e instalar actualizaciones
-echo "[1/7] Actualizando el sistema..."
+echo "ℹ️ [1/7] Actualizando el sistema..."
 sudo apt update && sudo apt upgrade -y
 
 # 2. Instalar dependencias necesarias y el paquete ptyxis
-echo "[2/7] Instalando dependencias y Ptyxis..."
+echo "📦 [2/7] Instalando dependencias y Ptyxis..."
 sudo apt install -y \
     git \
     make \
@@ -30,7 +31,7 @@ sudo apt install -y \
     ptyxis
 
 # 3. Descargar e instalar la extensión "Nautilus Open Any Terminal"
-echo "[3/7] Instalando extensión Nautilus Open Any Terminal..."
+echo "📥 [3/7] Instalando extensión Nautilus Open Any Terminal..."
 TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT
 cd "$TMP_DIR"
@@ -42,12 +43,12 @@ sudo make install schema
 sudo glib-compile-schemas /usr/share/glib-2.0/schemas
 
 # 4. Establecer Ptyxis como terminal por defecto en Nautilus
-echo "[4/7] Configurando Ptyxis como terminal por defecto en Nautilus..."
+echo "⚙️ [4/7] Configurando Ptyxis como terminal por defecto en Nautilus..."
 gsettings set com.github.stunkymonkey.nautilus-open-any-terminal terminal ptyxis
 gsettings set com.github.stunkymonkey.nautilus-open-any-terminal new-tab true
 
 # 5. Configurar atajo de teclado para abrir Ptyxis (Ctrl + Alt + T)
-echo "[5/7] Configurando atajo de teclado (Ctrl+Alt+T)..."
+echo "⌨️ [5/7] Configurando atajo de teclado (Ctrl+Alt+T)..."
 KEYBINDINGS=$(gsettings get org.gnome.settings-daemon.plugins.media-keys custom-keybindings 2>/dev/null || echo "@as []")
 NEW_BINDING="'/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/ptyxis/'"
 
@@ -66,7 +67,7 @@ gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/or
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/ptyxis/ binding '<Primary><Alt>t'
 
 # 6. Configurar apariencia de Ptyxis (Moderno y Transparente)
-echo "[6/7] Aplicando tema moderno y transparencia a Ptyxis..."
+echo "🎨 [6/7] Aplicando configuración estética a Ptyxis (tema oscuro y transparencia)..."
 # Obtener el UUID del perfil por defecto
 PROFILE_UUID=$(gsettings get org.gnome.Ptyxis default-profile-uuid 2>/dev/null | tr -d "'" || true)
 
@@ -81,11 +82,11 @@ gsettings set org.gnome.Ptyxis interface-style 'dark' || true
 gsettings set org.gnome.Ptyxis scrollbar-policy 'never' || true
 
 # 7. Reiniciar Nautilus para aplicar los cambios
-echo "[7/7] Reiniciando Nautilus para aplicar cambios..."
+echo "🔄 [7/7] Reiniciando Nautilus para aplicar cambios..."
 nautilus -q || true
 
 echo "==========================================================="
-echo "¡Instalación y configuración completadas con éxito!"
+echo "✅ ¡Instalación y configuración estética completadas con éxito!"
 echo "Ptyxis ya está configurado con un look moderno (oscuro y transparente)."
 echo "Puedes abrirlo con Ctrl+Alt+T o desde el menú contextual en Nautilus."
 echo "==========================================================="
