@@ -104,11 +104,23 @@ cd "linux-${KERNEL_VER}"
 
 # 4. Configuración Base del Kernel Completo
 echo "ℹ️ Obteniendo la configuración del kernel base (compilación del kernel completo)..."
+BASE_CONFIG=""
 if [ -f "/boot/config-$(uname -r)" ]; then
-    cp "/boot/config-$(uname -r)" .config
+    BASE_CONFIG="/boot/config-$(uname -r)"
 elif [ -f "/proc/config.gz" ]; then
     zcat /proc/config.gz > .config
 else
+    BASE_CONFIG=$(ls -1t /boot/config-*amd64* /boot/config-* 2>/dev/null | grep -v "\-v3" | head -n1 || true)
+    if [ -z "$BASE_CONFIG" ]; then
+        BASE_CONFIG=$(ls -1t /boot/config-* 2>/dev/null | head -n1 || true)
+    fi
+fi
+
+if [ -n "$BASE_CONFIG" ] && [ -f "$BASE_CONFIG" ]; then
+    echo "📋 Cargando configuración base completa desde: $BASE_CONFIG"
+    cp "$BASE_CONFIG" .config
+elif [ ! -f .config ]; then
+    echo "⚠️ No se encontró una configuración previa del kernel. Usando defconfig..."
     make defconfig
 fi
 
@@ -125,6 +137,15 @@ scripts/config --disable CONFIG_MODULE_SIG_ALL
 scripts/config --set-str CONFIG_SYSTEM_TRUSTED_KEYS ""
 scripts/config --set-str CONFIG_SYSTEM_REVOCATION_KEYS ""
 scripts/config --set-str CONFIG_MODULE_SIG_KEY ""
+
+# Asegurar soporte para discos externos USB y puertos USB-C / Type-C / UAS
+scripts/config --module CONFIG_USB_STORAGE
+scripts/config --module CONFIG_USB_UAS
+scripts/config --module CONFIG_TYPEC
+scripts/config --module CONFIG_TYPEC_UCSI
+scripts/config --module CONFIG_UCSI_ACPI || true
+scripts/config --module CONFIG_USB4 || true
+scripts/config --module CONFIG_BLK_DEV_SD
 
 # Desactivar CPU genérica y activar optimización x86_64-v3
 scripts/config --disable CONFIG_GENERIC_CPU
