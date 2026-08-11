@@ -1,5 +1,5 @@
 #!/bin/bash
-# debian-tuning.sh - Optimizaciones de Kernel Sysctl, Distrobox y llamada a extensiones GNOME en Debian
+# debian-tuning.sh - Optimizaciones de Kernel Sysctl y Distrobox en Debian
 
 set -euo pipefail
 
@@ -22,12 +22,5 @@ sudo sysctl --system > /dev/null || true
 echo "ℹ️ Instalando Distrobox para contenedores de desarrollo..."
 sudo apt update
 sudo apt install -y distrobox 2>/dev/null || true
-
-# 3. Llamada al script de extensiones de GNOME
-echo "ℹ️ Ejecutando instalación de extensiones de GNOME..."
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [ -f "$SCRIPT_DIR/gnome-extensions.sh" ]; then
-    "$SCRIPT_DIR/gnome-extensions.sh"
-fi
 
 echo "✅ Optimizaciones avanzadas de Debian completadas."

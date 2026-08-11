@@ -21,13 +21,7 @@ sudo systemctl enable --now bluetooth.service || true
 sudo systemctl enable --now power-profiles-daemon.service || true
 sudo systemctl enable --now switcheroo-control.service || true
 
-# 2. Extensiones de GNOME útiles para portátil y desarrollo
-echo "ℹ️ Instalando extensiones recomendadas de GNOME para portátil..."
-sudo apt install -y \
-    gnome-shell-extension-appindicator \
-    gnome-shell-extension-caffeine 2>/dev/null || true
-
-# 3. Configuraciones de GSettings para Portátil (Touchpad, Pantalla y Energía)
+# 2. Configuraciones de GSettings para Portátil (Touchpad, Pantalla y Energía)
 if [[ "${XDG_CURRENT_DESKTOP:-}" == *"GNOME"* ]]; then
     echo "ℹ️ Aplicando configuraciones de Touchpad y pantalla para GNOME..."
 

@@ -37,7 +37,8 @@ OS configuration, customization, and hardening scripts:
 - **`post-install.sh`**: Master post-install script (Enables `contrib`, `non-free`, `non-free-firmware`, and `backports`).
 - **`laptop-setup.sh`**: Development laptop optimization (Touchpad, Bluetooth, `power-profiles-daemon`, `switcheroo-control`, HiDPI, VRR).
 - **`fingerprint-setup.sh`**: Fingerprint unlock & admin authentication (`fprintd`, PAM `sudo`, `polkit-1`, `pam-auth-update`).
-- **`debian-tuning.sh`**: Kernel tuning (`sysctl`), `distrobox`, `gnome-browser-connector`, `extension-manager`, and automated download of 17 custom GNOME extensions.
+- **`debian-tuning.sh`**: Kernel tuning (`sysctl`) and `distrobox`.
+- **`gnome-extensions.sh`**: Automated setup of `gnome-browser-connector`, `extension-manager`, and clean installation of 17 custom GNOME extensions.
 - **`apariencia.sh`**: Theme and icon installation.
 - **`cockpit.sh`**: Cockpit web admin installation and setup.
 - **`fastfetch.sh`**: System summary info on terminal launch (Fastfetch).
