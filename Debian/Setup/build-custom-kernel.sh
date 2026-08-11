@@ -53,6 +53,7 @@ if command -v apt &> /dev/null; then
     sudo apt update
     sudo apt install -y \
         build-essential \
+        debhelper \
         libncurses-dev \
         bison \
         flex \
@@ -148,7 +149,7 @@ echo "☕ Este proceso tardará solo unos pocos minutos gracias a localmodconfig
 
 if command -v apt &> /dev/null; then
     # En Debian compilamos paquetes .deb nativos para una instalación y desinstalación limpia
-    make -j"$CPU_CORES" bindeb-pkg
+    make -j"$CPU_CORES" bindeb-pkg DPKG_FLAGS="-d"
     
     echo "================================================================="
     echo "✅ Compilación completada con éxito. Paquetes .deb generados en:"
