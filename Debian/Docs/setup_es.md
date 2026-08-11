@@ -27,10 +27,10 @@ Prepara el sistema base configurando repositorios oficiales adicionales, instala
    sudo apt update
    ```
 
-3. **Software Esencial y Gestor Nala**:
-   Instala utilidades de compilación, monitorización de sistema y el acelerador de paquetes Nala:
+3. **Software Esencial y Utilidades**:
+   Instala utilidades de compilación y monitorización del sistema:
    - Compilación: `build-essential`, `cmake`
-   - Paquetes: `nala`, `zram-tools`
+   - Paquetes: `zram-tools`
    - Monitorización: `btop`, `htop`, `inxi`
    - Utilidades: `curl`, `fuse3`, `libfuse2t64`, `exfatprogs`, `p7zip`, `unrar`, `zip`, `unzip`, `bzip2`, `xz-utils`
    - Gráficos y Multimedia: `vlc`, `gimp`, `gparted`

@@ -27,13 +27,15 @@ fi
 
 Sustituye comandos estándar por alternativas enriquecidas, seguras y de monitorización:
 
-### 📦 Atajos de Paquetes con Nala
-Si `nala` está instalado en el sistema, los comandos principales de APT se redirigen a Nala manteniendo `apt` nativo y 100% activo:
-- `update` -> `sudo nala update`
-- `upgrade` -> `sudo nala upgrade -y`
-- `install` -> `sudo nala install`
-- `remove` -> `sudo nala remove`
-- `search` -> `nala search`
+### 📦 Atajos de Paquetes con APT
+Los comandos principales de APT cuentan con alias simplificados:
+- `update` -> `sudo apt update`
+- `upgrade` -> `sudo apt upgrade -y`
+- `install` -> `sudo apt install`
+- `remove` -> `sudo apt remove`
+- `search` -> `apt search`
+- `clean` -> `sudo apt autoremove -y && sudo apt clean`
+- `list` -> `apt list --upgradable`
 
 ### 🐧 Monitor de Kernel (`check-kernel`)
 La función y alias **`check-kernel`** consulta en tiempo real la API de `kernel.org` y la compara con la versión activa de tu sistema (`uname -r`):

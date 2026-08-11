@@ -30,25 +30,14 @@ alias chown='chown --preserve-root'
 alias chmod='chmod --preserve-root'
 alias chgrp='chgrp --preserve-root'
 
-# 4. GESTIÓN DE PAQUETES (NALA / APT)
-if command -v nala &> /dev/null; then
-    alias update='sudo nala update'
-    alias upgrade='sudo nala upgrade -y'
-    alias install='sudo nala install'
-    alias remove='sudo nala remove'
-    alias search='nala search'
-    alias clean='sudo nala autoremove -y && sudo nala clean'
-    alias list='nala list --upgradable'
-    alias history='nala history'
-else
-    alias update='sudo apt update'
-    alias upgrade='sudo apt upgrade -y'
-    alias install='sudo apt install'
-    alias remove='sudo apt remove'
-    alias search='apt search'
-    alias clean='sudo apt autoremove -y && sudo apt clean'
-    alias list='apt list --upgradable'
-fi
+# 4. GESTIÓN DE PAQUETES (APT)
+alias update='sudo apt update'
+alias upgrade='sudo apt upgrade -y'
+alias install='sudo apt install'
+alias remove='sudo apt remove'
+alias search='apt search'
+alias clean='sudo apt autoremove -y && sudo apt clean'
+alias list='apt list --upgradable'
 
 # 5. UTILIDADES MODERNAS (RUST-BASED)
 if command -v batcat &> /dev/null; then
@@ -106,4 +95,4 @@ alias vminfo='virsh dominfo'
 alias update-antigravity='sudo "$UPDATE_ANTIGRAVITY_PATH"'
 alias update-antigravity-ide='sudo "$UPDATE_ANTIGRAVITY_IDE_PATH"'
 
-echo "✅ Aliases modernizados cargados (Nala/APT, Kernel-Check, Rust tools, Git, Seguridad)"
+echo "✅ Aliases modernizados cargados (APT, Kernel-Check, Rust tools, Git, Seguridad)"

@@ -22,7 +22,7 @@ echo "deb http://deb.debian.org/debian ${CODENAME}-backports main contrib non-fr
 sudo apt update
 ```
 
-Installs `nala`, `zram-tools`, `build-essential`, `flatpak`, `vlc`, `gimp`, `ffmpeg`, and Mesa 3D drivers.
+Installs `zram-tools`, `build-essential`, `flatpak`, `vlc`, `gimp`, `ffmpeg`, and Mesa 3D drivers.
 
 ---
 

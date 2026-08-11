@@ -1,5 +1,5 @@
 #!/bin/bash
-# post-install.sh - Script maestro de post-instalación para Debian (Modernizado con Backports, Nala, ZRAM, Kernel, Mesa y PipeWire)
+# post-install.sh - Script maestro de post-instalación para Debian (Modernizado con Backports, ZRAM, Kernel, Mesa y PipeWire)
 
 set -euo pipefail
 
@@ -31,17 +31,7 @@ echo "ℹ️ Actualizando listas de paquetes de todos los repositorios..."
 sudo apt update
 sudo apt upgrade -y
 
-# 2. Instalación de Nala (Frontend moderno y paralelo para APT)
-echo "ℹ️ Instalando Nala (Frontend avanzado para APT)..."
-sudo apt install -y nala 2>/dev/null || true
-
-# Helper para ejecutar apt/nala
-APT_CMD="apt"
-if command -v nala &> /dev/null; then
-    APT_CMD="nala"
-fi
-
-# 3. Compresión de Memoria ZRAM (Evita bloqueos del sistema al compilar)
+# 2. Compresión de Memoria ZRAM (Evita bloqueos del sistema al compilar)
 echo "ℹ️ Instalando y configurando SWAP comprimida en RAM (ZRAM con ZSTD)..."
 sudo apt install -y zram-tools 2>/dev/null || true
 if [ -f /etc/default/zramswap ]; then
