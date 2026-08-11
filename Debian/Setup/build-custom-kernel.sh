@@ -118,7 +118,9 @@ yes "" | make localmodconfig > /dev/null 2>&1 || true
 # 5. Aplicar Optimizaciones x86_64-v3, Latencia Baja (1000Hz) y Preemption
 echo "ℹ️ Modificando parámetros de rendimiento en .config..."
 
-# Limpiar firmas/certificados propios de Debian para evitar errores en compilaciones de fuentes vanilla
+# Desactivar firma de módulos y limpiar certificados de Debian para evitar errores con OpenSSL/sign-file
+scripts/config --disable CONFIG_MODULE_SIG
+scripts/config --disable CONFIG_MODULE_SIG_ALL
 scripts/config --set-str CONFIG_SYSTEM_TRUSTED_KEYS ""
 scripts/config --set-str CONFIG_SYSTEM_REVOCATION_KEYS ""
 scripts/config --set-str CONFIG_MODULE_SIG_KEY ""
