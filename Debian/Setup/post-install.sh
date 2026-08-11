@@ -48,9 +48,9 @@ sudo apt install -y -t ${CODENAME}-backports \
     firmware-linux \
     firmware-linux-nonfree \
     firmware-misc-nonfree \
-    firmware-amd-graphics \
-    firmware-intel-microcode \
-    firmware-amd-ucode 2>/dev/null || sudo apt install -y linux-image-amd64 linux-headers-amd64 firmware-linux-nonfree 2>/dev/null || true
+    firmware-amd-graphics 2>/dev/null || sudo apt install -y linux-image-amd64 linux-headers-amd64 firmware-linux-nonfree 2>/dev/null || true
+
+sudo apt install -y intel-microcode amd64-microcode 2>/dev/null || true
 
 # 5. Stack Gráfico y Aceleración HW (Mesa / VA-API) desde Backports
 echo "ℹ️ Instalando controladores gráficos Mesa y aceleración de hardware (VA-API / VDPAU) desde Backports..."

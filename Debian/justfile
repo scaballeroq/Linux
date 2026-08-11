@@ -20,6 +20,10 @@ workspace:
 build-kernel:
     ./Setup/build-custom-kernel.sh
 
+# Instalación del último Kernel Linux oficial y Firmware desde Debian Backports
+kernel-backports:
+    ./Setup/install-backports-kernel.sh
+
 # Optimización para portátiles de desarrollo (Touchpad, Batería, Bluetooth, HiDPI)
 laptop:
     ./Setup/laptop-setup.sh
