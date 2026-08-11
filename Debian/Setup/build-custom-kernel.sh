@@ -1,5 +1,5 @@
 #!/bin/bash
-# build-custom-kernel.sh - Compilación del Kernel Linux optimizado para x86_64-v3 y ajustado a tu portátil (Debian / Arch)
+# build-custom-kernel.sh - Compilación del Kernel Linux completo optimizado para x86_64-v3 (Debian / Arch)
 
 set -euo pipefail
 
@@ -9,7 +9,7 @@ CPU_MODEL=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs)
 CPU_VENDOR=$(grep -m1 'vendor_id' /proc/cpuinfo | awk '{print $3}')
 
 echo "================================================================="
-echo "🏎️ COMPILADOR DE KERNEL LINUX OPTIMIZADO PARA X86_64-V3"
+echo "🏎️ COMPILADOR DE KERNEL LINUX COMPLETO OPTIMIZADO PARA X86_64-V3"
 echo "================================================================="
 echo "💻 Procesador: $CPU_MODEL"
 echo "⚙️ Hilos de compilación: $CPU_CORES hilos"
@@ -102,8 +102,8 @@ fi
 
 cd "linux-${KERNEL_VER}"
 
-# 4. Ajuste de Configuración NATIVA para Portátil (localmodconfig)
-echo "ℹ️ Obteniendo la configuración del kernel actual..."
+# 4. Configuración Base del Kernel Completo
+echo "ℹ️ Obteniendo la configuración del kernel base (compilación del kernel completo)..."
 if [ -f "/boot/config-$(uname -r)" ]; then
     cp "/boot/config-$(uname -r)" .config
 elif [ -f "/proc/config.gz" ]; then
@@ -112,11 +112,12 @@ else
     make defconfig
 fi
 
-echo "ℹ️ Aplicando localmodconfig (Recorta el kernel para compilar SOLO los módulos activos en tu portátil)..."
-yes "" | make localmodconfig > /dev/null 2>&1 || true
+# 5. Aplicar Identificador v3, Optimizaciones x86_64-v3, Latencia Baja (1000Hz) y Preemption
+echo "ℹ️ Modificando parámetros de rendimiento y versión en .config..."
 
-# 5. Aplicar Optimizaciones x86_64-v3, Latencia Baja (1000Hz) y Preemption
-echo "ℹ️ Modificando parámetros de rendimiento en .config..."
+# Establecer identificador -v3 en el nombre del kernel (CONFIG_LOCALVERSION)
+scripts/config --set-str CONFIG_LOCALVERSION "-v3"
+scripts/config --disable CONFIG_LOCALVERSION_AUTO
 
 # Desactivar firma de módulos y limpiar certificados de Debian para evitar errores con OpenSSL/sign-file
 scripts/config --disable CONFIG_MODULE_SIG
@@ -125,8 +126,9 @@ scripts/config --set-str CONFIG_SYSTEM_TRUSTED_KEYS ""
 scripts/config --set-str CONFIG_SYSTEM_REVOCATION_KEYS ""
 scripts/config --set-str CONFIG_MODULE_SIG_KEY ""
 
-# Desactivar CPU genérica y activar optimización nativa x86_64-v3
+# Desactivar CPU genérica y activar optimización x86_64-v3
 scripts/config --disable CONFIG_GENERIC_CPU
+scripts/config --enable CONFIG_GENERIC_CPU_V3 || true
 if [ "$CPU_VENDOR" == "GenuineIntel" ]; then
     scripts/config --enable CONFIG_MCORE2 || scripts/config --enable CONFIG_MNATIVE_INTEL || true
 elif [ "$CPU_VENDOR" == "AuthenticAMD" ]; then
@@ -146,27 +148,28 @@ scripts/config --enable CONFIG_TRANSPARENT_HUGEPAGE_ALWAYS
 make olddefconfig > /dev/null
 
 # 6. Compilación Paralela
-echo "🚀 Iniciando compilación del Kernel Linux v${KERNEL_VER} con $CPU_CORES hilos..."
-echo "☕ Este proceso tardará solo unos pocos minutos gracias a localmodconfig..."
+echo "🚀 Iniciando compilación del Kernel Linux v${KERNEL_VER}-v3 (Completo) con $CPU_CORES hilos..."
+echo "☕ Compilando todos los módulos y controladores (kernel completo con optimización x86_64-v3)..."
 
 if command -v apt &> /dev/null; then
     # En Debian compilamos paquetes .deb nativos para una instalación y desinstalación limpia
-    make -j"$CPU_CORES" bindeb-pkg DPKG_FLAGS="-d"
+    make -j"$CPU_CORES" KCFLAGS="-march=x86-64-v3 -O3 -pipe" bindeb-pkg DPKG_FLAGS="-d"
     
     echo "================================================================="
     echo "✅ Compilación completada con éxito. Paquetes .deb generados en:"
     echo "   $KERNEL_BUILD_DIR"
     echo "================================================================="
     
-    read -rp "¿Deseas instalar el nuevo Kernel v${KERNEL_VER} personalizado ahora mismo? (s/N): " INSTALL_NOW || true
+    read -rp "¿Deseas instalar el nuevo Kernel v${KERNEL_VER}-v3 personalizado ahora mismo? (s/N): " INSTALL_NOW || true
     if [[ "${INSTALL_NOW:-n}" =~ ^[Ss]$ ]]; then
-        sudo dpkg -i "$KERNEL_BUILD_DIR"/linux-image-*.deb "$KERNEL_BUILD_DIR"/linux-headers-*.deb
+        sudo dpkg -i "$KERNEL_BUILD_DIR"/linux-image-*"${KERNEL_VER}-v3"*.deb "$KERNEL_BUILD_DIR"/linux-headers-*"${KERNEL_VER}-v3"*.deb 2>/dev/null || sudo dpkg -i "$KERNEL_BUILD_DIR"/linux-image-*.deb "$KERNEL_BUILD_DIR"/linux-headers-*.deb
         sudo update-grub
-        echo "🎉 ¡Kernel v${KERNEL_VER} instalado! Reinicia el equipo para arrancar con tu nuevo kernel x86_64-v3."
+        echo "🎉 ¡Kernel v${KERNEL_VER}-v3 instalado! Reinicia el equipo para arrancar con tu nuevo kernel x86_64-v3."
     fi
 else
-    make -j"$CPU_CORES"
+    make -j"$CPU_CORES" KCFLAGS="-march=x86-64-v3 -O3 -pipe"
     sudo make modules_install
     sudo make install
-    echo "✅ Kernel v${KERNEL_VER} instalado. Actualiza tu gestor de arranque (grub-mkconfig o bootctl) y reinicia."
+    echo "✅ Kernel v${KERNEL_VER}-v3 instalado. Actualiza tu gestor de arranque (grub-mkconfig o bootctl) y reinicia."
 fi
+
