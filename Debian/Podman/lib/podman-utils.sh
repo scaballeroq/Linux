@@ -66,6 +66,7 @@ cmd_create() {
     find "$project_dir" -type f \( -name "*.container" -o -name "*.network" -o -name "*.target" -o -name "*.volume" -o -name ".env*" \) | while read -r file; do
         sed -i "s/__PROJECT__/$project/g" "$file"
         sed -i "s/__PROJECT_UPPER__/$project_upper/g" "$file"
+        sed -i "s|__PROJECT_DIR__|$project_dir|g" "$file"
     done
 
     # Renombrar archivos con placeholder

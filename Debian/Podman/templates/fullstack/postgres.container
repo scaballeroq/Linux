@@ -5,7 +5,7 @@ After=__PROJECT__.network
 [Container]
 ContainerName=__PROJECT__-postgres
 Image=docker.io/library/postgres:17-alpine
-EnvironmentFile=%h/.config/containers/systemd/__PROJECT__/.env
+EnvironmentFile=__PROJECT_DIR__/.env
 Network=__PROJECT__.network
 Volume=__PROJECT__-pg-data:/var/lib/postgresql/data
 PublishPort=5432:5432

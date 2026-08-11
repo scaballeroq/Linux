@@ -102,6 +102,16 @@ enable_linger() {
     log_ok "Linger habilitado"
 }
 
+configure_subuids() {
+    log_info "Ajustando limites de recursos (subuid/subgid)..."
+    if ! grep -q "$USER" /etc/subuid 2>/dev/null; then
+        sudo usermod --add-subuids 100000-165535 --add-subgids 100000-165535 "$USER" 2>/dev/null || true
+        log_ok "subuid/subgid asignados a $USER"
+    else
+        log_info "subuid/subgid ya estan configurados"
+    fi
+}
+
 enable_podman_socket() {
     log_info "Habilitando socket de Podman (compatibilidad Docker)..."
     systemctl --user enable --now podman.socket 2>/dev/null || true
@@ -191,6 +201,7 @@ main() {
     configure_registries
     configure_network
     enable_linger
+    configure_subuids
     enable_podman_socket
     configure_docker_host
     verify_installation

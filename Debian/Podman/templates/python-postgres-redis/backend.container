@@ -6,10 +6,10 @@ Requires=__PROJECT__-postgres.service __PROJECT__-redis.service
 [Container]
 ContainerName=__PROJECT__-backend
 Image=docker.io/library/python:3.13-slim
-EnvironmentFile=%h/.config/containers/systemd/__PROJECT__/.env
+EnvironmentFile=__PROJECT_DIR__/.env
 Network=__PROJECT__.network
-Volume=$PROJECT_DIR/src:/app:z
-Volume=$PROJECT_DIR/requirements.txt:/app/requirements.txt:ro,z
+Volume=__PROJECT_DIR__/src:/app:z
+Volume=__PROJECT_DIR__/requirements.txt:/app/requirements.txt:ro,z
 WorkingDir=/app
 Command=sh -c "pip install --no-cache-dir -r requirements.txt && python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
 PublishPort=8000:8000
