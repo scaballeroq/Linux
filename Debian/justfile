@@ -1,16 +1,44 @@
-# Ubuntu Environment Configuration Justfile
+# Debian Environment Configuration Justfile
 
-# Instala todo el entorno (Post-install, Shell, Virtualización, Mise, Cockpit, etc.)
-setup-all: post-install shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
-    echo "🚀 Entorno completo configurado. Por favor, reinicia el sistema."
+# Instala todo el entorno (Post-install, Workspace, Laptop, Fingerprint, Tuning, Extensions, Screensaver, Shell, Virtualización, Mise, Cockpit, etc.)
+setup-all: post-install workspace laptop fingerprint tuning extensions screensaver shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
+    echo "🚀 Entorno completo de Debian configurado. Por favor, reinicia el sistema."
 
 # =============================================================================
 # CONFIGURACIÓN BASE DEL SISTEMA
 # =============================================================================
 
-# Configuración base post-instalación
+# Configuración base post-instalación (Repositorios contrib, non-free, backports)
 post-install:
     ./Setup/post-install.sh
+
+# Automontaje permanente de la partición Workspace (/home/caballero/Workspace) en /etc/fstab
+workspace:
+    ./Setup/mount-workspace.sh
+
+# Compilador de Kernel Linux optimizado para x86_64-v3 y ajustado a tu portátil
+build-kernel:
+    ./Setup/build-custom-kernel.sh
+
+# Optimización para portátiles de desarrollo (Touchpad, Batería, Bluetooth, HiDPI)
+laptop:
+    ./Setup/laptop-setup.sh
+
+# Autenticación y desbloqueo por huella dactilar (fprintd, PAM, sudo, polkit)
+fingerprint:
+    ./Setup/fingerprint-setup.sh
+
+# Optimizaciones avanzadas de Debian (Sysctl, Distrobox)
+tuning:
+    ./Setup/debian-tuning.sh
+
+# Instalación automatizada de conectores y las 17 extensiones de GNOME
+extensions:
+    ./Setup/gnome-extensions.sh
+
+# Configuración de salvapantallas 3D/Matrix al bloquear la pantalla
+screensaver:
+    ./Setup/screensaver-setup.sh
 
 # Utilidades de terminal y prompt (eza, bat, fzf, starship)
 shell:
@@ -122,7 +150,7 @@ angular:
 # =============================================================================
 
 # Todos los IDEs
-ides: nvim vscode antigravity
+ides: nvim vscode antigravity opencode
     echo "✅ IDEs instalados."
 
 # Neovim + LazyVim
@@ -133,27 +161,35 @@ nvim:
 vscode:
     ./IDE/vscode.sh
 
-# Google Antigravity
+# Google Antigravity Desktop 2.0 (Completo)
 antigravity:
     ./IDE/antigravity.sh
 
+# Google Antigravity CLI
+antigravity-cli:
+    ./IDE/antigravity-cli.sh
+
+# Google Antigravity IDE Engine
+antigravity-ide:
+    ./IDE/antigravity-ide.sh
+
+# OpenCode AI CLI/Editor
+opencode:
+    ./IDE/opencode.sh
+
 # =============================================================================
-# NAVEGADORES
+# NAVEGADORES Y JUEGOS
 # =============================================================================
 
 # Firefox nativo (.deb)
 firefox:
     ./Setup/firefox.sh
 
-# =============================================================================
-# APLICACIONES
-# =============================================================================
-
 # Meld (diff viewer)
 meld:
     ./Apps/meld.sh
 
-# Steam (vía Flatpak)
+# Steam y herramientas de juegos
 steam:
     ./Juegos/steam.sh
 

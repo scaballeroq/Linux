@@ -4,85 +4,49 @@ sidebar_position: 1
 
 # Configuración de Seguridad en Debian 13
 
-Esta guía detalla el proceso de endurecimiento de seguridad (hardening) aplicado a un sistema Debian 13, tal y como se automatiza en el script de seguridad.
+Esta guía detalla el proceso de endurecimiento de seguridad (hardening) optimizado para un portátil de desarrollador en Debian 13, tal y como se automatiza en [`Setup/seguridad.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Debian/Setup/seguridad.sh).
 
-El proceso cubre la configuración del firewall, privacidad DNS y auditoría de permisos.
+El proceso cubre la configuración del firewall compatible con KVM/Podman, protección de accesos, Fail2ban y privacidad DNS.
 
-## 1. Configuración de Firewall (UFW)
+---
 
-Se utiliza Uncomplicated Firewall (UFW) para definir políticas estrictas de red.
+## 1. Configuración de Firewall (UFW) y Enrutamiento KVM/Podman
 
-1. Instala UFW si no está presente:
+Se utiliza Uncomplicated Firewall (UFW) adaptado para no interferir con máquinas virtuales ni contenedores de desarrollo:
+
+1. **Instalación de UFW y Fail2ban**:
    ```bash
    sudo apt update
-   sudo apt install -y ufw
+   sudo apt install -y ufw fail2ban
    ```
 
-2. Establece las políticas por defecto (bloquear entrada, permitir salida):
+2. **Compatibilidad con KVM (`virbr0`) y Podman (`DEFAULT_FORWARD_POLICY`)**:
+   Para evitar que UFW bloquee el acceso a Internet dentro de las MVs de KVM o contenedores Podman, se habilita el reenvío de paquetes en `/etc/default/ufw`:
    ```bash
-   sudo ufw default deny incoming
-   sudo ufw default allow outgoing
+   sudo sed -i 's/^DEFAULT_FORWARD_POLICY=.*/DEFAULT_FORWARD_POLICY="ACCEPT"/' /etc/default/ufw
+   sudo ufw route allow in on virbr0
    ```
 
-3. Permite conexiones SSH **solo** desde la red local y con límite de intentos para prevenir ataques de fuerza bruta:
-   ```bash
-   sudo ufw limit from 192.168.1.0/24 to any port ssh
-   ```
-   *(Nota: Ajusta `192.168.1.0/24` según la configuración de tu red local.)*
+3. **Políticas de Seguridad y Rate-Limiting**:
+   - Denegar tráfico entrante no solicitado (`sudo ufw default deny incoming`).
+   - Permitir tráfico saliente (`sudo ufw default allow outgoing`).
+   - **SSH Anti Fuerza Bruta Móvil**: Se utiliza `sudo ufw limit ssh` en lugar de rangos fijos de IP, permitiendo conectar por SSH desde cualquier red Wi-Fi manteniendo protección contra ataques de fuerza bruta.
+   - **Cockpit (Puerto 9090)**: Protegido con `sudo ufw limit 9090/tcp`.
 
-4. Activa el firewall:
-   ```bash
-   sudo ufw --force enable
-   ```
+4. **Fail2ban**:
+   Habilitado automáticamente (`sudo systemctl enable --now fail2ban.service`) para bloquear de forma inteligente las IPs que realicen escaneos o intentos masivos de acceso.
 
-## 2. Privacidad DNS (DNS-over-TLS)
+---
 
-Para evitar que tu proveedor de internet espíe tus consultas web, se cifra el tráfico DNS mediante `systemd-resolved` utilizando Cloudflare.
+## 2. Privacidad DNS (DNS-over-TLS) (`seguridad-dot.sh`)
 
-1. Instala `systemd-resolved`:
-   ```bash
-   sudo apt install -y systemd-resolved
-   ```
+Para cifrar las consultas DNS del sistema mediante Cloudflare con `systemd-resolved`:
 
-2. Configura los servidores de Cloudflare con DNS-over-TLS creando el archivo `/etc/systemd/resolved.conf.d/dot.conf`:
-   ```bash
-   sudo mkdir -p /etc/systemd/resolved.conf.d/
-   sudo tee /etc/systemd/resolved.conf.d/dot.conf > /dev/null <<'EOF'
-   [Resolve]
-   DNS=1.1.1.1 1.0.0.1
-   DNSSEC=yes
-   DNSOverTLS=yes
-   FallbackDNS=8.8.8.8
-   EOF
-   ```
+```bash
+./Setup/seguridad-dot.sh
+```
 
-3. Reinicia el servicio para aplicar los cambios:
-   ```bash
-   sudo systemctl enable --now systemd-resolved
-   sudo systemctl restart systemd-resolved
-   ```
-
-4. Redirige el tráfico local al DNS cifrado:
-   ```bash
-   sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
-   ```
-
-## 3. Auditoría de Permisos Críticos
-
-Se restringen los permisos de archivos y carpetas vitales del sistema operativo para evitar que programas o usuarios sin privilegios los modifiquen.
-
-1. Protege la carpeta del administrador y los archivos de contraseñas:
-   ```bash
-   sudo chmod 700 /root
-   sudo chmod 644 /etc/passwd
-   sudo chmod 644 /etc/group
-   sudo chmod 600 /etc/shadow
-   sudo chmod 600 /etc/gshadow
-   ```
-
-## Verificación
-
-Para comprobar que el DNS cifrado funciona correctamente, ejecuta:
+Verificación con:
 ```bash
 resolvectl status
 ```

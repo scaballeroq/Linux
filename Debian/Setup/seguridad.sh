@@ -1,59 +1,58 @@
 #!/bin/bash
 # ==============================================================================
-# ENDURECIMIENTO DE SEGURIDAD BÁSICO (seguridad.sh)
+# ENDURECIMIENTO DE SEGURIDAD PARA DESARROLLADOR (seguridad.sh) - Debian 13
 # ==============================================================================
-# Este script aplica configuraciones básicas de seguridad para Debian:
-#   - Firewall UFW (cortafuegos)
-#
-# Para seguridad avanzada (DNS-over-TLS), ejecutar seguridad-dot.sh
+# Configuración de Firewall (UFW) compatible con KVM/QEMU, Podman y Wi-Fi Móvil:
+#   - Cortafuegos UFW (Bloqueo de entrada, navegación permitida)
+#   - Habilitar Forwarding para Virtualización KVM (virbr0) y Podman sin romper internet en MVs
+#   - Limitación anti fuerza bruta para SSH (sin hardcodear IPs para funcionar en cualquier Wi-Fi)
+#   - Protección automatizada con Fail2ban
 # ==============================================================================
 
-# 'set -e' hace que el script se detenga inmediatamente si algún comando falla.
-# 'set -u' detiene el script si se intenta usar una variable que no existe.
-# 'set -o pipefail' asegura que si un comando en una tubería (pipe) falla,
-# el error se propague y detenga el script.
 set -euo pipefail
 
 echo "🚀 Iniciando el proceso de endurecimiento de seguridad del sistema..."
 
-# ==============================================================================
-# PASO 1: CONFIGURACIÓN DEL CORTAFUEGOS (FIREWALL - UFW)
-# ==============================================================================
-# UFW (Uncomplicated Firewall) es una interfaz simplificada para iptables/nftables.
-# Nos permite definir reglas para decidir qué tráfico de red puede entrar o 
-# salir de nuestro ordenador.
-# ==============================================================================
-echo "ℹ️ Paso 1: Configurando UFW (Uncomplicated Firewall)..."
+# 1. Instalación de UFW y Fail2ban
+echo "ℹ️ Paso 1: Instalando UFW y Fail2ban vía APT..."
+sudo apt update
+sudo apt install -y ufw fail2ban
 
-# 1.1 Comprobar e instalar UFW si no está presente
-# Si el comando 'ufw' no está instalado en el sistema, lo instalamos usando 'apt'.
-if ! command -v ufw &> /dev/null; then
-    echo "   - UFW no detectado. Procediendo a la instalación..."
-    sudo apt update
-    sudo apt install -y ufw
+# 2. Configurar compatibilidad con KVM/QEMU y Podman (DEFAULT_FORWARD_POLICY)
+echo "ℹ️ Configurando enrutamiento de red para KVM (virbr0) y Podman..."
+if [ -f /etc/default/ufw ]; then
+    sudo sed -i 's/^DEFAULT_FORWARD_POLICY=.*/DEFAULT_FORWARD_POLICY="ACCEPT"/' /etc/default/ufw
 fi
 
-# 1.2 Establecer las políticas de seguridad por defecto
-# La regla más segura es: "Prohibir que nadie entre desde fuera, pero permitir
-# que nuestros programas salgan a internet".
-# - 'deny incoming': Bloquea cualquier intento de conexión desde el exterior.
+# 3. Establecer las políticas de seguridad por defecto
+echo "ℹ️ Estableciendo políticas por defecto (Denegar entrada, permitir salida)..."
 sudo ufw default deny incoming
-# - 'allow outgoing': Permite que nuestro equipo navegue por internet, descargue cosas, etc.
 sudo ufw default allow outgoing
 
-# 1.3 Permitir y limitar el acceso por SSH
-# Configurable mediante variable de entorno SSH_ALLOWED_NETWORK
-SSH_ALLOWED_NETWORK="${SSH_ALLOWED_NETWORK:-192.168.1.0/24}"
-sudo ufw limit from "$SSH_ALLOWED_NETWORK" to any port ssh
+# 4. Reglas específicas para KVM y Podman
+echo "ℹ️ Permitiendo tráfico de interfaces virtuales (virbr0)..."
+sudo ufw route allow in on virbr0 2>/dev/null || true
+sudo ufw allow in on virbr0 2>/dev/null || true
 
-# 1.4 Activar el Firewall
-# Una vez definidas las reglas, encendemos el firewall. 
-# El parámetro '--force' evita que el comando nos pida confirmación manual,
-# lo que es ideal para scripts automáticos.
+# 5. Protección Anti Fuerza Bruta de SSH (Laptop Friendly - Funciona en cualquier Wi-Fi)
+echo "ℹ️ Aplicando rate-limit anti fuerza bruta para SSH (Port 22)..."
+sudo ufw limit ssh
+
+# 6. Permitir puerto de Cockpit (9090) con rate-limit
+if command -v cockpit-bridge &> /dev/null || [ -d /etc/cockpit ]; then
+    echo "ℹ️ Habilitando acceso protegido a la consola Cockpit (Puerto 9090)..."
+    sudo ufw limit 9090/tcp
+fi
+
+# 7. Activar UFW
+echo "ℹ️ Activando UFW Firewall..."
 sudo ufw --force enable
 
-# ==============================================================================
-# FIN DEL PROCESO
-# ==============================================================================
-echo "✅ Configuración de seguridad básica completada con éxito."
-echo "💡 Para DNS cifrado (DNS-over-TLS), ejecuta: ./Setup/seguridad-dot.sh"
+# 8. Configurar y habilitar Fail2ban
+echo "ℹ️ Habilitando servicio Fail2ban..."
+sudo systemctl enable --now fail2ban.service || true
+
+echo "================================================================="
+echo "✅ Configuración de seguridad adaptada a Desarrollador completada."
+echo "💡 KVM (virbr0), Podman y SSH funcionan con total seguridad en cualquier Wi-Fi."
+echo "================================================================="
