@@ -112,10 +112,15 @@ else
 fi
 
 echo "ℹ️ Aplicando localmodconfig (Recorta el kernel para compilar SOLO los módulos activos en tu portátil)..."
-yes "" | make localmodconfig
+yes "" | make localmodconfig > /dev/null 2>&1 || true
 
 # 5. Aplicar Optimizaciones x86_64-v3, Latencia Baja (1000Hz) y Preemption
 echo "ℹ️ Modificando parámetros de rendimiento en .config..."
+
+# Limpiar firmas/certificados propios de Debian para evitar errores en compilaciones de fuentes vanilla
+scripts/config --set-str CONFIG_SYSTEM_TRUSTED_KEYS ""
+scripts/config --set-str CONFIG_SYSTEM_REVOCATION_KEYS ""
+scripts/config --set-str CONFIG_MODULE_SIG_KEY ""
 
 # Desactivar CPU genérica y activar optimización nativa x86_64-v3
 scripts/config --disable CONFIG_GENERIC_CPU
@@ -134,8 +139,8 @@ scripts/config --set-val CONFIG_HZ 1000
 scripts/config --enable CONFIG_PREEMPT_DYNAMIC || scripts/config --enable CONFIG_PREEMPT
 scripts/config --enable CONFIG_TRANSPARENT_HUGEPAGE_ALWAYS
 
-# Preparar compilación
-make olddefconfig
+# Resolver cualquier nueva opción usando valores por defecto de forma silenciosa
+make olddefconfig > /dev/null
 
 # 6. Compilación Paralela
 echo "🚀 Iniciando compilación del Kernel Linux v${KERNEL_VER} con $CPU_CORES hilos..."
