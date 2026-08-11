@@ -22,11 +22,27 @@ else
     echo "⚠️ Advertencia: No se detectaron las instrucciones AVX2/BMI2. Se compilará para march=native."
 fi
 
-# Detectar última versión estable de Kernel.org vía API
-echo "ℹ️ Consultando la última versión estable oficial en kernel.org..."
-LATEST_KERNEL_VER=$(curl -s https://www.kernel.org/releases.json 2>/dev/null | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('latest_link', {}).get('version', '6.13.2'))" 2>/dev/null || echo "6.13.2")
+# Detectar serie del kernel actual y consultar última versión en kernel.org
+CURRENT_KERNEL_VER=$(uname -r)
+KERNEL_SERIES=$(echo "$CURRENT_KERNEL_VER" | grep -oE '^[0-9]+\.[0-9]+' || echo "6.12")
 
-echo "📌 Última versión estable disponible en kernel.org: v${LATEST_KERNEL_VER}"
+echo "ℹ️ Consultando kernel.org para la serie v${KERNEL_SERIES} (kernel activo: ${CURRENT_KERNEL_VER})..."
+LATEST_KERNEL_VER=$(curl -s https://www.kernel.org/releases.json 2>/dev/null | python3 -c "
+import sys, json
+series = '$KERNEL_SERIES'
+try:
+    data = json.load(sys.stdin)
+    releases = data.get('releases', [])
+    matches = [r['version'] for r in releases if r.get('version', '').startswith(series + '.')]
+    if matches:
+        print(matches[0])
+    else:
+        print(data.get('latest_stable', {}).get('version', '6.12.103'))
+except Exception:
+    print('6.12.103')
+" 2>/dev/null || echo "6.12.103")
+
+echo "📌 Última versión disponible en kernel.org para tu serie (v${KERNEL_SERIES}): v${LATEST_KERNEL_VER}"
 
 read -rp "Introduce la versión del kernel a compilar [Por defecto: ${LATEST_KERNEL_VER}]: " USER_KERNEL_VER || true
 KERNEL_VER="${USER_KERNEL_VER:-$LATEST_KERNEL_VER}"
