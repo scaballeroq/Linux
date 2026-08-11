@@ -18,6 +18,19 @@ else
 fi
 
 $SUDO apt-get update
-$SUDO apt-get install -y papirus-icon-theme 
+$SUDO apt-get install -y \
+    papirus-icon-theme \
+    adwaita-icon-theme \
+    adwaita-icon-theme-legacy \
+    gnome-themes-extra \
+    adwaita-qt \
+    adwaita-qt6
 
-echo "✅ Temas e iconos instalados correctamente."
+# Configuración de tema Adwaita Dark en gsettings
+if command -v gsettings &> /dev/null; then
+    echo "ℹ️ Configurando tema oscuro Adwaita (Dark)..."
+    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark' 2>/dev/null || true
+fi
+
+echo "✅ Temas e iconos instalados y configurados correctamente."
