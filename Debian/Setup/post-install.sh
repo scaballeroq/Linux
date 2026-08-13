@@ -15,10 +15,15 @@ echo "🚀 Iniciando configuración base y modernización de Debian ($CODENAME).
 echo "ℹ️ Configurando repositorios contrib, non-free, non-free-firmware y backports para $CODENAME..."
 
 sudo apt update
-sudo apt install -y software-properties-common curl ca-certificates gnupg lsb-release
+sudo apt install -y curl ca-certificates gnupg lsb-release
 
-# Habilitar contrib, non-free y non-free-firmware en repositorios existentes
-sudo apt-add-repository -y contrib non-free non-free-firmware 2>/dev/null || true
+# Habilitar contrib, non-free y non-free-firmware en repositorios existentes (soporte para formato clásico sources.list y DEB822 debian.sources)
+if [ -f /etc/apt/sources.list.d/debian.sources ]; then
+    sudo sed -i '/^Components:/ s/\bmain\b\(?!.*contrib\)/main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources 2>/dev/null || true
+fi
+if [ -f /etc/apt/sources.list ]; then
+    sudo sed -i '/^deb / s/\bmain\b\(?!.*contrib\)/main contrib non-free non-free-firmware/' /etc/apt/sources.list 2>/dev/null || true
+fi
 
 # Configurar repositorio de Backports
 BACKPORTS_FILE="/etc/apt/sources.list.d/backports.list"
