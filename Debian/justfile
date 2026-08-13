@@ -32,6 +32,10 @@ laptop:
 fingerprint:
     ./Setup/fingerprint-setup.sh
 
+# Configuración e instalación de impresora HP LaserJet Pro M15w (USB)
+printer:
+    ./Setup/hp-printer-setup.sh
+
 # Optimizaciones avanzadas de Debian (Sysctl, Distrobox)
 tuning:
     ./Setup/debian-tuning.sh

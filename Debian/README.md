@@ -37,6 +37,7 @@ Scripts de configuración del sistema operativo, personalización y endurecimien
 - **`post-install.sh`**: Script maestro de post-instalación (Habilita `contrib`, `non-free`, `non-free-firmware` y `backports`).
 - **`laptop-setup.sh`**: Optimización para portátiles de desarrollo (Touchpad, Bluetooth, `power-profiles-daemon`, `switcheroo-control`, HiDPI, VRR).
 - **`fingerprint-setup.sh`**: Configuración de desbloqueo y autenticación admin por huella dactilar (`fprintd`, PAM `sudo`, `polkit-1`, `pam-auth-update`).
+- **`hp-printer-setup.sh`**: Instalación y configuración de la impresora HP LaserJet Pro M15w vía USB (CUPS, HPLIP, plugin propietario y grupos `lp`/`lpadmin`).
 - **`debian-tuning.sh`**: Ajustes de Kernel (`sysctl`) y `distrobox`.
 - **`gnome-extensions.sh`**: Instalación automatizada de `gnome-browser-connector`, `extension-manager` y descarga limpia de 17 extensiones personalizadas de GNOME (ver [Guía de Extensiones GNOME](./Docs/gnome_extensions_es.md)).
 - **`apariencia.sh`**: Instalación de temas e iconos.
