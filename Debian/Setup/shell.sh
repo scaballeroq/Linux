@@ -3,12 +3,21 @@
 
 set -euo pipefail
 
-# Detectar codename de Debian
+# Detectar codename de Debian y si es Testing/Unstable/Forky
 CODENAME=$(grep '^VERSION_CODENAME=' /etc/os-release | cut -d= -f2 || echo "bookworm")
+IS_TESTING=false
+if [[ "$CODENAME" =~ ^(testing|sid|unstable|forky)$ ]] || grep -q -i -E "testing|unstable|sid|forky" /etc/os-release 2>/dev/null; then
+    IS_TESTING=true
+fi
 
-echo "ℹ️ Instalando utilidades de terminal modernas desde repositorios y backports..."
+APT_TARGET_FLAG=()
+if [ "$IS_TESTING" = false ]; then
+    APT_TARGET_FLAG=("-t" "${CODENAME}-backports")
+fi
+
+echo "ℹ️ Instalando utilidades de terminal modernas..."
 sudo apt update
-sudo apt install -y -t ${CODENAME}-backports \
+sudo apt install -y ${APT_TARGET_FLAG+"${APT_TARGET_FLAG[@]}"} \
     eza \
     bat \
     fzf \
