@@ -1,7 +1,7 @@
 #!/bin/bash
-# fonts.sh - Instalación de Fuentes de Desarrollo (Optimizado) para Kubuntu
+# fonts.sh - Instalación de Fuentes de Desarrollo (Optimizado) para Kubuntu (KDE Plasma)
 
-set -e
+set -euo pipefail
 
 # Directorio de destino
 FONT_DIR="$HOME/.local/share/fonts"
@@ -13,7 +13,8 @@ FONTS=("JetBrainsMono" "FiraCode" "CascadiaCode" "Meslo" "Hack")
 echo "ℹ️ Verificando e instalando Nerd Fonts..."
 
 for font in "${FONTS[@]}"; do
-    if ls "$FONT_DIR/$font"* &>/dev/null; then
+    # Verificación robusta: buscar archivos .ttf o .otf de la fuente
+    if find "$FONT_DIR" -maxdepth 1 -name "${font}*.{ttf,otf}" -print -quit 2>/dev/null | grep -q .; then
         echo "✅ $font ya está instalada. Saltando..."
     else
         echo "⬇️ Descargando $font..."
@@ -30,7 +31,7 @@ done
 find "$FONT_DIR" -name "*.txt" -delete
 find "$FONT_DIR" -name "*.md" -delete
 
-echo "ℹ️ Actualizando caché de fuentes..."
+echo "ℹ️ Actualizando caché de fuentes del sistema..."
 fc-cache -f
 
-echo "✅ Fuentes instaladas y actualizadas correctamente."
+echo "✅ Fuentes de desarrollo instaladas y actualizadas correctamente."

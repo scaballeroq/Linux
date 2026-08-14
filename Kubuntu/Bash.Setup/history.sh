@@ -1,39 +1,42 @@
+#!/bin/bash
 # =============================================================================
-# CONFIGURACIÓN DEL HISTORIAL (history.sh)
+# CONFIGURACIÓN DEL HISTORIAL (history.sh) - Kubuntu
 # =============================================================================
-# Controla cómo bash recuerda los comandos que escribes.
+# Este archivo optimiza cómo Bash almacena y maneja el historial de comandos,
+# aumentando su capacidad, evitando duplicados y guardando marcas de tiempo.
 
-# Cantidad de comandos a recordar en la sesión actual (memoria)
+# -----------------------------------------------------------------------------
+# 1. TAMAÑO Y CAPACIDAD
+# -----------------------------------------------------------------------------
+# Número de comandos recordados en memoria durante la sesión
 export HISTSIZE=10000
 
-# Cantidad de comandos a guardar en el archivo ~/.bash_history
+# Número de líneas guardadas permanentemente en el archivo ~/.bash_history
 export HISTFILESIZE=20000
 
-# Opciones de control:
-# ignoreboth: Combina 'ignorespace' y 'ignoredups'.
-#   - ignorespace: No guardar líneas que empiezan con un espacio.
-#   - ignoredups: No guardar el comando si es igual al anterior.
-# erasedups: Elimina duplicados anteriores en todo el historial para ahorrar espacio.
-export HISTCONTROL=ignoreboth:erasedups
+# -----------------------------------------------------------------------------
+# 2. COMPORTAMIENTO Y FILTRADO
+# -----------------------------------------------------------------------------
+# ignoredups: No guardar comandos si son iguales al anterior.
+# ignorespace: No guardar comandos que comiencen con un espacio (útil para contraseñas).
+export HISTCONTROL="ignoredups:ignorespace"
 
-# Formato de fecha para el comando 'history'.
-# Muestra: Año-Mes-Día Hora:Minuto:Segundo
-export HISTTIMEFORMAT="%F %T "
+# Formato de fecha y hora para cada comando en 'history' (AAAA-MM-DD HH:MM:SS)
+export HISTTIMEFORMAT="%F %T  "
 
-# Añadir al archivo de historial en lugar de sobrescribirlo al salir de la sesión.
-# Esto es vital para no perder historial al usar múltiples terminales.
+# Comandos comunes que no vale la pena registrar en el historial
+export HISTIGNORE="ls:ll:la:cd:pwd:exit:clear:c:h:history"
+
+# -----------------------------------------------------------------------------
+# 3. OPCIONES DE SHELL PARA HISTORIAL
+# -----------------------------------------------------------------------------
+# Añadir al historial en lugar de sobrescribirlo al cerrar la sesión
 shopt -s histappend
 
-# Guardar comandos multilínea como una sola entrada en el historial.
-# Facilita la lectura y edición posterior.
+# Guardar comandos multilínea en una sola entrada del historial
 shopt -s cmdhist
-
-# Lista de comandos a IGNORAR.
-# Estos comandos no se guardarán en el historial para mantenerlo limpio.
-# Se ignoran: ls, cd, pwd, exit, clear, history, comandos de job (bg/fg), etc.
-export HISTIGNORE="ls:ll:la:cd:pwd:exit:clear:history:bg:fg:..:..."
 
 # =============================================================================
 # MENSAJE DE CARGA
 # =============================================================================
-echo "✅ Historial configurado (10k/20k líneas, ignorar duplicados)"
+echo "✅ Historial configurado"

@@ -1,35 +1,35 @@
 ---
+title: Development Environments (IDEs)
 sidebar_position: 5
 ---
 
-# Integrated Development Environments (IDEs) on Kubuntu
+# Development Environments (IDEs) in Kubuntu
 
-This guide details the installation and configuration of the code editors and development environments managed in the `IDE` folder.
+This guide details the installation and configuration of editors and integrated development environments located in the `IDE` directory.
 
-The environment covers the modern terminal editor **Neovim** (boosted with LazyVim), the desktop editor **Visual Studio Code**, and developer integrations like **Google Antigravity**.
+The environment covers the modern terminal editor **Neovim** (powered by LazyVim), the desktop editor **Visual Studio Code**, the AI client **OpenCode**, and the full suite of **Google Antigravity Desktop / CLI / IDE Engine**.
 
 ---
 
-## 1. Neovim and LazyVim (`neovim.sh`)
+## 1. Neovim + LazyVim (`neovim.sh`)
 
-Installs and configures an ultra-fast, modular terminal editing environment using Neovim and the LazyVim pre-configured layout.
+Installs and configures an ultra-fast, modular editing environment in the terminal using Neovim and the pre-configured LazyVim distribution.
 
-1. **Neovim and Dependency Installation**:
+1. **Neovim and Dependencies Installation**:
    ```bash
    sudo apt update
    sudo apt install -y neovim gcc make g++ ripgrep fd-find xclip wl-copy git
    ```
-   *(Note: C/C++ compilers, ripgrep, and fd are installed since they are essential for fuzzy finders and LSP server operations inside Neovim).*
 
-2. **Command Compatibility Symlinks**:
-   Maps `fdfind` (Kubuntu/Ubuntu's package binary name) to `fd` in the user's local path:
+2. **Command Compatibility**:
+   Ensures `fdfind` is mapped to `fd` in the user's local bin path:
    ```bash
    mkdir -p ~/.local/bin
    [ -f /usr/bin/fdfind ] && ln -sf /usr/bin/fdfind ~/.local/bin/fd
    ```
 
-3. **LazyVim Deployment**:
-   Clones the official starter template to the user's config directory:
+3. **Deploy LazyVim**:
+   Clones the official starter template to the user configuration directory:
    ```bash
    git clone https://github.com/LazyVim/starter "$HOME/.config/nvim"
    rm -rf "$HOME/.config/nvim/.git"
@@ -39,22 +39,22 @@ Installs and configures an ultra-fast, modular terminal editing environment usin
 
 ## 2. Visual Studio Code (`vscode.sh`)
 
-Automates Visual Studio Code installation directly from Microsoft's official repositories to guarantee secure, automatic updates.
+Automates the installation of Visual Studio Code from official Microsoft repositories to guarantee secure automatic updates.
 
-1. **Initial Dependencies**:
+1. **Prerequisites**:
    ```bash
    sudo apt update
    sudo apt install -y wget gpg apt-transport-https
    ```
 
-2. **GPG Key Import**:
+2. **Import GPG Key**:
    ```bash
    wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
    sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
    rm -f packages.microsoft.gpg
    ```
 
-3. **Official Repository Registration**:
+3. **Register Official Repository**:
    ```bash
    sudo sh -c 'echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
    ```
@@ -67,35 +67,41 @@ Automates Visual Studio Code installation directly from Microsoft's official rep
 
 ---
 
-## 3. Google Antigravity CLI (`antigravity.sh`)
+## 3. Google Antigravity Desktop, CLI & IDE (`antigravity.sh`, `antigravity-cli.sh`, `antigravity-ide.sh`)
 
-Installs the corporate AI-assisted coding and developer CLI helper tool for Kubuntu/Ubuntu.
+Complete scripts for installing and updating the Google Antigravity AI development platform:
 
-1. **Keyring Setup and GPG Import**:
-   ```bash
-   sudo mkdir -p /etc/apt/keyrings
-   curl -fsSL https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg | \
-   sudo gpg --dearmor --yes -o /etc/apt/keyrings/antigravity-repo-key.gpg
-   ```
+- **Google Antigravity Desktop (`antigravity.sh`)**: Quick installer via Google Artifact Registry official repository or helper.
+- **Google Antigravity CLI (`antigravity-cli.sh`)**: Terminal CLI (`agy`) installer with integrity checks and `update-antigravity-cli` helper.
+- **Google Antigravity IDE Engine (`antigravity-ide.sh`)**: Standalone IDE engine installer with Chromium sandbox configuration and `update-antigravity-ide` helper.
 
-2. **Google Artifact Registry Repository Registration**:
-   ```bash
-   echo "deb [signed-by=/etc/apt/keyrings/antigravity-repo-key.gpg] https://us-central1-apt.pkg.dev/projects/antigravity-auto-updater-dev/ antigravity-debian main" | \
-   sudo tee /etc/apt/sources.list.d/antigravity.list > /dev/null
-   ```
+```bash
+just antigravity
+just antigravity-cli
+just antigravity-ide
+```
 
-3. **Tool Installation**:
-   ```bash
-   sudo apt update
-   sudo apt install -y antigravity
-   ```
+---
+
+## 4. OpenCode AI CLI/Editor (`opencode.sh`)
+
+Automated installation of OpenCode AI client with explicit version support (e.g. `v1.18.13`).
+
+```bash
+./IDE/opencode.sh
+# Or specify a version:
+./IDE/opencode.sh 1.18.13
+# Or using just:
+just opencode
+```
 
 ---
 
 ## Verification
 
-To verify that the code editors are working correctly:
+To check proper functionality:
 
-- **Neovim**: Run `nvim` in your terminal. On the first launch, it will automatically download and set up the default LazyVim plugins. Once done, you can run `:LazyHealth` to verify language servers (LSPs) and compilers.
-- **VS Code**: Run `code` in the terminal or search for "Visual Studio Code" in your desktop application drawer.
-- **Antigravity**: Confirm it responds properly by running `antigravity --version` or executing its assigned CLI commands.
+- **Neovim**: Run `nvim` in your terminal (or Konsole). On first launch, LazyVim plugins will download automatically. Run `:LazyHealth` to check LSP health.
+- **VS Code**: Run `code` or open it from the KDE Plasma application launcher.
+- **Google Antigravity**: Run `antigravity` or `agy --version`.
+- **OpenCode**: Run `opencode --version`.

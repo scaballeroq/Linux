@@ -2,24 +2,24 @@
 sidebar_position: 2
 ---
 
-# Configuración del Sistema en Kubuntu 26.04 LTS
+# System Configuration in Kubuntu (KDE Plasma)
 
-This guide details the base system setup, terminal optimization, essential software installation, multimedia support, and desktop user environment customization applied to a Kubuntu 26.04 LTS system.
+This guide details the base setup, terminal optimization, essential tool installations, multimedia support, hardware integrations, and user environment customizations for Kubuntu (KDE Plasma 6 / 5).
 
-These settings are automated through the scripts located in the `Setup` folder.
+All configurations are automated through scripts in the `Setup` directory.
 
 ---
 
 ## 1. Base Post-Installation (`post-install.sh`)
 
-Prepares the base system by configuring additional official repositories, installing essential software, and setting up hardware acceleration.
+Prepares the system by configuring additional official repositories, installing essential packages, and enabling hardware acceleration.
 
-1. **Base System Update**:
+1. **System update**:
    ```bash
    sudo apt update && sudo apt upgrade -y
    ```
 
-2. **Enabling Extra Repositories** (Universe, Multiverse, and Restricted):
+2. **Enable Extra Repositories** (Universe, Multiverse, and Restricted):
    ```bash
    sudo add-apt-repository -y universe
    sudo add-apt-repository -y multiverse
@@ -28,123 +28,110 @@ Prepares the base system by configuring additional official repositories, instal
    ```
 
 3. **Essential Software**:
-   Installs compilation utilities, system monitoring tools, and compatibility packages:
    - Compilation: `build-essential`, `cmake`
    - Monitoring: `btop`, `htop`, `inxi`
    - Utilities: `curl`, `fuse3`, `libfuse2t64`, `exfatprogs`, `p7zip`, `unrar`, `zip`, `unzip`, `bzip2`, `xz-utils`
    - Graphics & Multimedia: `vlc`, `gimp`, `gparted`
-   - Universal Packages: `flatpak`, `gnome-software-plugin-flatpak`
+   - Universal Packages: `flatpak`, `plasma-discover-backend-flatpak`
 
 4. **Multimedia Codecs and HW Acceleration**:
    ```bash
-   sudo apt install -y libavcodec-extra ffmpeg mesa-va-drivers mesa-vdpau-drivers
+   sudo apt install -y kubuntu-restricted-extras libavcodec-extra ffmpeg mesa-va-drivers mesa-vdpau-drivers
    ```
 
 ---
 
-## 2. Terminal and Shell Environment (`shell.sh`, `fastfetch.sh`, and `fonts.sh`)
+## 2. KDE Plasma Customization (`kde-settings.sh` & `apariencia.sh`)
 
-Installs modern console utilities, development fonts, and the Starship interactive prompt.
+Applies recommended configuration for KDE Plasma 6 / 5 via CLI:
+- **Night Color** set to 3500K.
+- **Breeze Dark theme** and **Papirus** / **Breeze** icon themes.
+- **Power Management**: Disables automatic suspend when connected to AC power.
+- **Global Terminal Shortcut**: Meta + T for Konsole.
 
-### Modern Terminal Utilities
-Modern alternatives to classic commands are installed:
-- `eza` (replaces `ls`)
-- `bat` (replaces `cat` with syntax highlighting)
-- `fzf` (fuzzy finder)
-- `zoxide` (smart replacement for `cd`)
-- `ripgrep` (`rg`, fast text search)
-- `fd-find` (`fd`, simple replacement for `find`)
-- `tealdeer` (`tldr`, simplified man pages/cheat sheets)
-- `duf` (visual replacement for `df`)
-- `du-dust` (`dust`, disk space visualizer)
-- `procs` (modern replacement for `ps`)
-
-To avoid naming conflicts in Kubuntu/Ubuntu, symbolic links are configured:
 ```bash
-mkdir -p ~/.local/bin
-ln -sf /usr/bin/batcat ~/.local/bin/bat
-ln -sf /usr/bin/fdfind ~/.local/bin/fd
+just kde
+just apariencia
 ```
+
+---
+
+## 3. Terminal & Shell Environment (`shell.sh`, `fastfetch.sh`, `fonts.sh`)
+
+Installs modern command line utilities, development typography, and the Starship prompt.
+
+### Modern Terminal Tools
+- `eza` (modern `ls` replacement)
+- `bat` (enhanced `cat` with syntax highlighting)
+- `fzf` (fuzzy finder)
+- `zoxide` (smart `cd` directory jumper)
+- `ripgrep` (`rg`, blazing fast text search)
+- `fd-find` (`fd`, simple and fast file search)
+- `tealdeer` (`tldr`, quick cheat sheets)
+- `duf` (visual disk usage tables)
+- `du-dust` (`dust`, graphical directory disk usage)
+- `procs` (modern process viewer)
 
 ### Starship Prompt
-Downloads and configures the latest version of the Starship prompt:
-```bash
-curl -sS https://starship.rs/install.sh | sh -s -- -y
-```
-The configuration is modular. If the system supports `.bashrc.d`, the file `~/.bashrc.d/starship.sh` is created:
-```bash
-# Starship Prompt Configuration
-eval "$(starship init bash)"
-```
-Additionally, the design configuration is copied from `Setup/starship.toml` to `~/.config/starship.toml`.
+Downloads and deploys the latest Starship prompt with custom configuration in `~/.config/starship.toml`.
 
-### Development Fonts (Nerd Fonts)
-Downloads and installs fonts optimized for programming and terminal symbols (`JetBrainsMono`, `FiraCode`, `CascadiaCode`, `Meslo`, and `Hack`):
-```bash
-# Automatic download and extraction to ~/.local/share/fonts
-# Refreshing font cache:
-fc-cache -f
-```
+### Nerd Fonts
+Installs top developer typefaces (`JetBrainsMono`, `FiraCode`, `CascadiaCode`, `Meslo`, `Hack`).
 
 ### Fastfetch
-Displays system information in an aesthetic and visual way upon terminal startup. Installs `fastfetch` and copies the custom configuration template `config.jsonc` to `~/.config/fastfetch/config.jsonc`.
+Displays aesthetic system details upon opening the terminal.
 
 ---
 
-## 3. Web Administration Panel Cockpit (`cockpit.sh`)
+## 4. Hardware and System Utilities
 
-Installs Cockpit to administer the server or local machine via a convenient web interface.
+### Native Firefox (.deb) (`firefox.sh`)
+Installs the official Mozilla APT repository version with APT Pinning (Pin-Priority 900) and removes the Snap package for optimal performance:
+```bash
+just firefox
+```
 
-1. **Cockpit and Extensions Installation**:
-   Installs support for package management, storage, networking, virtual machines (`cockpit-machines`), and containers (`cockpit-podman`):
-   ```bash
-   sudo apt install -y cockpit cockpit-podman cockpit-machines cockpit-packagekit cockpit-storaged cockpit-networkmanager
-   ```
+### Laptop Optimization (`laptop-setup.sh`)
+Enables battery savings (`power-profiles-daemon`), bluetooth, hybrid graphics, and touchpad gestures:
+```bash
+just laptop
+```
 
-2. **Socket Activation**:
-   To save system resources, Cockpit only starts when its port is accessed:
-   ```bash
-   sudo systemctl enable --now cockpit.socket
-   ```
+### Fingerprint Authentication (`fingerprint-setup.sh`)
+Configures `fprintd`, PAM for `sudo`, `polkit-1`, and SDDM lockscreen:
+```bash
+just fingerprint
+```
 
-3. **Firewall Rule**:
-   ```bash
-   sudo ufw allow 9090/tcp
-   ```
+### HP LaserJet Pro M15w Printer (`hp-printer-setup.sh`)
+Configures CUPS, HPLIP drivers, and proprietary HP plugin:
+```bash
+just printer
+```
 
----
-
-## 4. Multimedia Support and yt-dlp (`yt-dlp-setup.sh`)
-
-Configures tools for video downloads and digital audio processing.
-
-1. **yt-dlp and FFMPEG Installation**:
-   ```bash
-   sudo apt install -y yt-dlp ffmpeg
-   ```
-
-2. **Fast JS Decryption Engine**:
-   Installs Deno via `mise` (or system-wide NodeJS as a fallback) to allow `yt-dlp` to process platform JavaScript logic ultra-fast:
-   ```bash
-   mise use --global deno@latest
-   ```
+### Workspace Automount (`mount-workspace.sh`)
+Configures permanent automounting of `/home/caballero/Workspace` partition in `/etc/fstab`.
 
 ---
 
-## 5. Desktop Themes and Icons (`apariencia.sh`)
+## 5. Web Management Cockpit (`cockpit.sh`)
 
-Applies design packages for a clean and cohesive visual environment.
+Installs Cockpit with support for storage, network, KVM virtual machines (`cockpit-machines`), and containers (`cockpit-podman`):
+```bash
+just cockpit
+```
+Access locally at [https://localhost:9090](https://localhost:9090).
 
-1. **Icon Themes Installation**:
-   ```bash
-   sudo apt install -y papirus-icon-theme
-   ```
+---
+
+## 6. Multimedia and yt-dlp (`yt-dlp-setup.sh`)
+
+Installs `yt-dlp`, `ffmpeg`, and configures the JS engine (Deno) via `mise`.
 
 ---
 
 ## Verification
 
-To verify that the main components have been installed and configured correctly:
-
-- **Terminal and Utilities**: Open a new terminal. You should see the **Starship** prompt loaded and the **Fastfetch** summary displayed. Test utilities by running `eza` or `bat --version`.
-- **Cockpit**: Open your browser and go to [https://localhost:9090](https://localhost:9090). Log in with your Kubuntu system user credentials.
+- **Terminal**: Open a new Konsole window to see **Starship** and **Fastfetch**.
+- **KDE Plasma**: Confirm Breeze Dark and Night Color in System Settings.
+- **Cockpit**: Open [https://localhost:9090](https://localhost:9090).

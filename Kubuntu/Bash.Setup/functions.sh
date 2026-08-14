@@ -1,149 +1,133 @@
 #!/bin/bash
 # =============================================================================
-# FUNCIONES BASH (functions.sh)
+# ARCHIVO DE FUNCIONES AVANZADAS (functions.sh) - Kubuntu
 # =============================================================================
-# Colección de funciones y utilidades para potenciar la terminal.
-#
-# ÍNDICE:
-#   1. Navegación y Gestión de Archivos
-#   2. Sistema e Información
-#   3. Discos e Imágenes ISO
-#   4. Multimedia (Audio, Video, Imágenes)
-#   5. Aliases y Utiles
-#
-# USO:
-#   source /ruta/a/functions.sh
-# =============================================================================
-
-# =============================================================================
-# 1. NAVEGACIÓN Y GESTIÓN DE ARCHIVOS
-# =============================================================================
+# Colección de funciones de shell organizadas por categorías:
+# 1. Navegación y Directorios (mkcd, up)
+# 2. Gestión de Archivos y Archivos Comprimidos (extract, backup, compress)
+# 3. Monitorización e Inspección de Procesos (psgrep, duh, hg)
+# 4. Administración de Discos y Medios (iso2sd, format-drive)
+# 5. Multimedia y Conversión (webm2mp4, transcode-video-*, img2*)
 
 # -----------------------------------------------------------------------------
-# mkcd: Crear y entrar
+# 1. NAVEGACIÓN Y DIRECTORIOS
+# -----------------------------------------------------------------------------
+
+# mkcd: Crea un directorio y entra en él inmediatamente
 # Uso: mkcd <nombre_directorio>
-# -----------------------------------------------------------------------------
-# Crea un directorio (incluyendo padres si es necesario) y entra en él inmediatamente.
 mkcd() {
-    mkdir -p "$1" && cd "$1"
+  if [ -z "$1" ]; then echo "Uso: mkcd <directorio>"; return 1; fi
+  mkdir -p "$1" && cd "$1"
 }
 
-# -----------------------------------------------------------------------------
-# up: Subir niveles rápidamente
-# Uso: up [numero]
-# -----------------------------------------------------------------------------
-# Sube 'n' niveles en el árbol de directorios.
-# Ejemplo: 'up 3' equivale a 'cd ../../..'
-# Si no se da argumento, sube 1 nivel.
+# up: Sube N niveles en el árbol de directorios (por defecto 1)
+# Uso: up [numero_de_niveles] (Ej: up 3)
 up() {
-    local d=""
-    local limit=$1
-    for ((i=1 ; i <= limit ; i++)); do
-        d=$d/..
-    done
-    d=$(echo $d | sed 's/^\///')
-    if [ -z "$d" ]; then
-        d=..
-    fi
-    cd $d
+  local d=""
+  local limit=${1:-1}
+  for ((i=1; i<=limit; i++)); do
+    d="../$d"
+  done
+  cd "$d" || return
 }
 
 # -----------------------------------------------------------------------------
-# backup: Copia de seguridad rápida
-# Uso: backup <archivo>
+# 2. GESTIÓN DE ARCHIVOS Y COMPRESIÓN
 # -----------------------------------------------------------------------------
-# Crea una copia del archivo con extensión .bak y la fecha actual.
-# Ejemplo: archivo.txt -> archivo.txt.bak-20231220-120000
-backup() {
-    cp "$1"{,.bak-$(date +%Y%m%d-%H%M%S)}
-}
 
-# -----------------------------------------------------------------------------
-# extract: Extractor universal
-# Uso: extract <archivo_comprimido>
-# -----------------------------------------------------------------------------
-# Detecta automáticamente la extensión del archivo y usa el programa adecuado
-# para descomprimirlo. Simplifica no tener que recordar las flags de tar.
+# extract: Extractor universal multiformato
+# Uso: extract <archivo>
 extract() {
-    if [ -f "$1" ]; then
-        case "$1" in
-            *.tar.bz2)   tar xjf "$1"     ;;
-            *.tar.gz)    tar xzf "$1"     ;;
-            *.bz2)       bunzip2 "$1"     ;;
-            *.rar)       unrar x "$1"     ;;
-            *.gz)        gunzip "$1"      ;;
-            *.tar)       tar xf "$1"      ;;
-            *.tbz2)      tar xjf "$1"     ;;
-            *.tgz)       tar xzf "$1"     ;;
-            *.zip)       unzip "$1"       ;;
-            *.Z)         uncompress "$1"  ;;
-            *.7z)        7z x "$1"        ;;
-            *)           echo "'$1' no se puede extraer con esta función" ;;
-        esac
-    else
-        echo "'$1' no es un archivo válido"
-    fi
+  if [ -z "$1" ]; then echo "Uso: extract <archivo>"; return 1; fi
+  if [ -f "$1" ]; then
+    case "$1" in
+      *.tar.bz2)   tar xjf "$1"     ;;
+      *.tar.gz)    tar xzf "$1"     ;;
+      *.bz2)       bunzip2 "$1"     ;;
+      *.rar)       unrar x "$1"     ;;
+      *.gz)        gunzip "$1"      ;;
+      *.tar)       tar xf "$1"      ;;
+      *.tbz2)      tar xjf "$1"     ;;
+      *.tgz)       tar xzf "$1"     ;;
+      *.zip)       unzip "$1"       ;;
+      *.Z)         uncompress "$1"  ;;
+      *.7z)        7z x "$1"        ;;
+      *.tar.xz)    tar xf "$1"      ;;
+      *.tar.zst)   tar --zstd -xf "$1" ;;
+      *)           echo "❌ No se puede extraer '$1' con extract()" ;;
+    esac
+  else
+    echo "❌ '$1' no es un archivo válido"
+  fi
+}
+
+# backup: Crea una copia de seguridad rápida con fecha y hora
+# Uso: backup <archivo_o_directorio>
+backup() {
+  if [ -z "$1" ]; then echo "Uso: backup <archivo_o_directorio>"; return 1; fi
+  local target="${1%/}"
+  local timestamp
+  timestamp=$(date +%Y%m%d_%H%M%S)
+  cp -r "$target" "${target}.bak_${timestamp}"
+  echo "✅ Copia creada: ${target}.bak_${timestamp}"
+}
+
+# compress: Comprime rápidamente carpetas o archivos
+# Uso: compress <formato> <nombre_salida> <archivos...>
+# Formatos soportados: zip, tar, tar.gz, tar.bz2, tar.xz, 7z
+compress() {
+  if [ $# -lt 3 ]; then
+    echo "Uso: compress <formato: zip|tar.gz|tar.bz2|tar.xz|7z> <nombre_salida> <origen...>"
+    return 1
+  fi
+  local format="$1"
+  local output="$2"
+  shift 2
+
+  case "$format" in
+    zip)     zip -r "${output}.zip" "$@" ;;
+    tar.gz)  tar -czf "${output}.tar.gz" "$@" ;;
+    tar.bz2) tar -cjf "${output}.tar.bz2" "$@" ;;
+    tar.xz)  tar -cJf "${output}.tar.xz" "$@" ;;
+    7z)      7z a "${output}.7z" "$@" ;;
+    *)       echo "❌ Formato '$format' no soportado." ;;
+  esac
 }
 
 # -----------------------------------------------------------------------------
-# compress: Comprimir directorio tar.gz
-# Uso: compress <nombre_directorio>
+# 3. MONITORIZACIÓN E INSPECCIÓN DE PROCESOS
 # -----------------------------------------------------------------------------
-# Comprime un directorio en formato .tar.gz
-compress() { 
-  tar -czf "${1%/}.tar.gz" "${1%/}"
-}
 
-# -----------------------------------------------------------------------------
-# decompress: Descomprimir tar.gz
-# Uso: decompress <archivo.tar.gz>
-# -----------------------------------------------------------------------------
-# Alias rápido para descomprimir archivos tar.gz
-alias decompress="tar -xzf"
-
-# =============================================================================
-# 2. SISTEMA E INFORMACIÓN
-# =============================================================================
-
-# -----------------------------------------------------------------------------
-# psgrep: Buscar procesos
-# Uso: psgrep <nombre_proceso>
-# -----------------------------------------------------------------------------
-# Muestra procesos que coincidan con el nombre, excluyendo el propio comando grep.
-# Muestra también la cabecera (VSZ...) para entender las columnas.
+# psgrep: Busca procesos por nombre excluyendo el propio grep
+# Uso: psgrep <termino_busqueda>
 psgrep() {
-    ps aux | grep -v grep | grep -i -e VSZ -e "$1"
+  if [ -z "$1" ]; then echo "Uso: psgrep <termino>"; return 1; fi
+  ps aux | grep -v grep | grep -i --color=auto "$1"
 }
 
-# -----------------------------------------------------------------------------
-# duh: Tamaño de disco legible
-# Uso: duh [directorio]
-# -----------------------------------------------------------------------------
-# Muestra el tamaño de los archivos/carpetas en el nivel actual, ordenados
-# de mayor a menor y en formato legible (MB, GB).
+# duh: Muestra los directorios más pesados del directorio actual
+# Uso: duh [numero_de_elementos] (Por defecto: 10)
 duh() {
-    du -h --max-depth=1 "$@" | sort -hr
+  local count="${1:-10}"
+  du -h --max-depth=1 2>/dev/null | sort -hr | head -n "$count"
 }
 
-# -----------------------------------------------------------------------------
-# hg: Grep en historial
-# Uso: hg <texto_a_buscar>
-# -----------------------------------------------------------------------------
-# Busca rápidamente un comando que usaste en el pasado dentro de tu historial.
+# hg: Busca en el historial de comandos usando fzf o grep
+# Uso: hg [termino_a_buscar]
 hg() {
-    history | grep "$1"
+  if command -v fzf &> /dev/null && [ -z "$1" ]; then
+    history | fzf --tac --reverse
+  else
+    history | grep -i --color=auto "${1:-}"
+  fi
 }
 
-# =============================================================================
-# 3. DISCOS E IMÁGENES ISO
-# =============================================================================
+# -----------------------------------------------------------------------------
+# 4. ADMINISTRACIÓN DE DISCOS Y MEDIOS
+# -----------------------------------------------------------------------------
 
-# -----------------------------------------------------------------------------
-# iso2sd: Grabar ISO a SD/USB
-# Uso: iso2sd <archivo_iso> <dispositivo_salida>
-# -----------------------------------------------------------------------------
-# Escribe una imagen ISO a un dispositivo (USB/SD) de forma segura pero destructiva.
-# ADVERTENCIA: Borra todos los datos del dispositivo destino.
+# iso2sd: Graba una imagen ISO en una memoria USB / tarjeta SD de forma segura
+# Uso: iso2sd <archivo.iso> <dispositivo> (Ej: iso2sd kubuntu.iso /dev/sdb)
 iso2sd() {
   if [ $# -ne 2 ]; then
     echo "Uso: iso2sd <archivo_iso> <dispositivo_salida>"
@@ -151,151 +135,109 @@ iso2sd() {
     echo -e "\nDispositivos disponibles:"
     lsblk -d -o NAME | grep -E '^sd[a-z]' | awk '{print "/dev/"$1}'
     return 1
-  else
-    # Escribir ISO a dispositivo usando dd con buffer de 4M y sync
-    sudo dd bs=4M status=progress oflag=sync if="$1" of="$2"
-    sudo eject $2
   fi
-}
 
-# -----------------------------------------------------------------------------
-# format-drive: Formatear disco (exFAT)
-# Uso: format-drive <dispositivo> <nombre_etiqueta>
-# -----------------------------------------------------------------------------
-# Formatea un disco completo con sistema de archivos exFAT (compatible Win/Mac/Linux).
-# ADVERTENCIA: Destruye tabla de particiones y todos los datos.
-format-drive() {
-  if [ $# -ne 2 ]; then
-    echo "Uso: format-drive <dispositivo> <nombre>"
-    echo "Ejemplo: format-drive /dev/sda 'Mi USB'"
-    lsblk -d -o NAME -n | awk '{print "/dev/"$1}'
+  local iso="$1"
+  local dev="$2"
+
+  if [ ! -f "$iso" ]; then
+    echo "❌ Error: El archivo ISO '$iso' no existe."
     return 1
   fi
 
-  echo "⚠️  ADVERTENCIA: Se borrarán TODOS los datos en $1 y se formateará como exFAT ('$2')"
-  read -rp "¿Continuar? (s/N): " confirm
+  if [ ! -b "$dev" ]; then
+    echo "❌ Error: '$dev' no es un dispositivo de bloques válido."
+    return 1
+  fi
 
-  if [[ "$confirm" =~ ^[Ss]$ ]]; then
-    echo "🗑️  Limpiando y creando partición GPT..."
-    sudo wipefs -a "$1"
-    sudo dd if=/dev/zero of="$1" bs=1M count=100 status=progress
-    sudo parted -s "$1" mklabel gpt
-    sudo parted -s "$1" mkpart primary 1MiB 100%
-
-    # Detectar partición (sda1 vs nvme0n1p1)
-    partition="$([[ $1 == *"nvme"* ]] && echo "${1}p1" || echo "${1}1")"
-    sudo partprobe "$1" || true
-    sudo udevadm settle || true
-
-    echo "💾 Formateando..."
-    sudo mkfs.exfat -n "$2" "$partition"
-    echo "✅ Listo: $1 ($2)"
+  echo "⚠️ ¡ATENCIÓN! Se van a borrar todos los datos en $dev."
+  echo "Dispositivo seleccionado:"
+  lsblk "$dev"
+  read -p "¿Estás completamente seguro de continuar? (escribe 'si' en mayúsculas/minúsculas): " -r confirm
+  if [[ "$confirm" =~ ^[sS][iI]$ ]]; then
+    echo "ℹ️ Desmontando particiones del dispositivo..."
+    sudo umount "${dev}"* 2>/dev/null || true
+    echo "ℹ️ Escribiendo ISO con dd (esto puede tardar unos minutos)..."
+    sudo dd if="$iso" of="$dev" bs=4M status=progress oflag=sync
+    echo "ℹ️ Sincronizando buffers de disco..."
+    sync
+    echo "✅ Grabación completada correctamente."
   else
-    echo "❌ Cancelado"
+    echo "❌ Operación cancelada por el usuario."
   fi
 }
 
-# =============================================================================
-# 4. MULTIMEDIA (AUDIO, VIDEO, IMÁGENES)
-# =============================================================================
+# format-drive: Formatea un disco en FAT32, NTFS, EXT4 o EXFAT de forma guiada
+# Uso: format-drive <dispositivo> <sistema_archivos: fat32|ntfs|ext4|exfat> <etiqueta>
+format-drive() {
+  if [ $# -lt 3 ]; then
+    echo "Uso: format-drive <dispositivo> <fat32|ntfs|ext4|exfat> <etiqueta>"
+    echo "Ejemplo: format-drive /dev/sdb1 ext4 MiDisco"
+    return 1
+  fi
+
+  local dev="$1"
+  local fstype="$2"
+  local label="$3"
+
+  if [ ! -b "$dev" ]; then echo "❌ Error: '$dev' no es un dispositivo válido."; return 1; fi
+
+  echo "⚠️ Se formateará $dev como $fstype con etiqueta '$label'."
+  read -p "¿Continuar? (s/N): " -r confirm
+  if [[ "$confirm" =~ ^[sS]$ ]]; then
+    sudo umount "$dev" 2>/dev/null || true
+    case "$fstype" in
+      fat32) sudo mkfs.vfat -F 32 -n "$label" "$dev" ;;
+      ntfs)  sudo mkfs.ntfs -f -L "$label" "$dev" ;;
+      ext4)  sudo mkfs.ext4 -L "$label" "$dev" ;;
+      exfat) sudo mkfs.exfat -n "$label" "$dev" ;;
+      *)     echo "❌ Sistema de archivos no soportado."; return 1 ;;
+    esac
+    echo "✅ Formateo completado."
+  fi
+}
 
 # -----------------------------------------------------------------------------
+# 5. MULTIMEDIA Y CONVERSIÓN
+# -----------------------------------------------------------------------------
+
 # webm2mp4: Convertir WebM a MP4
 # Uso: webm2mp4 <archivo.webm>
-# -----------------------------------------------------------------------------
-# Útil para convertir grabaciones de pantalla del sistema a un formato más compatible.
 webm2mp4() {
   if [ $# -ne 1 ]; then echo "Uso: webm2mp4 <archivo.webm>"; return 1; fi
   if ! command -v ffmpeg &> /dev/null; then echo "❌ Faltan dependencias: ffmpeg"; return 1; fi
-
   local input="$1"
-  local output="${input%.webm}.mp4"
-  # H.264 video, AAC audio, preset slow para mejor compresión
+  local output="${input%.*}.mp4"
   ffmpeg -i "$input" -c:v libx264 -preset slow -crf 22 -c:a aac -b:a 192k "$output"
+  echo "✅ Convertido a: $output"
 }
 
-# -----------------------------------------------------------------------------
-# transcode-video-1080p: Optimizar a 1080p (H.264)
-# Uso: transcode-video-1080p <video.mp4>
-# -----------------------------------------------------------------------------
-# Re-codifica video a 1080p usando H.264 (buena compatibilidad).
+# transcode-video-1080p: Recodificar video a H.264 1080p con buen ratio de compresión
+# Uso: transcode-video-1080p <entrada> <salida>
 transcode-video-1080p() {
-  if [ $# -ne 1 ]; then echo "Uso: transcode-video-1080p <video>"; return 1; fi
-  if ! command -v ffmpeg &> /dev/null; then echo "❌ Falta ffmpeg"; return 1; fi
-
-  echo "🎬 Transcodificando a 1080p..."
-  ffmpeg -i "$1" -vf scale=1920:1080 -c:v libx264 -preset fast -crf 23 -c:a copy "${1%.*}-1080p.mp4"
-  echo "✅ Terminado: ${1%.*}-1080p.mp4"
+  if [ $# -ne 2 ]; then echo "Uso: transcode-video-1080p <entrada> <salida.mp4>"; return 1; fi
+  ffmpeg -i "$1" -vf "scale=-2:1080" -c:v libx264 -crf 20 -preset medium -c:a aac -b:a 192k "$2"
 }
 
-# -----------------------------------------------------------------------------
-# transcode-video-4K: Optimizar a 4K (H.265)
-# Uso: transcode-video-4K <video.mp4>
-# -----------------------------------------------------------------------------
-# Usa codec H.265 (HEVC) para mejor compresión en resoluciones altas.
-transcode-video-4K() {
-  if [ $# -ne 1 ]; then echo "Uso: transcode-video-4K <video>"; return 1; fi
-  if ! command -v ffmpeg &> /dev/null; then echo "❌ Falta ffmpeg"; return 1; fi
-
-  echo "🎬 Transcodificando a 4K (H.265)..."
-  ffmpeg -i "$1" -c:v libx265 -preset slow -crf 24 -c:a aac -b:a 192k "${1%.*}-optimized.mp4"
-  echo "✅ Terminado: ${1%.*}-optimized.mp4"
+# transcode-video-720p: Recodificar video a H.264 720p optimizado para tamaño
+# Uso: transcode-video-720p <entrada> <salida>
+transcode-video-720p() {
+  if [ $# -ne 2 ]; then echo "Uso: transcode-video-720p <entrada> <salida.mp4>"; return 1; fi
+  ffmpeg -i "$1" -vf "scale=-2:720" -c:v libx264 -crf 23 -preset fast -c:a aac -b:a 128k "$2"
 }
 
-# -----------------------------------------------------------------------------
-# img2jpg: Optimizar imagen a JPG (Calidad Alta)
-# Uso: img2jpg <imagen>
-# -----------------------------------------------------------------------------
+# img2jpg / img2png: Conversión y optimización de imágenes (ImageMagick)
 img2jpg() {
-  if [ $# -lt 1 ]; then echo "Uso: img2jpg <imagen>"; return 1; fi
-  if ! command -v magick &> /dev/null; then echo "❌ Falta ImageMagick"; return 1; fi
-
-  local img="$1"; shift
-  echo "🖼️  Optimizando a JPG (Alta Calidad)..."
-  magick "$img" "$@" -quality 95 -strip "${img%.*}-optimized.jpg"
-  echo "✅ ${img%.*}-optimized.jpg"
+  if [ $# -ne 1 ]; then echo "Uso: img2jpg <imagen_origen>"; return 1; fi
+  magick "$1" -quality 85 "${1%.*}.jpg"
 }
 
-# -----------------------------------------------------------------------------
-# img2jpg-small: Optimizar imagen a JPG (Pequeño/Web)
-# Uso: img2jpg-small <imagen>
-# -----------------------------------------------------------------------------
-# Redimensiona a máximo 1080px de ancho y reduce calidad/tamaño para compartir.
-img2jpg-small() {
-  if [ $# -lt 1 ]; then echo "Uso: img2jpg-small <imagen>"; return 1; fi
-  if ! command -v magick &> /dev/null; then echo "❌ Falta ImageMagick"; return 1; fi
-
-  local img="$1"; shift
-  echo "🖼️  Optimizando a JPG (Web/Small)..."
-  magick "$img" "$@" -resize 1080x\> -quality 95 -strip "${img%.*}-optimized.jpg"
-  echo "✅ ${img%.*}-optimized.jpg"
-}
-
-# -----------------------------------------------------------------------------
-# img2png: Optimizar PNG
-# Uso: img2png <imagen>
-# -----------------------------------------------------------------------------
-# Compresión máxima sin pérdida para PNGs.
 img2png() {
-  if [ $# -lt 1 ]; then echo "Uso: img2png <imagen>"; return 1; fi
-  if ! command -v magick &> /dev/null; then echo "❌ Falta ImageMagick"; return 1; fi
-
-  local img="$1"; shift
-  echo "🖼️  Optimizando PNG..."
-  magick "$img" "$@" -strip -define png:compression-filter=5 \
-    -define png:compression-level=9 \
-    -define png:compression-strategy=1 \
-    -define png:exclude-chunk=all \
-    "${img%.*}-optimized.png"
-  echo "✅ ${img%.*}-optimized.png"
+  if [ $# -ne 1 ]; then echo "Uso: img2png <imagen_origen>"; return 1; fi
+  magick "$1" "${1%.*}.png"
 }
 
 # =============================================================================
 # MENSAJE DE CARGA
 # =============================================================================
-echo "✅ Funciones cargadas: 📂 Navegación, 💻 Sistema, 💾 Disco, 🎬 Multimedia"
-
-  # 📂 Navegación: mkcd, up, extract, backup, compress
-  # 💻 Sistema: psgrep, duh, hg
-  # 💾 Disco: iso2sd, format-drive
-  # 🎬 Multimedia: webm2mp4, transcode-video-*, img2*
+echo "✅ Funciones cargadas"

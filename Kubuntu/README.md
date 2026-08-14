@@ -1,89 +1,118 @@
-# 🔧 Kubuntu Environment Configuration
+# 🔧 Kubuntu Environment Configuration (KDE Plasma)
 
-Este repositorio contiene una colección organizada y modular de scripts de configuración para sistemas **Kubuntu** (enfocado en 26.04 LTS y posteriores). El objetivo es automatizar la puesta a punto de un entorno de desarrollo profesional, optimizado y estéticamente agradable.
+Este repositorio contiene una colección organizada, modular y automatizada de scripts de configuración para sistemas **Kubuntu** (enfocado en KDE Plasma 6 y 5 sobre Kubuntu 24.04 LTS, 24.10 y 26.04 LTS).
+
+El objetivo es automatizar completamente la puesta a punto de un entorno de desarrollo profesional, ultrarrápido, seguro y estéticamente pulido.
 
 ---
 
 ## 📂 Organización del Repositorio
 
-La configuración se ha reestructurado de forma modular para facilitar el mantenimiento y la legibilidad:
+La configuración está estructurada modularmente para facilitar el mantenimiento y la extensibilidad:
 
 ### 🐚 [Bash.Setup](./Bash.Setup/)
-El núcleo de la configuración de la terminal Bash.
-- **`aliases.sh`**: Atajos comunes para comandos frecuentemente utilizados.
-- **`environment.sh`**: Variables globales que afectan el comportamiento de la shell.
-- **`functions.sh`**: Colección de funciones avanzadas y utilidades.
-- **`desktop_settings.sh`**: Configuraciones de entorno para GNOME/KDE y aliases.
-- **`history.sh`**: Controla cómo bash recuerda los comandos.
-- **`options.sh`**: Configura el comportamiento interno de Bash mediante 'shopt' y 'bind'.
-- **`podman-functions.sh`**: Funciones para gestión simplificada de contenedores.
-- **`rclone_aliases.sh`**: Atajos para facilitar la sincronización en la nube.
-- **`yt-dlp_aliases.sh`**: Descargas multimedia optimizadas.
-
-### 🐳 [Podman](./Podman/)
-Scripts para instalar y desplegar servicios en contenedores Podman de forma aislada:
-- **Core**: `podman.sh` (Instalación principal en Kubuntu)
-- **Bases de Datos**: `podman-postgres.sh`, `podman-mysql.sh`, `podman-mongodb.sh`, `podman-redis.sh`
-- **Gestión y Monitoreo**: `podman-portainer.sh`, `podman-adminer.sh`, `podman-dozzle.sh`, `podman-grafana.sh`, `podman-prometheus.sh`, `podman-jaeger.sh`
-- **Infraestructura**: `podman-nginx.sh`, `podman-keycloak.sh`, `podman-rabbitmq.sh`, `podman-minio.sh`, `podman-mailhog.sh`, `podman-browserless.sh`
-- **Frameworks/CMS**: `podman-wordpress.sh`, `podman-storybook.sh`
+Núcleo modular de la terminal Bash cargado vía `~/.bashrc.d/`:
+- **`aliases.sh`**: Atajos para comandos frecuentes, Git, APT, utilidades Rust y virtualización.
+- **`desktop_settings.sh`**: Optimizaciones y atajos para KDE Plasma (Luz Nocturna, temas Breeze, energía).
+- **`environment.sh`**: Variables globales de entorno (`EDITOR`, `PATH`, personalización de `less` y `man`).
+- **`functions.sh`**: Colección de funciones utilitarias (backups, extracción multiformato, ISOs, multimedia).
+- **`history.sh`**: Historial persistente optimizado (10k/20k líneas, sin duplicados, con marcas de tiempo).
+- **`options.sh`**: Comportamiento avanzado de shell (`autocd`, `globstar`, corrección de typos).
+- **`podman-functions.sh`**: Funciones no colisionantes para gestión ágil de contenedores Podman.
+- **`rclone_aliases.sh`**: Atajos de sincronización, copia y simulación `--dry-run` para Google Drive y OneDrive.
+- **`yt-dlp_aliases.sh`**: Descargas multimedia en alta calidad con soporte para motor JS Deno.
 
 ### ⚙️ [Setup](./Setup/)
-Scripts de configuración del sistema operativo, personalización y endurecimiento:
-- **`post-install.sh`**: Script maestro de post-instalación para Kubuntu.
-- **`apariencia.sh`**: Instalación de temas e iconos.
-- **`cockpit.sh`**: Instalación y configuración de Cockpit (administración web).
-- **`fastfetch.sh`**: Información estética del sistema al inicio (Fastfetch).
-- **`fonts.sh`**: Instalación automatizada de fuentes de desarrollo (Nerd Fonts).
-- **`seguridad.sh`**: Endurecimiento (hardening) y configuración de UFW.
-- **`shell.sh`**: Herramientas modernas de terminal y prompt (Starship).
-- **`yt-dlp-setup.sh`**: Dependencias para manejo multimedia (yt-dlp, ffmpeg).
+Scripts de configuración del sistema operativo, hardware, personalización y endurecimiento:
+- **`post-install.sh`**: Configuración base del sistema, repositorios universe/multiverse, Flatpak con Discover y codecs.
+- **`kde-settings.sh`**: Personalización completa de KDE Plasma vía CLI (Breeze Dark, Night Color, atajo Meta+T).
+- **`apariencia.sh`**: Instalación de temas e iconos Papirus y Breeze.
+- **`firefox.sh`**: Instalador oficial de Firefox nativo `.deb` desde Mozilla APT con Pin-Priority 900 (sin Snap).
+- **`laptop-setup.sh`**: Optimización para portátiles en Kubuntu (energía, touchpad tap-to-click, bluetooth).
+- **`fingerprint-setup.sh`**: Autenticación por huella dactilar (fprintd, PAM, sudo, polkit, SDDM).
+- **`hp-printer-setup.sh`**: Instalación y configuración de impresora HP LaserJet Pro M15w (USB/CUPS/HPLIP).
+- **`mount-workspace.sh`**: Configuración de automontaje permanente de la partición Workspace en `/etc/fstab`.
+- **`cockpit.sh`**: Panel de administración web de alto rendimiento (Storage, KVM, Podman, Redes).
+- **`fastfetch.sh`** / **`config.jsonc`**: Resumen estético del sistema al abrir la terminal.
+- **`fonts.sh`**: Instalación de fuentes para desarrollo (Nerd Fonts: JetBrainsMono, FiraCode, CascadiaCode, Meslo, Hack).
+- **`seguridad.sh`**: Endurecimiento (hardening) del sistema mediante reglas seguras de UFW firewall.
+- **`shell.sh`** / **`starship.toml`**: Herramientas CLI modernas en Rust (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, etc.) y prompt Starship.
+- **`yt-dlp-setup.sh`**: Dependencias para procesamiento y descarga multimedia.
+
+### 🖥️ [Virtualizacion](./Virtualizacion/)
+- **`virtualization.sh`**: Entorno KVM/QEMU completo con Libvirt, Virt-Manager, bridge `br0`, drivers VirtIO y tuned.
+- **`notas_virtualizacion_kubuntu.md`**: Guía paso a paso y mejores prácticas de virtualización en Kubuntu.
 
 ### 💻 [IDE](./IDE/)
-- **`antigravity.sh`**: Instalación de la herramienta de Google Antigravity.
-- **`neovim.sh`**: Instalación de Neovim y LazyVim.
-- **`vscode.sh`**: Instalación de Visual Studio Code.
+- **`antigravity.sh`**: Google Antigravity Desktop.
+- **`antigravity-cli.sh`**: CLI de Google Antigravity (`agy`).
+- **`antigravity-ide.sh`**: Motor IDE de Google Antigravity.
+- **`opencode.sh`**: OpenCode AI CLI y Editor.
+- **`neovim.sh`**: Neovim modular potenciado con LazyVim y LSPs.
+- **`vscode.sh`**: Visual Studio Code desde el repositorio oficial de Microsoft.
 
 ### 🛠️ [Git](./Git/)
-- **`git.sh`**: Instalación y configuración de Git, Delta y Lazygit.
-- **`github-cli.sh`**: Instalación de GitHub CLI.
+- **`git.sh`**: Instalación y configuración de Git, Delta (diffs coloreados) y Lazygit (TUI).
+- **`github-cli.sh`**: Instalación y autenticación de GitHub CLI (`gh`).
 
 ### ⚡ [ProgrammingLanguages](./ProgrammingLanguages/)
-Gestión de entornos y runtimes de lenguajes usando **mise**.
+Gestión moderna de runtimes con **Mise**:
 - **`mise.sh`**: Instalador del gestor de versiones Mise.
-- **`angular.sh`**: Angular CLI.
+- **`nodejs.sh`**: Node.js LTS y activación de `pnpm` vía Corepack.
+- **`python.sh`**: Python 3.12 y herramientas pip.
+- **`rust.sh`**: Rust vía rustup y cargo-binstall.
 - **`dotnet.sh`**: .NET SDK.
+- **`java.sh`**: OpenJDK.
+- **`angular.sh`**: Angular CLI.
 - **`gemini.sh`**: Gemini CLI.
-- **`java.sh`**: OpenJDK (compatible con AutoFirma).
-- **`nodejs.sh`**: Node.js.
-- **`python.sh`**: Python.
-- **`rust.sh`**: Rust.
+
+### 🐳 [Podman](./Podman/)
+19 scripts modulares para desplegar servicios de desarrollo aislados:
+- **Core**: `podman.sh`
+- **Bases de Datos**: `podman-postgres.sh`, `podman-mysql.sh`, `podman-mongodb.sh`, `podman-redis.sh`
+- **Almacenamiento**: `podman-minio.sh`
+- **Monitoreo**: `podman-grafana.sh`, `podman-prometheus.sh`, `podman-jaeger.sh`, `podman-dozzle.sh`
+- **Administración**: `podman-portainer.sh`, `podman-adminer.sh`, `podman-keycloak.sh`
+- **Web & Testing**: `podman-nginx.sh`, `podman-wordpress.sh`, `podman-rabbitmq.sh`, `podman-mailhog.sh`, `podman-browserless.sh`, `podman-storybook.sh`
 
 ### 📦 [Apps](./Apps/) y 🎮 [Juegos](./Juegos/)
-- **`meld.sh`**: Herramienta de diff/merge visual.
-- **`steam.sh`**: Instalación de la plataforma de juegos Steam.
+- **`meld.sh`**: Herramienta visual de diff y merge.
+- **`steam.sh`**: Steam y compatibilidad Proton-GE vía Flatpak.
 
 ---
 
-## 🚀 Cómo empezar
+## 🚀 Uso con Justfile
 
-### 1. Clonar el repositorio
+El repositorio incluye un archivo [`justfile`](./justfile) para ejecutar cualquier configuración de forma rápida:
+
 ```bash
-git clone https://github.com/scaballeroq/Kubuntu.git
-cd Kubuntu
+# Configuración completa del sistema
+just setup-all
+
+# Tareas individuales
+just post-install    # Base del sistema y repositorios
+just kde             # Personalización de KDE Plasma 6 / 5
+just shell           # Terminal moderna (eza, bat, starship)
+just virtualization  # KVM / QEMU / Virt-Manager
+just firefox         # Firefox oficial .deb (sin snap)
+just ides            # Neovim, VS Code, Antigravity, OpenCode
+just languages       # Node, Python, Rust, .NET, Java
+just podman-base     # Podman rootless
 ```
 
-### 2. Configurar la Shell (Bash)
-Se recomienda el uso de un directorio `.bashrc.d/` para cargar los scripts de forma modular.
+---
+
+## 🐚 Configuración Manual de la Shell
+
+Para cargar los módulos de shell en cualquier sesión:
 
 ```bash
 mkdir -p ~/.bashrc.d
 ln -s $(pwd)/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
-Y añade lo siguiente a tu `~/.bashrc`:
+Añade esto a tu `~/.bashrc`:
 ```bash
-# Carga modular de scripts de Bash.Setup
 if [ -d "$HOME/.bashrc.d" ]; then
     for script in "$HOME/.bashrc.d"/*.sh; do
         [ -r "$script" ] && source "$script"
@@ -92,21 +121,6 @@ if [ -d "$HOME/.bashrc.d" ]; then
 fi
 ```
 
-### 3. Ejecutar Scripts de System Setup
-Puedes ejecutar scripts específicos según tu necesidad (asegúrate de darles permisos de ejecución):
-```bash
-chmod +x Setup/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/*.sh Git/*.sh
-./Setup/fonts.sh       # Instala Fuentes
-./ProgrammingLanguages/mise.sh # Instala Mise
-```
-
 ---
 
-## ✨ Características Principales
-- **Modularidad**: Cada componente y script es independiente.
-- **Estándares de Kubuntu**: Uso de repositorios oficiales, `apt` y configuraciones nativas de Ubuntu.
-- **Productividad**: Multiples alias y funciones precargadas (Podman, Git, Rclone).
-- **Actualizado**: Herramientas modernas como Fastfetch, Starship, Lazygit y Mise.
-
----
 *Mantenido por [caballero](https://github.com/scaballeroq)*

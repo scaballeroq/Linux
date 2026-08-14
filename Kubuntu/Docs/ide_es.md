@@ -1,4 +1,5 @@
 ---
+title: Entornos de Desarrollo (IDEs)
 sidebar_position: 5
 ---
 
@@ -6,11 +7,11 @@ sidebar_position: 5
 
 Esta guía detalla la instalación y configuración de los editores y entornos de desarrollo integrados presentes en la carpeta `IDE`.
 
-El entorno cubre el editor de consola moderno **Neovim** (potenciado con LazyVim), el editor de escritorio **Visual Studio Code** e integraciones de herramientas como **Google Antigravity**.
+El entorno cubre el editor de consola moderno **Neovim** (potenciado con LazyVim), el editor de escritorio **Visual Studio Code**, el cliente de IA **OpenCode** y la suite completa de **Google Antigravity Desktop / CLI / IDE Engine**.
 
 ---
 
-## 1. Neovim y LazyVim (`neovim.sh`)
+## 1. Neovim + LazyVim (`neovim.sh`)
 
 Instala y configura un entorno de edición ultrarrápido y modular en la terminal utilizando Neovim y la distribución preconfigurada LazyVim.
 
@@ -67,28 +68,33 @@ Automatiza la instalación del popular editor Visual Studio Code desde los repos
 
 ---
 
-## 3. Google Antigravity CLI (`antigravity.sh`)
+## 3. Google Antigravity Desktop, CLI e IDE (`antigravity.sh`, `antigravity-cli.sh`, `antigravity-ide.sh`)
 
-Instala la herramienta corporativa de inteligencia artificial y desarrollo de Google Antigravity para Kubuntu/Ubuntu.
+Scripts completos para la instalación y actualización de la plataforma de IA de Google Antigravity:
 
-1. **Configuración de Llaveros e Importación de GPG**:
-   ```bash
-   sudo mkdir -p /etc/apt/keyrings
-   curl -fsSL https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg | \
-   sudo gpg --dearmor --yes -o /etc/apt/keyrings/antigravity-repo-key.gpg
-   ```
+- **Google Antigravity Desktop (`antigravity.sh`)**: Instalador rápido vía repositorio oficial de Google Artifact Registry o helper automatizado.
+- **Google Antigravity CLI (`antigravity-cli.sh`)**: Instalador de la CLI de terminal (`agy`) con verificación de integridad y helper de actualización `update-antigravity-cli`.
+- **Google Antigravity IDE Engine (`antigravity-ide.sh`)**: Instalador independiente del motor IDE con sandbox de Chromium y helper `update-antigravity-ide`.
 
-2. **Añadir Repositorio de Google Artifact Registry**:
-   ```bash
-   echo "deb [signed-by=/etc/apt/keyrings/antigravity-repo-key.gpg] https://us-central1-apt.pkg.dev/projects/antigravity-auto-updater-dev/ antigravity-debian main" | \
-   sudo tee /etc/apt/sources.list.d/antigravity.list > /dev/null
-   ```
+```bash
+just antigravity
+just antigravity-cli
+just antigravity-ide
+```
 
-3. **Instalación de la herramienta**:
-   ```bash
-   sudo apt update
-   sudo apt install -y antigravity
-   ```
+---
+
+## 4. OpenCode AI CLI/Editor (`opencode.sh`)
+
+Instalación automatizada del cliente de IA OpenCode con control de versión explícito (ej. `v1.18.13`).
+
+```bash
+./IDE/opencode.sh
+# O especifica una versión:
+./IDE/opencode.sh 1.18.13
+# O usando just:
+just opencode
+```
 
 ---
 
@@ -96,6 +102,7 @@ Instala la herramienta corporativa de inteligencia artificial y desarrollo de Go
 
 Para comprobar el correcto funcionamiento de los editores:
 
-- **Neovim**: Ejecuta `nvim` en tu terminal. En la primera ejecución se descargarán e instalarán automáticamente los plugins de LazyVim. Una vez completado, puedes ejecutar `:LazyHealth` para evaluar el estado de tus LSPs y compiladores integrados.
-- **VS Code**: Ejecuta `code` o búscalo en el lanzador de aplicaciones del escritorio.
-- **Antigravity**: Verifica que responda correctamente ejecutando `antigravity --version` o ejecutando sus comandos CLI asignados.
+- **Neovim**: Ejecuta `nvim` en tu terminal (o Konsole). En la primera ejecución se descargarán automáticamente los plugins de LazyVim. Una vez completado, puedes ejecutar `:LazyHealth` para evaluar el estado de tus LSPs y compiladores integrados.
+- **VS Code**: Ejecuta `code` o búscalo en el menú de aplicaciones de KDE Plasma.
+- **Google Antigravity**: Ejecuta `antigravity` o `agy --version`.
+- **OpenCode**: Ejecuta `opencode --version`.

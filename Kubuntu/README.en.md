@@ -1,89 +1,118 @@
-# 🔧 Kubuntu Environment Configuration
+# 🔧 Kubuntu Environment Configuration (KDE Plasma)
 
-This repository contains an organized and modular collection of configuration scripts for **Kubuntu** systems (focused on 26.04 LTS and newer). The goal is to automate the setup of a professional, optimized, and aesthetically pleasing development environment.
+This repository contains an organized, modular, and automated collection of configuration scripts for **Kubuntu** systems (focused on KDE Plasma 6 and 5 across Kubuntu 24.04 LTS, 24.10, and 26.04 LTS).
+
+The goal is to fully automate the setup of a professional, ultra-fast, secure, and aesthetically refined development environment.
 
 ---
 
 ## 📂 Repository Organization
 
-The configuration has been restructured in a modular way to facilitate maintenance and readability:
+The project is structured modularly for maintainability and extensibility:
 
 ### 🐚 [Bash.Setup](./Bash.Setup/)
-The core of the Bash terminal configuration.
-- **`aliases.sh`**: Common shortcuts for frequently used commands.
-- **`environment.sh`**: Global environment variables that affect shell behavior.
-- **`functions.sh`**: Collection of advanced functions and utilities.
-- **`desktop_settings.sh`**: Environment configurations for GNOME/KDE and aliases.
-- **`history.sh`**: Controls how bash remembers commands.
-- **`options.sh`**: Configures internal Bash behavior using 'shopt' and 'bind'.
-- **`podman-functions.sh`**: Functions for simplified Podman container management.
-- **`rclone_aliases.sh`**: Shortcuts to facilitate cloud synchronization.
-- **`yt-dlp_aliases.sh`**: Optimized multimedia downloads.
-
-### 🐳 [Podman](./Podman/)
-Scripts to install and deploy services in isolated Podman containers:
-- **Core**: `podman.sh` (Main installation for Kubuntu)
-- **Databases**: `podman-postgres.sh`, `podman-mysql.sh`, `podman-mongodb.sh`, `podman-redis.sh`
-- **Management & Monitoring**: `podman-portainer.sh`, `podman-adminer.sh`, `podman-dozzle.sh`, `podman-grafana.sh`, `podman-prometheus.sh`, `podman-jaeger.sh`
-- **Infrastructure**: `podman-nginx.sh`, `podman-keycloak.sh`, `podman-rabbitmq.sh`, `podman-minio.sh`, `podman-mailhog.sh`, `podman-browserless.sh`
-- **Frameworks/CMS**: `podman-wordpress.sh`, `podman-storybook.sh`
+Modular Bash terminal core loaded via `~/.bashrc.d/`:
+- **`aliases.sh`**: Shortcuts for common commands, Git, APT, Rust tools, and virtualization.
+- **`desktop_settings.sh`**: KDE Plasma optimizations and shortcuts (Night Color, Breeze themes, power).
+- **`environment.sh`**: Global environment variables (`EDITOR`, `PATH`, styled `less`/`man`).
+- **`functions.sh`**: Utility functions (backups, universal extract, ISO burning, multimedia).
+- **`history.sh`**: Optimized persistent history (10k/20k lines, no duplicates, timestamps).
+- **`options.sh`**: Advanced shell behaviors (`autocd`, `globstar`, typo autocorrection).
+- **`podman-functions.sh`**: Non-colliding functions for streamlined Podman container management.
+- **`rclone_aliases.sh`**: Sync, copy, and `--dry-run` shortcuts for Google Drive and OneDrive.
+- **`yt-dlp_aliases.sh`**: High quality multimedia downloads with Deno JS engine support.
 
 ### ⚙️ [Setup](./Setup/)
-Scripts for operating system configuration, customization, and hardening:
-- **`post-install.sh`**: Master post-installation script for Kubuntu.
-- **`apariencia.sh`**: Installation of themes and icons.
-- **`cockpit.sh`**: Installation and configuration of Cockpit (web administration).
-- **`fastfetch.sh`**: Aesthetic system information on startup (Fastfetch).
-- **`fonts.sh`**: Automated installation of development fonts (Nerd Fonts).
-- **`seguridad.sh`**: System hardening and UFW configuration.
-- **`shell.sh`**: Modern terminal tools and prompt (Starship).
-- **`yt-dlp-setup.sh`**: Dependencies for multimedia handling (yt-dlp, ffmpeg).
+Operating system, hardware, customization, and hardening scripts:
+- **`post-install.sh`**: Base system setup, universe/multiverse repositories, Flatpak with Discover, and codecs.
+- **`kde-settings.sh`**: Complete KDE Plasma CLI customization (Breeze Dark, Night Color, Meta+T shortcut).
+- **`apariencia.sh`**: Papirus and Breeze icon and theme installations.
+- **`firefox.sh`**: Official native `.deb` Firefox from Mozilla APT with Pin-Priority 900 (no Snap).
+- **`laptop-setup.sh`**: Laptop optimizations for Kubuntu (power profiles, tap-to-click, bluetooth).
+- **`fingerprint-setup.sh`**: Fingerprint authentication (fprintd, PAM, sudo, polkit, SDDM).
+- **`hp-printer-setup.sh`**: HP LaserJet Pro M15w printer configuration (USB/CUPS/HPLIP).
+- **`mount-workspace.sh`**: Permanent and safe automounting for Workspace partition in `/etc/fstab`.
+- **`cockpit.sh`**: High-performance web administration suite (Storage, KVM, Podman, Network).
+- **`fastfetch.sh`** / **`config.jsonc`**: Aesthetic system summary on terminal launch.
+- **`fonts.sh`**: Developer Nerd Fonts (JetBrainsMono, FiraCode, CascadiaCode, Meslo, Hack).
+- **`seguridad.sh`**: System hardening with strict and container-friendly UFW firewall rules.
+- **`shell.sh`** / **`starship.toml`**: Modern Rust CLI utilities (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`) and Starship prompt.
+- **`yt-dlp-setup.sh`**: Multimedia processing and download dependencies.
+
+### 🖥️ [Virtualizacion](./Virtualizacion/)
+- **`virtualization.sh`**: Full KVM/QEMU environment with Libvirt, Virt-Manager, `br0` bridge, VirtIO drivers, and tuned.
+- **`notas_virtualizacion_kubuntu.md`**: Step-by-step virtualization guide and best practices for Kubuntu.
 
 ### 💻 [IDE](./IDE/)
-- **`antigravity.sh`**: Google Antigravity tool installation.
-- **`neovim.sh`**: Neovim and LazyVim installation.
-- **`vscode.sh`**: Visual Studio Code installation.
+- **`antigravity.sh`**: Google Antigravity Desktop.
+- **`antigravity-cli.sh`**: Google Antigravity CLI (`agy`).
+- **`antigravity-ide.sh`**: Google Antigravity IDE Engine.
+- **`opencode.sh`**: OpenCode AI CLI and Editor.
+- **`neovim.sh`**: Modular Neovim powered by LazyVim and LSPs.
+- **`vscode.sh`**: Visual Studio Code from the official Microsoft repository.
 
 ### 🛠️ [Git](./Git/)
-- **`git.sh`**: Git, Delta, and Lazygit installation and configuration.
-- **`github-cli.sh`**: GitHub CLI installation.
+- **`git.sh`**: Git, Delta (syntax-highlighted diffs), and Lazygit (TUI).
+- **`github-cli.sh`**: GitHub CLI (`gh`).
 
 ### ⚡ [ProgrammingLanguages](./ProgrammingLanguages/)
-Language environment and runtime management using **mise**.
-- **`mise.sh`**: Installation of the Mise version manager.
-- **`angular.sh`**: Angular CLI.
+Modern runtime management via **Mise**:
+- **`mise.sh`**: Mise version manager installer.
+- **`nodejs.sh`**: Node.js LTS and `pnpm` activation via Corepack.
+- **`python.sh`**: Python 3.12 and pip tooling.
+- **`rust.sh`**: Rust via rustup and cargo-binstall.
 - **`dotnet.sh`**: .NET SDK.
+- **`java.sh`**: OpenJDK.
+- **`angular.sh`**: Angular CLI.
 - **`gemini.sh`**: Gemini CLI.
-- **`java.sh`**: OpenJDK (compatible with AutoFirma).
-- **`nodejs.sh`**: Node.js.
-- **`python.sh`**: Python.
-- **`rust.sh`**: Rust.
+
+### 🐳 [Podman](./Podman/)
+19 modular scripts for isolated development service deployments:
+- **Core**: `podman.sh`
+- **Databases**: `podman-postgres.sh`, `podman-mysql.sh`, `podman-mongodb.sh`, `podman-redis.sh`
+- **Storage**: `podman-minio.sh`
+- **Monitoring**: `podman-grafana.sh`, `podman-prometheus.sh`, `podman-jaeger.sh`, `podman-dozzle.sh`
+- **Management**: `podman-portainer.sh`, `podman-adminer.sh`, `podman-keycloak.sh`
+- **Web & Testing**: `podman-nginx.sh`, `podman-wordpress.sh`, `podman-rabbitmq.sh`, `podman-mailhog.sh`, `podman-browserless.sh`, `podman-storybook.sh`
 
 ### 📦 [Apps](./Apps/) & 🎮 [Juegos](./Juegos/)
-- **`meld.sh`**: Visual diff/merge tool.
-- **`steam.sh`**: Steam gaming platform installation.
+- **`meld.sh`**: Visual diff and merge tool.
+- **`steam.sh`**: Steam and Proton-GE compatibility via Flatpak.
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Usage with Justfile
 
-### 1. Clone the repository
+Use [`justfile`](./justfile) to execute tasks quickly:
+
 ```bash
-git clone https://github.com/scaballeroq/Kubuntu.git
-cd Kubuntu
+# Complete system configuration
+just setup-all
+
+# Individual tasks
+just post-install    # Base system & repositories
+just kde             # KDE Plasma 6 / 5 customization
+just shell           # Modern terminal (eza, bat, starship)
+just virtualization  # KVM / QEMU / Virt-Manager
+just firefox         # Official .deb Firefox (no snap)
+just ides            # Neovim, VS Code, Antigravity, OpenCode
+just languages       # Node, Python, Rust, .NET, Java
+just podman-base     # Podman rootless
 ```
 
-### 2. Configure the Shell (Bash)
-Using a `.bashrc.d/` directory is recommended for loading scripts modularly.
+---
+
+## 🐚 Manual Shell Setup
+
+To source shell modules dynamically:
 
 ```bash
 mkdir -p ~/.bashrc.d
 ln -s $(pwd)/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
-And add the following to your `~/.bashrc`:
+Add this to `~/.bashrc`:
 ```bash
-# Modular loading of Bash.Setup scripts
 if [ -d "$HOME/.bashrc.d" ]; then
     for script in "$HOME/.bashrc.d"/*.sh; do
         [ -r "$script" ] && source "$script"
@@ -92,21 +121,6 @@ if [ -d "$HOME/.bashrc.d" ]; then
 fi
 ```
 
-### 3. Run System Setup Scripts
-You can run specific scripts according to your needs (make sure to give them execution permissions):
-```bash
-chmod +x Setup/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/*.sh Git/*.sh
-./Setup/fonts.sh       # Install Fonts
-./ProgrammingLanguages/mise.sh # Install Mise
-```
-
 ---
 
-## ✨ Key Features
-- **Modularity**: Each component and script is independent.
-- **Kubuntu Standards**: Use of official repositories, `apt`, and native Ubuntu configurations.
-- **Productivity**: Multiple pre-loaded aliases and functions (Podman, Git, Rclone).
-- **Up-to-date**: Modern tools like Fastfetch, Starship, Lazygit, and Mise.
-
----
 *Maintained by [caballero](https://github.com/scaballeroq)*

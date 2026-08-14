@@ -1,52 +1,44 @@
+#!/bin/bash
 # =============================================================================
-# OPCIONES DE LA SHELL (options.sh)
+# OPCIONES DE SHELL (options.sh) - Kubuntu
 # =============================================================================
-# Configura el comportamiento interno de Bash mediante 'shopt' y 'bind'.
+# Este archivo configura opciones de comportamiento de Bash (shopt) para
+# hacer la línea de comandos más intuitiva, rápida y tolerante a fallos.
 
 # -----------------------------------------------------------------------------
-# NAVEGACIÓN Y ERRORES
+# 1. NAVEGACIÓN INTELIGENTE
 # -----------------------------------------------------------------------------
+# Si escribes el nombre de un directorio sin 'cd', entra en él directamente.
+shopt -s autocd 2>/dev/null
 
-# cdspell: Intenta corregir pequeños errores tipográficos en los comandos cd.
-# Ej: 'cd Dcouments' -> te lleva a 'Documents'.
-shopt -s cdspell
+# Corrige errores tipográficos menores al escribir nombres de directorios en 'cd'.
+shopt -s cdspell 2>/dev/null
 
-# autocd: Permite entrar en un directorio escribiendo solo su nombre.
-# Ej: Escribir 'Downloads' hace 'cd Downloads'.
-shopt -s autocd
-
-# -----------------------------------------------------------------------------
-# EXPANSIÓN DE ARCHIVOS (GLOBBING)
-# -----------------------------------------------------------------------------
-
-# globstar: Habilita el uso de '**' para buscar de forma recursiva.
-# Ej: 'ls **/*.txt' busca archivos .txt en el directorio actual y subdirectorios.
-shopt -s globstar
+# Corrige errores tipográficos en variables de directorio durante autocompletado.
+shopt -s dirspell 2>/dev/null
 
 # -----------------------------------------------------------------------------
-# INTERFAZ Y VENTANA
+# 2. EXPANSIÓN DE PATRONES (GLOBBING)
 # -----------------------------------------------------------------------------
+# Permite usar '**' para buscar recursivamente en subdirectorios.
+shopt -s globstar 2>/dev/null
 
-# checkwinsize: Verifica el tamaño de la ventana después de cada comando.
-# Útil si redimensionas la terminal a menudo, para que el texto se ajuste bien.
-shopt -s checkwinsize
+# Los patrones de búsqueda no distinguen mayúsculas de minúsculas.
+shopt -s nocaseglob 2>/dev/null
 
 # -----------------------------------------------------------------------------
-# AUTOCOMPLETADO
+# 3. INTERACCIÓN Y TERMINAL
 # -----------------------------------------------------------------------------
+# Actualiza automáticamente las variables LINES y COLUMNS al redimensionar la ventana.
+shopt -s checkwinsize 2>/dev/null
 
-# completion-ignore-case: Ignorar mayúsculas/minúsculas al tabular.
-# Ej: Escribir 'cd doc<TAB>' completará 'Documents'.
-bind 'set completion-ignore-case on'
+# Comprueba si hay trabajos en segundo plano antes de salir de la shell.
+shopt -s checkjobs 2>/dev/null
 
-# show-all-if-ambiguous: Mostrar lista de opciones inmediatamente si hay varias,
-# en lugar de esperar a una segunda pulsación de TAB.
-bind 'set show-all-if-ambiguous on'
+# No intentar autocompletar en una línea vacía
+shopt -s no_empty_cmd_completion 2>/dev/null
 
-# colored-stats: Usar colores para mostrar lso tipos de archivos en las
-# sugerencias de autocompletado.
-bind 'set colored-stats on'
 # =============================================================================
 # MENSAJE DE CARGA
 # =============================================================================
-echo "✅ Opciones de Shell activadas (autocd, globstar, corrección errores...)"
+echo "✅ Opciones de Shell activadas"
