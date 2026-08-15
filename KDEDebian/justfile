@@ -72,13 +72,17 @@ fonts:
 kde:
     ./Setup/kde-settings.sh
 
-# Información estética del sistema (Fastfetch)
-fastfetch:
-    ./Setup/fastfetch.sh
+# Personalización avanzada y estética moderna (Klassy, Kvantum Fluent, Material You, Panel Colorizer, Tela Icons)
+kde-custom:
+    ./Setup/kde-plasma-customization.sh
 
 # Apariencia (Temas Breeze Dark, iconos Papirus e integración Qt/GTK)
 apariencia:
     ./Setup/apariencia.sh
+
+# Información estética del sistema (Fastfetch)
+fastfetch:
+    ./Setup/fastfetch.sh
 
 # Terminal Konsole translúcida con blur + integración en Dolphin
 konsole:

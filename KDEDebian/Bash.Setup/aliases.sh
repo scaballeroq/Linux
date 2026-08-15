@@ -9,6 +9,7 @@ alias ...='cd ../..'
 alias ....='cd ../../..'
 alias ~='cd ~'
 alias repos='cd ~/Workspace/Repositorios'
+alias kdebian='cd ~/Workspace/Repositorios/Linux/KDEDebian'
 
 # 2. MEJORAS DE 'LS' (USANDO EZA)
 if command -v eza &> /dev/null; then
