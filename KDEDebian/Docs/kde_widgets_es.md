@@ -4,7 +4,7 @@ sidebar_position: 10
 
 # Guía Completa de Widgets, Klipper y Personalización de KDE Plasma 6
 
-Esta guía detalla el ecosistema de **Widgets (Plasmoids)**, **KWin Scripts**, **Klipper** y herramientas auxiliares que se configuran de forma automatizada en **KDEDebian** a través del script [`Setup/kde-widgets.sh`](file:///home/caballero/Workspace/Respositorios/Linux/KDEDebian/Setup/kde-widgets.sh) y el comando `just widgets`.
+Esta guía detalla el ecosistema de **Widgets (Plasmoids)**, **KWin Scripts**, **Klipper** y herramientas auxiliares que se configuran de forma automatizada en **KDEDebian** a través del script [`Setup/kde-widgets.sh`](file:///home/caballero/Workspace/Repositorios/Linux/KDEDebian/Setup/kde-widgets.sh) y el comando `just widgets`.
 
 KDE Plasma 6 sobre Debian Testing (Trixie) ofrece una arquitectura modular extremadamente potente y eficiente, donde la mayoría de capacidades avanzadas (gestor de portapapeles, monitores de recursos, fondos dinámicos, control de audio por aplicación y mosaico de ventanas) están integradas de manera nativa sin sobrecargar el sistema.
 

@@ -3,9 +3,9 @@
 
 set -euo pipefail
 
-echo "ℹ️ Instalando Git y Git-Delta vía APT..."
+echo "ℹ️ Instalando Git y Delta vía APT..."
 sudo apt update
-sudo apt install -y git git-delta
+sudo apt install -y git delta
 
 # Configuración Global de Git
 echo "ℹ️ Aplicando configuración global de Git..."

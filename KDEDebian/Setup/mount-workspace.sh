@@ -6,7 +6,7 @@ set -euo pipefail
 TARGET_USER="${SUDO_USER:-$USER}"
 TARGET_HOME=$(eval echo "~$TARGET_USER")
 MOUNT_POINT="$TARGET_HOME/Workspace"
-KNOWN_UUID="3d81e6d2-6011-484a-8123-6bcf68f365ba"
+KNOWN_UUID="74A413DE-2268-4F03-998C-68A3ABA151CF"
 
 echo "🚀 Configurando montaje automático de la partición Workspace..."
 
