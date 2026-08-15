@@ -14,12 +14,12 @@ alias plasma-restart='systemctl --user restart plasma-plasmashell.service 2>/dev
 alias kwin-restart='systemctl --user restart plasma-kwin_wayland.service 2>/dev/null || qdbus org.kde.KWin /KWin reconfigure'
 
 # Luz Nocturna (Night Color)
-alias kde-night-light-on='kwriteconfig6 --file kwinrc --group NightColor --key Active true 2>/dev/null || true; qdbus org.kde.KWin /KWin reconfigure 2>/dev/null || true'
-alias kde-night-light-off='kwriteconfig6 --file kwinrc --group NightColor --key Active false 2>/dev/null || true; qdbus org.kde.KWin /KWin reconfigure 2>/dev/null || true'
+alias kde-night-light-on='(kwriteconfig6 --file kwinrc --group NightColor --key Active true 2>/dev/null || kwriteconfig5 --file kwinrc --group NightColor --key Active true 2>/dev/null || true); qdbus org.kde.KWin /ColorCorrect org.kde.kwin.ColorCorrect.setNightColorActive true 2>/dev/null || qdbus org.kde.KWin /KWin reconfigure 2>/dev/null || true'
+alias kde-night-light-off='(kwriteconfig6 --file kwinrc --group NightColor --key Active false 2>/dev/null || kwriteconfig5 --file kwinrc --group NightColor --key Active false 2>/dev/null || true); qdbus org.kde.KWin /ColorCorrect org.kde.kwin.ColorCorrect.setNightColorActive false 2>/dev/null || qdbus org.kde.KWin /KWin reconfigure 2>/dev/null || true'
 
-# Temas Claro / Oscuro
-alias kde-theme-dark='plasma-apply-colorscheme BreezeDark 2>/dev/null || true'
-alias kde-theme-light='plasma-apply-colorscheme BreezeLight 2>/dev/null || true'
+# Temas Claro / Oscuro (Brisa Oscuro / Brisa Claro)
+alias kde-theme-dark='plasma-apply-lookandfeel -a org.kde.breezedark.desktop 2>/dev/null || plasma-apply-colorscheme BreezeDark 2>/dev/null || true'
+alias kde-theme-light='plasma-apply-lookandfeel -a org.kde.breeze.desktop 2>/dev/null || plasma-apply-colorscheme BreezeLight 2>/dev/null || true'
 
 # Acceso rápido a módulos de Preferencias del Sistema (KCM)
 alias kde-settings='systemsettings'
