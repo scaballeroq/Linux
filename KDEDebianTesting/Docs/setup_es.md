@@ -93,12 +93,20 @@ just gnome
 
 ---
 
-## 6. Terminal Ptyxis e Integración con Nautilus (`ptyxis.sh`)
+## 6. Terminales Modernas (Ptyxis y Kitty)
 
-Instala y configura Ptyxis (el emulador moderno de GNOME) con perfil oscuro translúcido (85% de opacidad), sin scrollbar, atajo de teclado `Ctrl + Alt + T` e integración directa en Nautilus mediante `nautilus-open-any-terminal`.
+### Ptyxis (`ptyxis.sh`)
+Instala y configura Ptyxis (el emulador moderno para GNOME) con perfil oscuro translúcido (85% de opacidad), sin scrollbar, atajo de teclado `Ctrl + Alt + T` e integración directa en Nautilus mediante `nautilus-open-any-terminal`.
 
 ```bash
 just ptyxis
+```
+
+### Kitty (`kitty.sh`)
+Instala y configura Kitty (emulador acelerado por GPU) con perfil Catppuccin Mocha / Tokyo Night translúcido (85% opacidad) con efectos blur, tipografía JetBrainsMono Nerd Font, barra de pestañas Powerline inclinada y control dinámico de opacidad al vuelo (`Ctrl+Shift+A` + `M`/`L`/`1`).
+
+```bash
+just kitty
 ```
 
 ---

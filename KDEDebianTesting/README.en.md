@@ -26,6 +26,7 @@ Operating system setup, GNOME personalization, and security hardening:
 - **`gnome-settings.sh`**: Automated GNOME personalization via GSettings (Night Light at 3500K, 24h clock, window buttons, prefer dark theme, VRR).
 - **`gnome-extensions.sh`**: Clean, automated installation of 17 curated GNOME extensions with GSettings schema compilation (see [GNOME Extensions Guide](./Docs/gnome_extensions_en.md)).
 - **`ptyxis.sh`**: Modern Ptyxis terminal setup (85% translucent profile, no scrollbar, `Ctrl+Alt+T` shortcut, and Nautilus context menu integration).
+- **`kitty.sh`**: GPU-accelerated Kitty terminal setup with 85% opacity, blur effects, JetBrainsMono Nerd Font, and GNOME/Nautilus integration.
 - **`apariencia.sh`**: Themes, icons, and Qt/GTK style consistency (Adwaita-Dark and Papirus-Dark).
 - **`laptop-setup.sh`**: Development laptop optimizations (Touchpad gestures, Bluetooth, `power-profiles-daemon`, `switcheroo-control`, HiDPI, VRR on Wayland).
 - **`fingerprint-setup.sh`**: Fingerprint unlocking and PAM authentication (`fprintd`, `sudo`, `polkit-1`, `pam-auth-update`).
