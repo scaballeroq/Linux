@@ -1,0 +1,45 @@
+#!/bin/bash
+# laptop-setup.sh - Optimización para portátiles de desarrollo en Debian Testing + GNOME
+
+set -euo pipefail
+
+echo "🚀 Iniciando optimización para portátil de desarrollo en Debian Testing + GNOME..."
+
+# 1. Herramientas de Hardware y Conectividad
+echo "ℹ️ Instalando servicios de energía, bluetooth y gráficos híbridos..."
+sudo apt update
+sudo apt install -y \
+    power-profiles-daemon \
+    switcheroo-control \
+    bluez \
+    bluez-tools \
+    brightnessctl
+
+# Habilitar servicios clave de portátil
+echo "ℹ️ Habilitando servicios systemd para portátil..."
+sudo systemctl enable --now bluetooth.service || true
+sudo systemctl enable --now power-profiles-daemon.service || true
+sudo systemctl enable --now switcheroo-control.service || true
+
+# 2. Configuraciones de GSettings para Portátil (Touchpad, Pantalla y Energía)
+if [[ "${XDG_CURRENT_DESKTOP:-}" == *"GNOME"* ]] || command -v gsettings &>/dev/null; then
+    echo "ℹ️ Aplicando configuraciones de Touchpad y pantalla para GNOME..."
+
+    # Gestos y Touchpad
+    gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true 2>/dev/null || true
+    gsettings set org.gnome.desktop.peripherals.touchpad natural-scroll true 2>/dev/null || true
+    gsettings set org.gnome.desktop.peripherals.touchpad two-finger-scrolling-enabled true 2>/dev/null || true
+
+    # Escalado Fraccional y Tasa de Refresco Variable (VRR)
+    gsettings set org.gnome.mutter experimental-features "['scale-monitor-framebuffer', 'variable-refresh-rate']" 2>/dev/null || true
+
+    # Comportamiento de energía en batería
+    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'suspend' 2>/dev/null || true
+    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 1200 2>/dev/null || true
+    gsettings set org.gnome.desktop.privacy idle-delay 600 2>/dev/null || true
+fi
+
+echo "================================================================="
+echo "✅ Configuración de portátil para Debian Testing + GNOME aplicada correctamente."
+echo "💡 Recuerda reiniciar la sesión para que todos los cambios de GNOME entren en vigor."
+echo "================================================================="
