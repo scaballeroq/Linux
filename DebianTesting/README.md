@@ -26,6 +26,7 @@ Scripts de configuración del sistema operativo, personalización de GNOME y end
 - **`gnome-settings.sh`**: Personalización automatizada de GNOME vía GSettings (Luz nocturna a 3500K, reloj 24h, porcentaje de batería, botones de ventana, VRR).
 - **`gnome-extensions.sh`**: Instalación automatizada y limpia de 17 extensiones de GNOME Shell con compilación de esquemas (ver [Guía de Extensiones GNOME](./Docs/gnome_extensions_es.md)).
 - **`ptyxis.sh`**: Instalación y perfil moderno de Ptyxis (translúcido al 85%, sin scrollbar, atajo `Ctrl+Alt+T` e integración en Nautilus).
+- **`kitty.sh`**: Terminal Kitty acelerada por GPU con opacidad (85%), efectos blur, tipografía JetBrainsMono Nerd Font e integración con GNOME/Nautilus.
 - **`apariencia.sh`**: Instalación de temas e iconos (Adwaita-Dark, Papirus-Dark e integración visual GTK/Qt).
 - **`laptop-setup.sh`**: Optimización para portátiles de desarrollo (Touchpad, Bluetooth, `power-profiles-daemon`, `switcheroo-control`, HiDPI, VRR en Wayland).
 - **`fingerprint-setup.sh`**: Desbloqueo y autenticación por huella dactilar (`fprintd`, PAM para `sudo`, `polkit-1`, `pam-auth-update`).

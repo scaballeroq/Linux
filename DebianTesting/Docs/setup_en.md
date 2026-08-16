@@ -87,12 +87,20 @@ just gnome
 
 ---
 
-## 6. Ptyxis Modern Terminal & Nautilus Integration (`ptyxis.sh`)
+## 6. Modern Terminals (Ptyxis and Kitty)
 
+### Ptyxis (`ptyxis.sh`)
 Installs and configures Ptyxis with translucent dark styling (85% opacity), no scrollbar, global `Ctrl + Alt + T` shortcut, and Nautilus context menu integration via `nautilus-open-any-terminal`.
 
 ```bash
 just ptyxis
+```
+
+### Kitty (`kitty.sh`)
+Installs and configures GPU-accelerated Kitty terminal with Catppuccin Mocha / Tokyo Night dark theme, 85% background opacity with blur, JetBrainsMono Nerd Font typography, slanted powerline tab bar, and on-the-fly opacity adjustments (`Ctrl+Shift+A` + `M`/`L`/`1`).
+
+```bash
+just kitty
 ```
 
 ---

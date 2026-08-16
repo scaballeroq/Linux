@@ -77,6 +77,10 @@ fastfetch:
 ptyxis:
     ./Setup/ptyxis.sh
 
+# Terminal Kitty acelerada por GPU con tema oscuro y opacidad/blur
+kitty:
+    ./Setup/kitty.sh
+
 # Multimedia (yt-dlp, ffmpeg)
 yt-dlp:
     ./Setup/yt-dlp-setup.sh
