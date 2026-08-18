@@ -41,6 +41,8 @@ Scripts de configuración del sistema operativo, personalización de GNOME y end
 - **`seguridad.sh`**: Endurecimiento (hardening) con Firewall UFW.
 - **`seguridad-dot.sh`**: DNS-over-TLS mediante `systemd-resolved`.
 - **`shell.sh`**: Herramientas modernas de terminal (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`) y Starship prompt.
+- **`screensaver-setup.sh`**: Configuración de salvapantallas 3D/Matrix al bloquear la pantalla en GNOME.
+- **`plymouth-setup.sh`**: Instalación, configuración y selector de Splash Screen visual de arranque (Plymouth: BGRT UEFI OEM, Ceratopsian oficial Debian 13, Spinner y previsualización).
 - **`yt-dlp-setup.sh`**: Dependencias multimedia (yt-dlp, ffmpeg y motor JS Deno vía mise).
 
 ### 🐳 [Podman](./Podman/)
@@ -81,6 +83,7 @@ O ejecutar componentes de forma individual:
 just gnome        # Aplica configuración de GNOME vía GSettings
 just extensions   # Instala y compila las 17 extensiones de GNOME
 just ptyxis       # Instala y configura el emulador de terminal Ptyxis
+just plymouth     # Configura y activa el splash screen visual de arranque
 just ides         # Instala Neovim, VSCode, Antigravity y OpenCode
 just build-kernel # Compila un kernel Linux nativo x86_64-v3
 ```

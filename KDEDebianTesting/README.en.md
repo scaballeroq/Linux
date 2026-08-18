@@ -41,6 +41,8 @@ Operating system setup, GNOME personalization, and security hardening:
 - **`seguridad.sh`**: UFW Firewall hardening.
 - **`seguridad-dot.sh`**: DNS-over-TLS via `systemd-resolved`.
 - **`shell.sh`**: Modern CLI utilities (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`) and Starship prompt.
+- **`screensaver-setup.sh`**: 3D/Matrix screensaver upon locking GNOME session.
+- **`plymouth-setup.sh`**: Visual boot splash screen installer and theme selector (Plymouth: BGRT UEFI OEM, Debian 13 Ceratopsian, Spinner, and live desktop preview).
 - **`yt-dlp-setup.sh`**: Multimedia dependencies (yt-dlp, ffmpeg, and Deno JS engine via mise).
 
 ### 🐳 [Podman](./Podman/)
@@ -81,6 +83,7 @@ Or run individual components:
 just gnome        # Apply GNOME GSettings configuration
 just extensions   # Install and compile the 17 GNOME extensions
 just ptyxis       # Install and configure Ptyxis terminal emulator
+just plymouth     # Setup and activate graphical boot splash screen
 just ides         # Install Neovim, VSCode, Antigravity, and OpenCode
 just build-kernel # Compile a native x86_64-v3 Linux kernel
 ```

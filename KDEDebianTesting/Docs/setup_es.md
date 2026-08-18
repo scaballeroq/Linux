@@ -75,9 +75,23 @@ Instala `gnome-browser-connector`, `extension-manager` y descarga las 17 extensi
 just extensions
 ```
 
+## 5. Optimización para Portátiles y Brillo al 95% (`laptop-setup.sh`)
+
+Configura componentes esenciales para portátiles:
+- **Brillo automático al 95% al encender**: Registra un servicio systemd (`set-screen-brightness.service`) que fija el brillo de pantalla al 95% al iniciar el sistema y al iniciar sesión en GNOME.
+- **Gestión de energía**: Instala y activa `power-profiles-daemon` y `switcheroo-control` (gráficos híbridos).
+- **Herramientas de brillo**: Instala `brightnessctl` y utilidades de hardware.
+- **Touchpad y pantalla**: Tap-to-click, scroll natural, dos dedos, VRR y escalado fraccional.
+
+```bash
+./Setup/laptop-setup.sh
+# O usando just:
+just laptop
+```
+
 ---
 
-## 5. Personalización de GNOME vía GSettings (`gnome-settings.sh`)
+## 6. Personalización de GNOME vía GSettings (`gnome-settings.sh`)
 
 Configura de manera nativa y atomizada:
 - **Luz Nocturna (Night Light)** a 3500K.
@@ -93,7 +107,7 @@ just gnome
 
 ---
 
-## 6. Terminales Modernas (Ptyxis y Kitty)
+## 7. Terminales Modernas (Ptyxis y Kitty)
 
 ### Ptyxis (`ptyxis.sh`)
 Instala y configura Ptyxis (el emulador moderno para GNOME) con perfil oscuro translúcido (85% de opacidad), sin scrollbar, atajo de teclado `Ctrl + Alt + T` e integración directa en Nautilus mediante `nautilus-open-any-terminal`.
@@ -111,7 +125,7 @@ just kitty
 
 ---
 
-## 7. Salvapantallas 3D y Bloqueo (`screensaver-setup.sh`)
+## 8. Salvapantallas 3D y Bloqueo (`screensaver-setup.sh`)
 
 Instala la suite XScreenSaver con efectos 3D OpenGL (Matrix, Tuberías, Flurry), registra el demonio en autostart de GNOME y vincula el atajo `Super + L` para activar el salvapantallas animado al bloquear la pantalla.
 
@@ -121,7 +135,7 @@ just screensaver
 
 ---
 
-## 8. Entorno de Shell (`shell.sh`, `fastfetch.sh` y `fonts.sh`)
+## 9. Entorno de Shell (`shell.sh`, `fastfetch.sh` y `fonts.sh`)
 
 Instala utilidades modernas de consola (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`), tipografías para desarrollo (Nerd Fonts: JetBrainsMono, FiraCode, CascadiaCode) y el prompt interactivo Starship.
 
@@ -133,7 +147,7 @@ just fastfetch
 
 ---
 
-## 9. Panel de Administración Web Cockpit (`cockpit.sh`)
+## 10. Panel de Administración Web Cockpit (`cockpit.sh`)
 
 Instala Cockpit con módulos para administrar el equipo desde el navegador ([https://localhost:9090](https://localhost:9090)):
 - `cockpit-podman`: Gestión de contenedores Podman.
@@ -146,10 +160,35 @@ just cockpit
 
 ---
 
-## 10. Temas e Iconos de Escritorio (`apariencia.sh`)
+## 11. Temas e Iconos de Escritorio (`apariencia.sh`)
 
 Aplica temas e iconos Papirus-Dark y Adwaita, integrando visualmente aplicaciones GTK y Qt.
 
 ```bash
 just apariencia
 ```
+
+---
+
+## 12. Splash Screen Visual de Arranque (`plymouth-setup.sh`)
+
+Instala y activa Plymouth con soporte para múltiples temas oficiales y modernos (`bgrt`, `ceratopsian`, `spinner`, etc.), asegurando un arranque gráfico limpio y silencioso sin parpadeos.
+
+- **Instalar y activar tema recomendado (BGRT / Ceratopsian)**:
+  ```bash
+  just plymouth
+  # o ./Setup/plymouth-setup.sh
+  ```
+- **Listar todos los temas disponibles**:
+  ```bash
+  ./Setup/plymouth-setup.sh --list
+  ```
+- **Activar un tema específico**:
+  ```bash
+  ./Setup/plymouth-setup.sh ceratopsian
+  ```
+- **Previsualizar el splash screen en el escritorio**:
+  ```bash
+  ./Setup/plymouth-setup.sh --preview
+  ```
+
