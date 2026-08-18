@@ -144,3 +144,28 @@ Applies Papirus-Dark and Adwaita styling across GTK and Qt applications.
 ```bash
 just apariencia
 ```
+
+---
+
+## 11. Graphical Boot Splash (`plymouth-setup.sh`)
+
+Installs, configures, and activates Plymouth boot splash with support for multiple official and modern themes (`bgrt`, `ceratopsian`, `spinner`, etc.), ensuring a smooth, flicker-free startup.
+
+- **Install and activate default theme (BGRT / Ceratopsian)**:
+  ```bash
+  just plymouth
+  # or ./Setup/plymouth-setup.sh
+  ```
+- **List all available themes**:
+  ```bash
+  ./Setup/plymouth-setup.sh --list
+  ```
+- **Activate a specific theme**:
+  ```bash
+  ./Setup/plymouth-setup.sh ceratopsian
+  ```
+- **Preview splash screen on desktop**:
+  ```bash
+  ./Setup/plymouth-setup.sh --preview
+  ```
+

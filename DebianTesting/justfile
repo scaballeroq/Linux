@@ -1,8 +1,8 @@
 # DebianTesting Environment Configuration Justfile
 # (Debian Testing + GNOME)
 
-# Instala todo el entorno (Post-install, Workspace, Laptop, Fingerprint, Tuning, Extensions, Screensaver, Shell, Virtualización, Mise, Cockpit, etc.)
-setup-all: post-install workspace laptop fingerprint tuning extensions screensaver shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
+# Instala todo el entorno (Post-install, Workspace, Laptop, Fingerprint, Tuning, Extensions, Screensaver, Plymouth, Shell, Virtualización, Mise, Cockpit, etc.)
+setup-all: post-install workspace laptop fingerprint tuning extensions screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
     echo "🚀 Entorno completo de DebianTesting (Debian Testing + GNOME) configurado. Por favor, reinicia el sistema."
 
 # =============================================================================
@@ -44,6 +44,10 @@ extensions:
 # Configuración de salvapantallas 3D/Matrix al bloquear la pantalla
 screensaver:
     ./Setup/screensaver-setup.sh
+
+# Configuración y activación de Splash Screen visual de arranque (Plymouth: BGRT / Ceratopsian)
+plymouth:
+    ./Setup/plymouth-setup.sh
 
 # Utilidades de terminal y prompt (eza, bat, fzf, starship)
 shell:
