@@ -1,145 +1,82 @@
 #!/bin/bash
-# post-install.sh - Script maestro de post-instalación para Debian Testing (Trixie) con GNOME
-# (Configurado con ZRAM, Kernel rolling, Mesa, PipeWire y Suite GNOME)
+# post-install.sh - Despachador y selector inteligente de post-instalación para Debian Testing (Trixie) + GNOME
+# Detecta automáticamente la arquitectura de CPU (AMD Ryzen vs Intel Core) o permite selección manual
 
 set -euo pipefail
 
-# Detectar versión/codename de Debian
-CODENAME=$(grep '^VERSION_CODENAME=' /etc/os-release | cut -d= -f2 || true)
-if [ -z "$CODENAME" ]; then
-    CODENAME=$(lsb_release -sc 2>/dev/null || echo "trixie")
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+show_help() {
+    cat <<EOF
+🚀 Despachador de Post-Instalación para Debian Testing (Trixie) + GNOME
+
+Uso:
+  $0 [OPCIÓN]
+
+Opciones:
+  (sin argumentos)   Auto-detecta el procesador (AMD o Intel) y ejecuta el instalador correspondiente.
+  --amd, -a          Ejecuta la configuración optimizada para AMD Ryzen y Radeon Graphics.
+  --intel, -i        Ejecuta la configuración optimizada para Intel Core (Haswell/i7-4790) + Multimedia (Kodi/Streaming).
+  --help, -h         Muestra este mensaje de ayuda.
+
+Scripts independientes disponibles:
+  • Setup/post-install-amd.sh   -> Optimizado para AMD Ryzen (microcódigo AMD, RADV, Mesa)
+  • Setup/post-install-intel.sh -> Optimizado para Intel Core / HD Graphics (microcódigo Intel, i965 VA-API, Kodi, sin virtualización)
+EOF
+}
+
+# Procesar argumentos de línea de comandos
+if [ $# -gt 0 ]; then
+    case "$1" in
+        --amd|-a|amd)
+            echo "⚡ Opción manual seleccionada: AMD Ryzen"
+            exec "$SCRIPT_DIR/post-install-amd.sh"
+            ;;
+        --intel|-i|intel)
+            echo "⚡ Opción manual seleccionada: Intel Core / Media Center"
+            exec "$SCRIPT_DIR/post-install-intel.sh"
+            ;;
+        --help|-h|help)
+            show_help
+            exit 0
+            ;;
+        *)
+            echo "❌ Opción no reconocida: $1"
+            show_help
+            exit 1
+            ;;
+    esac
 fi
 
-echo "🚀 Iniciando configuración base y modernización de Debian Testing ($CODENAME) + GNOME..."
+# Auto-detección de procesador
+echo "🔍 Analizando procesador y arquitectura del sistema..."
+CPU_VENDOR=$(grep -m1 'vendor_id' /proc/cpuinfo | awk '{print $3}' || true)
+CPU_MODEL=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs || echo "Desconocido")
 
-# 1. Habilitar Repositorios Extra (Contrib, Non-Free, Non-Free-Firmware)
-echo "ℹ️ Configurando repositorios contrib, non-free y non-free-firmware para $CODENAME..."
+echo "💻 CPU Detectado: $CPU_MODEL (Vendor: $CPU_VENDOR)"
 
-sudo apt update
-sudo apt install -y curl ca-certificates gnupg lsb-release
-
-# Habilitar contrib, non-free y non-free-firmware en repositorios existentes (soporte para debian.sources DEB822 y sources.list clásico)
-if [ -f /etc/apt/sources.list.d/debian.sources ]; then
-    sudo sed -i '/^Components:/ s/\bmain\b\(?!.*contrib\)/main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources 2>/dev/null || true
+if [ "$CPU_VENDOR" == "AuthenticAMD" ]; then
+    echo "✅ Procesador AMD detectado. Ejecutando post-install-amd.sh..."
+    exec "$SCRIPT_DIR/post-install-amd.sh"
+elif [ "$CPU_VENDOR" == "GenuineIntel" ]; then
+    echo "✅ Procesador Intel detectado. Ejecutando post-install-intel.sh..."
+    exec "$SCRIPT_DIR/post-install-intel.sh"
+else
+    echo "⚠️ No se pudo determinar automáticamente el fabricante del procesador."
+    echo "¿Qué configuración deseas aplicar?"
+    echo "1) AMD Ryzen / Radeon Graphics"
+    echo "2) Intel Core / Intel HD Graphics (Haswell / Media Center)"
+    read -rp "Selecciona una opción (1 o 2): " CHOICE
+    case "$CHOICE" in
+        1)
+            exec "$SCRIPT_DIR/post-install-amd.sh"
+            ;;
+        2)
+            exec "$SCRIPT_DIR/post-install-intel.sh"
+            ;;
+        *)
+            echo "❌ Selección inválida. Abortando."
+            exit 1
+            ;;
+    esac
 fi
-if [ -f /etc/apt/sources.list ]; then
-    sudo sed -i '/^deb / s/\bmain\b\(?!.*contrib\)/main contrib non-free non-free-firmware/' /etc/apt/sources.list 2>/dev/null || true
-fi
-
-echo "ℹ️ Debian Testing ($CODENAME) detectado: Los paquetes y kernels más recientes se obtienen directamente de los repositorios principales."
-echo "ℹ️ Actualizando listas de paquetes de todos los repositorios..."
-sudo apt update
-sudo apt upgrade -y
-
-# 2. Compresión de Memoria ZRAM (Evita bloqueos del sistema al compilar)
-echo "ℹ️ Instalando y configurando SWAP comprimida en RAM (ZRAM con ZSTD)..."
-sudo apt install -y zram-tools 2>/dev/null || true
-if [ -f /etc/default/zramswap ]; then
-    sudo sed -i 's/^#*ALGORITHM=.*/ALGORITHM=zstd/' /etc/default/zramswap
-    sudo sed -i 's/^#*PERCENT=.*/PERCENT=50/' /etc/default/zramswap
-    sudo systemctl restart zramswap.service 2>/dev/null || true
-fi
-
-# 3. Kernel Linux y Firmware Oficial más reciente de Debian Testing
-echo "ℹ️ Instalando el Kernel Linux más reciente y Firmware..."
-sudo apt install -y \
-    linux-image-amd64 \
-    linux-headers-amd64 \
-    firmware-linux \
-    firmware-linux-nonfree \
-    firmware-misc-nonfree \
-    firmware-amd-graphics 2>/dev/null || sudo apt install -y linux-image-amd64 linux-headers-amd64 firmware-linux-nonfree 2>/dev/null || true
-
-sudo apt install -y intel-microcode amd64-microcode 2>/dev/null || true
-
-# 4. Stack Gráfico y Aceleración HW (Mesa / VA-API / VDPAU / Vulkan)
-echo "ℹ️ Instalando controladores gráficos Mesa y aceleración de hardware (VA-API / VDPAU / Vulkan)..."
-sudo apt install -y \
-    mesa-va-drivers \
-    mesa-vdpau-drivers \
-    mesa-utils \
-    va-driver-all \
-    vulkan-tools \
-    vainfo 2>/dev/null || sudo apt install -y mesa-va-drivers mesa-vdpau-drivers mesa-utils vainfo || true
-
-# 5. Codecs Multimedia y FFmpeg
-echo "ℹ️ Instalando FFmpeg y codecs multimedia de alto rendimiento..."
-sudo apt install -y \
-    ffmpeg \
-    libavcodec-extra \
-    gstreamer1.0-plugins-base \
-    gstreamer1.0-plugins-good \
-    gstreamer1.0-plugins-bad \
-    gstreamer1.0-plugins-ugly \
-    gstreamer1.0-libav 2>/dev/null || true
-
-# 6. Sistema de Audio de Alta Fidelidad (PipeWire + WirePlumber)
-echo "ℹ️ Habilitando servidor de audio moderno PipeWire y WirePlumber..."
-sudo apt install -y \
-    pipewire \
-    pipewire-alsa \
-    pipewire-pulse \
-    pipewire-jack \
-    wireplumber 2>/dev/null || true
-
-systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
-
-# 7. Entorno de Escritorio GNOME y Aplicaciones Base
-echo "ℹ️ Instalando componentes y utilidades base de GNOME..."
-sudo apt install -y \
-    gnome-core \
-    gnome-shell \
-    gnome-control-center \
-    gnome-tweaks \
-    gnome-terminal \
-    ptyxis \
-    nautilus \
-    file-roller \
-    gnome-text-editor \
-    gnome-calculator \
-    gnome-disk-utility \
-    gnome-system-monitor \
-    power-profiles-daemon \
-    switcheroo-control \
-    ffmpegthumbnailer \
-    evince \
-    seahorse 2>/dev/null || true
-
-# 8. Integración de Flatpak & Flathub en GNOME Software
-echo "ℹ️ Configurando Flatpak y Flathub para GNOME Software..."
-sudo apt install -y flatpak gnome-software gnome-software-plugin-flatpak 2>/dev/null || true
-flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
-
-# 9. Software Esencial de Sistema
-echo "ℹ️ Instalando utilidades esenciales para Debian..."
-sudo apt install -y \
-    build-essential \
-    cmake \
-    curl \
-    btop \
-    htop \
-    inxi \
-    fuse3 \
-    exfat-fuse \
-    exfatprogs \
-    vlc \
-    gimp \
-    gparted \
-    7zip \
-    p7zip-full \
-    unrar \
-    zip \
-    unzip \
-    bzip2 \
-    xz-utils \
-    fastfetch 2>/dev/null || true
-
-# 10. Limpieza de Paquetes Antiguos
-echo "ℹ️ Limpiando paquetes obsoletos..."
-sudo apt autoremove -y
-sudo apt clean
-
-echo "================================================================="
-echo "✅ Debian Testing ($CODENAME) + GNOME configurado con éxito."
-echo "💡 Se recomienda reiniciar el equipo para arrancar con el nuevo Kernel Linux, Mesa y ZRAM."
-echo "================================================================="
