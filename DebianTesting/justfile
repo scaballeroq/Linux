@@ -1,17 +1,33 @@
 # DebianTesting Environment Configuration Justfile
 # (Debian Testing + GNOME)
 
-# Instala todo el entorno (Post-install, Workspace, Laptop, Fingerprint, Tuning, Extensions, Screensaver, Plymouth, Shell, Virtualización, Mise, Cockpit, etc.)
+# Instala todo el entorno por defecto (Auto-detección de CPU / Portátil AMD)
 setup-all: post-install workspace laptop fingerprint tuning extensions screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
     echo "🚀 Entorno completo de DebianTesting (Debian Testing + GNOME) configurado. Por favor, reinicia el sistema."
+
+# Perfil completo para Portátil de desarrollo (AMD Ryzen + Huella + Virtualización)
+setup-laptop-amd: post-install-amd workspace laptop fingerprint tuning extensions screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
+    echo "🚀 Entorno Portátil AMD Ryzen configurado con éxito. Por favor, reinicia el sistema."
+
+# Perfil para Sobremesa Centro Multimedia (Intel Haswell / Media Center - Sin virtualización ni batería)
+setup-media-desktop: post-install-intel workspace tuning extensions screensaver plymouth shell security fonts gnome apariencia fastfetch ptyxis firefox kodi
+    echo "🚀 Entorno Sobremesa Intel Media Center configurado con éxito. Por favor, reinicia el sistema."
 
 # =============================================================================
 # CONFIGURACIÓN BASE DEL SISTEMA
 # =============================================================================
 
-# Configuración base post-instalación (Repositorios contrib, non-free, firmware, ZRAM, PipeWire, GNOME Suite)
+# Configuración base post-instalación (Auto-detección inteligente: AMD Ryzen vs Intel Core)
 post-install:
     ./Setup/post-install.sh
+
+# Configuración post-instalación para AMD Ryzen (Kernel, firmware-amd, RADV, Mesa, PipeWire, GNOME)
+post-install-amd:
+    ./Setup/post-install-amd.sh
+
+# Configuración post-instalación para Intel Haswell/Core (Kernel, intel-microcode, i965 VA-API, Kodi, PipeWire, GNOME)
+post-install-intel:
+    ./Setup/post-install-intel.sh
 
 # Automontaje permanente de la partición Workspace (/home/caballero/Workspace) en /etc/fstab
 workspace:
@@ -88,6 +104,10 @@ kitty:
 # Multimedia (yt-dlp, ffmpeg)
 yt-dlp:
     ./Setup/yt-dlp-setup.sh
+
+# Centro Multimedia (Kodi + complementos de streaming)
+kodi:
+    sudo apt update && sudo apt install -y kodi kodi-inputstream-adaptive kodi-inputstream-rtmp kodi-pvr-iptvsimple
 
 # =============================================================================
 # CONFIGURACIÓN DE RED Y VIRTUALIZACIÓN

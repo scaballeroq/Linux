@@ -22,7 +22,9 @@ El núcleo de la configuración de la terminal Bash:
 
 ### ⚙️ [Setup](./Setup/)
 Scripts de configuración del sistema operativo, personalización de GNOME y endurecimiento:
-- **`post-install.sh`**: Script maestro de post-instalación (Habilita `contrib`, `non-free`, `non-free-firmware`, ZRAM, PipeWire, Mesa y Suite GNOME).
+- **`post-install.sh`**: Despachador inteligente con detección automática de procesador (AMD vs Intel) y soporte para banderas CLI (`--amd`, `--intel`).
+- **`post-install-amd.sh`**: Post-instalación optimizada para procesadores **AMD Ryzen** y gráficos Radeon (microcódigo AMD, firmware GPU, RADV, Mesa, ZRAM, PipeWire, GNOME).
+- **`post-install-intel.sh`**: Post-instalación optimizada para equipos de sobremesa **Intel Core** (Haswell i7-4790 / HD Graphics 4600) dedicados a centro multimedia y streaming (microcódigo Intel, driver VA-API `i965`, codecs, Kodi, sin virtualización).
 - **`gnome-settings.sh`**: Personalización automatizada de GNOME vía GSettings (Luz nocturna a 3500K, reloj 24h, porcentaje de batería, botones de ventana, VRR).
 - **`gnome-extensions.sh`**: Instalación automatizada y limpia de 17 extensiones de GNOME Shell con compilación de esquemas (ver [Guía de Extensiones GNOME](./Docs/gnome_extensions_es.md)).
 - **`ptyxis.sh`**: Instalación y perfil moderno de Ptyxis (translúcido al 85%, sin scrollbar, atajo `Ctrl+Alt+T` e integración en Nautilus).
@@ -68,24 +70,32 @@ Ecosistema completo para contenedores Rootless y Systemd Quadlets:
 ---
 
 ## 🚀 Despliegue Rápido con Just
-
-Para ejecutar la instalación completa del sistema:
+ 
+Para ejecutar la instalación según el perfil de tu equipo:
 
 ```bash
 git clone https://github.com/scaballeroq/DebianTesting.git
 cd DebianTesting
 chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/install/*.sh Git/*.sh Juegos/*.sh
-just setup-all
+
+# Portátil de Desarrollo (AMD Ryzen + Huella + Virtualización):
+just setup-laptop-amd
+
+# Sobremesa Multimedia (Intel Haswell / Media Center + Kodi - Sin virtualización):
+just setup-media-desktop
 ```
 
 O ejecutar componentes de forma individual:
 ```bash
-just gnome        # Aplica configuración de GNOME vía GSettings
-just extensions   # Instala y compila las 17 extensiones de GNOME
-just ptyxis       # Instala y configura el emulador de terminal Ptyxis
-just plymouth     # Configura y activa el splash screen visual de arranque
-just ides         # Instala Neovim, VSCode, Antigravity y OpenCode
-just build-kernel # Compila un kernel Linux nativo x86_64-v3
+just post-install-amd    # Post-instalación exclusiva para AMD Ryzen
+just post-install-intel  # Post-instalación para Intel Media Center
+just kodi                # Instala Kodi y complementos de streaming
+just gnome               # Aplica configuración de GNOME vía GSettings
+just extensions          # Instala y compila las 17 extensiones de GNOME
+just ptyxis              # Instala y configura el emulador de terminal Ptyxis
+just plymouth            # Configura y activa el splash screen visual de arranque
+just ides                # Instala Neovim, VSCode, Antigravity y OpenCode
+just build-kernel        # Compila un kernel Linux nativo x86_64-v3
 ```
 
 ---
