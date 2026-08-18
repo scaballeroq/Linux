@@ -10,34 +10,48 @@ Configurations are automated via scripts located in the `Setup` directory.
 
 ---
 
-## 1. Base Post-Installation (`post-install.sh`)
+## 1. Base Post-Installation (`post-install.sh`, `post-install-amd.sh`, `post-install-intel.sh`)
 
-Prepares the base system by enabling additional official repositories, installing essential packages, PipeWire audio, GNOME desktop suite, and hardware acceleration.
+Prepares the base system by enabling additional official repositories (`contrib`, `non-free`, `non-free-firmware`), installing essential packages, ZRAM memory compression, PipeWire audio, GNOME suite, and tailored GPU/media acceleration.
 
-1. **System update**:
-   ```bash
-   sudo apt update && sudo apt upgrade -y
-   ```
+### Available Scripts:
 
-2. **Enable Extra Repositories** (Contrib, Non-Free, Non-Free-Firmware):
-   ```bash
-   sudo apt install -y curl ca-certificates gnupg lsb-release
-   # On Debian Testing, main repositories provide the newest packages directly
-   ```
+- **Smart Dispatcher (`post-install.sh`)**:
+  Automatically detects CPU vendor (`AuthenticAMD` vs `GenuineIntel`) or allows CLI flags:
+  ```bash
+  ./Setup/post-install.sh          # Auto-detection
+  ./Setup/post-install.sh --amd    # Force AMD mode
+  ./Setup/post-install.sh --intel  # Force Intel mode
+  ```
 
-3. **Essential Software and Utilities**:
-   - Compilation: `build-essential`, `cmake`
-   - Memory: `zram-tools` (ZRAM with ZSTD at 50%)
-   - Monitoring: `btop`, `htop`, `inxi`, `gnome-system-monitor`
-   - Utilities: `curl`, `fuse3`, `exfatprogs`, `p7zip-full`, `unrar`, `zip`, `unzip`, `bzip2`, `xz-utils`
-   - Graphics & Multimedia: `vlc`, `gimp`, `gparted`, `evince`, `seahorse`
-   - GNOME Environment: `gnome-core`, `gnome-shell`, `gnome-control-center`, `gnome-tweaks`, `ptyxis`, `nautilus`, `file-roller`, `gnome-text-editor`, `gnome-calculator`, `gnome-disk-utility`, `power-profiles-daemon`, `switcheroo-control`, `ffmpegthumbnailer`
-   - Universal Packages: `flatpak`, `gnome-software`, `gnome-software-plugin-flatpak`
+- **AMD Ryzen Profile (`post-install-amd.sh`)**:
+  Tailored for AMD Ryzen CPUs and Radeon Graphics:
+  - Microcode: `amd64-microcode`
+  - GPU Firmware: `firmware-amd-graphics`
+  - Graphics Stack: `mesa-va-drivers`, `mesa-vdpau-drivers`, `mesa-vulkan-drivers` (RADV), `radeontop`, `va-driver-all`.
+  ```bash
+  just post-install-amd
+  ```
 
-4. **Multimedia Codecs and HW Acceleration**:
-   ```bash
-   sudo apt install -y libavcodec-extra ffmpeg mesa-va-drivers mesa-vdpau-drivers vainfo vulkan-tools
-   ```
+- **Intel Core / Media Center Profile (`post-install-intel.sh`)**:
+  Tailored for Intel Core desktop PCs (specifically 4th Gen Haswell i7-4790 with Intel HD Graphics 4600) used as a media center for Kodi, Netflix, and Prime Video:
+  - Microcode: `intel-microcode`
+  - Video VA-API Acceleration: `i965-va-driver`, `i965-va-driver-shaders`, `intel-media-va-driver`, `intel-gpu-tools` (`intel_gpu_top`).
+  - Media & Streaming: `kodi`, `kodi-inputstream-adaptive`, `kodi-inputstream-rtmp`, `kodi-pvr-iptvsimple`, codecs `ffmpeg`, `libavcodec-extra`, `gstreamer1.0-*`.
+  - **No KVM Virtualization**: Stripped of virtualization overhead and laptop battery daemon to keep the media workstation lean and snappy.
+  ```bash
+  just post-install-intel
+  ```
+
+### Common Installed Packages:
+- **Compilation**: `build-essential`, `cmake`
+- **Memory**: `zram-tools` (ZRAM with ZSTD at 50%)
+- **Audio**: `pipewire`, `pipewire-alsa`, `pipewire-pulse`, `pipewire-jack`, `wireplumber`
+- **Monitoring**: `btop`, `htop`, `inxi`, `gnome-system-monitor`
+- **Utilities**: `curl`, `fuse3`, `exfatprogs`, `p7zip-full`, `unrar`, `zip`, `unzip`, `bzip2`, `xz-utils`
+- **Graphics & Multimedia**: `vlc`, `gimp`, `gparted`, `evince`, `seahorse`
+- **GNOME Suite**: `gnome-core`, `gnome-shell`, `gnome-control-center`, `gnome-tweaks`, `ptyxis`, `nautilus`, `file-roller`, `gnome-text-editor`, `gnome-calculator`, `gnome-disk-utility`, `power-profiles-daemon`, `ffmpegthumbnailer`
+- **Universal Packages**: `flatpak`, `gnome-software`, `gnome-software-plugin-flatpak` with Flathub repo.
 
 ---
 

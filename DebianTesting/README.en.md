@@ -22,7 +22,9 @@ The core of the Bash terminal configuration:
 
 ### ⚙️ [Setup](./Setup/)
 Operating system setup, GNOME personalization, and security hardening:
-- **`post-install.sh`**: Master post-installation script (Enables `contrib`, `non-free`, `non-free-firmware`, ZRAM, PipeWire, Mesa, and GNOME Desktop Suite).
+- **`post-install.sh`**: Smart dispatcher with automatic CPU vendor detection (AMD vs Intel) and CLI flags (`--amd`, `--intel`).
+- **`post-install-amd.sh`**: Post-installation optimized for **AMD Ryzen** CPUs and Radeon Graphics (AMD microcode, GPU firmware, RADV, Mesa, ZRAM, PipeWire, GNOME).
+- **`post-install-intel.sh`**: Post-installation optimized for **Intel Core** desktop PCs (Haswell i7-4790 / HD Graphics 4600) tailored for media center & streaming (Intel microcode, `i965` VA-API driver, codecs, Kodi, no virtualization).
 - **`gnome-settings.sh`**: Automated GNOME personalization via GSettings (Night Light at 3500K, 24h clock, window buttons, prefer dark theme, VRR).
 - **`gnome-extensions.sh`**: Clean, automated installation of 17 curated GNOME extensions with GSettings schema compilation (see [GNOME Extensions Guide](./Docs/gnome_extensions_en.md)).
 - **`ptyxis.sh`**: Modern Ptyxis terminal setup (85% translucent profile, no scrollbar, `Ctrl+Alt+T` shortcut, and Nautilus context menu integration).
@@ -69,23 +71,31 @@ Rootless container ecosystem and Systemd Quadlets:
 
 ## 🚀 Quick Deployment with Just
 
-To deploy the entire environment:
+To deploy the environment tailored to your machine profile:
 
 ```bash
 git clone https://github.com/scaballeroq/DebianTesting.git
 cd DebianTesting
 chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/install/*.sh Git/*.sh Juegos/*.sh
-just setup-all
+
+# Development Laptop (AMD Ryzen + Fingerprint + Virtualization):
+just setup-laptop-amd
+
+# Multimedia Desktop Workstation (Intel Haswell / Media Center + Kodi - No Virtualization):
+just setup-media-desktop
 ```
 
 Or run individual components:
 ```bash
-just gnome        # Apply GNOME GSettings configuration
-just extensions   # Install and compile the 17 GNOME extensions
-just ptyxis       # Install and configure Ptyxis terminal emulator
-just plymouth     # Setup and activate graphical boot splash screen
-just ides         # Install Neovim, VSCode, Antigravity, and OpenCode
-just build-kernel # Compile a native x86_64-v3 Linux kernel
+just post-install-amd    # Post-installation exclusively for AMD Ryzen
+just post-install-intel  # Post-installation for Intel Media Center
+just kodi                # Install Kodi and streaming plugins
+just gnome               # Apply GNOME GSettings configuration
+just extensions          # Install and compile the 17 GNOME extensions
+just ptyxis              # Install and configure Ptyxis terminal emulator
+just plymouth            # Setup and activate graphical boot splash screen
+just ides                # Install Neovim, VSCode, Antigravity, and OpenCode
+just build-kernel        # Compile a native x86_64-v3 Linux kernel
 ```
 
 ---

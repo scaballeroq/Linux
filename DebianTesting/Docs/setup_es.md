@@ -10,35 +10,52 @@ Las configuraciones están automatizadas a través de los scripts ubicados en la
 
 ---
 
-## 1. Post-Instalación Base (`post-install.sh`)
+## 1. Post-Instalación Base (`post-install.sh`, `post-install-amd.sh`, `post-install-intel.sh`)
 
-Prepara el sistema base configurando repositorios oficiales adicionales, instalando software esencial, PipeWire, la suite GNOME y aceleración por hardware.
+Prepara el sistema base configurando repositorios oficiales adicionales (`contrib`, `non-free`, `non-free-firmware`), instalando software esencial, ZRAM, PipeWire, la suite GNOME y la pila gráfica/multimedia optimizada según el fabricante de la CPU/GPU.
 
-1. **Actualización base del sistema**:
-   ```bash
-   sudo apt update && sudo apt upgrade -y
-   ```
+### Scripts disponibles:
 
-2. **Habilitación de repositorios Extra** (Contrib, Non-Free, Non-Free-Firmware):
-   ```bash
-   sudo apt install -y curl ca-certificates gnupg lsb-release
-   # En Debian Testing los repositorios principales entregan los paquetes más recientes directamente
-   ```
+- **Despachador Inteligente (`post-install.sh`)**:
+  Detecta automáticamente el procesador (`AuthenticAMD` vs `GenuineIntel`) o permite selección por banderas:
+  ```bash
+  ./Setup/post-install.sh          # Auto-detección
+  ./Setup/post-install.sh --amd    # Forzar modo AMD
+  ./Setup/post-install.sh --intel  # Forzar modo Intel
+  ```
 
-3. **Software Esencial y Utilidades**:
-   Instala utilidades de compilación, suite GNOME y monitorización:
-   - Compilación: `build-essential`, `cmake`
-   - Memoria: `zram-tools` (ZRAM con ZSTD al 50%)
-   - Monitorización: `btop`, `htop`, `inxi`, `gnome-system-monitor`
-   - Utilidades: `curl`, `fuse3`, `exfatprogs`, `p7zip-full`, `unrar`, `zip`, `unzip`, `bzip2`, `xz-utils`
-   - Gráficos y Multimedia: `vlc`, `gimp`, `gparted`, `evince`, `seahorse`
-   - Entorno GNOME y Aplicaciones: `gnome-core`, `gnome-shell`, `gnome-control-center`, `gnome-tweaks`, `ptyxis`, `nautilus`, `file-roller`, `gnome-text-editor`, `gnome-calculator`, `gnome-disk-utility`, `power-profiles-daemon`, `switcheroo-control`, `ffmpegthumbnailer`
-   - Paquetes universales: `flatpak`, `gnome-software`, `gnome-software-plugin-flatpak`
+- **Perfil AMD Ryzen (`post-install-amd.sh`)**:
+  Optimizado para procesadores AMD Ryzen y gráficos Radeon:
+  - Microcódigo: `amd64-microcode`
+  - Firmware GPU: `firmware-amd-graphics`
+  - Pila Gráfica: `mesa-va-drivers`, `mesa-vdpau-drivers`, `mesa-vulkan-drivers` (RADV), `radeontop`, `va-driver-all`.
+  ```bash
+  ./Setup/post-install-amd.sh
+  # O usando just:
+  just post-install-amd
+  ```
 
-4. **Codecs Multimedia y Aceleración HW**:
-   ```bash
-   sudo apt install -y libavcodec-extra ffmpeg mesa-va-drivers mesa-vdpau-drivers vainfo vulkan-tools
-   ```
+- **Perfil Intel Core / Media Center (`post-install-intel.sh`)**:
+  Optimizado para equipos de sobremesa con procesadores Intel Core (especialmente 4ª Gen Haswell i7-4790 y gráficos integrados Intel HD Graphics 4600) dedicados a centro multimedia y streaming (Kodi, Netflix, Prime Video):
+  - Microcódigo: `intel-microcode`
+  - Aceleración VA-API de vídeo: `i965-va-driver`, `i965-va-driver-shaders`, `intel-media-va-driver`, `intel-gpu-tools` (`intel_gpu_top`).
+  - Multimedia y Streaming: `kodi`, `kodi-inputstream-adaptive`, `kodi-inputstream-rtmp`, `kodi-pvr-iptvsimple`, codecs `ffmpeg`, `libavcodec-extra`, `gstreamer1.0-*`.
+  - **Sin virtualización KVM**: Excluye herramientas de virtualización y optimizaciones de batería de portátiles para mantener el sistema ligero y enfocado en multimedia.
+  ```bash
+  ./Setup/post-install-intel.sh
+  # O usando just:
+  just post-install-intel
+  ```
+
+### Paquetes Comunes Instalados:
+- **Compilación**: `build-essential`, `cmake`
+- **Memoria**: `zram-tools` (ZRAM con ZSTD al 50%)
+- **Audio**: `pipewire`, `pipewire-alsa`, `pipewire-pulse`, `pipewire-jack`, `wireplumber`
+- **Monitorización**: `btop`, `htop`, `inxi`, `gnome-system-monitor`
+- **Utilidades**: `curl`, `fuse3`, `exfatprogs`, `p7zip-full`, `unrar`, `zip`, `unzip`, `bzip2`, `xz-utils`
+- **Gráficos y Multimedia**: `vlc`, `gimp`, `gparted`, `evince`, `seahorse`
+- **Entorno GNOME**: `gnome-core`, `gnome-shell`, `gnome-control-center`, `gnome-tweaks`, `ptyxis`, `nautilus`, `file-roller`, `gnome-text-editor`, `gnome-calculator`, `gnome-disk-utility`, `power-profiles-daemon`, `ffmpegthumbnailer`
+- **Paquetes universales**: `flatpak`, `gnome-software`, `gnome-software-plugin-flatpak` con repositorio Flathub activo.
 
 ---
 
