@@ -1,6 +1,6 @@
 # Manual de Virtualización de Alto Rendimiento (KVM/QEMU) en Debian 13 (Trixie)
 
-Este manual detalla la configuración y optimización de **KVM / QEMU / virt-manager** para **Debian 13** con kernel optimizado `x86_64-v3`, audio nativo PipeWire y aceleración de hardware.
+Este manual detalla la configuración y optimización de **KVM / QEMU / virt-manager** para **Debian 13** con kernel optimizado `x86_64-v3`, aceleración de hardware y audio nativo.
 
 ---
 
@@ -11,10 +11,13 @@ Instalamos QEMU, libvirt, virt-manager, firmware UEFI (OVMF) con soporte TPM 2.0
 sudo apt update
 sudo apt install -y \
     qemu-system-x86 qemu-utils libvirt-daemon-system libvirt-clients \
-    virt-manager virt-viewer virtinst dnsmasq dmidecode vde2 \
+    virt-manager virt-viewer virtinst dnsmasq-base dmidecode \
     bridge-utils netcat-openbsd iptables nftables ovmf swtpm \
-    libosinfo-bin guestfs-tools tuned
+    libosinfo-bin guestfs-tools tuned acl polkitd
 ```
+
+> [!NOTE]
+> Usamos `dnsmasq-base` en vez de `dnsmasq` para que el demonio de sistema `dnsmasq` no capture el puerto 53 del host, permitiendo a `libvirt` gestionar su propia red NAT virtual (`virbr0`).
 
 ---
 
@@ -36,12 +39,8 @@ sudo modprobe vhost_vsock
 
 ---
 
-## 3. Integración de Sonido Nativo PipeWire (`/etc/libvirt/qemu.conf`)
-Para que las máquinas virtuales (Windows, macOS o Linux) reproduzcan audio directamente por el servidor PipeWire de tu usuario:
-```ini
-user = "caballero"
-group = "kvm"
-```
+## 3. Audio Nativo y Permisos QEMU
+Debian gestiona QEMU bajo el usuario `libvirt-qemu` y grupo `kvm`. El audio de las máquinas virtuales se canaliza de forma transparente hacia tu sesión de PipeWire/PulseAudio mediante el cliente SPICE/virt-manager.
 
 ---
 
@@ -61,9 +60,10 @@ curl -fsSL -o ~/Descargas/virtio-drivers/virtio-win.iso https://fedorapeople.org
 
 ---
 
-## 6. Sockets Modulares y Perfil Tuned (`virtual-host`)
+## 6. Sockets y Servicios de Libvirt y Perfil Tuned (`virtual-host`)
 ```bash
-sudo systemctl enable --now virtqemud.socket virtnetworkd.socket virtstoraged.socket
+sudo systemctl enable --now virtlogd.socket virtlockd.socket
+sudo systemctl enable --now libvirtd.socket libvirtd-ro.socket libvirtd-admin.socket
 sudo systemctl enable --now libvirtd.service
 sudo systemctl enable --now tuned.service
 sudo tuned-adm profile virtual-host
@@ -71,13 +71,22 @@ sudo tuned-adm profile virtual-host
 
 ---
 
-## 7. Permisos de Usuario y Directorio de Imágenes (ACL)
+## 7. Permisos de Usuario, Polkit y Directorio de Imágenes (ACL)
 
 ```bash
 sudo usermod -aG libvirt,kvm $USER
 sudo setfacl -R -m u:$USER:rwX /var/lib/libvirt/images
 sudo setfacl -d -m u:$USER:rwX /var/lib/libvirt/images
 export LIBVIRT_DEFAULT_URI="qemu:///system"
+```
+
+Regla de Polkit (`/etc/polkit-1/rules.d/80-libvirt.rules`):
+```javascript
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.libvirt.unix.manage" && subject.isInGroup("libvirt")) {
+        return polkit.Result.YES;
+    }
+});
 ```
 
 ---

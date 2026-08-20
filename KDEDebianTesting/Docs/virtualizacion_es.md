@@ -4,9 +4,9 @@ sidebar_position: 7
 
 # Entorno de Virtualización (KVM/QEMU) en Debian 13
 
-Esta guía detalla la instalación, configuración y optimización del entorno de virtualización de alto rendimiento presente en [`Virtualizacion/virtualization.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Debian/Virtualizacion/virtualization.sh).
+Esta guía detalla la instalación, configuración y optimización del entorno de virtualización de alto rendimiento presente en [`Virtualizacion/virtualization.sh`](file:///home/caballero/Workspace/Repositorios/Linux/DebianTesting/Virtualizacion/virtualization.sh).
 
-El esquema utiliza el hipervisor **KVM** y el emulador **QEMU**, con pasarela de audio nativa **PipeWire**, filtrado de paquetes **nftables**, aceleración por sockets **`vhost_vsock`** y virtualización anidada.
+El esquema utiliza el hipervisor **KVM** y el emulador **QEMU**, con integración de audio **PipeWire**, filtrado de paquetes **nftables**, aceleración por sockets **`vhost_vsock`** y virtualización anidada.
 
 ---
 
@@ -16,6 +16,8 @@ Instala el hipervisor KVM, QEMU, Virt-Manager, firmware UEFI (OVMF) con soporte 
 
 ```bash
 ./Virtualizacion/virtualization.sh
+# O mediante just:
+just virtualization
 ```
 
 ---
@@ -29,35 +31,24 @@ Instala el hipervisor KVM, QEMU, Virt-Manager, firmware UEFI (OVMF) con soporte 
 
 ---
 
-## 3. Pasarela de Audio Nativa PipeWire (`/etc/libvirt/qemu.conf`)
-
-Permite a las MVs de QEMU reproducir audio directamente por el servidor PipeWire de tu usuario de escritorio sin problemas de permisos ni necesidad de parches adicionales:
-
-```ini
-user = "caballero"
-group = "kvm"
-```
-
----
-
-## 4. Backend de Firewall Nftables (`/etc/libvirt/network.conf`)
+## 3. Backend de Firewall Nftables (`/etc/libvirt/network.conf`)
 
 Configura `firewall_backend = "nftables"` para alinearse con el framework nativo de filtrado de paquetes en Debian 13.
 
 ---
 
-## 5. Controladores VirtIO para Windows
+## 4. Controladores VirtIO para Windows
 
 Descarga automática de la ISO estable de Fedora `virtio-win.iso` a `~/Descargas/virtio-drivers/virtio-win.iso` para controladores de almacenamiento (`viostor`) y red (`NetKVM`).
 
 ---
 
-## 6. Sockets Modulares y Perfil Tuned (`virtual-host`)
+## 5. Sockets y Servicios de Libvirt y Perfil Tuned (`virtual-host`)
 
-Activa los servicios e interfaces por demanda para optimizar memoria RAM:
+Activa los servicios e interfaces de libvirt y el perfil de optimización del host:
 
 ```bash
-sudo systemctl enable --now virtqemud.socket virtnetworkd.socket virtstoraged.socket
+sudo systemctl enable --now libvirtd.socket libvirtd.service
 sudo systemctl enable --now tuned.service
 sudo tuned-adm profile virtual-host
 ```
