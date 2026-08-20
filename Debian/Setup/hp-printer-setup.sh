@@ -1,9 +1,9 @@
 #!/bin/bash
-# hp-printer-setup.sh - Instalación y configuración de impresora HP LaserJet Pro M15w por USB en Debian
+# hp-printer-setup.sh - Instalación y configuración de impresora HP LaserJet Pro M15w por USB en Debian Testing + GNOME
 
 set -euo pipefail
 
-echo "🚀 Iniciando configuración de impresora HP LaserJet Pro M15w (USB) en Debian..."
+echo "🚀 Iniciando configuración de impresora HP LaserJet Pro M15w (USB) en Debian Testing + GNOME..."
 
 # 1. Identificar usuario principal
 TARGET_USER="${SUDO_USER:-$USER}"
@@ -21,7 +21,7 @@ sudo apt install -y \
     python3-pyqt5 \
     system-config-printer \
     usbutils \
-    wget
+    wget 2>/dev/null || true
 
 # 3. Habilitar e iniciar servicio CUPS
 echo "ℹ️ Habilitando e iniciando el servicio CUPS..."

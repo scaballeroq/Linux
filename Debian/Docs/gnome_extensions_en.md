@@ -1,12 +1,10 @@
 ---
-sidebar_position: 10
----
 
 # Complete Guide to GNOME Shell Extensions
 
-This guide details the set of **17 GNOME Shell extensions** and auxiliary tools automatically installed and configured via the [`Setup/gnome-extensions.sh`](file:///home/caballero/Workspace/Respositorios/Linux/Debian/Setup/gnome-extensions.sh) script and the `just extensions` command.
+This guide details the set of **12 GNOME Shell extensions** and auxiliary tools automatically installed and configured via the [`Setup/gnome-extensions.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Debian/Setup/gnome-extensions.sh) script and the `just extensions` command.
 
-The goal of this selection is to optimize the GNOME desktop environment in Debian 13 (Trixie), combining **advanced window management**, **real-time resource monitoring**, **productivity enhancements**, and **modern visual aesthetics** (glassmorphism/blur, transparency, and dynamic wallpapers).
+The goal of this selection is to optimize the GNOME desktop environment in Debian 13 (Trixie), combining **advanced window management**, **productivity enhancements**, **system tray support**, and **modern visual aesthetics** (glassmorphism/blur, dynamic wallpapers, and audio panel), with **Dash to Dock** as the primary native dock.
 
 ---
 
@@ -23,7 +21,7 @@ Before installing extensions, the setup script deploys baseline support to ensur
 
 ---
 
-## 🧩 Extension Catalog (17 Extensions)
+## 🧩 Extension Catalog (12 Extensions)
 
 ---
 
@@ -39,24 +37,15 @@ Before installing extensions, the setup script deploys baseline support to ensur
   - Independent multi-monitor support.
   - Keyboard shortcuts to swap and move windows across zones.
 
-#### ⚓ Dash to Dock
+#### ⚓ Dash to Dock (Primary Dock)
 * **ID / UUID**: `307` | `dash-to-dock@micxgx.gmail.com`
 * **Link**: [extensions.gnome.org/extension/307/dash-to-dock](https://extensions.gnome.org/extension/307/dash-to-dock/)
-* **Description**: Transforms the GNOME Overview dash into a persistent dock placed on the desktop.
+* **Description**: Transforms the GNOME Overview dash into a persistent dock placed on the desktop as the primary launcher.
 * **Key Features**:
   - Flexible positioning on any screen edge (bottom, left, right, top).
   - Intelligent autohide capabilities.
   - Window counter badges and notification indicators.
   - Customizable icon sizing, opacity, and color themes.
-
-#### 🎛️ Dash to Panel
-* **ID / UUID**: `1160` | `dash-to-panel@jderose9.github.com`
-* **Link**: [extensions.gnome.org/extension/1160/dash-to-panel](https://extensions.gnome.org/extension/1160/dash-to-panel/)
-* **Description**: Combines the GNOME top bar and taskbar into a single unified panel (Windows 10/11 or KDE Plasma style).
-* **Key Features**:
-  - Eliminates the need for a separate dock, saving vertical screen real estate.
-  - Window grouping with thumbnail previews on hover.
-  - Highly configurable panel position, size, and system tray items.
 
 #### 🖥️ Desktop Icons NG (DING)
 * **ID / UUID**: `2087` | `ding@rastersoft.com`
@@ -98,14 +87,6 @@ Before installing extensions, the setup script deploys baseline support to ensur
   - One-click manual activation toggle.
   - Automatic activation when fullscreen applications (videos, games, slides) are detected.
 
-#### 🎯 Grand Theft Focus
-* **ID / UUID**: `5410` | `grand-theft-focus@zalckos.github.com`
-* **Link**: [extensions.gnome.org/extension/5410/grand-theft-focus](https://extensions.gnome.org/extension/5410/grand-theft-focus/)
-* **Description**: Suppresses `"Window is ready"` toast notifications and immediately brings newly launched windows into foreground focus.
-* **Key Features**:
-  - Eliminates extra clicks when applications take a moment to launch.
-  - Improves workflow speed when launching apps from terminal or external tools.
-
 #### 🔒 Lock Keys
 * **ID / UUID**: `36` | `lockkeys@vaina.lt`
 * **Link**: [extensions.gnome.org/extension/36/lock-keys](https://extensions.gnome.org/extension/36/lock-keys/)
@@ -114,27 +95,9 @@ Before installing extensions, the setup script deploys baseline support to ensur
   - Real-time status icons in the top bar.
   - On-Screen Display (OSD) notifications upon key toggle.
 
-#### ⚙️ Extension List
-* **ID / UUID**: `3088` | `extension-list@tu.berry`
-* **Link**: [extensions.gnome.org/extension/3088/extension-list](https://extensions.gnome.org/extension/3088/extension-list/)
-* **Description**: Dropdown menu in the top panel listing all installed GNOME extensions.
-* **Key Features**:
-  - Toggle extensions on/off quickly.
-  - Direct access to extension preference dialogs.
-  - Useful for debugging or trying out utilities without opening full apps.
-
 ---
 
-### 3. Monitoring & System
-
-#### 📊 Astra Monitor
-* **ID / UUID**: `6682` | `monitor@astraext.github.io`
-* **Link**: [extensions.gnome.org/extension/6682/astra-monitor](https://extensions.gnome.org/extension/6682/astra-monitor/)
-* **Description**: Cutting-edge, lightweight system monitor integrated into GNOME top bar.
-* **Key Features**:
-  - Real-time metrics: CPU usage/freq, RAM utilization, GPU stats, Disk I/O, Network upload/download, and thermal sensors.
-  - Embedded graphs and detailed dropdown panel.
-  - Color, polling rate, and display customization.
+### 3. System Integration & Audio
 
 #### 🔔 AppIndicator and KStatusNotifierItem Support
 * **ID / UUID**: `615` | `appindicatorsupport@rgcjonas.gmail.com`
@@ -174,14 +137,6 @@ Before installing extensions, the setup script deploys baseline support to ensur
   - Daily automatic fetch with zero background overhead.
   - Displays image title, story, and location info.
   - Allows cycling or browsing previously downloaded wallpapers.
-
-#### 🔍 Transparent Top Bar (Adjustable transparency)
-* **ID / UUID**: `3960` | `transparent-top-bar@ftpix.com`
-* **Link**: [extensions.gnome.org/extension/3960/transparent-top-bar-adjustable-transparency](https://extensions.gnome.org/extension/3960/transparent-top-bar-adjustable-transparency/)
-* **Description**: Restores transparent GNOME top bar when no windows are maximized.
-* **Key Features**:
-  - Configurable opacity levels.
-  - Smooth animation transitions on window maximize/unmaximize.
 
 #### 📐 Status Area Horizontal Spacing
 * **ID / UUID**: `355` | `status-area-horizontal-spacing@mathematical.coffee.gmail.com`

@@ -2,76 +2,184 @@
 sidebar_position: 2
 ---
 
-# System Setup on Debian 13
+# System Setup on Debian
 
-This guide details the base setup, automatic workspace mounting, native `x86_64-v3` kernel compilation, 3D screensavers, GNOME extensions, terminal enhancements, and web administration panel for Debian 13 (Trixie).
+This guide details the base setup process, automatic workspace mount, custom `x86_64-v3` kernel compilation, GNOME desktop customization, Ptyxis and Kitty terminals, GNOME Shell extensions, and Cockpit web administration panel on **Debian** with **GNOME**.
 
-All configurations are automated through scripts located in the `Setup` folder.
+Configurations are automated via scripts located in the `Setup` directory.
 
 ---
 
-## 1. Base Post-Installation (`post-install.sh`)
+## 1. Base Post-Installation (`post-install.sh`, `post-install-amd.sh`, `post-install-intel.sh`)
 
-Prepares the base system by enabling additional official repositories, installing essential software, and configuring hardware acceleration.
+Prepares the base system by enabling additional official repositories (`contrib`, `non-free`, `non-free-firmware`), installing essential packages, ZRAM memory compression, PipeWire audio, GNOME suite, and tailored GPU/media acceleration.
+
+### Available Scripts:
+
+- **Smart Dispatcher (`post-install.sh`)**:
+  Automatically detects CPU vendor (`AuthenticAMD` vs `GenuineIntel`) or allows CLI flags:
+  ```bash
+  ./Setup/post-install.sh          # Auto-detection
+  ./Setup/post-install.sh --amd    # Force AMD mode
+  ./Setup/post-install.sh --intel  # Force Intel mode
+  ```
+
+- **AMD Ryzen Profile (`post-install-amd.sh`)**:
+  Tailored for AMD Ryzen CPUs and Radeon Graphics:
+  - Microcode: `amd64-microcode`
+  - GPU Firmware: `firmware-amd-graphics`
+  - Graphics Stack: `mesa-va-drivers`, `mesa-vdpau-drivers`, `mesa-vulkan-drivers` (RADV), `radeontop`, `va-driver-all`.
+  ```bash
+  just post-install-amd
+  ```
+
+- **Intel Core / Media Center Profile (`post-install-intel.sh`)**:
+  Tailored for Intel Core desktop PCs (specifically 4th Gen Haswell i7-4790 with Intel HD Graphics 4600) used as a media center for Kodi, Netflix, and Prime Video:
+  - Microcode: `intel-microcode`
+  - Video VA-API Acceleration: `i965-va-driver`, `i965-va-driver-shaders`, `intel-media-va-driver`, `intel-gpu-tools` (`intel_gpu_top`).
+  - Media & Streaming: `kodi`, `kodi-inputstream-adaptive`, `kodi-inputstream-rtmp`, `kodi-pvr-iptvsimple`, codecs `ffmpeg`, `libavcodec-extra`, `gstreamer1.0-*`.
+  - **No KVM Virtualization**: Stripped of virtualization overhead and laptop battery daemon to keep the media workstation lean and snappy.
+  ```bash
+  just post-install-intel
+  ```
+
+### Common Installed Packages:
+- **Compilation**: `build-essential`, `cmake`
+- **Memory**: `zram-tools` (ZRAM with ZSTD at 50%)
+- **Audio**: `pipewire`, `pipewire-alsa`, `pipewire-pulse`, `pipewire-jack`, `wireplumber`
+- **Monitoring**: `btop`, `htop`, `inxi`, `gnome-system-monitor`
+- **Utilities**: `curl`, `fuse3`, `exfatprogs`, `p7zip-full`, `unrar`, `zip`, `unzip`, `bzip2`, `xz-utils`
+- **Graphics & Multimedia**: `vlc`, `gimp`, `gparted`, `evince`, `seahorse`
+- **GNOME Suite**: `gnome-core`, `gnome-shell`, `gnome-control-center`, `gnome-tweaks`, `ptyxis`, `nautilus`, `file-roller`, `gnome-text-editor`, `gnome-calculator`, `gnome-disk-utility`, `power-profiles-daemon`, `ffmpegthumbnailer`
+- **Universal Packages**: `flatpak`, `gnome-software`, `gnome-software-plugin-flatpak` with Flathub repo.
+
+---
+
+## 2. Workspace Partition Auto-mount (`mount-workspace.sh`)
+
+Automatically mounts the `/home/caballero/Workspace` data partition in `/etc/fstab` using UUID identification and safe `defaults,noatime,nofail` flags.
 
 ```bash
-sudo apt update && sudo apt upgrade -y
-sudo apt-add-repository -y contrib non-free non-free-firmware
-CODENAME=$(grep '^VERSION_CODENAME=' /etc/os-release | cut -d= -f2)
-echo "deb http://deb.debian.org/debian ${CODENAME}-backports main contrib non-free non-free-firmware" | sudo tee /etc/apt/sources.list.d/backports.list
-sudo apt update
+just workspace
 ```
 
-Installs `zram-tools`, `build-essential`, `flatpak`, `vlc`, `gimp`, `ffmpeg`, and Mesa 3D drivers.
-
 ---
 
-## 2. Workspace Partition Automount (`mount-workspace.sh`)
+## 3. Native x86_64-v3 Linux Kernel Builder (`build-custom-kernel.sh`)
 
-Automatically mounts `/home/caballero/Workspace` via `/etc/fstab` using UUID `3d81e6d2-6011-484a-8123-6bcf68f365ba` with `defaults,noatime,nofail` flags.
-
-```bash
-./Setup/mount-workspace.sh
-```
-
----
-
-## 3. Custom NATIVE x86_64-v3 Kernel Builder (`build-custom-kernel.sh`)
-
-Queries `kernel.org` API (`https://www.kernel.org/releases.json`) for the latest stable Linux kernel version, trims unused drivers with `make localmodconfig`, and builds native `.deb` packages tuned for `x86_64-v3`, **1000Hz** timer frequency, and **Dynamic Preemption**.
+Fetches the latest official stable release from `kernel.org`, applies `x86_64-v3` microarchitecture optimizations, **1000Hz** timer frequency, and dynamic preemption.
 
 ```bash
-./Setup/build-custom-kernel.sh
-# Or using just:
 just build-kernel
 ```
 
 ---
 
-## 4. Clean GNOME Extensions Installer (`gnome-extensions.sh`)
+## 4. Clean GNOME Extensions Installation (`gnome-extensions.sh`)
 
-Installs `gnome-browser-connector`, `extension-manager`, and downloads 17 custom extensions using native DBus installer `gnome-extensions install --force` and automatic GSettings schema compilation (`glib-compile-schemas`).
+Installs `gnome-browser-connector`, `extension-manager`, and cleanly downloads/registers the 17 curated GNOME extensions with GSettings schema compilation (`glib-compile-schemas`). See [GNOME Extensions Guide](./gnome_extensions_en.md).
 
 ```bash
-./Setup/gnome-extensions.sh
-# Or using just:
 just extensions
 ```
 
 ---
 
-## 5. 3D Screensaver & Lock Screen (`screensaver-setup.sh`)
+## 5. GNOME Personalization via GSettings (`gnome-settings.sh`)
 
-Installs XScreenSaver 3D OpenGL effects (Matrix, Pipes, Flurry), registers the GNOME autostart daemon, and binds `Super + L` to lock screen with 3D animations.
+Configures:
+- **Night Light** at 3500K.
+- **24-hour clock** and battery percentage.
+- **Window controls**: minimize, maximize, close on the right.
+- **Touchpad**: Tap-to-click, natural scrolling, two-finger gestures.
+- **Mutter**: Variable Refresh Rate (VRR) & fractional scaling.
+- **Dark Mode**: Prefer dark theme.
 
 ```bash
-./Setup/screensaver-setup.sh
+just gnome
 ```
 
 ---
 
-## 6. Web Administration Panel Cockpit (`cockpit.sh`)
+## 6. Modern Terminals (Ptyxis and Kitty)
 
-Installs Cockpit with modules for Podman (`cockpit-podman`), KVM VMs (`cockpit-machines`), Storage (`cockpit-storaged`), Networking (`cockpit-networkmanager`), and Hardware Sensors (`lm-sensors`).
+### Ptyxis (`ptyxis.sh`)
+Installs and configures Ptyxis with translucent dark styling (85% opacity), no scrollbar, global `Ctrl + Alt + T` shortcut, and Nautilus context menu integration via `nautilus-open-any-terminal`.
 
-Configures UFW rate-limiting (`sudo ufw limit 9090/tcp`) and uses systemd socket activation (`cockpit.socket`). Access at [https://localhost:9090](https://localhost:9090).
+```bash
+just ptyxis
+```
+
+### Kitty (`kitty.sh`)
+Installs and configures GPU-accelerated Kitty terminal with Catppuccin Mocha / Tokyo Night dark theme, 85% background opacity with blur, JetBrainsMono Nerd Font typography, slanted powerline tab bar, and on-the-fly opacity adjustments (`Ctrl+Shift+A` + `M`/`L`/`1`).
+
+```bash
+just kitty
+```
+
+---
+
+## 7. 3D Screensaver and Lock Screen (`screensaver-setup.sh`)
+
+Installs XScreenSaver 3D/GL suite, registers the autostart daemon, and maps `Super + L` to lock the screen with active screensavers.
+
+```bash
+just screensaver
+```
+
+---
+
+## 8. Shell Environment (`shell.sh`, `fastfetch.sh`, `fonts.sh`)
+
+Installs modern terminal CLI utilities (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`), Nerd Fonts, and Starship prompt.
+
+```bash
+just shell
+just fonts
+just fastfetch
+```
+
+---
+
+## 9. Cockpit Web Management (`cockpit.sh`)
+
+Deploys Cockpit admin console with modules for Podman, KVM/QEMU VMs, and storage disks at [https://localhost:9090](https://localhost:9090).
+
+```bash
+just cockpit
+```
+
+---
+
+## 10. Themes and Desktop Appearance (`apariencia.sh`)
+
+Applies Papirus-Dark and Adwaita styling across GTK and Qt applications.
+
+```bash
+just apariencia
+```
+
+---
+
+## 11. Graphical Boot Splash (`plymouth-setup.sh`)
+
+Installs, configures, and activates Plymouth boot splash with support for multiple official and modern themes (`bgrt`, `ceratopsian`, `spinner`, etc.), ensuring a smooth, flicker-free startup.
+
+- **Install and activate default theme (BGRT / Ceratopsian)**:
+  ```bash
+  just plymouth
+  # or ./Setup/plymouth-setup.sh
+  ```
+- **List all available themes**:
+  ```bash
+  ./Setup/plymouth-setup.sh --list
+  ```
+- **Activate a specific theme**:
+  ```bash
+  ./Setup/plymouth-setup.sh ceratopsian
+  ```
+- **Preview splash screen on desktop**:
+  ```bash
+  ./Setup/plymouth-setup.sh --preview
+  ```
+

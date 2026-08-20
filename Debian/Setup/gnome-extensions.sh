@@ -20,19 +20,11 @@ sudo apt install -y \
 pipx install gnome-extensions-cli 2>/dev/null || pip install --break-system-packages gnome-extensions-cli 2>/dev/null || true
 export PATH="$HOME/.local/bin:$PATH"
 
-# 2. Instalación de paquetes de extensiones desde repositorios nativos
-echo "ℹ️ Instalando extensiones nativas del repositorio Debian..."
-sudo apt install -y \
-    gnome-shell-extension-appindicator \
-    gnome-shell-extension-caffeine \
-    gnome-shell-extension-dash-to-dock \
-    gnome-shell-extension-dash-to-panel 2>/dev/null || true
-
-# 3. Instalación de tus 17 extensiones personalizadas con compilación de esquemas GSettings
+# 2. Instalación de extensiones personalizadas con compilación de esquemas GSettings
 echo "ℹ️ Instalando y compilando esquemas GSettings desde extensions.gnome.org..."
 
-# IDs de extensiones solicitadas:
-EXTENSION_IDS=(1262 307 36 355 517 5940 779 3960 3193 7065 615 97 6682 3088 5410 1160 2087)
+# IDs de extensiones solicitadas (Dash to Dock como dock principal, sin Dash to Panel ni duplicidades):
+EXTENSION_IDS=(1262 307 36 355 517 5940 779 3193 7065 615 97 2087)
 
 if command -v gext &> /dev/null; then
     echo "ℹ️ Utilizando gext (herramienta oficial CLI de GNOME) para instalación limpia..."
@@ -45,7 +37,7 @@ import subprocess
 import urllib.request
 import shutil
 
-extension_ids = [1262, 307, 36, 355, 517, 5940, 779, 3960, 3193, 7065, 615, 97, 6682, 3088, 5410, 1160, 2087]
+extension_ids = [1262, 307, 36, 355, 517, 5940, 779, 3193, 7065, 615, 97, 2087]
 
 home_dir = os.path.expanduser("~")
 target_base_dir = os.path.join(home_dir, ".local/share/gnome-shell/extensions")

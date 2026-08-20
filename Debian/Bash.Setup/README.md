@@ -1,8 +1,8 @@
-# 🚀 Bash.Setup
+# 🚀 Bash.Setup (Debian)
 
-Colección de scripts de configuración y funciones avanzadas para potenciar tu terminal Bash en Linux (optimizado para Fedora y Arch Linux).
+Colección de scripts de configuración y funciones avanzadas para potenciar tu terminal Bash en Linux (optimizado para Debian con GNOME).
 
-Este repositorio organiza de forma modular tus alias, variables de entorno, utilidades multimedia y gestores de contenedores (Podman).
+Este repositorio organiza de forma modular tus alias, variables de entorno, utilidades multimedia, accesos directos a GNOME y gestores de contenedores (Podman).
 
 ---
 
@@ -10,7 +10,7 @@ Este repositorio organiza de forma modular tus alias, variables de entorno, util
 
 | Archivo | Descripción |
 | :--- | :--- |
-| `aliases.sh` | Atajos generales de navegación, seguridad (`rm -i`), gestión de paquetes (`dnf`) e integración con `eza` y `bat`. |
+| `aliases.sh` | Atajos generales de navegación, seguridad (`rm -i`), gestión de paquetes (`apt`) e integración con `eza` y `bat`. |
 | `functions.sh` | El "navaja suiza": utilidades multimedia (FFMPEG), gestión de discos, extracción de archivos (unificado) y navegación avanzada. |
 | `podman-functions.sh` | Funciones y aliases específicos para **Podman** y gestión de Pods. |
 | `rclone_aliases.sh` | Sincronización avanzada con la nube (Google Drive) mediante **Rclone**. |
@@ -18,7 +18,7 @@ Este repositorio organiza de forma modular tus alias, variables de entorno, util
 | `history.sh` | Configuración optimizada del historial de Bash (10k/20k líneas, sin duplicados). |
 | `environment.sh` | Definición de variables globales (`EDITOR`, `PATH`) y personalización visual de `less` y `man`. |
 | `options.sh` | Configuración del comportamiento de Bash (`autocd`, `globstar`, corrección de typos). |
-| `gnome_settings.sh` | [NUEVO] Optimizaciones del entorno GNOME (luz nocturna, formato 24h, gestión de extensiones). |
+| `gnome_settings.sh` | Optimizaciones del entorno GNOME (luz nocturna, formato 24h, gestión de extensiones, temas y accesos de configuración). |
 
 ---
 
@@ -40,10 +40,8 @@ Luego, puedes crear enlaces simbólicos de los scripts de este repositorio a esa
 
 ```bash
 mkdir -p ~/.bashrc.d
-ln -s ~/Workspace/Repositorios/Linux/Debian/Bash.Setup/*.sh ~/.bashrc.d/
+ln -sf ~/Workspace/Repositorios/Linux/Debian/Bash.Setup/*.sh ~/.bashrc.d/
 ```
-
-*Nota: Asegúrate de ajustar la ruta al directorio donde hayas clonado el repositorio.*
 
 ---
 
@@ -56,7 +54,7 @@ ln -s ~/Workspace/Repositorios/Linux/Debian/Bash.Setup/*.sh ~/.bashrc.d/
 - `dclean` / `pclean`: Limpieza profunda del sistema de contenedores.
 
 ### 🎬 Multimedia (FFMPEG & ImageMagick)
-- `webm2mp4`: Convierte grabaciones de GNOME a MP4 compatible.
+- `webm2mp4`: Convierte grabaciones de pantalla de GNOME a MP4 compatible.
 - `img2jpg` / `img2png`: Optimiza imágenes para web o almacenamiento.
 - `transcode-video-1080p`: Optimización rápida de video.
 
@@ -69,25 +67,10 @@ ln -s ~/Workspace/Repositorios/Linux/Debian/Bash.Setup/*.sh ~/.bashrc.d/
 ### ☁️ Sincronización (Rclone)
 - `rclone-documentos`: Sincroniza tu carpeta de documentos con Google Drive.
 - `rclone-videos-down`: Descarga tus vídeos de la nube al equipo local.
-- Configurado con límites de TPS y logs detallados para evitar bloqueos.
 
 ### 📥 Descargas (YT-DLP)
 - `ytvideo` / `ytaudio`: Descarga directa en MP4 (1080p) o MP3 (alta calidad).
 - `ytlista-audio`: Descarga listas completas de reproducción convertidas a audio.
-- Incluye parches automáticos para evitar el error de descifrado y n-challenge.
-
----
-
-## 📦 Herramientas Recomendadas
-
-Para disfrutar de la experiencia completa con los aliases predefinidos, se recomienda instalar:
-- **[bat](https://github.com/sharkdp/bat)**: `cat` con resaltado de sintaxis.
-- **[eza](https://github.com/eza-community/eza)**: Reemplazo moderno de `ls` con iconos.
-- **[ffmpeg](https://ffmpeg.org/)**: Motor de procesamiento multimedia.
-- **[rclone](https://rclone.org/)**: El "rsync" para almacenamiento en la nube.
-- **[yt-dlp](https://github.com/yt-dlp/yt-dlp)**: Potente extractor de vídeo y audio de YouTube y otros sitios.
-- **[ImageMagick](https://imagemagick.org/)**: Manipulación de imágenes por consola.
-- **[paru](https://github.com/Morganamilo/paru)**: AUR helper para Arch Linux (opcional, cae a `pacman` si no existe).
 
 ---
 

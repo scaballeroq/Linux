@@ -1,16 +1,33 @@
 # Debian Environment Configuration Justfile
+# (Debian + GNOME)
 
-# Instala todo el entorno (Post-install, Workspace, Laptop, Fingerprint, Tuning, Extensions, Screensaver, Shell, Virtualización, Mise, Cockpit, etc.)
-setup-all: post-install workspace laptop fingerprint tuning extensions screensaver shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
-    echo "🚀 Entorno completo de Debian configurado. Por favor, reinicia el sistema."
+# Instala todo el entorno por defecto (Auto-detección de CPU / Portátil AMD)
+setup-all: post-install workspace laptop fingerprint tuning extensions screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
+    echo "🚀 Entorno completo de Debian (Debian + GNOME) configurado. Por favor, reinicia el sistema."
+
+# Perfil completo para Portátil de desarrollo (AMD Ryzen + Huella + Virtualización)
+setup-laptop-amd: post-install-amd workspace laptop fingerprint tuning extensions screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
+    echo "🚀 Entorno Portátil AMD Ryzen configurado con éxito. Por favor, reinicia el sistema."
+
+# Perfil para Sobremesa Centro Multimedia (Intel Haswell / Media Center - Sin virtualización ni batería)
+setup-media-desktop: post-install-intel workspace tuning extensions screensaver plymouth shell security fonts gnome apariencia fastfetch ptyxis firefox kodi
+    echo "🚀 Entorno Sobremesa Intel Media Center configurado con éxito. Por favor, reinicia el sistema."
 
 # =============================================================================
 # CONFIGURACIÓN BASE DEL SISTEMA
 # =============================================================================
 
-# Configuración base post-instalación (Repositorios contrib, non-free, backports)
+# Configuración base post-instalación (Auto-detección inteligente: AMD Ryzen vs Intel Core)
 post-install:
     ./Setup/post-install.sh
+
+# Configuración post-instalación para AMD Ryzen (Kernel, firmware-amd, RADV, Mesa, PipeWire, GNOME)
+post-install-amd:
+    ./Setup/post-install-amd.sh
+
+# Configuración post-instalación para Intel Haswell/Core (Kernel, intel-microcode, i965 VA-API, Kodi, PipeWire, GNOME)
+post-install-intel:
+    ./Setup/post-install-intel.sh
 
 # Automontaje permanente de la partición Workspace (/home/caballero/Workspace) en /etc/fstab
 workspace:
@@ -20,15 +37,11 @@ workspace:
 build-kernel:
     ./Setup/build-custom-kernel.sh
 
-# Instalación del último Kernel Linux oficial y Firmware desde Debian Backports
-kernel-backports:
-    ./Setup/install-backports-kernel.sh
-
-# Optimización para portátiles de desarrollo (Touchpad, Batería, Bluetooth, HiDPI)
+# Optimización para portátiles de desarrollo (Touchpad, Batería, Bluetooth, HiDPI, VRR)
 laptop:
     ./Setup/laptop-setup.sh
 
-# Autenticación y desbloqueo por huella dactilar (fprintd, PAM, sudo, polkit)
+# Autenticación y desbloqueo por huella dactilar (fprintd, PAM, sudo, polkit, GNOME)
 fingerprint:
     ./Setup/fingerprint-setup.sh
 
@@ -36,17 +49,21 @@ fingerprint:
 printer:
     ./Setup/hp-printer-setup.sh
 
-# Optimizaciones avanzadas de Debian (Sysctl, Distrobox)
+# Optimizaciones avanzadas de Debian Testing (Sysctl, Distrobox)
 tuning:
     ./Setup/debian-tuning.sh
 
-# Instalación automatizada de conectores y las 17 extensiones de GNOME
+# Instalación automatizada de conectores y las 12 extensiones de GNOME
 extensions:
     ./Setup/gnome-extensions.sh
 
 # Configuración de salvapantallas 3D/Matrix al bloquear la pantalla
 screensaver:
     ./Setup/screensaver-setup.sh
+
+# Configuración y activación de Splash Screen visual de arranque (Plymouth: BGRT / Ceratopsian)
+plymouth:
+    ./Setup/plymouth-setup.sh
 
 # Utilidades de terminal y prompt (eza, bat, fzf, starship)
 shell:
@@ -56,39 +73,47 @@ shell:
 security:
     ./Setup/seguridad.sh
 
-# Seguridad avanzada (DNS-over-TLS)
+# Seguridad avanzada (DNS-over-TLS con systemd-resolved)
 security-dot:
     ./Setup/seguridad-dot.sh
 
-# Fuentes de desarrollo (Nerd Fonts)
+# Fuentes de desarrollo (Nerd Fonts: JetBrainsMono, FiraCode, CascadiaCode...)
 fonts:
     ./Setup/fonts.sh
 
-# Personalización de GNOME (gsettings)
+# Personalización de GNOME (gsettings, luz nocturna, 24h, temas)
 gnome:
     ./Setup/gnome-settings.sh
 
-# Información estética del sistema
-fastfetch:
-    ./Setup/fastfetch.sh
-
-# Apariencia (temas e iconos)
+# Apariencia (Temas Adwaita Dark, iconos Papirus e integración GTK/Qt)
 apariencia:
     ./Setup/apariencia.sh
+
+# Información estética del sistema (Fastfetch)
+fastfetch:
+    ./Setup/fastfetch.sh
 
 # Terminal Ptyxis + integración Nautilus
 ptyxis:
     ./Setup/ptyxis.sh
 
+# Terminal Kitty acelerada por GPU con tema oscuro y opacidad/blur
+kitty:
+    ./Setup/kitty.sh
+
 # Multimedia (yt-dlp, ffmpeg)
 yt-dlp:
     ./Setup/yt-dlp-setup.sh
+
+# Centro Multimedia (Kodi + complementos de streaming)
+kodi:
+    sudo apt update && sudo apt install -y kodi kodi-inputstream-adaptive kodi-inputstream-rtmp kodi-pvr-iptvsimple
 
 # =============================================================================
 # CONFIGURACIÓN DE RED Y VIRTUALIZACIÓN
 # =============================================================================
 
-# Configuración de KVM/QEMU
+# Configuración de KVM/QEMU y Libvirt
 virtualization:
     ./Virtualizacion/virtualization.sh
 
@@ -193,10 +218,6 @@ opencode:
 firefox:
     ./Setup/firefox.sh
 
-# Meld (diff viewer)
-meld:
-    ./Apps/meld.sh
-
 # Steam y herramientas de juegos
 steam:
     ./Juegos/steam.sh
@@ -207,83 +228,12 @@ steam:
 
 # Podman base (instalación y configuración rootless)
 podman-base:
-    ./Podman/podman.sh
+    ./Podman/install/podman-install.sh
 
 # =============================================================================
-# PODMAN - SERVICIOS
+# PODMAN - SERVICIOS Y TEMPLATES
 # =============================================================================
 
-# Bases de datos
-podman-postgres:
-    ./Podman/podman-postgres.sh
-
-podman-mysql:
-    ./Podman/podman-mysql.sh
-
-podman-mongodb:
-    ./Podman/podman-mongodb.sh
-
-podman-redis:
-    ./Podman/podman-redis.sh
-
-# Almacenamiento
-podman-minio:
-    ./Podman/podman-minio.sh
-
-# Monitoreo y Observabilidad
-podman-grafana:
-    ./Podman/podman-grafana.sh
-
-podman-prometheus:
-    ./Podman/podman-prometheus.sh
-
-podman-jaeger:
-    ./Podman/podman-jaeger.sh
-
-podman-dozzle:
-    ./Podman/podman-dozzle.sh
-
-# Administración
-podman-portainer:
-    ./Podman/podman-portainer.sh
-
-podman-adminer:
-    ./Podman/podman-adminer.sh
-
-# Autenticación
-podman-keycloak:
-    ./Podman/podman-keycloak.sh
-
-# Web y Proxy
-podman-nginx:
-    ./Podman/podman-nginx.sh
-
-# CMS
-podman-wordpress:
-    ./Podman/podman-wordpress.sh
-
-# Mensajería
-podman-rabbitmq:
-    ./Podman/podman-rabbitmq.sh
-
-podman-mailhog:
-    ./Podman/podman-mailhog.sh
-
-# Testing
-podman-browserless:
-    ./Podman/podman-browserless.sh
-
-podman-storybook:
-    ./Podman/podman-storybook.sh
-
-# Stack de desarrollo completo (todas las bases de datos)
-podman-databases: podman-postgres podman-mysql podman-mongodb podman-redis
-    echo "✅ Bases de datos iniciadas."
-
-# Stack de monitoreo completo
-podman-monitoring: podman-prometheus podman-grafana podman-jaeger podman-dozzle
-    echo "✅ Stack de monitoreo iniciado."
-
-# Stack de administración completo
-podman-admin: podman-portainer podman-adminer podman-keycloak
-    echo "✅ Stack de administración iniciado."
+# Configuración Quadlets de Podman
+podman-quadlets:
+    ./Podman/install/quadlets-setup.sh

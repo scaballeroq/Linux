@@ -1,12 +1,10 @@
 ---
-sidebar_position: 10
----
 
 # Guía Completa de Extensiones de GNOME Shell
 
-Esta guía detalla el conjunto de **17 extensiones de GNOME Shell** y herramientas auxiliares que se instalan y configuran de forma automatizada a través del script [`Setup/gnome-extensions.sh`](file:///home/caballero/Workspace/Respositorios/Linux/Debian/Setup/gnome-extensions.sh) y el comando `just extensions`.
+Esta guía detalla el conjunto de **12 extensiones de GNOME Shell** y herramientas auxiliares que se instalan y configuran de forma automatizada a través del script [`Setup/gnome-extensions.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Debian/Setup/gnome-extensions.sh) y el comando `just extensions`.
 
-El objetivo de esta selección es optimizar el entorno de escritorio GNOME en Debian 13 (Trixie), combinando **gestión avanzada de ventanas**, **monitoreo de recursos en tiempo real**, **mejora de la productividad** y una **estética visual moderna** (glassmorphism/blur, transparencia y fondos dinámicos).
+El objetivo de esta selección es optimizar el entorno de escritorio GNOME en Debian 13 (Trixie), combinando **gestión avanzada de ventanas**, **mejora de la productividad**, **soporte de bandeja del sistema** y una **estética visual moderna** (glassmorphism/blur, fondos dinámicos y audio mixer), utilizando **Dash to Dock** como lanzador y dock principal nativo.
 
 ---
 
@@ -23,7 +21,7 @@ Antes de instalar las extensiones, el script despliega el soporte base para gara
 
 ---
 
-## 🧩 Catálogo de Extensiones (17 Extensiones)
+## 🧩 Catálogo de Extensiones (12 Extensiones)
 
 ---
 
@@ -39,24 +37,15 @@ Antes de instalar las extensiones, el script despliega el soporte base para gara
   - Soporte multimonitor independiente.
   - Atajos de teclado para mover ventanas entre zonas.
 
-#### ⚓ Dash to Dock
+#### ⚓ Dash to Dock (Dock Principal)
 * **ID / UUID**: `307` | `dash-to-dock@micxgx.gmail.com`
 * **Enlace**: [extensions.gnome.org/extension/307/dash-to-dock](https://extensions.gnome.org/extension/307/dash-to-dock/)
-* **Descripción**: Transforma el panel de aplicaciones del menú Resumen (Overview) en un dock flotante o anclado persistente en el escritorio.
+* **Descripción**: Transforma el panel de aplicaciones del menú Resumen (Overview) en un dock flotante o anclado persistente en el escritorio. Es el dock principal del sistema.
 * **Características Clave**:
   - Posicionamiento en cualquier borde de la pantalla (abajo, izquierda, derecha, arriba).
   - Ocultación automática inteligente (autohide).
   - Indicadores de número de ventanas abiertas y contadores de notificaciones.
   - Opciones de tamaño de icono, opacidad y temas de color.
-
-#### 🎛️ Dash to Panel
-* **ID / UUID**: `1160` | `dash-to-panel@jderose9.github.com`
-* **Enlace**: [extensions.gnome.org/extension/1160/dash-to-panel](https://extensions.gnome.org/extension/1160/dash-to-panel/)
-* **Descripción**: Combina la barra superior de GNOME y la barra de tareas en un único panel unificado (estilo Windows 10/11 o KDE Plasma).
-* **Características Clave**:
-  - Elimina la necesidad de un dock separado, ahorrando espacio vertical de pantalla.
-  - Agrupa ventanas por aplicación con previsualización en miniatura al pasar el cursor.
-  - Altamente configurable en tamaño, posición y comportamiento de los iconos de estado.
 
 #### 🖥️ Desktop Icons NG (DING)
 * **ID / UUID**: `2087` | `ding@rastersoft.com`
@@ -98,14 +87,6 @@ Antes de instalar las extensiones, el script despliega el soporte base para gara
   - Activación/desactivación manual con un solo clic.
   - Activación automática al ejecutar aplicaciones a pantalla completa (reproductores de vídeo, juegos, presentaciones).
 
-#### 🎯 Grand Theft Focus
-* **ID / UUID**: `5410` | `grand-theft-focus@zalckos.github.com`
-* **Enlace**: [extensions.gnome.org/extension/5410/grand-theft-focus](https://extensions.gnome.org/extension/5410/grand-theft-focus/)
-* **Descripción**: Elimina el aviso emergente del sistema `"La ventana está lista"` ("Window is ready") y otorga el foco de teclado/pantalla inmediatamente a la aplicación recién abierta.
-* **Características Clave**:
-  - Evita interrupciones y clics extra cuando una aplicación tarda un par de segundos en arrancar.
-  - Mejora la fluidez al lanzar herramientas desde la terminal o aplicaciones externas.
-
 #### 🔒 Lock Keys
 * **ID / UUID**: `36` | `lockkeys@vaina.lt`
 * **Enlace**: [extensions.gnome.org/extension/36/lock-keys](https://extensions.gnome.org/extension/36/lock-keys/)
@@ -114,27 +95,9 @@ Antes de instalar las extensiones, el script despliega el soporte base para gara
   - Iconos de estado en tiempo real en el área de notificaciones/barra superior.
   - Notificaciones OSD (On-Screen Display) en el centro de la pantalla al presionar las teclas.
 
-#### ⚙️ Extension List
-* **ID / UUID**: `3088` | `extension-list@tu.berry`
-* **Enlace**: [extensions.gnome.org/extension/3088/extension-list](https://extensions.gnome.org/extension/3088/extension-list/)
-* **Descripción**: Añade un menú desplegable directo en el panel superior que enumera todas las extensiones de GNOME instaladas.
-* **Características Clave**:
-  - Habilita o deshabilita extensiones individualmente con un conmutador.
-  - Acceso directo a la pantalla de preferencias/configuración de cada extensión.
-  - Ideal para desarrolladores o usuarios que prueban diferentes utilidades sin abrir Extension Manager.
-
 ---
 
-### 3. Monitorización y Sistema (Monitoring & System)
-
-#### 📊 Astra Monitor
-* **ID / UUID**: `6682` | `monitor@astraext.github.io`
-* **Enlace**: [extensions.gnome.org/extension/6682/astra-monitor](https://extensions.gnome.org/extension/6682/astra-monitor/)
-* **Descripción**: Monitor de recursos de última generación, ligero y altamente personalizable que se integra directamente en la barra superior de GNOME.
-* **Características Clave**:
-  - Métricas en tiempo real: Uso de CPU, frecuencia, uso de RAM, consumo de GPU, actividad de disco I/O, tráfico de red (subida/bajada) y sensores de temperatura.
-  - Gráficos integrados y menú desplegable detallado al hacer clic.
-  - Personalización de colores, intervalos de refresco e indicadores visibles.
+### 3. Integración de Sistema y Audio (System & Audio)
 
 #### 🔔 AppIndicator and KStatusNotifierItem Support
 * **ID / UUID**: `615` | `appindicatorsupport@rgcjonas.gmail.com`
@@ -174,14 +137,6 @@ Antes de instalar las extensiones, el script despliega el soporte base para gara
   - Descarga automática una vez al día sin consumo apreciable de recursos en segundo plano.
   - Muestra la descripción, título e historia detrás de la fotografía del día.
   - Permite explorar y seleccionar imágenes descargadas previamente en modo aleatorio o manual.
-
-#### 🔍 Transparent Top Bar (Adjustable transparency)
-* **ID / UUID**: `3960` | `transparent-top-bar@ftpix.com`
-* **Enlace**: [extensions.gnome.org/extension/3960/transparent-top-bar-adjustable-transparency](https://extensions.gnome.org/extension/3960/transparent-top-bar-adjustable-transparency/)
-* **Descripción**: Restaura la barra superior transparente en GNOME Shell cuando no hay ninguna ventana maximizada tocando el borde superior.
-* **Características Clave**:
-  - Opacidad personalizable en estado reposo y estado maximizado.
-  - Transición suave al maximizar o desmaximizar ventanas.
 
 #### 📐 Status Area Horizontal Spacing
 * **ID / UUID**: `355` | `status-area-horizontal-spacing@mathematical.coffee.gmail.com`

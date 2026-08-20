@@ -1,23 +1,14 @@
 #!/bin/bash
-# shell.sh - Instalación de herramientas modernas de terminal y prompt Starship para Debian
+# shell.sh - Instalación de herramientas modernas de terminal y prompt Starship para Debian Testing
 
 set -euo pipefail
 
-# Detectar codename de Debian y si es Testing/Unstable/Forky
-CODENAME=$(grep '^VERSION_CODENAME=' /etc/os-release | cut -d= -f2 || echo "bookworm")
-IS_TESTING=false
-if [[ "$CODENAME" =~ ^(testing|sid|unstable|forky)$ ]] || grep -q -i -E "testing|unstable|sid|forky" /etc/os-release 2>/dev/null; then
-    IS_TESTING=true
-fi
+# Detectar codename de Debian
+CODENAME=$(grep '^VERSION_CODENAME=' /etc/os-release | cut -d= -f2 || echo "trixie")
 
-APT_TARGET_FLAG=()
-if [ "$IS_TESTING" = false ]; then
-    APT_TARGET_FLAG=("-t" "${CODENAME}-backports")
-fi
-
-echo "ℹ️ Instalando utilidades de terminal modernas..."
+echo "ℹ️ Instalando utilidades de terminal modernas en Debian Testing ($CODENAME)..."
 sudo apt update
-sudo apt install -y ${APT_TARGET_FLAG+"${APT_TARGET_FLAG[@]}"} \
+sudo apt install -y \
     eza \
     bat \
     fzf \
@@ -61,4 +52,4 @@ elif [ -f "Setup/starship.toml" ]; then
     cp Setup/starship.toml ~/.config/starship.toml
 fi
 
-echo "✅ Instalación de shell moderna completada en Debian."
+echo "✅ Instalación de shell moderna completada en DebianTesting."

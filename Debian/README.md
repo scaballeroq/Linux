@@ -1,64 +1,101 @@
-# 🔧 Debian Environment Configuration (GNOME Desktop)
+# 🔧 Debian: Configuración de Entorno Debian + GNOME
 
-Este repositorio contiene una colección organizada y modular de scripts de configuración para sistemas **Debian** (Debian 12 Bookworm / Debian 13 Trixie) con el entorno de escritorio **GNOME** (optimizado para PCs y portátiles de desarrollo).
+Este repositorio contiene una colección organizada, modular y automatizada de scripts de configuración para sistemas **Debian** con el entorno de escritorio **GNOME** (optimizado para estaciones de trabajo y portátiles de desarrollo).
 
 ---
 
 ## 📂 Organización del Repositorio
 
-La configuración se ha estructurado de forma modular para facilitar el mantenimiento y la legibilidad:
+La configuración está estructurada de forma modular para facilitar su mantenimiento y despliegue:
 
 ### 🐚 [Bash.Setup](./Bash.Setup/)
-El núcleo de la configuración de la terminal Bash.
-- **`aliases.sh`**: Atajos comunes para comandos frecuentemente utilizados.
-- **`environment.sh`**: Variables globales que afectan el comportamiento de la shell.
-- **`functions.sh`**: Colección de funciones avanzadas y utilidades.
-- **`gnome_settings.sh`**: Configuraciones de entorno para GNOME, touchpad, energía y HiDPI.
-- **`history.sh`**: Controla cómo bash recuerda los comandos.
-- **`options.sh`**: Configura el comportamiento interno de Bash mediante 'shopt' y 'bind'.
+El núcleo de la configuración de la terminal Bash:
+- **`aliases.sh`**: Atajos comunes para comandos frecuentemente utilizados y utilidades modernas en Rust (`eza`, `bat`, `duf`, `dust`).
+- **`environment.sh`**: Variables globales que afectan el comportamiento de la shell (`PATH`, `EDITOR`, paginador `less` con colores).
+- **`functions.sh`**: Colección de funciones avanzadas y utilidades multimedia (FFmpeg, ImageMagick, extracción unificada).
+- **`gnome_settings.sh`**: Configuraciones de entorno para GNOME, luz nocturna, temas, reinicio de shell y accesos rápidos a Configuración.
+- **`history.sh`**: Controla cómo bash recuerda los comandos (sin duplicados, hasta 20k líneas).
+- **`options.sh`**: Configura el comportamiento interno de Bash mediante `shopt` y `bind`.
 - **`podman-functions.sh`**: Funciones para gestión simplificada de contenedores.
-- **`rclone_aliases.sh`**: Atajos para facilitar la sincronización en la nube.
-- **`yt-dlp_aliases.sh`**: Descargas multimedia optimizadas.
-
-### 🐳 [Podman](./Podman/)
-Scripts para instalar y desplegar servicios en contenedores Podman de forma aislada:
-- **Core**: `podman.sh` (Instalación principal en Debian)
-- **Bases de Datos**: `podman-postgres.sh`, `podman-mysql.sh`, `podman-mongodb.sh`, `podman-redis.sh`
-- **Gestión y Monitoreo**: `podman-portainer.sh`, `podman-adminer.sh`, `podman-dozzle.sh`, `podman-grafana.sh`, `podman-prometheus.sh`, `podman-jaeger.sh`
-- **Infraestructura**: `podman-nginx.sh`, `podman-keycloak.sh`, `podman-rabbitmq.sh`, `podman-minio.sh`, `podman-mailhog.sh`, `podman-browserless.sh`
-- **Frameworks/CMS**: `podman-wordpress.sh`, `podman-storybook.sh`
-
-### 🖥️ [Virtualizacion](./Virtualizacion/)
-- **`virtualization.sh`**: Instalación y configuración de Virtualización de alto rendimiento (KVM/QEMU, libvirtd, sockets modulares, VirtIO, Nested KVM) optimizada para Debian.
-- **`notas_virtualizacion_debian.md`**: Guía detallada de KVM/QEMU en Debian.
+- **`rclone_aliases.sh`**: Atajos para sincronización en la nube con Google Drive.
+- **`yt-dlp_aliases.sh`**: Descargas multimedia optimizadas con yt-dlp y ffmpeg.
 
 ### ⚙️ [Setup](./Setup/)
-Scripts de configuración del sistema operativo, personalización y endurecimiento:
-- **`post-install.sh`**: Script maestro de post-instalación (Habilita `contrib`, `non-free`, `non-free-firmware` y `backports`).
-- **`laptop-setup.sh`**: Optimización para portátiles de desarrollo (Touchpad, Bluetooth, `power-profiles-daemon`, `switcheroo-control`, HiDPI, VRR).
-- **`fingerprint-setup.sh`**: Configuración de desbloqueo y autenticación admin por huella dactilar (`fprintd`, PAM `sudo`, `polkit-1`, `pam-auth-update`).
-- **`hp-printer-setup.sh`**: Instalación y configuración de la impresora HP LaserJet Pro M15w vía USB (CUPS, HPLIP, plugin propietario y grupos `lp`/`lpadmin`).
-- **`debian-tuning.sh`**: Ajustes de Kernel (`sysctl`) y `distrobox`.
-- **`gnome-extensions.sh`**: Instalación automatizada de `gnome-browser-connector`, `extension-manager` y descarga limpia de 17 extensiones personalizadas de GNOME (ver [Guía de Extensiones GNOME](./Docs/gnome_extensions_es.md)).
-- **`apariencia.sh`**: Instalación de temas e iconos.
-- **`cockpit.sh`**: Instalación y configuración de Cockpit (administración web).
-- **`fastfetch.sh`**: Información estética del sistema al inicio (Fastfetch).
-- **`firefox.sh`**: Instalación y configuración de Mozilla Firefox.
-- **`fonts.sh`**: Instalación automatizada de fuentes de desarrollo (Nerd Fonts).
-- **`ptyxis.sh`**: Instalación del emulador de terminal moderno Ptyxis.
-- **`seguridad.sh`**: Endurecimiento (hardening) y configuración de UFW.
-- **`shell.sh`**: Herramientas modernas de terminal y prompt (Starship).
-- **`yt-dlp-setup.sh`**: Dependencias para manejo multimedia (yt-dlp, ffmpeg).
+Scripts de configuración del sistema operativo, personalización de GNOME y endurecimiento:
+- **`post-install.sh`**: Despachador inteligente con detección automática de procesador (AMD vs Intel) y soporte para banderas CLI (`--amd`, `--intel`).
+- **`post-install-amd.sh`**: Post-instalación optimizada para procesadores **AMD Ryzen** y gráficos Radeon (microcódigo AMD, firmware GPU, RADV, Mesa, ZRAM, PipeWire, GNOME).
+- **`post-install-intel.sh`**: Post-instalación optimizada para equipos de sobremesa **Intel Core** (Haswell i7-4790 / HD Graphics 4600) dedicados a centro multimedia y streaming (microcódigo Intel, driver VA-API `i965`, codecs, Kodi, sin virtualización).
+- **`gnome-settings.sh`**: Personalización automatizada de GNOME vía GSettings (Luz nocturna a 3500K, reloj 24h, porcentaje de batería, botones de ventana, VRR).
+- **`gnome-extensions.sh`**: Instalación automatizada y limpia de 12 extensiones de GNOME Shell con compilación de esquemas (ver [Guía de Extensiones GNOME](./Docs/gnome_extensions_es.md)).
+- **`ptyxis.sh`**: Instalación y perfil moderno de Ptyxis (translúcido al 85%, sin scrollbar, atajo `Ctrl+Alt+T` e integración en Nautilus).
+- **`kitty.sh`**: Terminal Kitty acelerada por GPU con opacidad (85%), efectos blur, tipografía JetBrainsMono Nerd Font e integración con GNOME/Nautilus.
+- **`apariencia.sh`**: Instalación de temas e iconos (Adwaita-Dark, Papirus-Dark e integración visual GTK/Qt).
+- **`laptop-setup.sh`**: Optimización para portátiles de desarrollo (Touchpad, Bluetooth, `power-profiles-daemon`, `switcheroo-control`, HiDPI, VRR en Wayland).
+- **`fingerprint-setup.sh`**: Desbloqueo y autenticación por huella dactilar (`fprintd`, PAM para `sudo`, `polkit-1`, `pam-auth-update`).
+- **`hp-printer-setup.sh`**: Impresora HP LaserJet Pro M15w vía USB (CUPS, HPLIP, plugin propietario y `system-config-printer`).
+- **`debian-tuning.sh`**: Ajustes de Kernel Sysctl (`inotify`, `max_map_count`) y soporte de `distrobox`.
+- **`build-custom-kernel.sh`**: Compilador de Kernel Linux oficial optimizado para arquitectura `x86_64-v3`, latencia a 1000Hz y Preemption dinámica.
+- **`cockpit.sh`**: Panel de administración web Cockpit con módulos Podman, Virtualización y Almacenamiento.
+- **`fastfetch.sh`**: Información estética del sistema al abrir la terminal (Fastfetch).
+- **`firefox.sh`**: Instalación de Mozilla Firefox oficial (.deb de Mozilla APT).
+- **`fonts.sh`**: Fuentes tipográficas de desarrollo (JetBrainsMono, FiraCode, CascadiaCode Nerd Fonts).
+- **`mount-workspace.sh`**: Automontaje seguro de la partición de trabajo `/home/caballero/Workspace`.
+- **`seguridad.sh`**: Endurecimiento (hardening) con Firewall UFW.
+- **`seguridad-dot.sh`**: DNS-over-TLS mediante `systemd-resolved`.
+- **`shell.sh`**: Herramientas modernas de terminal (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`) y Starship prompt.
+- **`screensaver-setup.sh`**: Configuración de salvapantallas 3D/Matrix al bloquear la pantalla en GNOME.
+- **`plymouth-setup.sh`**: Instalación, configuración y selector de Splash Screen visual de arranque (Plymouth: BGRT UEFI OEM, Ceratopsian oficial Debian 13, Spinner y previsualización).
+- **`yt-dlp-setup.sh`**: Dependencias multimedia (yt-dlp, ffmpeg y motor JS Deno vía mise).
+
+### 🐳 [Podman](./Podman/)
+Ecosistema completo para contenedores Rootless y Systemd Quadlets:
+- **Instalación**: `podman-install.sh`, `quadlets-setup.sh`
+- **Servicios Compartidos**: Traefik, PostgreSQL, Redis, Keycloak.
+- **Templates**: Python-Postgres, Python-Postgres-Redis, Fullstack.
+
+### 🖥️ [Virtualizacion](./Virtualizacion/)
+- **`virtualization.sh`**: Instalación y configuración de KVM/QEMU, Libvirt, sockets modulares, VirtIO y Nested KVM optimizado para Debian.
+- **`notas_virtualizacion_debian.md`**: Guía detallada de virtualización en Debian.
+
+### 💻 [IDEs y Editores](./IDE/)
+- **`neovim.sh`**: Neovim moderno con LazyVim.
+- **`vscode.sh`**: Visual Studio Code nativo (.deb oficial de Microsoft).
+- **`antigravity.sh`**: Google Antigravity Desktop 2.0.
+- **`antigravity-cli.sh`** & **`antigravity-ide.sh`**: Suite de CLI y motor IDE de Antigravity.
+- **`opencode.sh`**: OpenCode AI CLI/Editor.
+
+### 🎮 [Juegos](./Juegos/)
+- **`steam.sh`**: Steam aislado vía Flatpak con soporte para **Proton-GE**.
 
 ---
 
-## 🚀 Cómo empezar
+## 🚀 Despliegue Rápido con Just
+ 
+Para ejecutar la instalación según el perfil de tu equipo:
 
 ```bash
-git clone https://github.com/scaballeroq/Environment-Configuration.git
-cd Repos-Linux/Debian
-chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/*.sh Git/*.sh Apps/*.sh Juegos/*.sh
-just setup-all
+git clone https://github.com/scaballeroq/Debian.git
+cd Debian
+chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/install/*.sh Git/*.sh Juegos/*.sh
+
+# Portátil de Desarrollo (AMD Ryzen + Huella + Virtualización):
+just setup-laptop-amd
+
+# Sobremesa Multimedia (Intel Haswell / Media Center + Kodi - Sin virtualización):
+just setup-media-desktop
+```
+
+O ejecutar componentes de forma individual:
+```bash
+just post-install-amd    # Post-instalación exclusiva para AMD Ryzen
+just post-install-intel  # Post-instalación para Intel Media Center
+just kodi                # Instala Kodi y complementos de streaming
+just gnome               # Aplica configuración de GNOME vía GSettings
+just extensions          # Instala y compila las 12 extensiones de GNOME
+just ptyxis              # Instala y configura el emulador de terminal Ptyxis
+just plymouth            # Configura y activa el splash screen visual de arranque
+just ides                # Instala Neovim, VSCode, Antigravity y OpenCode
+just build-kernel        # Compila un kernel Linux nativo x86_64-v3
 ```
 
 ---

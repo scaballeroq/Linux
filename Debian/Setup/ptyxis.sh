@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Configuración e Instalación de Ptyxis para Debian 13
+# Configuración e Instalación de Ptyxis para Debian Testing (Trixie)
 # 
 # Este script instala el emulador de terminal Ptyxis, una alternativa moderna 
 # diseñada para GNOME, junto con la extensión "Nautilus Open Any Terminal" 
@@ -12,7 +12,7 @@
 set -euo pipefail
 
 echo "==========================================================="
-echo "🚀 Iniciando instalación y configuración estética de Ptyxis en Debian 13"
+echo "🚀 Iniciando instalación y configuración estética de Ptyxis en Debian Testing"
 echo "==========================================================="
 
 # 1. Actualizar repositorios e instalar actualizaciones

@@ -1,9 +1,9 @@
 #!/bin/bash
-# fingerprint-setup.sh - Configuración de autenticación por huella dactilar (fprintd) en Debian (GNOME, Sudo & PolKit)
+# fingerprint-setup.sh - Configuración de autenticación por huella dactilar (fprintd) en Debian Testing (GNOME, GDM, Sudo & PolKit)
 
 set -euo pipefail
 
-echo "🚀 Configurando desbloqueo y autenticación admin por huella dactilar en Debian..."
+echo "🚀 Configurando desbloqueo y autenticación admin por huella dactilar en Debian Testing + GNOME..."
 
 # 1. Instalación de paquetes necesarios
 echo "ℹ️ Instalando fprintd, libpam-fprintd e imagemagick vía APT..."
@@ -24,8 +24,8 @@ else
 fi
 
 # 4. Configuración de PAM para PolKit (autenticación admin gráfica en GNOME)
-echo "ℹ️ Configurando PAM para autenticación gráfica de administración (/etc/pam.d/polkit-1)..."
 if [ -f /etc/pam.d/polkit-1 ]; then
+    echo "ℹ️ Configurando PAM para autenticación gráfica de administración (/etc/pam.d/polkit-1)..."
     if ! grep -q "pam_fprintd.so" /etc/pam.d/polkit-1; then
         sudo sed -i '1s/^/auth       sufficient   pam_fprintd.so\n/' /etc/pam.d/polkit-1
         echo "✅ Huella dactilar añadida a /etc/pam.d/polkit-1"
@@ -63,4 +63,4 @@ if [[ "${REGISTER_NOW:-n}" =~ ^[Ss]$ ]]; then
     fprintd-enroll "${SUDO_USER:-$USER}" || echo "⚠️ El registro por consola no finalizó. Puedes probar desde Configuración -> Usuarios en GNOME."
 fi
 
-echo "✅ Configuración de huella dactilar completada en Debian."
+echo "✅ Configuración de huella dactilar completada en Debian Testing + GNOME."

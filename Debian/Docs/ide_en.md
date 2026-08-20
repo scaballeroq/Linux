@@ -32,7 +32,7 @@ Installs official VS Code from Microsoft's APT repository.
 
 Full suite of installation scripts for Google Antigravity:
 
-- **Google Antigravity Desktop 2.0 (`antigravity.sh`)**: Full installer configuring `/opt/antigravity`, `/usr/local/bin/update-antigravity`, GNOME launcher, and Chromium SUID sandbox (`4755`).
+- **Google Antigravity Desktop 2.0 (`antigravity.sh`)**: Full installer configuring `/opt/antigravity`, `/usr/local/bin/update-antigravity`, desktop application launcher, and Chromium SUID sandbox (`4755`).
 - **Google Antigravity CLI (`antigravity-cli.sh`)**: Terminal CLI tool installer.
 - **Google Antigravity IDE Engine (`antigravity-ide.sh`)**: Standalone IDE engine installer.
 

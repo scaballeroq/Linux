@@ -478,7 +478,7 @@ echo "Helper installed at $helper_path"
 
 # --- Install / Update Antigravity ---
 echo "[3/4] Installing Antigravity..."
-sudo update-antigravity
+sudo /usr/local/bin/update-antigravity
 
 # --- Verification ---
 echo "[4/4] Verifying installation..."
