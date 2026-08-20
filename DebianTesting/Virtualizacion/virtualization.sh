@@ -18,9 +18,8 @@ sudo apt install -y \
     virt-manager \
     virt-viewer \
     virtinst \
-    dnsmasq \
+    dnsmasq-base \
     dmidecode \
-    vde2 \
     bridge-utils \
     netcat-openbsd \
     iptables \
@@ -29,7 +28,17 @@ sudo apt install -y \
     swtpm \
     libosinfo-bin \
     guestfs-tools \
-    tuned
+    tuned \
+    acl \
+    polkitd
+
+# Si el servicio del paquete standalone 'dnsmasq' estuviera instalado y activo, lo deshabilitamos
+# para evitar que capture el puerto 53 (0.0.0.0:53) e impida que libvirt inicie la red NAT virtual.
+if systemctl is-active --quiet dnsmasq.service 2>/dev/null || systemctl is-enabled --quiet dnsmasq.service 2>/dev/null; then
+    echo "ℹ️ Deshabilitando servicio del demonio dnsmasq del sistema para permitir que libvirt gestione virbr0..."
+    sudo systemctl stop dnsmasq.service 2>/dev/null || true
+    sudo systemctl disable dnsmasq.service 2>/dev/null || true
+fi
 
 # 2. Controladores VirtIO para Windows (ISO estable oficial de Fedora)
 echo "ℹ️ Descargando controladores VirtIO para Windows (virtio-win.iso)..."
@@ -65,11 +74,12 @@ EOF
 sudo modprobe vhost_net 2>/dev/null || true
 sudo modprobe vhost_vsock 2>/dev/null || true
 
-# 4. Ajustes de /etc/libvirt/qemu.conf (Audio PipeWire nativo e integración de usuario)
-echo "ℹ️ Configurando usuario y grupo en /etc/libvirt/qemu.conf para soporte de sonido PipeWire..."
+# 4. Ajustes de /etc/libvirt/qemu.conf
+# Restaurar/mantener usuario y grupo estándar libvirt-qemu:kvm en Debian
+echo "ℹ️ Asegurando configuración estándar en /etc/libvirt/qemu.conf..."
 if [ -f /etc/libvirt/qemu.conf ]; then
-    sudo sed -i "s/^#*user = .*/user = \"$TARGET_USER\"/" /etc/libvirt/qemu.conf 2>/dev/null || true
-    sudo sed -i "s/^#*group = .*/group = \"kvm\"/" /etc/libvirt/qemu.conf 2>/dev/null || true
+    sudo sed -i 's/^user = .*/#user = "libvirt-qemu"/' /etc/libvirt/qemu.conf 2>/dev/null || true
+    sudo sed -i 's/^group = .*/#group = "kvm"/' /etc/libvirt/qemu.conf 2>/dev/null || true
 fi
 
 # 5. Ajustes de Firewall Nftables en Libvirt (/etc/libvirt/network.conf)
@@ -82,15 +92,39 @@ fi
 echo "ℹ️ Verificando soporte de hardware KVM..."
 virt-host-validate qemu || echo "⚠️ Advertencia: Revisa que la virtualización VT-x / AMD-V esté habilitada en tu BIOS/UEFI."
 
-# 7. Configuración de Servicios y Sockets Modulares
-echo "ℹ️ Habilitando servicios y sockets modulares de libvirt..."
-if systemctl list-unit-files | grep -q "virtqemud.socket"; then
-    sudo systemctl enable --now virtqemud.socket virtnetworkd.socket virtstoraged.socket 2>/dev/null || true
+# 7. Inicialización de Clave de Secretos (Debian 13 / Trixie)
+echo "ℹ️ Verificando soporte de cifrado de secretos libvirt..."
+sudo mkdir -p /var/lib/libvirt/secrets
+sudo chmod 700 /var/lib/libvirt/secrets
+if [ -f /usr/lib/systemd/system/virt-secret-init-encryption.service ]; then
+    if [ ! -s /var/lib/libvirt/secrets/secrets-encryption-key ]; then
+        sudo rm -f /var/lib/libvirt/secrets/secrets-encryption-key
+        sudo systemctl start virt-secret-init-encryption.service 2>/dev/null || true
+    fi
 fi
-sudo systemctl enable --now libvirtd.service 2>/dev/null || true
 
-# 8. Configuración de Red Virtual y Storage Pool por Defecto
-echo "ℹ️ Configurando red virtual NAT por defecto..."
+# 8. Reglas de Polkit para virt-manager sin contraseña
+echo "ℹ️ Configurando reglas de Polkit para el grupo libvirt..."
+sudo mkdir -p /etc/polkit-1/rules.d
+cat <<'EOF' | sudo tee /etc/polkit-1/rules.d/80-libvirt.rules > /dev/null
+/* Permitir gestión completa de libvirt/KVM a los miembros del grupo libvirt */
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.libvirt.unix.manage" && subject.isInGroup("libvirt")) {
+        return polkit.Result.YES;
+    }
+});
+EOF
+sudo chmod 644 /etc/polkit-1/rules.d/80-libvirt.rules
+
+# 9. Configuración de Servicios y Sockets de Libvirt
+echo "ℹ️ Habilitando sockets y demonio monolithic de libvirt..."
+sudo systemctl daemon-reload
+sudo systemctl enable --now virtlogd.socket virtlockd.socket 2>/dev/null || true
+sudo systemctl enable --now libvirtd.socket libvirtd-ro.socket libvirtd-admin.socket 2>/dev/null || true
+sudo systemctl restart libvirtd.service 2>/dev/null || sudo systemctl start libvirtd.service 2>/dev/null || true
+
+# 10. Configuración de Red Virtual y Storage Pool por Defecto
+echo "ℹ️ Configurando red virtual NAT por defecto (virbr0)..."
 sudo virsh net-start default 2>/dev/null || true
 sudo virsh net-autostart default 2>/dev/null || true
 
@@ -98,13 +132,13 @@ echo "ℹ️ Configurando pool de almacenamiento por defecto..."
 sudo virsh pool-start default 2>/dev/null || true
 sudo virsh pool-autostart default 2>/dev/null || true
 
-# 9. Configuración de Bridge Linux (br0) opcional para acceso LAN directo
-echo "ℹ️ Configurando Bridge de red (br0) para acceso LAN directo..."
-PHYS_IFACE=$(ip route | grep default | awk '{print $5}' | head -n1)
+# 11. Configuración de Bridge Linux (br0) solo para interfaces Ethernet cableadas
+echo "ℹ️ Comprobando compatibilidad de Bridge de red (br0)..."
+PHYS_IFACE=$(ip route | grep default | awk '{print $5}' | head -n1 || true)
 
-if [ -n "$PHYS_IFACE" ] && [ "$PHYS_IFACE" != "br0" ]; then
+if [ -n "$PHYS_IFACE" ] && [[ "$PHYS_IFACE" =~ ^(en|eth) ]]; then
     if ! nmcli con show br0 >/dev/null 2>&1; then
-        echo "Creando bridge br0 sobre la interfaz $PHYS_IFACE..."
+        echo "Creando bridge br0 sobre la interfaz Ethernet $PHYS_IFACE..."
         sudo nmcli con add type bridge ifname br0 con-name br0
         sudo nmcli con add type bridge-slave ifname "$PHYS_IFACE" con-name br0-port master br0
         sudo nmcli con modify br0 ipv4.method auto
@@ -123,25 +157,27 @@ EOF
     else
         echo "✅ El bridge br0 ya existe, omitiendo creación."
     fi
+else
+    echo "ℹ️ La conexión principal ($PHYS_IFACE) es inalámbrica (Wi-Fi) o no compatible con bridging directo."
+    echo "ℹ️ Las máquinas virtuales utilizarán la red virtual NAT por defecto (virbr0), compatible con Wi-Fi."
 fi
 
-# 10. Perfil de Rendimiento Tuned (virtual-host)
+# 12. Perfil de Rendimiento Tuned (virtual-host)
 echo "ℹ️ Aplicando optimizaciones de rendimiento con tuned (virtual-host)..."
 sudo systemctl enable --now tuned.service || true
 sudo tuned-adm profile virtual-host || true
 
-# 11. Permisos de Usuario y Listas de Control de Acceso (ACL)
+# 13. Permisos de Usuario y Listas de Control de Acceso (ACL)
 echo "ℹ️ Configurando grupos de usuario (libvirt, kvm)..."
 sudo usermod -aG libvirt,kvm "$TARGET_USER" 2>/dev/null || sudo usermod -aG libvirt "$TARGET_USER"
 
 echo "ℹ️ Configurando permisos ACL en el directorio de imágenes (/var/lib/libvirt/images)..."
-sudo apt install -y acl
 sudo mkdir -p /var/lib/libvirt/images
 sudo setfacl -R -b /var/lib/libvirt/images 2>/dev/null || true
 sudo setfacl -R -m u:"$TARGET_USER":rwX /var/lib/libvirt/images 2>/dev/null || true
 sudo setfacl -d -m u:"$TARGET_USER":rwX /var/lib/libvirt/images 2>/dev/null || true
 
-# 12. Variable de Entorno LIBVIRT_DEFAULT_URI
+# 14. Variable de Entorno LIBVIRT_DEFAULT_URI
 echo "ℹ️ Configurando LIBVIRT_DEFAULT_URI en el entorno del usuario..."
 if [ -d "/etc/bashrc.d" ] || [ -d "$HOME/.bashrc.d" ]; then
     mkdir -p ~/.bashrc.d
