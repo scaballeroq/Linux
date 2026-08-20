@@ -51,21 +51,26 @@ OS setup, GNOME tuning, and hardware hardening scripts:
 - **`yt-dlp-setup.sh`**: Multimedia dependencies (yt-dlp, ffmpeg, Deno JS runtime via mise).
 
 ### 🐳 [Podman](./Podman/)
-Rootless container ecosystem and Systemd Quadlets:
-- **Installation**: `podman-install.sh`, `quadlets-setup.sh`
+Rootless container ecosystem, Systemd Quadlets, and Standalone Launchers:
+- **Installation & Setup**: `podman-install.sh`, `quadlets-setup.sh`, `podman.sh`
 - **Shared Services**: Traefik, PostgreSQL, Redis, Keycloak.
 - **Templates**: Python-Postgres, Python-Postgres-Redis, Fullstack.
+- **Standalone Development Services**: PostgreSQL, Redis, MySQL, MongoDB, Nginx, Adminer, Portainer, Dozzle, Grafana, Prometheus, RabbitMQ, Keycloak, MinIO, MailHog, Browserless, Jaeger, Storybook, WordPress.
 
 ### 🖥️ [Virtualizacion](./Virtualizacion/)
 - **`virtualization.sh`**: KVM/QEMU, Libvirt, modular sockets, VirtIO, Nftables, and Nested KVM for Manjaro.
 - **`notas_virtualizacion_manjaro.md`**: Virtualization guide for Manjaro Linux.
 
-### 💻 [IDEs & Editors](./IDE/)
+### 💻 [IDEs, Editors & AI](./IDE/)
 - **`neovim.sh`**: Modern Neovim with LazyVim.
 - **`vscode.sh`**: Visual Studio Code (AUR / Pacman).
 - **`antigravity.sh`**: Google Antigravity Desktop 2.0.
 - **`antigravity-cli.sh`** & **`antigravity-ide.sh`**: Antigravity CLI and IDE engine suite.
 - **`opencode.sh`**: OpenCode AI CLI/Editor.
+- **`gemini.sh`** ([ProgrammingLanguages/](./ProgrammingLanguages/)): Google Gemini CLI via Mise.
+
+### 📱 [Apps](./Apps/)
+- **`meld.sh`**: Visual diff and merge tool.
 
 ### 🎮 [Gaming](./Juegos/)
 - **`steam.sh`**: Native Manjaro Steam with **GameMode**, **MangoHud**, **Vulkan**, and **Lutris**.
@@ -77,7 +82,7 @@ Rootless container ecosystem and Systemd Quadlets:
 ```bash
 git clone https://github.com/scaballeroq/Manjaro.git
 cd Manjaro
-chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/install/*.sh Git/*.sh Juegos/*.sh
+chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/install/*.sh Git/*.sh Juegos/*.sh Apps/*.sh AI/*.sh
 
 # Developer Laptop (AMD Ryzen + Fingerprint + Virtualization):
 just setup-laptop-amd

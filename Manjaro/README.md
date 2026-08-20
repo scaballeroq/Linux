@@ -51,21 +51,26 @@ Scripts de configuración del sistema operativo, personalización de GNOME y ren
 - **`yt-dlp-setup.sh`**: Dependencias multimedia (yt-dlp, ffmpeg y motor JS Deno vía mise).
 
 ### 🐳 [Podman](./Podman/)
-Ecosistema completo para contenedores Rootless y Systemd Quadlets:
-- **Instalación**: `podman-install.sh`, `quadlets-setup.sh`
-- **Servicios Compartidos**: Traefik, PostgreSQL, Redis, Keycloak.
-- **Templates**: Python-Postgres, Python-Postgres-Redis, Fullstack.
+Ecosistema completo para contenedores Rootless, Systemd Quadlets y Lanzadores Rápidos:
+- **Instalación y Configuración**: `podman-install.sh`, `quadlets-setup.sh`, `podman.sh`
+- **Servicios Compartidos Quadlets**: Traefik, PostgreSQL, Redis, Keycloak.
+- **Templates Quadlets**: Python-Postgres, Python-Postgres-Redis, Fullstack.
+- **Lanzadores Rápidos de Desarrollo**: PostgreSQL, Redis, MySQL, MongoDB, Nginx, Adminer, Portainer, Dozzle, Grafana, Prometheus, RabbitMQ, Keycloak, MinIO, MailHog, Browserless, Jaeger, Storybook, WordPress.
 
 ### 🖥️ [Virtualizacion](./Virtualizacion/)
 - **`virtualization.sh`**: Instalación y configuración de KVM/QEMU, Libvirt, sockets modulares, VirtIO, Nftables y Nested KVM optimizado para Manjaro.
 - **`notas_virtualizacion_manjaro.md`**: Guía detallada de virtualización en Manjaro.
 
-### 💻 [IDEs y Editores](./IDE/)
+### 💻 [IDEs, Editores e IA](./IDE/)
 - **`neovim.sh`**: Neovim moderno con LazyVim.
 - **`vscode.sh`**: Visual Studio Code nativo (AUR / Pacman).
 - **`antigravity.sh`**: Google Antigravity Desktop 2.0.
 - **`antigravity-cli.sh`** & **`antigravity-ide.sh`**: Suite de CLI y motor IDE de Antigravity.
 - **`opencode.sh`**: OpenCode AI CLI/Editor.
+- **`gemini.sh`** ([ProgrammingLanguages/](./ProgrammingLanguages/)): Google Gemini CLI vía Mise.
+
+### 📱 [Apps](./Apps/)
+- **`meld.sh`**: Instalador del comparador visual de diferencias Meld.
 
 ### 🎮 [Juegos](./Juegos/)
 - **`steam.sh`**: Steam nativo de Manjaro con soporte para **GameMode**, **MangoHud**, **Vulkan** y **Lutris**.
@@ -79,7 +84,7 @@ Para ejecutar la instalación según el perfil de tu equipo:
 ```bash
 git clone https://github.com/scaballeroq/Manjaro.git
 cd Manjaro
-chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/install/*.sh Git/*.sh Juegos/*.sh
+chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/install/*.sh Git/*.sh Juegos/*.sh Apps/*.sh AI/*.sh
 
 # Portátil de Desarrollo (AMD Ryzen + Huella + Virtualización):
 just setup-laptop-amd
@@ -100,6 +105,7 @@ just ptyxis              # Instala y configura la terminal Ptyxis
 just plymouth            # Configura y activa el splash screen visual de arranque
 just ides                # Instala Neovim, VSCode, Antigravity y OpenCode
 just build-kernel        # Compila un kernel Linux nativo x86_64-v3
+just meld                # Instala Meld
 ```
 
 ---

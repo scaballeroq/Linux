@@ -113,6 +113,10 @@ yt-dlp:
 kodi:
     sudo pacman -S --needed --noconfirm kodi kodi-addon-inputstream-adaptive kodi-addon-inputstream-rtmp kodi-addon-pvr-iptvsimple
 
+# Aplicaciones de escritorio (Meld)
+meld:
+    ./Apps/meld.sh
+
 # =============================================================================
 # CONFIGURACIÓN DE RED Y VIRTUALIZACIÓN
 # =============================================================================
@@ -227,17 +231,75 @@ steam:
     ./Juegos/steam.sh
 
 # =============================================================================
-# PODMAN - BASE
+# PODMAN - BASE Y QUADLETS
 # =============================================================================
 
 # Podman base (instalación y configuración rootless)
 podman-base:
     ./Podman/install/podman-install.sh
 
-# =============================================================================
-# PODMAN - SERVICIOS Y TEMPLATES
-# =============================================================================
-
 # Configuración Quadlets de Podman
 podman-quadlets:
     ./Podman/install/quadlets-setup.sh
+
+# Instalador alternativo de Podman
+podman:
+    ./Podman/podman.sh
+
+# =============================================================================
+# CONTENEDORES INDIVIDUALES DE DESARROLLO (PODMAN)
+# =============================================================================
+
+podman-postgres:
+    ./Podman/podman-postgres.sh
+
+podman-redis:
+    ./Podman/podman-redis.sh
+
+podman-mysql:
+    ./Podman/podman-mysql.sh
+
+podman-mongodb:
+    ./Podman/podman-mongodb.sh
+
+podman-nginx:
+    ./Podman/podman-nginx.sh
+
+podman-adminer:
+    ./Podman/podman-adminer.sh
+
+podman-portainer:
+    ./Podman/podman-portainer.sh
+
+podman-dozzle:
+    ./Podman/podman-dozzle.sh
+
+podman-grafana:
+    ./Podman/podman-grafana.sh
+
+podman-prometheus:
+    ./Podman/podman-prometheus.sh
+
+podman-rabbitmq:
+    ./Podman/podman-rabbitmq.sh
+
+podman-keycloak:
+    ./Podman/podman-keycloak.sh
+
+podman-minio:
+    ./Podman/podman-minio.sh
+
+podman-mailhog:
+    ./Podman/podman-mailhog.sh
+
+podman-browserless:
+    ./Podman/podman-browserless.sh
+
+podman-jaeger:
+    ./Podman/podman-jaeger.sh
+
+podman-storybook:
+    ./Podman/podman-storybook.sh
+
+podman-wordpress:
+    ./Podman/podman-wordpress.sh
