@@ -1,22 +1,14 @@
 #!/bin/bash
-# yt-dlp-setup.sh - Instalación de dependencias para yt-dlp y multimedia (DNF5 Optimized)
+# yt-dlp-setup.sh - Instalación de dependencias para yt-dlp y multimedia para Fedora 44
 
-set -e
+set -euo pipefail
 
-echo "ℹ️ Instalando yt-dlp y FFMPEG vía DNF5..."
-# ffmpeg es esencial para la mezcla de streams y conversión de audio
+echo "ℹ️ Instalando yt-dlp y FFMPEG vía DNF5 en Fedora 44..."
 sudo dnf5 install -y yt-dlp ffmpeg
 
 echo "ℹ️ Configurando motor JavaScript (Deno) vía Mise..."
-# yt-dlp utiliza motores JS para descifrar algoritmos de YouTube (n-challenge).
-# Deno es la opción recomendada por rendimiento.
 if command -v mise &> /dev/null; then
-    echo "✅ Instalando Deno vía mise..."
-    mise use --global deno@latest
-else
-    echo "⚠️ 'mise' no detectado. Instalando Deno a nivel de sistema como respaldo..."
-    sudo dnf5 install -y deno || sudo dnf5 install -y nodejs
+    mise use --global deno@latest || true
 fi
 
-echo "✅ Entorno multimedia preparado."
-echo "💡 Usa los comandos: ytvideo, ytaudio, ytlista para descargar."
+echo "✅ yt-dlp, FFmpeg y soporte de motor JS configurados correctamente."

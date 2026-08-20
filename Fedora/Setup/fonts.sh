@@ -1,36 +1,29 @@
 #!/bin/bash
-# fonts.sh - Instalación de Fuentes de Desarrollo (Optimizado)
+# fonts.sh - Instalación de Fuentes de Desarrollo (Nerd Fonts) para Fedora 44
 
-set -e
+set -euo pipefail
 
-# Directorio de destino
 FONT_DIR="$HOME/.local/share/fonts"
 mkdir -p "$FONT_DIR"
 
-# Lista de Nerd Fonts a instalar
 FONTS=("JetBrainsMono" "FiraCode" "CascadiaCode" "Meslo" "Hack")
 
 echo "ℹ️ Verificando e instalando Nerd Fonts..."
 
 for font in "${FONTS[@]}"; do
-    if ls "$FONT_DIR/$font"* &>/dev/null; then
-        echo "✅ $font ya está instalada. Saltando..."
+    if [ ! -d "$FONT_DIR/$font" ]; then
+        echo "⬇️ Descargando $font Nerd Font..."
+        mkdir -p "$FONT_DIR/$font"
+        curl -fLo "/tmp/${font}.zip" "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${font}.zip"
+        unzip -qo "/tmp/${font}.zip" -d "$FONT_DIR/$font"
+        rm -f "/tmp/${font}.zip"
+        echo "✅ $font instalada."
     else
-        echo "⬇️ Descargando $font..."
-        URL="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/$font.zip"
-        curl -L -o "/tmp/$font.zip" "$URL"
-        
-        echo "📦 Extrayendo $font..."
-        unzip -q -o "/tmp/$font.zip" -d "$FONT_DIR"
-        rm -f "/tmp/$font.zip"
+        echo "✅ $font ya está instalada."
     fi
 done
 
-# Eliminar archivos innecesarios (txt, md) que a veces vienen en los zips
-find "$FONT_DIR" -name "*.txt" -delete
-find "$FONT_DIR" -name "*.md" -delete
+echo "ℹ️ Actualizando caché de fuentes del sistema..."
+fc-cache -f "$FONT_DIR"
 
-echo "ℹ️ Actualizando caché de fuentes..."
-fc-cache -f
-
-echo "✅ Fuentes instaladas y actualizadas correctamente."
+echo "✅ Todas las fuentes se han instalado y configurado correctamente."

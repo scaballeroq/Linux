@@ -1,7 +1,7 @@
 #!/bin/bash
-# github-cli.sh - GitHub CLI Installation (Optimized)
+# github-cli.sh - Instalación de GitHub CLI para Fedora 44
 
-set -e
+set -euo pipefail
 
 echo "ℹ️ Instalando GitHub CLI (gh) vía DNF5..."
 sudo dnf5 install -y gh

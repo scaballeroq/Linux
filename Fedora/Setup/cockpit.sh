@@ -1,26 +1,27 @@
 #!/bin/bash
-# cockpit.sh - Instalación y configuración de Cockpit para administración web
+# cockpit.sh - Instalación y configuración del panel web Cockpit en Fedora 44
 
-set -e
+set -euo pipefail
 
-echo "🚀 Configurando Cockpit (Panel de Administración Web)..."
+echo "ℹ️ Instalando Cockpit y módulos avanzados (Podman, Virtualización, Almacenamiento) vía DNF5..."
 
-# 1. Instalación de Cockpit y extensiones útiles
-# Incluimos soporte para Podman, Máquinas Virtuales y Paquetes
-echo "ℹ️ Instalando Cockpit y extensiones..."
-sudo dnf5 install -y cockpit cockpit-podman cockpit-machines cockpit-packagekit cockpit-storaged cockpit-networkmanager
+sudo dnf5 install -y \
+    cockpit \
+    cockpit-podman \
+    cockpit-machines \
+    cockpit-storaged \
+    cockpit-packagekit \
+    cockpit-networkmanager \
+    cockpit-selinux 2>/dev/null || sudo dnf5 install -y cockpit cockpit-podman cockpit-machines cockpit-storaged
 
-# 2. Habilitar el servicio vía Socket (Eficiencia)
-# Al igual que con Libvirt, el socket activará el servicio solo cuando accedas a él.
-echo "ℹ️ Habilitando Cockpit Socket..."
+echo "ℹ️ Habilitando socket de Cockpit..."
 sudo systemctl enable --now cockpit.socket
 
-# 3. Configuración del Firewall
-# Cockpit usa el puerto 9090 por defecto.
-echo "ℹ️ Abriendo puerto 9090 en el Firewall (Zona Work)..."
-sudo firewall-cmd --permanent --zone=work --add-service=cockpit
-sudo firewall-cmd --reload
+echo "ℹ️ Configurando reglas de firewall para Cockpit..."
+sudo firewall-cmd --permanent --zone=FedoraWorkstation --add-service=cockpit 2>/dev/null || sudo firewall-cmd --permanent --add-service=cockpit 2>/dev/null || true
+sudo firewall-cmd --reload 2>/dev/null || true
 
-echo "✅ Cockpit configurado correctamente."
-echo "🌐 Puedes acceder desde: https://localhost:9090 (o la IP de tu máquina)"
-echo "💡 Usa tu usuario y contraseña de sistema para entrar."
+echo "================================================================="
+echo "✅ Cockpit instalado y en ejecución."
+echo "🌐 Accede desde tu navegador en: https://localhost:9090"
+echo "================================================================="

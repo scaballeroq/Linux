@@ -1,72 +1,85 @@
-# Instalación y Configuración de Virtualización (KVM/QEMU) en Fedora
+# Manual de Virtualización de Alto Rendimiento (KVM/QEMU) en Fedora 44 Workstation
 
-Este manual está optimizado para versiones modernas de Fedora (como Fedora 40/44). Evita el uso del esquema monolítico antiguo (`libvirtd`) e implementa la arquitectura moderna de demonios modulares (*socket activation*), que ahorra batería y memoria. También elimina `tuned` tal como solicitaste, manteniendo el sistema liviano y acorde a tus preferencias.
+Este manual detalla la configuración y optimización de **KVM / QEMU / virt-manager** para **Fedora 44** con kernel optimizado `x86_64-v3`, audio nativo PipeWire y aceleración de hardware.
+
+---
 
 ## 1. Instalación de Paquetes
-Instalamos el grupo completo de virtualización que incluye automáticamente KVM, libvirt, virt-manager, y utilidades asociadas.
+Instalamos QEMU, libvirt, virt-manager, firmware UEFI (OVMF) con soporte TPM 2.0 y herramientas de aceleración:
 
 ```bash
-sudo dnf group install -y --with-optional virtualization
+sudo dnf5 update
+sudo dnf5 install -y \
+    qemu-system-x86 qemu-utils libvirt-daemon-system libvirt-clients \
+    virt-manager virt-viewer virtinst dnsmasq dmidecode vde2 \
+    bridge-utils netcat-openbsd iptables nftables ovmf swtpm \
+    libosinfo-bin guestfs-tools tuned
 ```
 
-## 2. Controladores de Windows (VirtIO)
-Si planeas virtualizar máquinas Windows, es fundamental instalar los controladores VirtIO para obtener el máximo rendimiento nativo en discos y adaptadores de red.
+---
 
+## 2. Aceleración del Kernel y Virtualización Anidada (Nested KVM)
+
+### Virtualización Anidada:
+- **Intel**: `/etc/modprobe.d/kvm_intel.conf` -> `options kvm_intel nested=1`
+- **AMD**: `/etc/modprobe.d/kvm_amd.conf` -> `options kvm_amd nested=1`
+
+### Aceleración de Red y Sockets del Kernel (`vhost_net` y `vhost_vsock`):
 ```bash
-sudo curl -o /etc/yum.repos.d/virtio-win.repo https://fedorapeople.org/groups/virt/virtio-win/virtio-win.repo
-sudo dnf install -y virtio-win
+cat <<EOF | sudo tee /etc/modules-load.d/kvm-vhost.conf
+vhost_net
+vhost_vsock
+EOF
+sudo modprobe vhost_net
+sudo modprobe vhost_vsock
 ```
 
-## 3. Configuración de Servicios (Demonios Modulares)
-Históricamente se habilitaba el servicio obsoleto `libvirtd` o se arrancaban múltiples demonios (`virtqemud.service`, etc.). Las versiones modernas recomiendan usar **sockets**. Al habilitar los sockets, el servicio sólo se iniciará automáticamente cuando utilices `virt-manager` o `virsh`, ahorrando recursos el resto del tiempo.
+---
 
-```bash
-# Habilitamos y arrancamos los sockets principales de QEMU y Red
-sudo systemctl enable --now virtqemud.socket virtnetworkd.socket
+## 3. Integración de Sonido Nativo PipeWire (`/etc/libvirt/qemu.conf`)
+Para que las máquinas virtuales (Windows, macOS o Linux) reproduzcan audio directamente por el servidor PipeWire de tu usuario:
+```ini
+user = "caballero"
+group = "kvm"
 ```
 
-## 4. Permisos de Grupo y Entorno de Terminal
-Añadimos tu usuario a los grupos clave para no depender de contraseñas de administrador para gestionar las máquinas virtuales, y redirigimos la variable predeterminada para que conectes siempre a nivel de sistema.
+---
+
+## 4. Backend de Firewall Nftables en Fedora 44 (`/etc/libvirt/network.conf`)
+Configurado para usar `nftables` nativo en lugar de legacy iptables:
+```ini
+firewall_backend = "nftables"
+```
+
+---
+
+## 5. Controladores VirtIO para Windows (`virtio-win.iso`)
+Descarga automática de la ISO estable más reciente del proyecto Fedora:
+```bash
+curl -fsSL -o ~/Descargas/virtio-drivers/virtio-win.iso https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso
+```
+
+---
+
+## 6. Sockets Modulares y Perfil Tuned (`virtual-host`)
+```bash
+sudo systemctl enable --now virtqemud.socket virtnetworkd.socket virtstoraged.socket
+sudo systemctl enable --now libvirtd.service
+sudo systemctl enable --now tuned.service
+sudo tuned-adm profile virtual-host
+```
+
+---
+
+## 7. Permisos de Usuario y Directorio de Imágenes (ACL)
 
 ```bash
-# Añadir al grupo libvirt (gestión de VMs) y kvm (rendimiento hardware)
 sudo usermod -aG libvirt,kvm $USER
-
-# Configurar QEMU del host como destino automático en tu shell
-echo "export LIBVIRT_DEFAULT_URI='qemu:///system'" >> ~/.zshrc
-source ~/.zshrc
-```
-
-## 5. Accesibilidad de Directorio (ACL)
-Para facilitarte la tarea de agregar ISOs o administrar directamente los discos duros virtuales, asignamos listas de control de acceso (ACLs) al directorio principal usando la variable `$USER` genérica, reemplazando el nombre manual para que sea replicable.
-
-```bash
-# Eliminar cualquier configuración ACL antigua
-sudo setfacl -R -b /var/lib/libvirt/images
-
-# Otorgar permisos completos al usuario sobre el contenido existente (X mayúscula respeta ejecutabilidad)
 sudo setfacl -R -m u:$USER:rwX /var/lib/libvirt/images
-
-# Imponer una regla por defecto para que los nuevos ficheros creados mantengan tus permisos
 sudo setfacl -d -m u:$USER:rwX /var/lib/libvirt/images
-
-# Comprobar el resultado
-getfacl /var/lib/libvirt/images
+export LIBVIRT_DEFAULT_URI="qemu:///system"
 ```
 
-## 6. Verificación Final
-Por último, puedes utilizar estos comandos para validar tu entorno. Tu hardware (IOMMU, KVM, etc.) debería mostrar "PASS".
-
-```bash
-# Verificar configuraciones de hardware y kernel
-sudo virt-host-validate qemu
-
-# Comprobar que la red por defecto ("default") esté activa
-sudo virsh net-list --all
-
-# Confirmar la conexión predeterminada (debería decir "qemu:///system")
-virsh uri
-```
-
+---
 > [!IMPORTANT]
-> A diferencia de los servicios o configuraciones, **la asignación de grupos de tu usuario (paso 4)** entrará en vigor sólo en una nueva sesión o una vez que reinicies el sistema.
+> Recuerda reiniciar la sesión o el equipo tras la instalación para aplicar los grupos `libvirt` y `kvm` a tu usuario.

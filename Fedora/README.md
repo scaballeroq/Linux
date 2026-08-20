@@ -1,90 +1,100 @@
-# 🔧 Fedora & Arch Linux Environment Configuration
+# 🔧 Fedora: Configuración de Entorno Fedora 44 Workstation + GNOME
 
-Este repositorio contiene una colección organizada y modular de scripts de configuración para sistemas **Fedora** y **Arch Linux**. El objetivo es automatizar la puesta a punto de un entorno de desarrollo profesional, optimizado y estéticamente agradable.
+Este repositorio contiene una colección organizada, modular y automatizada de scripts de configuración para sistemas **Fedora 44 Workstation** con el entorno de escritorio **GNOME** (optimizado para estaciones de trabajo y portátiles de desarrollo).
 
 ---
 
 ## 📂 Organización del Repositorio
 
-La configuración se ha reestructurado de forma modular para facilitar el mantenimiento y la legibilidad:
+La configuración está estructurada de forma modular para facilitar su mantenimiento y despliegue:
 
 ### 🐚 [Bash.Setup](./Bash.Setup/)
-El núcleo de la configuración de la terminal Bash.
-- **`aliases.sh`**, **`functions.sh`**: Atajos y utilidades potentes.
-- **`podman-functions.sh`**: Gestión simplificada de contenedores.
-- **`yt-dlp_aliases.sh`**: Descargas multimedia optimizadas.
-- **`environment.sh`**, **`history.sh`**, **`options.sh`**: Ajustes de comportamiento de la shell.
+El núcleo de la configuración de la terminal Bash:
+- **`aliases.sh`**: Atajos comunes para DNF5, comandos frecuentemente utilizados y utilidades modernas en Rust (`eza`, `bat`, `duf`, `dust`, `procs`, `btm`).
+- **`environment.sh`**: Variables globales que afectan el comportamiento de la shell (`PATH`, `EDITOR`, `mise`, `GPG_TTY`, DOCKER_HOST).
+- **`functions.sh`**: Colección de funciones avanzadas y utilidades multimedia (FFmpeg, ImageMagick, extracción unificada).
+- **`gnome_settings.sh`**: Configuraciones de entorno para GNOME, luz nocturna, temas, reinicio de shell y accesos rápidos a Configuración.
+- **`history.sh`**: Controla cómo bash recuerda los comandos (sin duplicados, hasta 20k líneas).
+- **`options.sh`**: Configura el comportamiento interno de Bash mediante `shopt` y `bind`.
+- **`podman-functions.sh`**: Funciones para gestión simplificada de contenedores (`pexec`, `plogs`, `pclean`).
+- **`rclone_aliases.sh`**: Atajos para sincronización en la nube con Google Drive y OneDrive.
+- **`yt-dlp_aliases.sh`**: Descargas multimedia optimizadas con yt-dlp, ffmpeg y motor JS (Deno).
+
+### ⚙️ [Setup](./Setup/)
+Scripts de configuración del sistema operativo, personalización de GNOME y endurecimiento:
+- **`post-install.sh`**: Despachador inteligente con detección automática de procesador (AMD vs Intel) y soporte para banderas CLI (`--amd`, `--intel`).
+- **`post-install-amd.sh`**: Post-instalación optimizada para procesadores **AMD Ryzen** y gráficos Radeon (microcódigo AMD, firmware GPU, RADV, Mesa, ZRAM con `zram-generator`, PipeWire, GNOME, RPM Fusion).
+- **`post-install-intel.sh`**: Post-instalación optimizada para equipos de sobremesa **Intel Core** (Haswell i7-4790 / HD Graphics 4600) dedicados a centro multimedia y streaming (microcódigo Intel, driver VA-API `i965` / `intel-media-driver`, codecs, Kodi, sin virtualización).
+- **`gnome-settings.sh`**: Personalización automatizada de GNOME vía GSettings (Luz nocturna a 3500K, reloj 24h, porcentaje de batería, botones de ventana, VRR).
+- **`gnome-extensions.sh`**: Instalación automatizada y limpia de 12 extensiones de GNOME Shell con compilación de esquemas (ver [Guía de Extensiones GNOME](./Docs/gnome_extensions_es.md)).
+- **`ptyxis.sh`**: Instalación y perfil moderno de Ptyxis (translúcido al 85%, sin scrollbar, atajo `Ctrl+Alt+T` e integración en Nautilus).
+- **`kitty.sh`**: Terminal Kitty acelerada por GPU con opacidad (85%), efectos blur, tipografía JetBrainsMono Nerd Font e integración con GNOME/Nautilus.
+- **`apariencia.sh`**: Instalación de temas e iconos (Adwaita-Dark, Papirus-Dark e integración visual GTK/Qt).
+- **`laptop-setup.sh`**: Optimización para portátiles de desarrollo (Touchpad, Bluetooth, `power-profiles-daemon`, `switcheroo-control`, HiDPI, VRR en Wayland, persistencia de brillo al 95%).
+- **`fingerprint-setup.sh`**: Desbloqueo y autenticación por huella dactilar (`fprintd`, `fprintd-pam`, `authselect` nativo en Fedora).
+- **`hp-printer-setup.sh`**: Impresora HP LaserJet Pro M15w vía USB (CUPS, HPLIP, plugin propietario y `system-config-printer`).
+- **`fedora-tuning.sh`**: Ajustes de Kernel Sysctl (`inotify`, `max_map_count`) y soporte de `distrobox`.
+- **`build-custom-kernel.sh`**: Compilador de Kernel Linux oficial optimizado para arquitectura `x86_64-v3`, latencia a 1000Hz y Preemption dinámica con Dracut y GRUB.
+- **`cockpit.sh`**: Panel de administración web Cockpit con módulos Podman, Virtualización y Almacenamiento.
+- **`fastfetch.sh`**: Información estética del sistema al abrir la terminal (Fastfetch).
+- **`firefox.sh`**: Instalación y configuración de Mozilla Firefox oficial.
+- **`fonts.sh`**: Fuentes tipográficas de desarrollo (JetBrainsMono, FiraCode, CascadiaCode Nerd Fonts).
+- **`mount-workspace.sh`**: Automontaje seguro de la partición de trabajo `/home/caballero/Workspace`.
+- **`seguridad.sh`**: Endurecimiento (hardening) con Firewall Firewalld (zona `FedoraWorkstation`), MAC Randomization y sysctl hardening.
+- **`seguridad-dot.sh`**: DNS-over-TLS mediante `systemd-resolved`.
+- **`shell.sh`**: Herramientas modernas de terminal (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd-find`, `duf`, `dust`) y Starship prompt.
+- **`screensaver-setup.sh`**: Configuración de salvapantallas 3D/Matrix al bloquear la pantalla en GNOME.
+- **`plymouth-setup.sh`**: Instalación, configuración y selector de Splash Screen visual de arranque con `dracut -f`.
+- **`yt-dlp-setup.sh`**: Dependencias multimedia (yt-dlp, ffmpeg y motor JS Deno vía mise).
 
 ### 🐳 [Podman](./Podman/)
-Scripts individuales para desplegar servicios comunes en contenedores Podman de forma aislada:
-- Bases de datos: Postgres, MySQL, MongoDB, Redis.
-- Herramientas: Portainer, Dozzle, Adminer, Minio.
-- Desarrollo: Nginx, Keycloak, RabbitMQ, Storybook.
+Ecosistema completo para contenedores Rootless y Systemd Quadlets:
+- **Instalación**: `podman-install.sh`, `quadlets-setup.sh`
+- **Servicios Compartidos**: Traefik, PostgreSQL, Redis, Keycloak.
+- **Templates**: Python-Postgres, Python-Postgres-Redis, Fullstack.
+- **CLI Utility**: `lib/podman-utils.sh`
 
 ### 🖥️ [Virtualizacion](./Virtualizacion/)
-Configuración de bajo nivel para **KVM/QEMU** en Fedora 44.
-- Uso de demonios modulares (`virtqemud`, `virtnetworkd`).
-- Gestión de permisos mediante ACLs para el usuario actual.
-- Controladores VirtIO para máximo rendimiento en Windows.
+- **`virtualization.sh`**: Instalación y configuración de KVM/QEMU, Libvirt, sockets modulares, VirtIO nativo, PipeWire audio, Tuned `virtual-host` y Nested KVM optimizado para Fedora 44.
+- **`Notas_Virtualizacion_Fedora.md`**: Guía detallada de virtualización en Fedora 44.
 
-### ⚙️ [Setup](./Setup/) / [IDE](./IDE/)
-- **`post-install.sh`**: Script maestro de post-instalación para Fedora.
-- **`fonts.sh`**: Instalación automatizada de **Nerd Fonts**.
-- **`seguridad.sh`**: Ajustes de endurecimiento del sistema.
-- **`neovim.sh`**, **`vscode.sh`**: Configuración de editores (LazyVim, extensiones).
-- **`antigravity_2.0.sh`**, **`antigravity_2.0-IDE.sh`**: Instalación y auto-actualización automática de Google Antigravity 2.0 y Antigravity IDE 2.0 (mediante comandos locales `/usr/local/bin/update-antigravity*`).
-- **`fastfetch.sh`**: Información estética del sistema al inicio.
+### 💻 [IDEs y Editores](./IDE/)
+- **`neovim.sh`**: Neovim moderno con LazyVim.
+- **`vscode.sh`**: Visual Studio Code nativo (repo oficial de Microsoft con DNF5).
+- **`antigravity.sh`**: Google Antigravity Desktop 2.0.
+- **`antigravity-cli.sh`** & **`antigravity-ide.sh`**: Suite de CLI y motor IDE de Antigravity.
+- **`opencode.sh`**: OpenCode AI CLI/Editor.
 
-### 🛠️ Otros Directorios
-- **`Git/`**: Configuración global de Git (`git.sh`) con mejores prácticas modernas (rama por defecto `develop`, editor por defecto `kate --block` para KDE, visor de diferencias `git-delta`) e instalación de **Lazygit** y **GitHub CLI** (`github-cli.sh`).
-- **`AI/`**: Herramientas de Inteligencia Artificial como **Antigravity CLI** (`antigravity-CLI.sh`) que configura la herramienta de terminal oficial `agy` y su actualizador local.
-- **`ProgrammingLanguages/`**: Gestión de runtimes con **mise** (`mise.sh`) y scripts para Node.js, Python, Rust, .NET y Angular.
-- **`Apps/`**: Scripts para aplicaciones específicas como **Meld** (comparación de archivos).
+### 🎮 [Juegos](./Juegos/)
+- **`steam.sh`**: Steam nativo vía RPM Fusion / Flatpak con soporte para **Proton-GE**, MangoHud y GameMode.
 
 ---
 
-## 🚀 Cómo empezar
-
-### 1. Clonar el repositorio
-```bash
-git clone https://github.com/scaballeroq/Fedora.Environment-Configuration.git
-cd Fedora.Environment-Configuration
-```
-
-### 2. Configurar la Shell (Bash)
-Se recomienda el uso de un directorio `.bashrc.d/` para cargar los scripts de forma modular.
+## 🚀 Despliegue Rápido con Just
+ 
+Para ejecutar la instalación según el perfil de tu equipo:
 
 ```bash
-mkdir -p ~/.bashrc.d
-ln -s $(pwd)/Bash.Setup/*.sh ~/.bashrc.d/
+git clone https://github.com/scaballeroq/Fedora.git
+cd Fedora
+chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/install/*.sh Git/*.sh Juegos/*.sh
+
+# Portátil de Desarrollo (AMD Ryzen + Huella + Virtualización):
+just setup-laptop-amd
+
+# Sobremesa Multimedia (Intel Haswell / Media Center + Kodi - Sin virtualización):
+just setup-media-desktop
 ```
 
-Y añade lo siguiente a tu `~/.bashrc`:
+O ejecutar componentes de forma individual:
 ```bash
-# Carga modular de scripts de Bash.Setup
-if [ -d "$HOME/.bashrc.d" ]; then
-    for script in "$HOME/.bashrc.d"/*.sh; do
-        [ -r "$script" ] && source "$script"
-    done
-    unset script
-fi
+just post-install-amd    # Post-instalación exclusiva para AMD Ryzen
+just post-install-intel  # Post-instalación para Intel Media Center
+just kodi                # Instala Kodi y complementos de streaming
+just gnome               # Aplica configuración de GNOME vía GSettings
+just extensions          # Instala y compila las 12 extensiones de GNOME
+just ptyxis              # Instala y configura el emulador de terminal Ptyxis
+just plymouth            # Configura y activa el splash screen visual de arranque
+just ides                # Instala Neovim, VSCode, Antigravity y OpenCode
+just build-kernel        # Compila un kernel Linux nativo x86_64-v3
 ```
-
-### 3. Ejecutar Scripts de System Setup
-Puedes ejecutar scripts específicos según tu necesidad (asegúrate de darles permisos de ejecución):
-```bash
-chmod +x Setup/*.sh Virtualizacion/*.sh
-./Setup/fonts.sh       # Instala Fuentes
-./Virtualizacion/virtualization.sh # Configura KVM/QEMU
-```
-
----
-
-## ✨ Características Principales
-- **Modularidad**: Cada componente es independiente.
-- **Optimización**: Servicios modulares en KVM para ahorrar recursos.
-- **Productividad**: Cientos de alias y funciones para FFMPEG, Rclone, Podman y YT-DLP.
-- **Limpieza**: Uso de ACLs para evitar el uso excesivo de `sudo` en tareas diarias.
-
----
-*Mantenido por [caballero](https://github.com/scaballeroq)*

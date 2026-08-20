@@ -49,5 +49,4 @@ bind 'set colored-stats on'
 # =============================================================================
 # MENSAJE DE CARGA
 # =============================================================================
-#echo "✅ Opciones de Shell activadas (autocd, globstar, corrección errores...)"
-echo "✅ Opciones de Shell activadas"
+echo "✅ Opciones de Shell activadas (autocd, globstar, corrección errores...)"

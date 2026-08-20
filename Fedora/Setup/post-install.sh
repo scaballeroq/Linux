@@ -1,50 +1,82 @@
 #!/bin/bash
-# post-install.sh - Optimización de DNF5, actualización, RPMFusion, Codecs y Flathub
+# post-install.sh - Despachador y selector inteligente de post-instalación para Fedora 44 Workstation + GNOME
+# Detecta automáticamente la arquitectura de CPU (AMD Ryzen vs Intel Core) o permite selección manual
 
-set -e
+set -euo pipefail
 
-echo "🚀 Iniciando configuración base de Fedora Workstation (KDE Optimized)..."
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# 1. Optimización DNF5 (DNF5 ya es rápido por defecto, pero mantenemos paralelismo)
-echo "ℹ️ Configurando DNF5..."
-if [ -f /etc/dnf/dnf.conf ]; then
-    if ! grep -q "max_parallel_downloads" /etc/dnf/dnf.conf; then
-        echo "max_parallel_downloads=10" | sudo tee -a /etc/dnf/dnf.conf
-    fi
+show_help() {
+    cat <<EOF
+🚀 Despachador de Post-Instalación para Fedora 44 Workstation + GNOME
+
+Uso:
+  $0 [OPCIÓN]
+
+Opciones:
+  (sin argumentos)   Auto-detecta el procesador (AMD o Intel) y ejecuta el instalador correspondiente.
+  --amd, -a          Ejecuta la configuración optimizada para AMD Ryzen y Radeon Graphics.
+  --intel, -i        Ejecuta la configuración optimizada para Intel Core (Haswell/i7-4790) + Multimedia (Kodi/Streaming).
+  --help, -h         Muestra este mensaje de ayuda.
+
+Scripts independientes disponibles:
+  • Setup/post-install-amd.sh   -> Optimizado para AMD Ryzen (firmware AMD, RADV, Mesa, DNF5)
+  • Setup/post-install-intel.sh -> Optimizado para Intel Core / HD Graphics (microcódigo Intel, i965/Media VA-API, Kodi, sin virtualización)
+EOF
+}
+
+# Procesar argumentos de línea de comandos
+if [ $# -gt 0 ]; then
+    case "$1" in
+        --amd|-a|amd)
+            echo "⚡ Opción manual seleccionada: AMD Ryzen"
+            exec "$SCRIPT_DIR/post-install-amd.sh"
+            ;;
+        --intel|-i|intel)
+            echo "⚡ Opción manual seleccionada: Intel Core / Media Center"
+            exec "$SCRIPT_DIR/post-install-intel.sh"
+            ;;
+        --help|-h|help)
+            show_help
+            exit 0
+            ;;
+        *)
+            echo "❌ Opción no reconocida: $1"
+            show_help
+            exit 1
+            ;;
+    esac
 fi
 
-# 2. Actualización Base
-echo "ℹ️ Actualizando sistema con DNF5..."
-sudo dnf5 update -y
+# Auto-detección de procesador
+echo "🔍 Analizando procesador y arquitectura del sistema..."
+CPU_VENDOR=$(grep -m1 'vendor_id' /proc/cpuinfo | awk '{print $3}' || true)
+CPU_MODEL=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs || echo "Desconocido")
 
-# 3. RPMFusion
-echo "ℹ️ Habilitando RPM Fusion..."
-sudo dnf5 install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+echo "💻 CPU Detectado: $CPU_MODEL (Vendor: $CPU_VENDOR)"
 
-sudo dnf5 install -y rpmfusion-free-appstream-data rpmfusion-nonfree-appstream-data
-
-# 4. System Upgrade
-echo "ℹ️ Refrescando paquetes..."
-sudo dnf5 upgrade --refresh -y
-
-# 5. Flatpak + Flathub Completo
-echo "ℹ️ Configurando Flathub..."
-sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-
-# 6. Software Esencial (Removido gnome-software, exfat-utils -> exfatprogs)
-echo "ℹ️ Instalando utilidades esenciales..."
-sudo dnf5 install -y @development-tools kernel-devel kernel-headers cmake curl btop htop inxi fuse-libs exfatprogs hfsplus-tools vlc gimp gparted p7zip p7zip-plugins unrar zip unzip bzip2 xz flatpak
-
-# 7. Multimedia Codecs
-echo "ℹ️ Configurando codecs multimedia..."
-sudo dnf5 config-manager setopt fedora-cisco-openh264.enabled=1
-sudo dnf5 swap -y ffmpeg-free ffmpeg --allowerasing
-sudo dnf5 update @multimedia --setopt="install_weak_deps=False" --exclude=PackageKit-gstreamer-plugin -y
-sudo dnf5 install -y libdvdread libdvdnav lsdvd
-
-# 8. Aceleración HW
-echo "ℹ️ Configurando aceleración de hardware de video (Mesa)..."
-sudo dnf5 install -y mesa-va-drivers-freeworld mesa-va-drivers-freeworld.i686 || true
-
-echo "✅ Sistema base configurado correctamente (Se recomienda reiniciar)"
+if [ "$CPU_VENDOR" == "AuthenticAMD" ]; then
+    echo "✅ Procesador AMD detectado. Ejecutando post-install-amd.sh..."
+    exec "$SCRIPT_DIR/post-install-amd.sh"
+elif [ "$CPU_VENDOR" == "GenuineIntel" ]; then
+    echo "✅ Procesador Intel detectado. Ejecutando post-install-intel.sh..."
+    exec "$SCRIPT_DIR/post-install-intel.sh"
+else
+    echo "⚠️ No se pudo determinar automáticamente el fabricante del procesador."
+    echo "¿Qué configuración deseas aplicar?"
+    echo "1) AMD Ryzen / Radeon Graphics"
+    echo "2) Intel Core / Intel HD Graphics (Haswell / Media Center)"
+    read -rp "Selecciona una opción (1 o 2): " CHOICE
+    case "$CHOICE" in
+        1)
+            exec "$SCRIPT_DIR/post-install-amd.sh"
+            ;;
+        2)
+            exec "$SCRIPT_DIR/post-install-intel.sh"
+            ;;
+        *)
+            echo "❌ Selección inválida. Abortando."
+            exit 1
+            ;;
+    esac
+fi

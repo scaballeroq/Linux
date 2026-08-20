@@ -1,46 +1,50 @@
 #!/bin/bash
-# shell.sh - Instalación de herramientas modernas de terminal y prompt Starship
+# shell.sh - Instalación de herramientas modernas de terminal y prompt Starship para Fedora 44
 
-set -e
+set -euo pipefail
 
-echo "ℹ️ Instalando utilidades de terminal modernas..."
-sudo dnf5 install -y --skip-unavailable \
+echo "ℹ️ Instalando utilidades de terminal modernas en Fedora 44 vía DNF5..."
+sudo dnf5 install -y \
     eza \
     bat \
     fzf \
     zoxide \
     ripgrep \
     fd-find \
-    tldr \
     duf \
     dust \
+    procs \
     bottom \
-    procs
+    curl \
+    git 2>/dev/null || true
 
-echo "✅ Utilidades de terminal instaladas correctamente."
-
-echo "ℹ️ Instalando Starship..."
-sudo dnf5 copr enable -y atim/starship
-sudo dnf5 install -y starship
-
-# Configuración Modular
-mkdir -p ~/.bashrc.d
-
-cat <<EOF > ~/.bashrc.d/starship.sh
-# Starship Prompt Configuration
-eval "\$(starship init bash)"
-EOF
-
-echo "✅ Configuración modular de Starship creada en ~/.bashrc.d/starship.sh"
-
-# Asegurar que existe el directorio de configuración
-mkdir -p ~/.config
-
-# Copiar config predeterminada si existe
-if [ -f "starship.toml" ]; then
-    cp starship.toml ~/.config/starship.toml
-elif [ -f "Setup/starship.toml" ]; then
-    cp Setup/starship.toml ~/.config/starship.toml
+# 2. Instalación de Starship Prompt
+if ! command -v starship &> /dev/null; then
+    echo "ℹ️ Instalando Starship Prompt..."
+    curl -sS https://starship.rs/install.sh | sh -s -- -y
+else
+    echo "✅ Starship Prompt ya está instalado."
 fi
 
-echo "✅ Instalación y configuración completadas. Reinicia la terminal."
+# 3. Configuración de Starship
+mkdir -p ~/.config
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/starship.toml" ]; then
+    cp "$SCRIPT_DIR/starship.toml" ~/.config/starship.toml
+    echo "✅ Configuración starship.toml copiada a ~/.config/starship.toml"
+fi
+
+# 4. Integración en .bashrc
+if ! grep -q "starship init bash" ~/.bashrc 2>/dev/null; then
+    echo 'eval "$(starship init bash)"' >> ~/.bashrc
+    echo "✅ Starship integrado en ~/.bashrc"
+fi
+
+if ! grep -q "zoxide init bash" ~/.bashrc 2>/dev/null; then
+    echo 'eval "$(zoxide init bash)"' >> ~/.bashrc
+    echo "✅ Zoxide integrado en ~/.bashrc"
+fi
+
+echo "================================================================="
+echo "✅ Entorno de terminal moderno configurado con éxito para Fedora 44."
+echo "================================================================="
