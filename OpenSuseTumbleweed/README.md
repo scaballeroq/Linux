@@ -1,0 +1,103 @@
+# 🦎 OpenSuseTumbleweed: Configuración de Entorno OpenSUSE Tumbleweed + GNOME
+
+Este repositorio contiene una colección organizada, modular y automatizada de scripts de configuración para sistemas **OpenSUSE Tumbleweed (Rolling Release)** con el entorno de escritorio **GNOME** (optimizado para estaciones de trabajo y portátiles de desarrollo).
+
+---
+
+## 📂 Organización del Repositorio
+
+La configuración está estructurada de forma modular para facilitar su mantenimiento y despliegue:
+
+### 🐚 [Bash.Setup](./Bash.Setup/)
+El núcleo de la configuración de la terminal Bash:
+- **`aliases.sh`**: Atajos comunes para navegación, gestión de paquetes con `zypper` (`update`, `dup`, `install`, `clean`), instantáneas `snapper` y utilidades modernas en Rust (`eza`, `bat`, `duf`, `dust`).
+- **`environment.sh`**: Variables globales que afectan el comportamiento de la shell (`PATH`, `EDITOR`, paginador `less` con colores).
+- **`functions.sh`**: Colección de funciones avanzadas y utilidades multimedia (FFmpeg, ImageMagick, extracción unificada).
+- **`gnome_settings.sh`**: Configuraciones de entorno para GNOME, luz nocturna, temas, reinicio de shell y accesos rápidos a Configuración.
+- **`history.sh`**: Controla cómo bash recuerda los comandos (sin duplicados, hasta 20k líneas).
+- **`options.sh`**: Configura el comportamiento interno de Bash mediante `shopt` y `bind`.
+- **`podman-functions.sh`**: Funciones para gestión simplificada de contenedores.
+- **`rclone_aliases.sh`**: Atajos para sincronización en la nube con Google Drive.
+- **`yt-dlp_aliases.sh`**: Descargas multimedia optimizadas con yt-dlp y ffmpeg.
+
+### ⚙️ [Setup](./Setup/)
+Scripts de configuración del sistema operativo, personalización de GNOME y endurecimiento:
+- **`post-install.sh`**: Despachador inteligente con detección automática de procesador (AMD vs Intel) y soporte para banderas CLI (`--amd`, `--intel`).
+- **`post-install-amd.sh`**: Post-instalación optimizada para procesadores **AMD Ryzen** y gráficos Radeon (repositorio Packman, codecs multimedia, Mesa, RADV, ZRAM, PipeWire, OPI, GNOME).
+- **`post-install-intel.sh`**: Post-instalación optimizada para equipos de sobremesa **Intel Core** (Haswell i7-4790 / HD Graphics 4600) dedicados a centro multimedia y streaming (microcódigo Intel, driver VA-API `i965`, codecs Packman, Kodi, sin virtualización).
+- **`gnome-settings.sh`**: Personalización automatizada de GNOME vía GSettings (Luz nocturna a 3500K, reloj 24h, porcentaje de batería, botones de ventana, VRR).
+- **`gnome-extensions.sh`**: Instalación automatizada y limpia de extensiones de GNOME Shell con compilación de esquemas (ver [Guía de Extensiones GNOME](./Docs/gnome_extensions_es.md)).
+- **`ptyxis.sh`**: Instalación y perfil moderno de Ptyxis (translúcido al 85%, sin scrollbar, atajo `Ctrl+Alt+T` e integración en Nautilus).
+- **`kitty.sh`**: Terminal Kitty acelerada por GPU con opacidad (85%), efectos blur, tipografía JetBrainsMono Nerd Font e integración con GNOME/Nautilus.
+- **`apariencia.sh`**: Instalación de temas e iconos (Adwaita-Dark, Papirus-Dark e integración visual GTK/Qt).
+- **`laptop-setup.sh`**: Optimización para portátiles de desarrollo (Touchpad, Bluetooth, `power-profiles-daemon`, `switcheroo-control`, HiDPI, VRR en Wayland, brillo de pantalla al 95%).
+- **`fingerprint-setup.sh`**: Desbloqueo y autenticación por huella dactilar (`fprintd`, `pam-config` para openSUSE, GNOME).
+- **`hp-printer-setup.sh`**: Impresora HP LaserJet Pro M15w vía USB (CUPS, HPLIP, plugin propietario y `system-config-printer`).
+- **`tumbleweed-tuning.sh`**: Ajustes de Kernel Sysctl (`inotify`, `max_map_count`), políticas de retención de instantáneas Snapper (Btrfs) y `distrobox`.
+- **`build-custom-kernel.sh`**: Compilador de Kernel Linux oficial optimizado para arquitectura `x86_64-v3`, latencia a 1000Hz y Preemption dinámica.
+- **`cockpit.sh`**: Panel de administración web Cockpit con módulos Podman, Virtualización y Almacenamiento.
+- **`fastfetch.sh`**: Información estética del sistema al abrir la terminal (Fastfetch con configuración moderna).
+- **`firefox.sh`**: Instalación y actualización de Mozilla Firefox oficial nativo vía Zypper.
+- **`fonts.sh`**: Fuentes tipográficas de desarrollo (JetBrainsMono, FiraCode, CascadiaCode Nerd Fonts).
+- **`mount-workspace.sh`**: Automontaje seguro de la partición de trabajo `/home/caballero/Workspace`.
+- **`seguridad.sh`**: Endurecimiento con Firewall Firewalld (KVM/Podman friendly) y Fail2ban.
+- **`seguridad-dot.sh`**: DNS-over-TLS mediante `systemd-resolved`.
+- **`shell.sh`**: Herramientas modernas de terminal (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`) y Starship prompt.
+- **`screensaver-setup.sh`**: Configuración de salvapantallas 3D/Matrix al bloquear la pantalla en GNOME.
+- **`plymouth-setup.sh`**: Instalación, configuración y selector de Splash Screen visual de arranque (Plymouth: BGRT UEFI OEM, openSUSE oficial, Spinner y previsualización).
+- **`yt-dlp-setup.sh`**: Dependencias multimedia (yt-dlp, ffmpeg Packman y motor JS Deno vía mise).
+
+### 🐳 [Podman](./Podman/)
+Ecosistema completo para contenedores Rootless y Systemd Quadlets:
+- **Instalación**: `podman-install.sh`, `quadlets-setup.sh`
+- **Servicios Compartidos**: Traefik, PostgreSQL, Redis, Keycloak.
+- **Templates**: Python-Postgres, Python-Postgres-Redis, Fullstack.
+
+### 🖥️ [Virtualizacion](./Virtualizacion/)
+- **`virtualization.sh`**: Instalación y configuración de KVM/QEMU, Libvirt, sockets modulares, VirtIO y Nested KVM optimizado para OpenSUSE Tumbleweed.
+- **`notas_virtualizacion_opensuse.md`**: Guía detallada de virtualización en OpenSUSE.
+
+### 💻 [IDEs y Editores](./IDE/)
+- **`neovim.sh`**: Neovim moderno con LazyVim.
+- **`vscode.sh`**: Visual Studio Code nativo (repositorio RPM oficial de Microsoft).
+- **`antigravity.sh`**: Google Antigravity Desktop 2.0.
+- **`antigravity-cli.sh`** & **`antigravity-ide.sh`**: Suite de CLI y motor IDE de Antigravity.
+- **`opencode.sh`**: OpenCode AI CLI/Editor.
+
+### 🎮 [Juegos](./Juegos/)
+- **`steam.sh`**: Steam con librerías de 32 bits y soporte para **Proton-GE**.
+
+---
+
+## 🚀 Despliegue Rápido con Just
+ 
+Para ejecutar la instalación según el perfil de tu equipo:
+
+```bash
+git clone https://github.com/scaballeroq/OpenSuseTumbleweed.git
+cd OpenSuseTumbleweed
+chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/install/*.sh Git/*.sh Juegos/*.sh
+
+# Portátil de Desarrollo (AMD Ryzen + Huella + Virtualización):
+just setup-laptop-amd
+
+# Sobremesa Multimedia (Intel Haswell / Media Center + Kodi - Sin virtualización):
+just setup-media-desktop
+```
+
+O ejecutar componentes de forma individual:
+```bash
+just post-install-amd    # Post-instalación para AMD Ryzen con Packman y OPI
+just post-install-intel  # Post-instalación para Intel Media Center
+just kodi                # Instala Kodi y complementos de streaming
+just gnome               # Aplica configuración de GNOME vía GSettings
+just extensions          # Instala y compila las extensiones de GNOME
+just ptyxis              # Instala y configura el emulador de terminal Ptyxis
+just plymouth            # Configura y activa el splash screen visual de arranque
+just ides                # Instala Neovim, VSCode, Antigravity y OpenCode
+just build-kernel        # Compila un kernel Linux nativo x86_64-v3
+just dup                 # Actualiza el sistema (zypper dup)
+```
+
+---
+*Mantenido por [caballero](https://github.com/scaballeroq)*
