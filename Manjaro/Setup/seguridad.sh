@@ -1,22 +1,20 @@
 #!/bin/bash
-# seguridad.sh - Configuración de Firewall (UFW) y Endurecimiento Básico en Manjaro Linux
+# seguridad.sh - Activación y configuración de Firewall (UFW) en Manjaro Linux
+# Nota: UFW/GUFW ya viene instalado por defecto en Manjaro, pero desactivado
 
 set -euo pipefail
 
-echo "🛡️ Configurando Firewall UFW en Manjaro Linux..."
+echo "🛡️ Activando y configurando Firewall UFW en Manjaro Linux..."
 
-# 1. Instalación de UFW
-sudo pacman -S --needed --noconfirm ufw
-
-# 2. Configurar reglas por defecto (Bloquear entradas, permitir salidas)
+# 1. Configurar reglas por defecto (Bloquear entradas, permitir salidas)
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
 
-# 3. Habilitar e iniciar servicio UFW
+# 2. Habilitar e iniciar servicio UFW
 sudo systemctl enable --now ufw.service || true
 sudo ufw --force enable
 
-# 4. Estado
+# 3. Estado
 echo "================================================================="
 echo "✅ Firewall UFW activado y configurado:"
 sudo ufw status verbose
