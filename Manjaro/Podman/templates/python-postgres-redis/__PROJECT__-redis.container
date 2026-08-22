@@ -15,8 +15,5 @@ HealthInterval=5s
 HealthRetries=3
 HealthTimeout=3s
 
-[Volume]
-VolumeName=__PROJECT__-redis-data
-
 [Install]
 WantedBy=__PROJECT__.target

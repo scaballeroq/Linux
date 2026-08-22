@@ -15,8 +15,5 @@ HealthInterval=5s
 HealthRetries=5
 HealthTimeout=5s
 
-[Volume]
-VolumeName=__PROJECT__-pg-data
-
 [Install]
 WantedBy=__PROJECT__.target

@@ -63,18 +63,18 @@ install_global_services() {
 
     log_info "Instalando servicios compartidos..."
 
-    for container_file in "$shared_dir"/*.container; do
-        [ -f "$container_file" ] || continue
+    for file in "$shared_dir"/*.container "$shared_dir"/*.network "$shared_dir"/*.volume; do
+        [ -f "$file" ] || continue
 
         local basename
-        basename="$(basename "$container_file")"
+        basename="$(basename "$file")"
         local target="$systemd_global/$basename"
 
-        # Reemplazar placeholder del socket path
-        if grep -q "__PODMAN_SOCKET__" "$container_file" 2>/dev/null; then
-            sed "s|__PODMAN_SOCKET__|$socket_path|g" "$container_file" > "$target"
+        # Reemplazar placeholder del socket path si existe
+        if grep -q "__PODMAN_SOCKET__" "$file" 2>/dev/null; then
+            sed "s|__PODMAN_SOCKET__|$socket_path|g" "$file" > "$target"
         else
-            cp "$container_file" "$target"
+            cp "$file" "$target"
         fi
 
         log_ok "  $basename -> global/"

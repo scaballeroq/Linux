@@ -1,11 +1,11 @@
 [Unit]
 Description=Traefik Proxy Global
-After=podman-network-proxy-net.service
+After=proxy-net-network.service
 
 [Container]
 ContainerName=traefik
 Image=docker.io/library/traefik:v3.2
-Network=proxy-net
+Network=proxy-net.network
 PublishPort=80:80
 PublishPort=443:443
 PublishPort=8080:8080
@@ -17,12 +17,6 @@ HealthStartPeriod=10s
 HealthInterval=10s
 HealthRetries=3
 HealthTimeout=5s
-
-[Volume]
-VolumeName=traefik-config
-
-[Network]
-NetworkName=proxy-net
 
 [Install]
 WantedBy=default.target

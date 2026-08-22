@@ -53,13 +53,13 @@ Crea la estructura de systemd para gestionar contenedores como servicios.
 
 ```bash
 # En ~/.bashrc o ~/.zshrc
-export PATH="$HOME/Workspace/Repositorios/Debian/Podman/lib:$PATH"
+export PATH="$HOME/Workspace/Repositorios/Linux/Manjaro/Podman/lib:$PATH"
 ```
 
 O crea un alias:
 
 ```bash
-alias podman-utils="$HOME/Workspace/Repositorios/Debian/Podman/lib/podman-utils.sh"
+alias podman-utils="$HOME/Workspace/Repositorios/Linux/Manjaro/Podman/lib/podman-utils.sh"
 ```
 
 ---

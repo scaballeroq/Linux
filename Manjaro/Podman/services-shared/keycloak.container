@@ -1,11 +1,11 @@
 [Unit]
 Description=Keycloak Auth Global
-After=podman-network-proxy-net.service
+After=proxy-net-network.service postgres-global.service
 
 [Container]
 ContainerName=keycloak
 Image=quay.io/keycloak/keycloak:26
-Network=proxy-net
+Network=proxy-net.network
 Environment=KEYCLOAK_ADMIN=admin
 Environment=KEYCLOAK_ADMIN_PASSWORD=admin
 Environment=KC_DB=postgres

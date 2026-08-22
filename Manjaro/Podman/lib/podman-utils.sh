@@ -67,6 +67,7 @@ cmd_create() {
         sed -i "s/__PROJECT__/$project/g" "$file"
         sed -i "s/__PROJECT_UPPER__/$project_upper/g" "$file"
         sed -i "s|__PROJECT_DIR__|$project_dir|g" "$file"
+        sed -i "s|__PODMAN_SOCKET__|/run/user/$(id -u)/podman/podman.sock|g" "$file"
     done
 
     # Renombrar archivos con placeholder
@@ -257,6 +258,12 @@ cmd_install_global() {
     fi
 
     mkdir -p "$SYSTEMD_GLOBAL"
+
+    # Asegurar que la red proxy-net esté disponible si existe
+    if [ -f "$shared_dir/proxy-net.network" ] && [ ! -f "$SYSTEMD_GLOBAL/proxy-net.network" ]; then
+        cp "$shared_dir/proxy-net.network" "$SYSTEMD_GLOBAL/proxy-net.network"
+        log_ok "  proxy-net.network -> global/"
+    fi
 
     local socket_path="/run/user/$(id -u)/podman/podman.sock"
     local target="$SYSTEMD_GLOBAL/${service}.container"
