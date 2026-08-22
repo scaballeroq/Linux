@@ -34,11 +34,6 @@ PACKAGES=(
     vde2
 )
 
-# Tuned opcional si está disponible en repositorios
-if pacman -Si tuned &>/dev/null; then
-    PACKAGES+=(tuned)
-fi
-
 sudo pacman -S --needed --noconfirm "${PACKAGES[@]}"
 
 # 3. Controladores VirtIO para Windows
@@ -121,13 +116,6 @@ if [ -f /etc/libvirt/network.conf ]; then
     if ! grep -q "firewall_backend" /etc/libvirt/network.conf; then
         echo 'firewall_backend = "nftables"' | sudo tee -a /etc/libvirt/network.conf > /dev/null
     fi
-fi
-
-# 9. Configuración de perfil Tuned para Host de Máquinas Virtuales
-if command -v tuned-adm &> /dev/null; then
-    echo "ℹ️ Aplicando perfil de optimización 'virtual-host' en Tuned..."
-    sudo systemctl enable --now tuned.service || true
-    sudo tuned-adm profile virtual-host || true
 fi
 
 echo "================================================================="
