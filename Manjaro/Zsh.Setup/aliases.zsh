@@ -69,6 +69,9 @@ alias c='clear'
 alias ff='fastfetch'
 alias sysinfo='ff'
 
+#7.PODMAN
+alias podman-utils="$HOME/Workspace/Repositorios/Linux/Manjaro/Podman/lib/podman-utils.sh"
+
 # Comprobar versión de kernel activo vs última versión en kernel.org
 check-kernel-update() {
     local active_kernel
