@@ -10,9 +10,6 @@ alias ....='cd ../../..'
 alias ~='cd ~'
 alias repos='cd ~/Workspace/Repositorios'
 alias manjaro='cd ~/Workspace/Repositorios/Linux/Manjaro'
-alias arch='cd ~/Workspace/Repositorios/Linux/ArchLinux'
-alias cachyos='cd ~/Workspace/Repositorios/Linux/CachyOS'
-alias debiantesting='cd ~/Workspace/Repositorios/Linux/DebianTesting'
 
 # 2. MEJORAS DE 'LS' (USANDO EZA)
 if command -v eza &> /dev/null; then
