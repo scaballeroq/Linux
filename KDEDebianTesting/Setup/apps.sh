@@ -38,7 +38,7 @@ DEV_TOOLS=(
     inxi
 )
 
-$SUDO apt install -y "${DEV_TOOLS[@]}" 2>/dev/null || true
+$SUDO apt install -y "${DEV_TOOLS[@]}"
 
 # 3. Utilidades de Disco, Compresión y Sistema
 # Nota: Usamos 'exfatprogs' (nativo en kernel) y '7zip' (soporte moderno oficial)
@@ -47,17 +47,16 @@ SYSTEM_TOOLS=(
     gparted
     exfatprogs
     7zip
-    p7zip-full
     zip
     unzip
     bzip2
     xz-utils
 )
 
-$SUDO apt install -y "${SYSTEM_TOOLS[@]}" 2>/dev/null || true
+$SUDO apt install -y "${SYSTEM_TOOLS[@]}"
 
 # 4. Multimedia, Gráficos, Codecs y Aceleración por Hardware (VA-API / GStreamer / Nautilus)
-# Nota: Incluye soporte para aceleración GPU, miniaturas en Nautilus (HEIC, WebP, vídeos) y formatos lossless
+# Nota: 'gstreamer1.0-plugins-bad' ya integra el soporte VA-API (gst-va) en GStreamer moderno
 echo "ℹ️ [4/5] Instalando aplicaciones multimedia, suite completa de codecs y miniaturas..."
 MEDIA_APPS=(
     vlc
@@ -70,7 +69,6 @@ MEDIA_APPS=(
     gstreamer1.0-plugins-bad
     gstreamer1.0-plugins-ugly
     gstreamer1.0-libav
-    gstreamer1.0-vaapi
     flac
     lame
     opus-tools
@@ -82,17 +80,17 @@ MEDIA_APPS=(
     webp-pixbuf-loader
 )
 
-$SUDO apt install -y "${MEDIA_APPS[@]}" 2>/dev/null || true
+$SUDO apt install -y "${MEDIA_APPS[@]}"
 
 # 5. Tiendas de Aplicaciones y Ecosistema Flatpak
 # Nota: 'flatpak' + 'gnome-software-plugin-flatpak' reemplazan a herramientas X11 obsoletas como synaptic
 echo "ℹ️ [5/5] Configurando Flatpak y repositorio oficial Flathub..."
-$SUDO apt install -y flatpak gnome-software-plugin-flatpak 2>/dev/null || true
+$SUDO apt install -y flatpak gnome-software-plugin-flatpak
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
 
 # 6. Temas e Iconos (Papirus)
 echo "ℹ️ Instalando tema de iconos Papirus..."
-$SUDO apt install -y papirus-icon-theme 2>/dev/null || true
+$SUDO apt install -y papirus-icon-theme
 
 echo "================================================================="
 echo "✅ Instalación de aplicaciones y herramientas completada con éxito."
