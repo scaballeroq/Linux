@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-echo "🧩 Iniciando instalación de las 10 extensiones de GNOME Shell seleccionadas..."
+echo "🧩 Iniciando instalación de las 11 extensiones de GNOME Shell seleccionadas..."
 
 # Manejo de permisos de sudo
 if [ "$EUID" -ne 0 ]; then
@@ -30,6 +30,7 @@ BASE_TOOLS=(
     extension-manager
     gnome-shell-extension-prefs
     libglib2.0-bin
+    gnome-weather
     pipx
     python3-pip
     python3-pip-whl
@@ -65,7 +66,8 @@ export PATH="$HOME/.local/bin:$PATH"
 # 4. Quick Settings Audio Panel (ID: 5940)
 # 5. Clipboard Indicator (ID: 779)
 # 6. Tiling Shell (ID: 7065)
-EGO_EXTENSION_IDS=(1262 36 355 5940 779 7065)
+# 7. Weather O'Clock (ID: 5470)
+EGO_EXTENSION_IDS=(1262 36 355 5940 779 7065 5470)
 
 echo "ℹ️ [2/3] Instalando extensiones restantes desde extensions.gnome.org (IDs: ${EGO_EXTENSION_IDS[*]})..."
 
@@ -82,7 +84,7 @@ import subprocess
 import urllib.request
 import shutil
 
-ego_extension_ids = [1262, 36, 355, 5940, 779, 7065]
+ego_extension_ids = [1262, 36, 355, 5940, 779, 7065, 5470]
 
 home_dir = os.path.expanduser("~")
 target_base_dir = os.path.join(home_dir, ".local/share/gnome-shell/extensions")
@@ -149,7 +151,7 @@ PYEOF
 # =============================================================================
 # 3. HABILITACIÓN DE TODAS LAS EXTENSIONES SELECCIONADAS
 # =============================================================================
-echo "ℹ️ [3/3] Habilitando las 10 extensiones solicitadas en GNOME Shell..."
+echo "ℹ️ [3/3] Habilitando las 11 extensiones solicitadas en GNOME Shell..."
 
 ALL_UUIDS=(
     "BingWallpaper@ineffable-gmail.com"
@@ -162,6 +164,7 @@ ALL_UUIDS=(
     "blur-my-shell@aunetx"
     "tilingshell@ferrarodomenico.com"
     "appindicatorsupport@rgcjonas.gmail.com"
+    "weatheroclock@CleoMenezesJr.github.io"
 )
 
 for uuid in "${ALL_UUIDS[@]}"; do
@@ -172,7 +175,7 @@ for uuid in "${ALL_UUIDS[@]}"; do
 done
 
 echo "================================================================="
-echo "✅ Instalación y habilitación de las 10 extensiones completada:"
+echo "✅ Instalación y habilitación de las 11 extensiones completada:"
 echo "   📦 Desde APT (Debian):"
 echo "      - gnome-shell-extension-dashtodock"
 echo "      - gnome-shell-extension-caffeine"
@@ -185,5 +188,6 @@ echo "      - Status Area Horizontal Spacing (355)"
 echo "      - Quick Settings Audio Panel (5940)"
 echo "      - Clipboard Indicator (779)"
 echo "      - Tiling Shell (7065)"
+echo "      - Weather O'Clock (5470)"
 echo "💡 Recuerda reiniciar la sesión (o pulsar Alt+F2 y teclear 'r' en X11) para que los cambios surtan efecto."
 echo "================================================================="

@@ -77,7 +77,7 @@ just build-kernel
 
 ## 4. Clean GNOME Extensions Installation (`gnome-extensions.sh`)
 
-Installs `gnome-browser-connector`, `extension-manager`, and cleanly downloads/registers the 17 curated GNOME extensions with GSettings schema compilation (`glib-compile-schemas`). See [GNOME Extensions Guide](./gnome_extensions_en.md).
+Installs `gnome-browser-connector`, `extension-manager`, `gnome-weather`, and cleanly downloads/registers the 11 curated GNOME extensions with GSettings schema compilation (`glib-compile-schemas`). See [GNOME Extensions Guide](./gnome_extensions_en.md).
 
 ```bash
 just extensions

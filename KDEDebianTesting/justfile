@@ -49,7 +49,7 @@ printer:
 tuning:
     ./Setup/debian-tuning.sh
 
-# Instalación automatizada de conectores y las 10 extensiones de GNOME
+# Instalación automatizada de conectores y las 11 extensiones de GNOME
 extensions:
     ./Setup/gnome-extensions.sh
 
