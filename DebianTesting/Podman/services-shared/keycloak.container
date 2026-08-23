@@ -16,7 +16,8 @@ Environment=KC_DB_PASSWORD=changeme_dev_123
 Environment=KC_HOSTNAME=localhost
 Environment=KC_HOSTNAME_PORT=8083
 Environment=KC_HOSTNAME_STRICT=false
-Environment=KC_PROXY=edge
+Environment=KC_PROXY_HEADERS=xforwarded
+Environment=KC_HTTP_ENABLED=true
 PublishPort=8083:8080
 Command=start-dev --http-relative-path=/auth
 Label=traefik.enable=true

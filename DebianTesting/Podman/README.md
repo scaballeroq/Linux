@@ -51,15 +51,18 @@ Crea la estructura de systemd para gestionar contenedores como servicios.
 
 ### 3. Anadir CLI al PATH
 
+Si utilizas la configuración de terminal del repositorio ([`Bash.Setup/environment.sh`](../Bash.Setup/environment.sh)), `podman-utils` ya se carga automáticamente.
+
+Si deseas añadirlo manualmente en `~/.bashrc` o `~/.zshrc`:
+
 ```bash
-# En ~/.bashrc o ~/.zshrc
-export PATH="$HOME/Workspace/Repositorios/Debian/Podman/lib:$PATH"
+export PATH="$HOME/Warehouse/Workspace/Repositorios/Linux/DebianTesting/Podman/lib:$PATH"
 ```
 
 O crea un alias:
 
 ```bash
-alias podman-utils="$HOME/Workspace/Repositorios/Debian/Podman/lib/podman-utils.sh"
+alias podman-utils="$HOME/Warehouse/Workspace/Repositorios/Linux/DebianTesting/Podman/lib/podman-utils.sh"
 ```
 
 ---

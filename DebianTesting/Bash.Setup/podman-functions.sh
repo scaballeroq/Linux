@@ -89,6 +89,7 @@ alias ps='podman ps --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}
 alias psa='podman ps -a'
 alias pi='podman images'
 alias pv='podman volume ls'
+alias podman-utils="$HOME/Warehouse/Workspace/Repositorios/Linux/DebianTesting/Podman/lib/podman-utils.sh"
 pstop-all() { podman stop $(podman ps -q); }
 prm-all() { podman rm $(podman ps -aq); }
 prmi-all() { podman rmi $(podman images -q); }
