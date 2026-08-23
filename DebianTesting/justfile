@@ -69,13 +69,9 @@ plymouth:
 shell:
     ./Setup/shell.sh
 
-# Seguridad básica (UFW firewall)
+# Seguridad para portátil y desarrollo (UFW firewall)
 security:
     ./Setup/seguridad.sh
-
-# Seguridad avanzada (DNS-over-TLS con systemd-resolved)
-security-dot:
-    ./Setup/seguridad-dot.sh
 
 # Fuentes de desarrollo (Nerd Fonts: JetBrainsMono, FiraCode, CascadiaCode...)
 fonts:

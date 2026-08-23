@@ -6,18 +6,18 @@ sidebar_position: 1
 
 Esta guía detalla el proceso de endurecimiento de seguridad (hardening) optimizado para un portátil de desarrollador en Debian 13, tal y como se automatiza en [`Setup/seguridad.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Debian/Setup/seguridad.sh).
 
-El proceso cubre la configuración del firewall compatible con KVM/Podman, protección de accesos, Fail2ban y privacidad DNS.
+El proceso cubre la configuración del firewall compatible con KVM/Podman y el blindaje de conexiones en redes Wi-Fi públicas.
 
 ---
 
 ## 1. Configuración de Firewall (UFW) y Enrutamiento KVM/Podman
 
-Se utiliza Uncomplicated Firewall (UFW) adaptado para no interferir con máquinas virtuales ni contenedores de desarrollo:
+Se utiliza Uncomplicated Firewall (UFW) optimizado para portátiles y entornos de desarrollo móvil:
 
-1. **Instalación de UFW y Fail2ban**:
+1. **Instalación de UFW y GUFW (Interfaz gráfica)**:
    ```bash
    sudo apt update
-   sudo apt install -y ufw fail2ban
+   sudo apt install -y ufw gufw
    ```
 
 2. **Compatibilidad con KVM (`virbr0`) y Podman (`DEFAULT_FORWARD_POLICY`)**:
@@ -27,26 +27,8 @@ Se utiliza Uncomplicated Firewall (UFW) adaptado para no interferir con máquina
    sudo ufw route allow in on virbr0
    ```
 
-3. **Políticas de Seguridad y Rate-Limiting**:
-   - Denegar tráfico entrante no solicitado (`sudo ufw default deny incoming`).
-   - Permitir tráfico saliente (`sudo ufw default allow outgoing`).
-   - **SSH Anti Fuerza Bruta Móvil**: Se utiliza `sudo ufw limit ssh` en lugar de rangos fijos de IP, permitiendo conectar por SSH desde cualquier red Wi-Fi manteniendo protección contra ataques de fuerza bruta.
-   - **Cockpit (Puerto 9090)**: Protegido con `sudo ufw limit 9090/tcp`.
-
-4. **Fail2ban**:
-   Habilitado automáticamente (`sudo systemctl enable --now fail2ban.service`) para bloquear de forma inteligente las IPs que realicen escaneos o intentos masivos de acceso.
-
----
-
-## 2. Privacidad DNS (DNS-over-TLS) (`seguridad-dot.sh`)
-
-Para cifrar las consultas DNS del sistema mediante Cloudflare con `systemd-resolved`:
-
-```bash
-./Setup/seguridad-dot.sh
-```
-
-Verificación con:
-```bash
-resolvectl status
-```
+3. **Políticas de Seguridad**:
+   - Denegar todo tráfico entrante no solicitado (`sudo ufw default deny incoming`).
+   - Permitir todo el tráfico saliente (`sudo ufw default allow outgoing`).
+   - Blindaje total sin puertos abiertos innecesarios en redes Wi-Fi públicas.
+   - Sin demonios pesados en segundo plano (ahorro de batería y recursos).
