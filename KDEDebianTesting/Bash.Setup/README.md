@@ -40,7 +40,7 @@ Luego, puedes crear enlaces simbólicos de los scripts de este repositorio a esa
 
 ```bash
 mkdir -p ~/.bashrc.d
-ln -sf ~/Workspace/Repositorios/Linux/DebianTesting/Bash.Setup/*.sh ~/.bashrc.d/
+ln -sf ~/Warehouse/Workspace/Repositorios/Linux/DebianTesting/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
 ---

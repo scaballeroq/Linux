@@ -8,9 +8,8 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias ~='cd ~'
-alias repos='cd ~/Workspace/Repositorios'
-alias debiantesting='cd ~/Workspace/Repositorios/Linux/DebianTesting'
-alias debian='cd ~/Workspace/Repositorios/Linux/Debian'
+alias repos='cd ~/Warehouse/Workspace/Repositorios'
+alias dt='cd ~/Warehouse/Workspace/Repositorios/Linux/DebianTesting'
 
 # 2. MEJORAS DE 'LS' (USANDO EZA)
 if command -v eza &> /dev/null; then
