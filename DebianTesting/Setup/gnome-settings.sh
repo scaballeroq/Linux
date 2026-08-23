@@ -29,6 +29,10 @@ if [[ "${XDG_CURRENT_DESKTOP:-}" == *"GNOME"* ]] || command -v gsettings &>/dev/
     echo "ℹ️ Estableciendo esquema de color preferido (Oscuro)..."
     gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null || true
 
+    # 6. Escalado Fraccional y Tasa de Refresco Variable (VRR) en Wayland
+    echo "ℹ️ Habilitando soporte experimental de escalado fraccional y VRR en Mutter..."
+    gsettings set org.gnome.mutter experimental-features "['scale-monitor-framebuffer', 'variable-refresh-rate']" 2>/dev/null || true
+
     echo "✅ Personalización de GNOME completada correctamente."
 else
     echo "⚠️ Advertencia: No se detectó un entorno GNOME activo. GSettings no se aplicaron."

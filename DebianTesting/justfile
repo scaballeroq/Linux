@@ -2,11 +2,11 @@
 # (Debian Testing + GNOME)
 
 # Instala todo el entorno por defecto (Auto-detección de CPU / Portátil AMD)
-setup-all: post-install workspace laptop fingerprint tuning extensions screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
+setup-all: post-install workspace fingerprint tuning extensions screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
     echo "🚀 Entorno completo de DebianTesting (Debian Testing + GNOME) configurado. Por favor, reinicia el sistema."
 
 # Perfil completo para Portátil de desarrollo (AMD Ryzen + Huella + Virtualización)
-setup-laptop-amd: post-install-amd workspace laptop fingerprint tuning extensions screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
+setup-laptop-amd: post-install-amd workspace fingerprint tuning extensions screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
     echo "🚀 Entorno Portátil AMD Ryzen configurado con éxito. Por favor, reinicia el sistema."
 
 # Perfil para Sobremesa Centro Multimedia (Intel Haswell / Media Center - Sin virtualización ni batería)
@@ -36,10 +36,6 @@ workspace:
 # Compilador de Kernel Linux optimizado para x86_64-v3 y ajustado a tu portátil
 build-kernel:
     ./Setup/build-custom-kernel.sh
-
-# Optimización para portátiles de desarrollo (Touchpad, Batería, Bluetooth, HiDPI, VRR)
-laptop:
-    ./Setup/laptop-setup.sh
 
 # Autenticación y desbloqueo por huella dactilar (fprintd, PAM, sudo, polkit, GNOME)
 fingerprint:
