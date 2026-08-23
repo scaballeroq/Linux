@@ -40,8 +40,7 @@ Operating system setup, GNOME personalization, and security hardening:
 - **`firefox.sh`**: Official Mozilla Firefox (.deb from Mozilla APT).
 - **`fonts.sh`**: Developer typography (JetBrainsMono, FiraCode, CascadiaCode Nerd Fonts).
 - **`mount-workspace.sh`**: Safe auto-mounting of `/home/caballero/Workspace`.
-- **`seguridad.sh`**: UFW Firewall hardening.
-- **`seguridad-dot.sh`**: DNS-over-TLS via `systemd-resolved`.
+- **`seguridad.sh`**: UFW Firewall hardening for laptop.
 - **`shell.sh`**: Modern CLI utilities (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`) and Starship prompt.
 - **`screensaver-setup.sh`**: 3D/Matrix screensaver upon locking GNOME session.
 - **`plymouth-setup.sh`**: Visual boot splash screen installer and theme selector (Plymouth: BGRT UEFI OEM, Debian 13 Ceratopsian, Spinner, and live desktop preview).

@@ -40,8 +40,7 @@ Scripts de configuración del sistema operativo, personalización de GNOME y end
 - **`firefox.sh`**: Instalación de Mozilla Firefox oficial (.deb de Mozilla APT).
 - **`fonts.sh`**: Fuentes tipográficas de desarrollo (JetBrainsMono, FiraCode, CascadiaCode Nerd Fonts).
 - **`mount-workspace.sh`**: Automontaje seguro de la partición de trabajo `/home/caballero/Workspace`.
-- **`seguridad.sh`**: Endurecimiento (hardening) con Firewall UFW.
-- **`seguridad-dot.sh`**: DNS-over-TLS mediante `systemd-resolved`.
+- **`seguridad.sh`**: Endurecimiento (hardening) con Firewall UFW para portátil.
 - **`shell.sh`**: Herramientas modernas de terminal (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`) y Starship prompt.
 - **`screensaver-setup.sh`**: Configuración de salvapantallas 3D/Matrix al bloquear la pantalla en GNOME.
 - **`plymouth-setup.sh`**: Instalación, configuración y selector de Splash Screen visual de arranque (Plymouth: BGRT UEFI OEM, Ceratopsian oficial Debian 13, Spinner y previsualización).
