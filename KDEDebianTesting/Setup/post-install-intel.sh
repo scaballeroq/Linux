@@ -22,12 +22,12 @@ echo "ℹ️ Configurando repositorios contrib, non-free y non-free-firmware par
 sudo apt update
 sudo apt install -y curl ca-certificates gnupg lsb-release
 
-# Habilitar contrib, non-free y non-free-firmware en repositorios existentes
+# Habilitar contrib, non-free y non-free-firmware en repositorios existentes (soporte para debian.sources DEB822 y sources.list clásico)
 if [ -f /etc/apt/sources.list.d/debian.sources ]; then
-    sudo sed -i '/^Components:/ s/\bmain\b\(?!.*contrib\)/main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources 2>/dev/null || true
+    sudo sed -i -E '/^Components:/ { /main/!b; s/[[:space:]]+(contrib|non-free-firmware|non-free)//g; s/\bmain\b/main contrib non-free non-free-firmware/; }' /etc/apt/sources.list.d/debian.sources
 fi
 if [ -f /etc/apt/sources.list ]; then
-    sudo sed -i '/^deb / s/\bmain\b\(?!.*contrib\)/main contrib non-free non-free-firmware/' /etc/apt/sources.list 2>/dev/null || true
+    sudo sed -i -E '/^deb(-src)?[[:space:]]+/ { /main/!b; s/[[:space:]]+(contrib|non-free-firmware|non-free)//g; s/\bmain\b/main contrib non-free non-free-firmware/; }' /etc/apt/sources.list
 fi
 
 echo "ℹ️ Debian Testing ($CODENAME) detectado: Obteniendo paquetes más recientes."
