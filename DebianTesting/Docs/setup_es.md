@@ -86,7 +86,7 @@ just build-kernel
 
 ## 4. Instalación Limpia de Extensiones GNOME (`gnome-extensions.sh`)
 
-Instala `gnome-browser-connector`, `extension-manager` y descarga las 17 extensiones personalizadas utilizando el instalador nativo por DBus `gnome-extensions install --force` y compilando automáticamente los esquemas GSettings (`glib-compile-schemas`), evitando el estado de error o deshabilitado en el gestor de extensiones (ver [Guía de Extensiones GNOME](./gnome_extensions_es.md)).
+Instala `gnome-browser-connector`, `extension-manager`, `gnome-weather` y descarga las 11 extensiones personalizadas utilizando el instalador nativo por DBus `gnome-extensions install --force` y compilando automáticamente los esquemas GSettings (`glib-compile-schemas`), evitando el estado de error o deshabilitado en el gestor de extensiones (ver [Guía de Extensiones GNOME](./gnome_extensions_es.md)).
 
 ```bash
 just extensions

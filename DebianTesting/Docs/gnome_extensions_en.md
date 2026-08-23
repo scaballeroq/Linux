@@ -2,9 +2,9 @@
 
 # GNOME Shell Extensions Guide
 
-This guide details the set of **10 GNOME Shell extensions** and auxiliary tools automatically installed and configured via the [`Setup/gnome-extensions.sh`](file:///home/caballero/Workspace/Repositorios/Linux/DebianTesting/Setup/gnome-extensions.sh) script and the `just extensions` command.
+This guide details the set of **11 GNOME Shell extensions** and auxiliary tools automatically installed and configured via the [`Setup/gnome-extensions.sh`](file:///home/caballero/Workspace/Repositorios/Linux/DebianTesting/Setup/gnome-extensions.sh) script and the `just extensions` command.
 
-The objective is to optimize the GNOME desktop environment on Debian Testing by combining **window management**, **productivity**, **system tray support**, and a **modern aesthetic** (glassmorphism/blur, daily dynamic wallpapers, and an integrated audio mixer), with **Dash to Dock** acting as the primary dock.
+The objective is to optimize the GNOME desktop environment on Debian Testing by combining **window management**, **productivity**, **system tray support**, **weather information next to clock**, and a **modern aesthetic** (glassmorphism/blur, daily dynamic wallpapers, and an integrated audio mixer), with **Dash to Dock** acting as the primary dock.
 
 ---
 
@@ -16,12 +16,13 @@ Before installing extensions, the script sets up base support tools to ensure se
 | :--- | :--- | :--- |
 | **`gnome-browser-connector`** | APT Package | Native connector enabling extension installation directly from [extensions.gnome.org](https://extensions.gnome.org/). |
 | **`extension-manager`** | GTK4/Adwaita App | Native application to search, install, update, and configure GNOME extensions without a browser. |
+| **`gnome-weather`** | APT Package | GNOME official weather application, required by weather extensions such as Weather O'Clock. |
 | **`gnome-extensions-cli` (`gext`)** | CLI Tool (Python/pipx) | Command-line utility used to install and update extensions via the official API. |
 | **`glib-compile-schemas`** | GSettings Compiler | Automatically compiles GSettings schemas in `~/.local/share/gnome-shell/extensions/<UUID>/schemas`, avoiding `Disabled` or `Error` states. |
 
 ---
 
-## 🧩 Extensions Catalog (10 Extensions)
+## 🧩 Extensions Catalog (11 Extensions)
 
 Extensions are installed using optimal sources, combining native **Debian Testing (APT)** packages and the official **extensions.gnome.org (EGO)** repository.
 
@@ -37,6 +38,7 @@ Extensions are installed using optimal sources, combining native **Debian Testin
 | **Quick Settings Audio Panel** | 🌐 GNOME Extensions | ID `5940` | `quick-settings-audio-panel@rayzeq.github.io` |
 | **Clipboard Indicator** | 🌐 GNOME Extensions | ID `779` | `clipboard-indicator@tudmotu.com` |
 | **Tiling Shell** | 🌐 GNOME Extensions | ID `7065` | `tilingshell@ferrarodomenico.com` |
+| **Weather O'Clock** | 🌐 GNOME Extensions | ID `5470` | `weatheroclock@CleoMenezesJr.github.io` |
 
 ---
 
@@ -88,6 +90,11 @@ Extensions are installed using optimal sources, combining native **Debian Testin
 ---
 
 ### 4. Aesthetics & Customization
+
+#### 🌤️ Weather O'Clock
+* **Source**: [extensions.gnome.org (ID: 5470)](https://extensions.gnome.org/extension/5470/weather-oclock/)
+* **UUID**: `weatheroclock@CleoMenezesJr.github.io`
+* **Description**: Displays current weather conditions and temperature directly inside the clock pill in the top bar.
 
 #### 🧊 Blur my Shell
 * **Source**: Debian Package `gnome-shell-extension-blur-my-shell` / [EGO ID: 3193](https://extensions.gnome.org/extension/3193/blur-my-shell/)

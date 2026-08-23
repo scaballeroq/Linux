@@ -2,9 +2,9 @@
 
 # Guía Completa de Extensiones de GNOME Shell
 
-Esta guía detalla el conjunto de **10 extensiones de GNOME Shell** y herramientas auxiliares que se instalan y configuran de forma automatizada a través del script [`Setup/gnome-extensions.sh`](file:///home/caballero/Warehouse/Workspace/Repositorios/Linux/DebianTesting/Setup/gnome-extensions.sh) y el comando `just extensions`.
+Esta guía detalla el conjunto de **11 extensiones de GNOME Shell** y herramientas auxiliares que se instalan y configuran de forma automatizada a través del script [`Setup/gnome-extensions.sh`](file:///home/caballero/Warehouse/Workspace/Repositorios/Linux/DebianTesting/Setup/gnome-extensions.sh) y el comando `just extensions`.
 
-El objetivo de esta selección es optimizar el entorno de escritorio GNOME en Debian Testing combinando **gestión de ventanas**, **productividad**, **soporte de bandeja del sistema** y una **estética visual moderna** (glassmorphism/blur, fondos dinámicos diarios y mezclador de audio integrado), utilizando **Dash to Dock** como lanzador y dock principal nativo.
+El objetivo de esta selección es optimizar el entorno de escritorio GNOME en Debian Testing combinando **gestión de ventanas**, **productividad**, **soporte de bandeja del sistema**, **información meteorológica en el reloj** y una **estética visual moderna** (glassmorphism/blur, fondos dinámicos diarios y mezclador de audio integrado), utilizando **Dash to Dock** como lanzador y dock principal nativo.
 
 ---
 
@@ -16,12 +16,13 @@ Antes de instalar las extensiones, el script despliega el soporte base para gara
 | :--- | :--- | :--- |
 | **`gnome-browser-connector`** | Paquete APT | Conector nativo que permite instalar y gestionar extensiones directamente desde el sitio web [extensions.gnome.org](https://extensions.gnome.org/). |
 | **`extension-manager`** | Aplicación GTK4/Adwaita | Aplicación gráfica para buscar, instalar, actualizar y configurar extensiones de GNOME de forma nativa sin necesidad de navegador. |
+| **`gnome-weather`** | Paquete APT | Aplicación oficial del clima de GNOME, requerida por extensiones meteorológicas como Weather O'Clock. |
 | **`gnome-extensions-cli` (`gext`)** | Herramienta CLI (Python/pipx) | Utilidad de línea de comandos utilizada por los scripts para instalar y actualizar extensiones masivamente mediante la API oficial. |
 | **`glib-compile-schemas`** | Compilador GSettings | Compila automáticamente las esquemas GSettings en `~/.local/share/gnome-shell/extensions/<UUID>/schemas`, previniendo errores de estado `Disabled` o `Error`. |
 
 ---
 
-## 🧩 Catálogo de Extensiones (10 Extensiones)
+## 🧩 Catálogo de Extensiones (11 Extensiones)
 
 Las extensiones se instalan de forma óptima combinando los paquetes nativos de **Debian Testing (APT)** y la plataforma oficial **extensions.gnome.org (EGO)**.
 
@@ -37,6 +38,7 @@ Las extensiones se instalan de forma óptima combinando los paquetes nativos de 
 | **Quick Settings Audio Panel** | 🌐 GNOME Extensions | ID `5940` | `quick-settings-audio-panel@rayzeq.github.io` |
 | **Clipboard Indicator** | 🌐 GNOME Extensions | ID `779` | `clipboard-indicator@tudmotu.com` |
 | **Tiling Shell** | 🌐 GNOME Extensions | ID `7065` | `tilingshell@ferrarodomenico.com` |
+| **Weather O'Clock** | 🌐 GNOME Extensions | ID `5470` | `weatheroclock@CleoMenezesJr.github.io` |
 
 ---
 
@@ -116,6 +118,15 @@ Las extensiones se instalan de forma óptima combinando los paquetes nativos de 
 ---
 
 ### 4. Estética y Personalización Visual (Aesthetics & Customization)
+
+#### 🌤️ Weather O'Clock
+* **Origen**: [extensions.gnome.org (ID: 5470)](https://extensions.gnome.org/extension/5470/weather-oclock/)
+* **UUID**: `weatheroclock@CleoMenezesJr.github.io`
+* **Descripción**: Muestra la condición y temperatura meteorológica actual directamente junto al reloj en el botón central de la barra superior.
+* **Características Clave**:
+  - Integración estética limpia y nativa junto al reloj del panel superior.
+  - Muestra temperatura actual e icono representativo del clima.
+  - Se sincroniza con las ubicaciones configuradas en **GNOME Weather** (`gnome-weather`).
 
 #### 🧊 Blur my Shell
 * **Origen**: Paquete Debian `gnome-shell-extension-blur-my-shell` / [EGO ID: 3193](https://extensions.gnome.org/extension/3193/blur-my-shell/)
