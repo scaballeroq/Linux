@@ -26,7 +26,7 @@ Operating system setup, GNOME personalization, and security hardening:
 - **`post-install-amd.sh`**: Post-installation optimized for **AMD Ryzen** CPUs and Radeon Graphics (AMD microcode, GPU firmware, RADV, Mesa, ZRAM, PipeWire, GNOME).
 - **`post-install-intel.sh`**: Post-installation optimized for **Intel Core** desktop PCs (Haswell i7-4790 / HD Graphics 4600) tailored for media center & streaming (Intel microcode, `i965` VA-API driver, codecs, Kodi, no virtualization).
 - **`gnome-settings.sh`**: Automated GNOME personalization via GSettings (Night Light at 3500K, 24h clock, window buttons, prefer dark theme, VRR).
-- **`gnome-extensions.sh`**: Clean, automated installation of 17 curated GNOME extensions with GSettings schema compilation (see [GNOME Extensions Guide](./Docs/gnome_extensions_en.md)).
+- **`gnome-extensions.sh`**: Clean, automated installation of 10 curated GNOME extensions with GSettings schema compilation (see [GNOME Extensions Guide](./Docs/gnome_extensions_en.md)).
 - **`ptyxis.sh`**: Modern Ptyxis terminal setup (85% translucent profile, no scrollbar, `Ctrl+Alt+T` shortcut, and Nautilus context menu integration).
 - **`kitty.sh`**: GPU-accelerated Kitty terminal setup with 85% opacity, blur effects, JetBrainsMono Nerd Font, and GNOME/Nautilus integration.
 - **`apariencia.sh`**: Themes, icons, and Qt/GTK style consistency (Adwaita-Dark and Papirus-Dark).

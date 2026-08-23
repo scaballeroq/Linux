@@ -1,0 +1,164 @@
+Ordenando...
+Buscar en todo el texto...
+gnome-shell-extension-appindicator/testing 64-2 all
+  AppIndicator, KStatusNotifierItem and tray support for GNOME Shell
+
+gnome-shell-extension-applications-menu/testing 50.0-2 all
+  applications menu extension for GNOME shell
+
+gnome-shell-extension-apps-menu/testing 50.2-2 all
+  Category based app menu for GNOME Shell
+
+gnome-shell-extension-arc-menu/testing 69.2-1 all
+  shell extension designed to provide a panel menu
+
+gnome-shell-extension-auto-move-windows/testing 50.2-2 all
+  GNOME Shell extension to move apps to specific workspaces
+
+gnome-shell-extension-autohidetopbar/testing 1:124-1 all
+  GNOME shell automatic topbar hider
+
+gnome-shell-extension-blur-my-shell/testing,now 72-1 all [instalado]
+  Extension that adds a blur look to different parts of the GNOME Shell
+
+gnome-shell-extension-bottom-panel/testing 50.0-2 all
+  bottom panel extension for GNOME shell
+
+gnome-shell-extension-caffeine/testing,now 60-1 all [instalado]
+  GNOME Shell extension to keep your computer awake
+
+gnome-shell-extension-dash-to-panel/testing 73-1 all
+  combines the dash and the GNOME main panel into a single panel
+
+gnome-shell-extension-dashtodock/testing,now 106-1 all [instalado]
+  dash-to-dock extension for GNOME shell
+
+gnome-shell-extension-desktop-icons-ng/testing 50.1.0-1 all
+  desktop icon support for GNOME Shell
+
+gnome-shell-extension-disable-workspace-switcher/testing 6-4 all
+  disables the popup displayed during workspace switching (GNOME)
+
+gnome-shell-extension-drive-menu/testing 50.2-2 all
+  Removable drive status menu for GNOME Shell
+
+gnome-shell-extension-easyscreencast/testing 1.13.2-1 all
+  GNOME Shell extension to simplify video recording
+
+gnome-shell-extension-flypie/testing 33-0.1 all
+  innovative marking menu via keyboard shortcuts
+
+gnome-shell-extension-freon/testing 61+dfsg-1 all
+  GNOME Shell Extension for Sensors
+
+gnome-shell-extension-gamemode/testing 21.0-1 all
+  gnome-shell extension that monitors the current status of gamemode
+
+gnome-shell-extension-gpaste/testing 50.7-1 all
+  GPaste extension for GNOME Shell
+
+gnome-shell-extension-gsconnect/testing 72-1 all
+  KDE Connect implementation for GNOME Shell
+
+gnome-shell-extension-gsconnect-browsers/testing 72-1 all
+  Browser support of KDE Connect implementation for GNOME Shell
+
+gnome-shell-extension-hamster/testing 0.10.0+git20251003-2 all
+  GNOME Shell extension for the Hamster Time Tracker
+
+gnome-shell-extension-hard-disk-led/testing 40-2 all
+  Shows harddisk activity (IO speed read/write and LED) in GNOME Shell
+
+gnome-shell-extension-hibernate-status/testing 1.16~rc1+20260407-3 all
+  adds a hibernate/hybrid suspend button in status menu (GNOME)
+
+gnome-shell-extension-hide-activities/testing 50-1 all
+  GNOME shell extension that hides the activities button
+
+gnome-shell-extension-impatience/testing 0.5.3-3 all
+  speed up the gnome-shell animation speed
+
+gnome-shell-extension-just-perfection/testing 36.0-4 all
+  Tweak tool to customize GNOME Shell
+
+gnome-shell-extension-kimpanel/testing 0.0~git20260731.c0affdf-1 all
+  KDE kimpanel protocol extension for GNOME shell
+
+gnome-shell-extension-launch-new-instance/testing 50.2-2 all
+  GNOME Shell extension to launch new instances of apps
+
+gnome-shell-extension-light-style/testing 50.2-2 all
+  GNOME Shell extension to switch the Shell to light style
+
+gnome-shell-extension-manager/testing,now 0.6.5-2 amd64 [instalado]
+  Utility for managing GNOME Shell Extensions
+
+gnome-shell-extension-middleclickclose/testing 36-3 all
+  closes apps in overview with a middle click (GNOME)
+
+gnome-shell-extension-move-clock/testing 50.0-2 all
+  move clock extension for GNOME shell
+
+gnome-shell-extension-native-window-placement/testing 50.2-2 all
+  GNOME Shell extension to arrange windows in a more compact way
+
+gnome-shell-extension-no-annoyance/testing 0+20241212-8ca0647-3 all
+  removes GNOME 'Window is ready' notifications
+
+gnome-shell-extension-no-overview/testing 49+20260418-4 all
+  disables the switch to overview at login (GNOME)
+
+gnome-shell-extension-panel-favorites/testing 50.0-2 all
+  top panel favorites extension for GNOME shell
+
+gnome-shell-extension-paperwm/testing 50.0.1-1 all
+  Tiled scrollable window management for GNOME Shell
+
+gnome-shell-extension-places-menu/testing 50.2-2 all
+  Places menu for GNOME Shell
+
+gnome-shell-extension-prefs/testing,now 50.3-1 amd64 [instalado, automático]
+  tool to enable / disable GNOME Shell extensions
+
+gnome-shell-extension-runcat/testing 30+really29-2 all
+  desktop icon for showing CPU usage with cats
+
+gnome-shell-extension-screenshot-window-sizer/testing 50.2-2 all
+  GNOME Shell extension to resize windows for GNOME Software screenshots
+
+gnome-shell-extension-shortcuts/testing 1.7.5-1 all
+  Creates a shortcuts help pop-up in GNOME Shell
+
+gnome-shell-extension-status-icons/testing 50.2-2 all
+  GNOME Shell extension to show some status icons in the top bar
+
+gnome-shell-extension-system-monitor/testing 50.2-2 all
+  Display system information in GNOME Shell status bar
+
+gnome-shell-extension-tiling-assistant/testing 54-1 all
+  extension which adds a Windows-like snap assist to GNOME Shell
+
+gnome-shell-extension-user-theme/testing 50.2-2 all
+  GNOME Shell extension to load alternative GNOME Shell themes
+
+gnome-shell-extension-vertical-workspaces/testing 50.7-1 all
+  allows customizing the layout and behavior of GNOME Shell
+
+gnome-shell-extension-window-list/testing 50.2-2 all
+  GNOME Shell extension to display a window list
+
+gnome-shell-extension-windows-navigator/testing 50.2-2 all
+  GNOME Shell extension to allow keyboard selection in overlay mode
+
+gnome-shell-extension-workspace-indicator/testing 50.2-2 all
+  Workspace indicator for GNOME Shell
+
+gnome-shell-extensions-extra/testing 20260514-1 all
+  Conglomeration package of GNOME Shell extensions (transitional package)
+
+normcap/testing 0.6.0+git20260213.4b026be+ds-2 all
+  OCR powered screen-capture tool to capture information
+
+variety/testing 0.9.0-2 all
+  Wallpaper changer, downloader and manager
+

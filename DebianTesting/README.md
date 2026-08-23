@@ -26,7 +26,7 @@ Scripts de configuración del sistema operativo, personalización de GNOME y end
 - **`post-install-amd.sh`**: Post-instalación optimizada para procesadores **AMD Ryzen** y gráficos Radeon (microcódigo AMD, firmware GPU, RADV, Mesa, ZRAM, PipeWire, GNOME).
 - **`post-install-intel.sh`**: Post-instalación optimizada para equipos de sobremesa **Intel Core** (Haswell i7-4790 / HD Graphics 4600) dedicados a centro multimedia y streaming (microcódigo Intel, driver VA-API `i965`, codecs, Kodi, sin virtualización).
 - **`gnome-settings.sh`**: Personalización automatizada de GNOME vía GSettings (Luz nocturna a 3500K, reloj 24h, porcentaje de batería, botones de ventana, VRR).
-- **`gnome-extensions.sh`**: Instalación automatizada y limpia de 17 extensiones de GNOME Shell con compilación de esquemas (ver [Guía de Extensiones GNOME](./Docs/gnome_extensions_es.md)).
+- **`gnome-extensions.sh`**: Instalación automatizada y limpia de 10 extensiones de GNOME Shell con compilación de esquemas (ver [Guía de Extensiones GNOME](./Docs/gnome_extensions_es.md)).
 - **`ptyxis.sh`**: Instalación y perfil moderno de Ptyxis (translúcido al 85%, sin scrollbar, atajo `Ctrl+Alt+T` e integración en Nautilus).
 - **`kitty.sh`**: Terminal Kitty acelerada por GPU con opacidad (85%), efectos blur, tipografía JetBrainsMono Nerd Font e integración con GNOME/Nautilus.
 - **`apariencia.sh`**: Instalación de temas e iconos (Adwaita-Dark, Papirus-Dark e integración visual GTK/Qt).
