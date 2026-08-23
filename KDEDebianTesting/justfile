@@ -61,6 +61,10 @@ screensaver:
 plymouth:
     ./Setup/plymouth-setup.sh
 
+# Instalación de aplicaciones esenciales, desarrollo, multimedia y Flatpak
+apps:
+    ./Setup/apps.sh
+
 # Utilidades de terminal y prompt (eza, bat, fzf, starship)
 shell:
     ./Setup/shell.sh
