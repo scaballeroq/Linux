@@ -41,20 +41,23 @@ install_podman() {
     log_info "Actualizando repositorios..."
     sudo apt update -qq
 
-    log_info "Instalando Podman y dependencias..."
+    log_info "Instalando Podman y dependencias modernas para Debian Testing..."
     sudo apt install -y \
         podman \
         podman-compose \
+        podman-docker \
         uidmap \
         slirp4netns \
         passt \
-        containernetworking-plugins
+        netavark \
+        aardvark-dns \
+        dbus-user-session
 
     log_ok "Podman instalado: $(podman --version)"
 }
 
 configure_storage() {
-    log_info "Configurando almacenamiento (overlay)..."
+    log_info "Configurando almacenamiento (overlay nativo)..."
 
     local storage_conf="$HOME/.config/containers/storage.conf"
     mkdir -p "$(dirname "$storage_conf")"
@@ -63,18 +66,22 @@ configure_storage() {
         cat > "$storage_conf" <<'EOF'
 [storage]
 driver = "overlay"
-
-[storage.options.overlay]
-mount_program = "/usr/bin/fuse-overlayfs"
 EOF
-        log_ok "storage.conf creado"
+        log_ok "storage.conf creado (overlay nativo del kernel)"
     else
         log_info "storage.conf ya existe, se mantiene"
     fi
+}
 
-    if ! command -v fuse-overlayfs &>/dev/null; then
-        log_info "Instalando fuse-overlayfs..."
-        sudo apt install -y fuse-overlayfs
+configure_unprivileged_ports() {
+    log_info "Habilitando puertos no privilegiados (>=80) para rootless Podman (Traefik)..."
+    local sysctl_conf="/etc/sysctl.d/99-podman-rootless.conf"
+    if [ ! -f "$sysctl_conf" ] || ! grep -q "ip_unprivileged_port_start" "$sysctl_conf" 2>/dev/null; then
+        echo "net.ipv4.ip_unprivileged_port_start = 80" | sudo tee "$sysctl_conf" > /dev/null
+        sudo sysctl --system >/dev/null 2>&1 || true
+        log_ok "Puertos >= 80 habilitados para usuarios no root"
+    else
+        log_info "Puertos no privilegiados ya configurados"
     fi
 }
 
@@ -110,6 +117,7 @@ configure_subuids() {
     else
         log_info "subuid/subgid ya estan configurados"
     fi
+    podman system migrate 2>/dev/null || true
 }
 
 enable_podman_socket() {
@@ -198,6 +206,7 @@ main() {
 
     install_podman
     configure_storage
+    configure_unprivileged_ports
     configure_registries
     configure_network
     enable_linger

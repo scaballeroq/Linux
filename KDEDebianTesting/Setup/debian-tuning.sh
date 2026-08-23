@@ -14,6 +14,7 @@ fs.inotify.max_user_instances = 1024
 fs.file-max = 2097152
 vm.max_map_count = 16777216
 vm.swappiness = 10
+net.ipv4.ip_unprivileged_port_start = 80
 EOF
 
 sudo sysctl --system > /dev/null || true

@@ -57,6 +57,17 @@ if [ -d "$HOME/.cargo/bin" ]; then
     export PATH="$HOME/.cargo/bin:$PATH"
 fi
 
+# Utilidades Podman Quadlets (podman-utils)
+PODMAN_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../Podman/lib" 2>/dev/null && pwd)"
+if [ -d "$PODMAN_LIB_DIR" ]; then
+    export PATH="$PODMAN_LIB_DIR:$PATH"
+fi
+
+# Socket de Podman (Compatibilidad con herramientas Docker)
+if [ -z "${DOCKER_HOST:-}" ] && [ -n "${XDG_RUNTIME_DIR:-}" ]; then
+    export DOCKER_HOST="unix://$XDG_RUNTIME_DIR/podman/podman.sock"
+fi
+
 # Activación de MISE (Gestor de lenguajes)
 if command -v mise &> /dev/null; then
     eval "$(mise activate bash)"
