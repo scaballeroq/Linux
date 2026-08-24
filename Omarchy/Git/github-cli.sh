@@ -1,10 +1,12 @@
 #!/bin/bash
-# github-cli.sh - GitHub CLI Installation for Arch Linux
+# github-cli.sh - Instalación de GitHub CLI para Omarchy (Arch Linux)
 
 set -euo pipefail
 
-echo "ℹ️ Instalando GitHub CLI (gh)..."
-sudo pacman -S --noconfirm gh
+echo "🐙 Instalando GitHub CLI..."
+sudo pacman -S --needed --noconfirm github-cli
 
+echo ""
 echo "✅ GitHub CLI instalado correctamente."
 echo "💡 Recuerda ejecutar 'gh auth login' para vincular tu cuenta."
+
