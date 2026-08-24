@@ -71,3 +71,7 @@ alias pclean='podman system prune -af'
 alias pclean-volumes='podman volume prune -f'
 alias pclean-all='podman system prune -af --volumes'
 
+# Quadlets CLI
+alias podman-utils='$HOME/Workspace/Repositorios/Linux/Omarchy/Podman/lib/podman-utils.sh'
+alias putils='$HOME/Workspace/Repositorios/Linux/Omarchy/Podman/lib/podman-utils.sh'
+

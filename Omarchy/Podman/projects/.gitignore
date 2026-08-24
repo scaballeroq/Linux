@@ -1,0 +1,4 @@
+# Ignorar todo el contenido de los proyectos generados excepto .gitkeep y .gitignore
+*
+!.gitkeep
+!.gitignore
