@@ -1,17 +1,12 @@
 #!/bin/bash
-# mise.sh - Instalador de Mise (Gestor de Versiones) para Arch Linux
+# mise.sh - Instalación de Mise (Polyglot Runtime / Version Manager) para Omarchy
 
-set -e
+set -euo pipefail
 
-echo "ℹ️ Instalando Mise desde repositorios oficiales..."
+echo "⚡ Instalando Mise desde repositorios oficiales..."
+sudo pacman -S --needed --noconfirm mise
 
-sudo pacman -S --noconfirm mise
+echo ""
+echo "✅ Mise instalado correctamente ($(mise --version))."
+echo "💡 Omarchy integra y activa Mise automáticamente en cada terminal (/usr/share/omarchy/default/bash/init)."
 
-mkdir -p ~/.bashrc.d
-
-cat <<EOF > ~/.bashrc.d/mise.sh
-# Mise (Language Version Manager)
-eval "\$(mise activate bash)"
-EOF
-
-echo "✅ Mise configurado modularmente en ~/.bashrc.d/mise.sh"

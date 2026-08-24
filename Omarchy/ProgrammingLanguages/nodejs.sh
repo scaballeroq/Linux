@@ -1,21 +1,18 @@
 #!/bin/bash
-# nodejs.sh - Node.js Installation via Mise
+# nodejs.sh - Node.js, PNPM and Yarn Installation via Mise
 
-set -e
+set -euo pipefail
 
 if ! command -v mise &> /dev/null; then
-    echo "❌ Error: 'mise' no está instalado. Por favor ejecuta ./mise.sh primero."
+    echo "❌ Error: 'mise' no está instalado. Ejecuta ./mise.sh primero."
     exit 1
 fi
 
-echo "ℹ️ Instalando dependencias de compilación..."
-sudo pacman -S --noconfirm gcc make gdbm ncurses zlib bzip2 openssl || true
+echo "🟢 Instalando Node.js (LTS), PNPM y Yarn vía Mise..."
+mise use --global node@lts
+mise use --global pnpm@latest
+mise use --global yarn@latest
 
-echo "ℹ️ Instalando Node.js LTS (22)..."
-mise use --global node@22
+echo ""
+echo "✅ Node.js, npm, pnpm y yarn configurados correctamente vía Mise."
 
-echo "ℹ️ Configurando Corepack (pnpm/yarn)..."
-mise exec node@22 -- corepack enable
-mise reshim
-
-echo "✅ Node.js 22, npm y corepack (pnpm/yarn) configurados correctamente."

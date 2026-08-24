@@ -1,22 +1,17 @@
 #!/bin/bash
-# python.sh - Python Installation via Mise
+# python.sh - Python and UV Installation via Mise
 
-set -e
+set -euo pipefail
 
 if ! command -v mise &> /dev/null; then
-    echo "❌ Error: 'mise' no está instalado."
+    echo "❌ Error: 'mise' no está instalado. Ejecuta ./mise.sh primero."
     exit 1
 fi
 
-echo "ℹ️ Instalando dependencias de compilación para Python..."
-sudo pacman -S --noconfirm gcc make automake autoconf curl \
-    openssl zlib readline libyaml libffi \
-    bzip2 libxml2 libxslt libtool patch \
-    sqlite perl gdbm ncurses \
-    tcl tk xz libedit || true
+echo "🐍 Instalando Python y UV (Gestor ultrarrápido de paquetes) vía Mise..."
+mise use --global python@latest
+mise use --global uv@latest
 
-export MISE_PYTHON_COMPILE=1
-echo "ℹ️ Instalando Python 3.12 vía Mise (Nativo)..."
-mise use --global python@3.12
+echo ""
+echo "✅ Python y UV instalados correctamente vía Mise."
 
-echo "✅ Python 3.12 instalado correctamente."

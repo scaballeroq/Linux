@@ -1,23 +1,22 @@
 #!/bin/bash
 # angular.sh - Angular CLI Installation via Mise
 
-set -e
+set -euo pipefail
 
 if ! command -v mise &> /dev/null; then
-    echo "❌ Error: 'mise' no está instalado."
+    echo "❌ Error: 'mise' no está instalado. Ejecuta ./mise.sh primero."
     exit 1
 fi
 
-echo "ℹ️ Instalando Angular CLI globalmente vía Mise/NPM..."
+echo "🅰️ Instalando Angular CLI globalmente vía Mise/NPM..."
 mise use --global npm:@angular/cli@latest
 
 echo "ℹ️ Configurando autocompletado de Angular..."
-mkdir -p ~/.bashrc.d
-cat <<EOF > ~/.bashrc.d/angular.sh
-# Angular CLI completion
+mkdir -p ~/.local/share/bash-completion/completions
 if command -v ng &> /dev/null; then
-  source <(ng completion script)
+    ng completion script > ~/.local/share/bash-completion/completions/ng 2>/dev/null || true
 fi
-EOF
 
-echo "✅ Angular CLI instalado y autocompletado configurado en ~/.bashrc.d/angular.sh"
+echo ""
+echo "✅ Angular CLI instalado y autocompletado configurado en ~/.local/share/bash-completion/completions/ng"
+
