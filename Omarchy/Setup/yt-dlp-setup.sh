@@ -1,15 +1,21 @@
 #!/bin/bash
-# yt-dlp-setup.sh - Instalación de yt-dlp y dependencias para Arch Linux
+# yt-dlp-setup.sh - Instalación y configuración de yt-dlp para Omarchy (Arch Linux)
 
-set -e
+set -euo pipefail
 
-echo "📺 Instalando yt-dlp y dependencias..."
+echo "📺 Instalando yt-dlp, FFmpeg, Deno y dependencias multimedia recomendadas..."
 
-# Instalar yt-dlp y ffmpeg
-sudo pacman -S --noconfirm yt-dlp ffmpeg
+# 1. Instalar yt-dlp, ffmpeg, runtime de JS (Deno) y librerías para metadatos/carátulas
+sudo pacman -S --needed --noconfirm \
+    yt-dlp \
+    ffmpeg \
+    deno \
+    atomicparsley \
+    python-mutagen \
+    python-pycryptodomex \
+    python-secretstorage
 
-# Instalar Deno como JS runtime para descifrado de YouTube
-echo "ℹ️ Instalando Deno..."
-sudo pacman -S --noconfirm deno
+echo ""
+echo "✅ yt-dlp, motor Deno y códecs multimedia instalados correctamente."
+echo "💡 Para descargar audio con carátula: yt-dlp -x --audio-format mp3 --embed-thumbnail <URL>"
 
-echo "✅ yt-dlp configurado correctamente"
