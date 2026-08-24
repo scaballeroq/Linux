@@ -5,7 +5,7 @@ echo "=== Google Antigravity CLI Installer ==="
 
 # --- Dependencies ---
 echo "[1/3] Installing dependencies..."
-sudo pacman -S --noconfirm curl
+sudo pacman -S --needed --noconfirm curl
 
 # --- Initial CLI install ---
 echo "[2/3] Installing Antigravity CLI..."

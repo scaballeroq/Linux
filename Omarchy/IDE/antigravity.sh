@@ -5,7 +5,7 @@ echo "=== Google Antigravity Desktop Installer ==="
 
 # --- Dependencies ---
 echo "[1/4] Installing dependencies..."
-sudo pacman -S --noconfirm ca-certificates curl tar desktop-file-utils python
+sudo pacman -S --needed --noconfirm ca-certificates curl tar desktop-file-utils python
 
 # --- Helper script ---
 echo "[2/4] Creating update helper..."
