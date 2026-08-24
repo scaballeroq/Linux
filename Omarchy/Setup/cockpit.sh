@@ -1,25 +1,30 @@
 #!/bin/bash
-# cockpit.sh - Instalación de Cockpit para Arch Linux
+# cockpit.sh - Instalación y configuración de Cockpit Web Admin para Omarchy (Arch Linux)
 
-set -e
+set -euo pipefail
 
-echo "🌐 Instalando Cockpit Web Admin..."
+echo "🌐 Instalando y configurando Cockpit Web Admin para Omarchy..."
 
-sudo pacman -S --noconfirm cockpit cockpit-machines
+# 1. Instalar Cockpit y extensiones oficiales compatibles con Arch Linux
+echo "ℹ️ Instalando Cockpit y extensiones..."
+sudo pacman -S --needed --noconfirm \
+    cockpit \
+    cockpit-machines \
+    cockpit-storaged \
+    cockpit-files \
+    udisks2
 
-# Extensiones de Cockpit
-echo "ℹ️ Instalando extensiones de Cockpit..."
-sudo pacman -S --noconfirm cockpit-podman || true
-sudo pacman -S --noconfirm cockpit-networkmanager || true
-sudo pacman -S --noconfirm cockpit-storaged || true
-
-# Habilitar Cockpit
-echo "ℹ️ Habilitando Cockpit..."
+# 2. Habilitar el socket de Cockpit (se activa bajo demanda, 0 consumo de RAM en reposo)
+echo "ℹ️ Habilitando socket de Cockpit en systemd..."
 sudo systemctl enable --now cockpit.socket
 
-# Abrir puerto en firewalld
-echo "ℹ️ Configurando Firewalld para Cockpit..."
-sudo firewall-cmd --permanent --add-service=cockpit
-sudo firewall-cmd --reload
+# 3. Configurar Firewall (UFW) para permitir acceso a la interfaz web (puerto 9090)
+if command -v ufw >/dev/null 2>&1; then
+    echo "ℹ️ Configurando regla en UFW para Cockpit (puerto 9090/tcp)..."
+    sudo ufw allow 9090/tcp comment "Cockpit Web Admin"
+fi
 
-echo "✅ Cockpit instalado y configurado (https://localhost:9090)"
+echo ""
+echo "✅ Cockpit instalado y configurado correctamente."
+echo "🔗 Accede desde tu navegador en: https://localhost:9090"
+
