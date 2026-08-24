@@ -2,7 +2,7 @@
 # (Arch Linux + Omarchy)
 
 # Instala todo el entorno por defecto
-setup-all: post-install shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome
+setup-all: post-install security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch
     echo "🚀 Entorno completo de Omarchy (Arch Linux) configurado. Por favor, reinicia el sistema."
 
 # =============================================================================
@@ -13,10 +13,6 @@ setup-all: post-install shell security fonts virtualization mise cockpit ides gi
 post-install:
     ./Setup/post-install.sh
 
-# Utilidades de terminal y prompt (eza, bat, fzf, starship)
-shell:
-    ./Setup/shell.sh
-
 # Seguridad básica (UFW firewall)
 security:
     ./Setup/seguridad.sh
@@ -25,17 +21,9 @@ security:
 fonts:
     ./Setup/fonts.sh
 
-# Personalización de GNOME (gsettings, luz nocturna, 24h, temas)
-gnome:
-    ./Setup/gnome-settings.sh
-
 # Información estética del sistema (Fastfetch)
 fastfetch:
     ./Setup/fastfetch.sh
-
-# Terminal Kitty acelerada por GPU con tema oscuro y opacidad/blur
-kitty:
-    ./Setup/terminal.sh
 
 # Multimedia (yt-dlp, ffmpeg)
 yt-dlp:

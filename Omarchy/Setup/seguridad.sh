@@ -1,60 +1,45 @@
 #!/bin/bash
-# seguridad.sh - Configuración de UFW para Arch Linux (Laptop Desarrollador)
+# seguridad.sh - Configuración de Firewall (UFW) para Omarchy (Laptop)
 
 set -e
 
-echo "🔒 Configurando UFW..."
+echo "🔒 Configurando Firewall (UFW) para Omarchy..."
 
-# Instalar ufw si no está presente
-if ! command -v ufw &>/dev/null; then
-    echo "📦 Instalando ufw..."
-    sudo pacman -S --noconfirm ufw
-fi
+# 1. Instalar UFW y GUFW (interfaz gráfica) si no están presentes
+echo "ℹ️ Verificando instalación de UFW y GUFW..."
+sudo pacman -S --needed --noconfirm ufw gufw
 
-# Detener y deshabilitar firewalld si está activo
-if systemctl is-active --quiet firewalld; then
-    echo "🔄 Deshabilitando firewalld..."
-    sudo systemctl disable --now firewalld
-fi
-
-# Resetear reglas existentes
+# 2. Resetear reglas previas para garantizar un estado limpio
 sudo ufw --force reset
 
-# Políticas por defecto: denegar entrada, permitir salida
+# 3. Políticas por defecto: denegar tráfico entrante, permitir tráfico saliente
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
 
-# Loopback esencial
+# 4. Tráfico interno (Loopback / Localhost para desarrollo local y contenedores)
 sudo ufw allow in on lo
 sudo ufw deny in from 127.0.0.0/8
 sudo ufw deny in from ::1
 
-# SSH: solo desde redes locales (trabajo remoto seguro)
-sudo ufw allow from 10.0.0.0/8 to any port 22 proto tcp
-sudo ufw allow from 172.16.0.0/12 to any port 22 proto tcp
-sudo ufw allow from 192.168.0.0/16 to any port 22 proto tcp
-
-# mDNS/Bonjour (impresoras, descubrimiento de dispositivos en red local)
-sudo ufw allow in 5353/udp
-
-# DHCP para WiFi/Ethernet
-sudo ufw allow in 67/udp
-sudo ufw allow in 68/udp
-
-# Desarrollo web local (solo loopback ya cubierto, pero por si usa red local)
-# sudo ufw allow from 192.168.0.0/16 to any port 3000 proto tcp  # React/Next.js
-# sudo ufw allow from 192.168.0.0/16 to any port 5173 proto tcp  # Vite
-# sudo ufw allow from 192.168.0.0/16 to any port 8080 proto tcp  # Servidores dev
-
-# SSH rate limiting (protección contra fuerza bruta)
+# 5. SSH: Permitido con limitación de intentos (Anti fuerza bruta) desde redes privadas
+sudo ufw allow from 10.0.0.0/8 to any port 22 proto tcp comment "SSH LAN 10.x"
+sudo ufw allow from 172.16.0.0/12 to any port 22 proto tcp comment "SSH LAN 172.x"
+sudo ufw allow from 192.168.0.0/16 to any port 22 proto tcp comment "SSH LAN 192.168.x"
 sudo ufw limit 22/tcp comment "SSH rate limit"
 
-# Habilitar UFW con logging bajo
+# 6. mDNS y DHCP (Descubrimiento en red local, impresoras y asignación de IP)
+sudo ufw allow in 5353/udp comment "mDNS/Avahi"
+sudo ufw allow in 67/udp comment "DHCP"
+sudo ufw allow in 68/udp comment "DHCP"
+
+# 7. Habilitar y persistir UFW en systemd para arranques futuros
 sudo ufw --force enable
 sudo ufw logging low
+sudo systemctl enable --now ufw.service
 
 echo ""
-echo "✅ UFW habilitado y activo"
+echo "✅ Firewall UFW configurado, habilitado y persistido en systemd."
 echo ""
-echo "📋 Estado actual:"
+echo "📋 Estado actual del Firewall:"
 sudo ufw status verbose
+
