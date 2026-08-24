@@ -1,54 +1,27 @@
 # =============================================================================
-# VARIABLES DE ENTORNO (environment.sh)
+# VARIABLES DE ENTORNO (environment.sh) - Omarchy
 # =============================================================================
-# Este archivo define variables globales que afectan al comportamiento de
-# la shell y de los programas que se ejecutan desde ella.
 
 # -----------------------------------------------------------------------------
-# 1. EDITORES DE TEXTO
+# 1. EDITORES DE TEXTO (Respeta la configuración nativa de Omarchy)
 # -----------------------------------------------------------------------------
-export EDITOR='nano'
-export VISUAL='nano'
+export EDITOR="${EDITOR:-omarchy-launch-editor --inline}"
+export VISUAL="${VISUAL:-$EDITOR}"
 
 # -----------------------------------------------------------------------------
-# 2. PAGINADOR (LESS)
+# 2. PAGINADOR Y COLORES
 # -----------------------------------------------------------------------------
 export LESS='-R'
 
-export LESS_TERMCAP_mb=$'\e[1;32m'
-export LESS_TERMCAP_md=$'\e[1;32m'
-export LESS_TERMCAP_me=$'\e[0m'
-export LESS_TERMCAP_se=$'\e[0m'
-export LESS_TERMCAP_so=$'\e[01;33m'
-export LESS_TERMCAP_ue=$'\e[0m'
-export LESS_TERMCAP_us=$'\e[1;4;31m'
-
-export MANPAGER="less -R --use-color -Dd+r -Du+b"
-
 # -----------------------------------------------------------------------------
-# 3. PATH (Rutas de ejecutables)
+# 3. PATH (Rutas de ejecutables sin duplicados)
 # -----------------------------------------------------------------------------
-if [ -d "$HOME/.local/bin" ]; then
-    export PATH="$HOME/.local/bin:$PATH"
-fi
+for p in "$HOME/.local/bin" "$HOME/bin" "$HOME/go/bin" "$HOME/.cargo/bin"; do
+    if [ -d "$p" ]; then
+        case ":$PATH:" in
+            *":$p:"*) ;;
+            *) export PATH="$p:$PATH" ;;
+        esac
+    fi
+done
 
-if [ -d "$HOME/bin" ]; then
-    export PATH="$HOME/bin:$PATH"
-fi
-
-if [ -d "$HOME/go/bin" ]; then
-    export PATH="$HOME/go/bin:$PATH"
-fi
-
-if [ -d "$HOME/.cargo/bin" ]; then
-    export PATH="$HOME/.cargo/bin:$PATH"
-fi
-
-# -----------------------------------------------------------------------------
-# 4. VARIOS
-# -----------------------------------------------------------------------------
-# export TZ='Europe/Madrid'
-# =============================================================================
-# MENSAJE DE CARGA
-# =============================================================================
-echo "✅ Variables de entorno"

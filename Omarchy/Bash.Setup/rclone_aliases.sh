@@ -60,7 +60,3 @@ alias lola-onedrive-documentos-down="rclone sync \"OneDrive:Documentos\" \"/home
 unset RCLONE_LOG_DIR
 unset RCLONE_OPTS
 
-# =============================================================================
-# MENSAJE DE CARGA
-# =============================================================================
-echo "✅ Aliases de rclone cargados"

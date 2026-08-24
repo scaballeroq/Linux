@@ -2,7 +2,7 @@
 # (Arch Linux + Omarchy)
 
 # Instala todo el entorno por defecto
-setup-all: post-install security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch
+setup-all: post-install security fonts bash-setup virtualization mise cockpit ides git-setup languages yt-dlp fastfetch
     echo "🚀 Entorno completo de Omarchy (Arch Linux) configurado. Por favor, reinicia el sistema."
 
 # =============================================================================
@@ -20,6 +20,10 @@ security:
 # Fuentes de desarrollo (Nerd Fonts: JetBrainsMono, FiraCode, CascadiaCode...)
 fonts:
     ./Setup/fonts.sh
+
+# Configuración modular de Bash (Aliases, Funciones, Entorno)
+bash-setup:
+    ./Bash.Setup/setup.sh
 
 # Información estética del sistema (Fastfetch)
 fastfetch:

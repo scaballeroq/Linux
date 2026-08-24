@@ -1,45 +1,87 @@
-# Bash Setup Module
+# Bash Setup Module (Omarchy)
 
-Configuración modular de Bash para Arch Linux con GNOME.
+Configuración modular de Bash adaptada y optimizada para **Omarchy (Arch Linux + Hyprland)**.
 
-## Estructura
+---
 
-| Archivo | Propósito |
-|---------|-----------|
-| `aliases.sh` | Atajos de teclado (Pacman, Git, Rust tools, navegación) |
-| `environment.sh` | Variables de entorno (PATH, EDITOR, LESS) |
-| `functions.sh` | Funciones utils (mkcd, extract, multimedia, disco) |
-| `history.sh` | Configuración del historial de comandos |
-| `options.sh` | Opciones de shell (autocd, globstar, autocompletado) |
-| `podman-functions.sh` | Funciones y aliases para Podman |
-| `gnome_settings.sh` | Optimizaciones de GNOME y aliases |
-| `rclone_aliases.sh` | Sincronización con Google Drive / OneDrive |
-| `yt-dlp_aliases.sh` | Descarga de vídeos y audio con yt-dlp |
+## 📁 Estructura de Módulos
 
-## Instalación
+| Módulo | Propósito y Contenido |
+| :--- | :--- |
+| **`aliases.sh`** | Atajos de teclado rápidos (Pacman, Yay, Git, Rust tools, navegación, virtualización, check de kernel). |
+| **`environment.sh`** | Rutas dinámicas al `$PATH` (`~/.local/bin`, `~/.cargo/bin`, `~/go/bin`, `~/bin`) y respeto a variables de Omarchy. |
+| **`functions.sh`** | Funciones utilitarias (`mkcd`, `extract`, `backup`, conversiones multimedia FFMPEG + ImageMagick). |
+| **`options.sh`** | Opciones de Shell interactivas (`autocd`, `globstar`, `cdspell`, completado insensible a mayúsculas). |
+| **`podman-functions.sh`** | Funciones y atajos para contenedores Podman (`psh`, `plogs`, `prmf`, `pstats`, `pclean-total`). |
+| **`rclone_aliases.sh`** | Sincronización personalizada con Google Drive y OneDrive. |
+| **`yt-dlp_aliases.sh`** | Atajos de descarga con `yt-dlp` (`ytvideo`, `ytaudio`, `ytlista`, `ytdl-subs`). |
 
-Crear enlaces simbólicos en `~/.bashrc.d/`:
+---
+
+## ⚙️ Instalación y Configuración
+
+### Método 1: Automático (Recomendado)
+
+Desde la raíz del repositorio, ejecuta:
 
 ```bash
-mkdir -p ~/.bashrc.d
-ln -s /home/caballero/Workspace/Repositorios/omarchy/Bash.Setup/*.sh ~/.bashrc.d/
+just bash-setup
+# o directamente:
+./Bash.Setup/setup.sh
 ```
 
-Añadir en `~/.bashrc`:
+### Método 2: Manual
+
+Añade el siguiente bloque al final de tu archivo `~/.bashrc`:
 
 ```bash
-if [ -d ~/.bashrc.d ]; then
-    for f in ~/.bashrc.d/*.sh; do
-        [ -r "$f" ] && source "$f"
+# =============================================================================
+# Cargar módulos personalizados de Bash.Setup
+# =============================================================================
+BASH_SETUP_DIR="$HOME/Workspace/Repositorios/Linux/Omarchy/Bash.Setup"
+if [ -d "$BASH_SETUP_DIR" ]; then
+    for f in "$BASH_SETUP_DIR"/*.sh; do
+        [ "$f" != "$BASH_SETUP_DIR/setup.sh" ] && [ -r "$f" ] && source "$f"
     done
     unset f
 fi
 ```
 
-## Características destacadas
+---
 
-- **Aliases de Pacman + Yay**: `update`, `upgrade`, `install`, `remove`, `aur-install`
-- **Funciones Podman**: `psh`, `plogs`, `prmf`, `pstats`, `pclean-total`
-- **Multimedia**: `webm2mp4`, `transcode-video-1080p`, `img2jpg` (FFMPEG + ImageMagick)
-- **Rclone sync**: Upload/download con Google Drive y OneDrive
-- **yt-dlp**: Descarga de vídeos, audio, playlists y subtítulos
+## 🔄 Aplicar Cambios
+
+Para activar la configuración en la terminal actual sin reiniciar:
+
+```bash
+source ~/.bashrc
+# o utilizando el atajo incluido:
+reload
+```
+
+---
+
+## 🚀 Atajos y Comandos Destacados
+
+* **Gestión de paquetes:**
+  * `update` (`sudo pacman -Sy`)
+  * `upgrade` (`sudo pacman -Syu`)
+  * `install <paquete>` (`sudo pacman -S --needed`)
+  * `aur-install <paquete>` (`yay -S --needed`)
+  * `clean` (limpia huérfanos y caché)
+* **Utilidades del sistema:**
+  * `cls` (limpia pantalla, preservando `c` para OpenCode)
+  * `fetch` o `sysinfo` (ejecuta Fastfetch, preservando `ff` para FZF)
+  * `check-kernel` (compara kernel local con el último de kernel.org)
+  * `ports` (muestra puertos y servicios abiertos con `ss`)
+* **Navegación y archivos:**
+  * `mkcd <directorio>` (crea la carpeta y entra en ella)
+  * `extract <archivo>` (descomprime automáticamente según la extensión: zip, tar, 7z, rar, etc.)
+  * `backup <archivo>` (crea copia con timestamp `.bak-YYYYMMDD-HHMMSS`)
+  * `repos`, `omarchy`, `arch` (acceso directo a tus workspaces)
+* **Multimedia:**
+  * `webm2mp4 <video.webm>`
+  * `transcode-video-1080p <video>`
+  * `img2jpg <imagen>`
+
+

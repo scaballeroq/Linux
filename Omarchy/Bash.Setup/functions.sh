@@ -195,12 +195,3 @@ img2png() {
   echo "✅ ${img%.*}-optimized.png"
 }
 
-# =============================================================================
-# MENSAJE DE CARGA
-# =============================================================================
-echo "✅ Funciones cargadas: 📂 Navegación, 💻 Sistema, 💾 Disco, 🎬 Multimedia"
-
-  # 📂 Navegación: mkcd, up, extract, backup, compress
-  # 💻 Sistema: psgrep, duh, hg
-  # 💾 Disco: iso2sd, format-drive
-  # 🎬 Multimedia: webm2mp4, transcode-video-*, img2*

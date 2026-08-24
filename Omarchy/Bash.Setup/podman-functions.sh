@@ -70,7 +70,4 @@ alias podrm='podman pod rm'
 alias pclean='podman system prune -af'
 alias pclean-volumes='podman volume prune -f'
 alias pclean-all='podman system prune -af --volumes'
-# =============================================================================
-# MENSAJE DE CARGA
-# =============================================================================
-echo "✅ Funciones Podman cargadas"
+

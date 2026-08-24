@@ -1,21 +1,18 @@
 # =============================================================================
-# ARCHIVO DE ALIASES (aliases.sh)
+# ARCHIVO DE ALIASES (aliases.sh) - Omarchy
 # =============================================================================
 # Este archivo contiene atajos (aliases) para comandos utilizados frecuentemente.
 
 # -----------------------------------------------------------------------------
 # 1. NAVEGACIÓN
 # -----------------------------------------------------------------------------
-alias ..='cd ..'
-alias ...='cd ../..'
-alias ....='cd ../../..'
 alias ~='cd ~'
 alias repos='cd ~/Workspace/Repositorios'
 alias omarchy='cd ~/Workspace/Repositorios/Linux/Omarchy'
 alias arch='cd ~/Workspace/Repositorios/Linux/Arch'
 
 # -----------------------------------------------------------------------------
-# 2. LISTADO DE ARCHIVOS (ls / eza / lsd)
+# 2. LISTADO DE ARCHIVOS (ls / eza)
 # -----------------------------------------------------------------------------
 if command -v eza &> /dev/null; then
     alias ll='eza -l --icons --git --group-directories-first'
@@ -48,12 +45,12 @@ alias chgrp='chgrp --preserve-root'
 # -----------------------------------------------------------------------------
 alias update='sudo pacman -Sy'
 alias upgrade='sudo pacman -Syu'
-alias install='sudo pacman -S'
+alias install='sudo pacman -S --needed'
 alias remove='sudo pacman -Rns'
 alias search='pacman -Ss'
 alias clean='sudo pacman -Rns $(pacman -Qtdq) 2>/dev/null; sudo pacman -Sc --noconfirm'
-alias list='pacman -Qu'
-alias aur-install='yay -S'
+alias list-updates='pacman -Qu'
+alias aur-install='yay -S --needed'
 alias aur-remove='yay -Rns'
 alias aur-search='yay -Ss'
 alias aur-upgrade='yay -Syu'
@@ -78,22 +75,19 @@ alias ports='sudo ss -tulanp'
 alias myip='curl -s ifconfig.me'
 alias localip='ip -4 addr show | grep -oP "(?<=inet\s)\d+(\.\d+){3}"'
 alias reload='source ~/.bashrc'
-alias edit-bashrc='${EDITOR:-nano} ~/.bashrc'
-alias edit-aliases='${EDITOR:-nano} ~/.bashrc.d/aliases.sh'
-alias c='clear'
-alias ff='fastfetch'
-alias sysinfo='ff'
+alias edit-bashrc='${EDITOR:-omarchy-launch-editor} ~/.bashrc'
+alias cls='clear'
+alias fetch='fastfetch'
+alias sysinfo='fastfetch'
 alias sudo='sudo '
 alias grep='grep --color=auto'
-alias h='history'
+alias hist='history'
 
-# Git aliases
-alias g='git'
+# Git aliases complementarios
 alias gs='git status'
 alias ga='git add'
 alias gc='git commit'
 alias gca='git commit -a'
-alias gcm='git commit -m'
 alias gp='git pull'
 alias gph='git push'
 alias gF='git fetch'
@@ -130,13 +124,9 @@ alias vmstop='virsh shutdown'
 alias vminfo='virsh dominfo'
 
 # -----------------------------------------------------------------------------
-# 8. IDEs
+# 8. IDEs Y ACTUALIZACIONES
 # -----------------------------------------------------------------------------
 alias update-antigravity='sudo /usr/local/bin/update-antigravity'
 alias update-antigravity-ide='sudo /usr/local/bin/update-antigravity-ide'
 alias update-antigravity-cli='$HOME/.local/bin/update-antigravity-cli'
 
-# =============================================================================
-# MENSAJE DE CARGA
-# =============================================================================
-echo "✅ Aliases modernizados cargados (Pacman, Kernel-Check, Rust tools, Git, Seguridad)"

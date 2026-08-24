@@ -1,15 +1,15 @@
 # =============================================================================
-# OPCIONES DE LA SHELL (options.sh)
+# OPCIONES DE LA SHELL (options.sh) - Omarchy
 # =============================================================================
 
 shopt -s cdspell
 shopt -s autocd
 shopt -s globstar
 shopt -s checkwinsize
-bind 'set completion-ignore-case on'
-bind 'set show-all-if-ambiguous on'
-bind 'set colored-stats on'
-# =============================================================================
-# MENSAJE DE CARGA
-# =============================================================================
-echo "✅ Opciones de Shell activadas"
+
+if [[ $- == *i* ]]; then
+    bind 'set completion-ignore-case on' 2>/dev/null || true
+    bind 'set show-all-if-ambiguous on' 2>/dev/null || true
+    bind 'set colored-stats on' 2>/dev/null || true
+fi
+
