@@ -198,8 +198,9 @@ img2png() {
 # =============================================================================
 # MENSAJE DE CARGA
 # =============================================================================
-echo "✅ Funciones cargadas"
-# echo "   📂 Navegación: mkcd, up, extract, backup, compress"
-# echo "   💻 Sistema: psgrep, duh, hg"
-# echo "   💾 Disco: iso2sd, format-drive"
-# echo "   🎬 Multimedia: webm2mp4, transcode-video-*, img2*"
+echo "✅ Funciones cargadas: 📂 Navegación, 💻 Sistema, 💾 Disco, 🎬 Multimedia"
+
+  # 📂 Navegación: mkcd, up, extract, backup, compress
+  # 💻 Sistema: psgrep, duh, hg
+  # 💾 Disco: iso2sd, format-drive
+  # 🎬 Multimedia: webm2mp4, transcode-video-*, img2*

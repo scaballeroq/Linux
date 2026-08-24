@@ -1,7 +1,7 @@
 #!/bin/bash
 # github-cli.sh - GitHub CLI Installation for Arch Linux
 
-set -e
+set -euo pipefail
 
 echo "ℹ️ Instalando GitHub CLI (gh)..."
 sudo pacman -S --noconfirm gh

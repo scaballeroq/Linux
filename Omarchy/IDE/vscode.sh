@@ -1,7 +1,7 @@
 #!/bin/bash
 # vscode.sh - Instalación de Visual Studio Code para Arch Linux
 
-set -e
+set -euo pipefail
 
 echo "ℹ️ Instalando Visual Studio Code..."
 
@@ -10,8 +10,8 @@ if command -v yay &> /dev/null; then
 elif command -v paru &> /dev/null; then
     paru -S --noconfirm visual-studio-code-bin
 else
-    echo "ℹ️ Instalando VS Code desde repositorio oficial..."
-    sudo pacman -S --noconfirm code
+    echo "⚠️ No se encontró yay ni paru. Instale VS Code manualmente o use un AUR helper."
+    exit 1
 fi
 
-echo "✅ VS Code instalado."
+echo "✅ Visual Studio Code instalado correctamente."
