@@ -5,9 +5,9 @@ set -e
 
 echo "🔒 Configurando Firewall (UFW) para Omarchy..."
 
-# 1. Instalar UFW y GUFW (interfaz gráfica) si no están presentes
-echo "ℹ️ Verificando instalación de UFW y GUFW..."
-sudo pacman -S --needed --noconfirm ufw gufw
+# 1. Instalar UFW si no está presente
+echo "ℹ️ Verificando instalación de UFW..."
+sudo pacman -S --needed --noconfirm ufw
 
 # 2. Resetear reglas previas para garantizar un estado limpio
 sudo ufw --force reset

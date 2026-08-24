@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "⚡ Instalando Fastfetch..."
 
-sudo pacman -S --noconfirm fastfetch
+sudo pacman -S --needed --noconfirm fastfetch
 
 echo "ℹ️ Configurando Fastfetch..."
 mkdir -p ~/.config/fastfetch
