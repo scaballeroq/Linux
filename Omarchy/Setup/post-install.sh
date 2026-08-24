@@ -1,59 +1,34 @@
 #!/bin/bash
-# post-install.sh - Optimización de Pacman, actualización, AUR, Codecs y Flathub
+# post-install.sh - Paquetes adicionales, utilidades y aceleración para Omarchy
 
 set -e
 
-echo "🚀 Iniciando configuración base de Arch Linux Workstation (GNOME Optimized)..."
+echo "🚀 Iniciando configuración post-instalación para Omarchy..."
 
-# 1. Optimización Pacman
-echo "ℹ️ Configurando Pacman..."
-if [ -f /etc/pacman.conf ]; then
-    sudo sed -i 's/^#Color/Color/' /etc/pacman.conf
-    sudo sed -i 's/^#ParallelDownloads = 5/ParallelDownloads = 10/' /etc/pacman.conf
-    sudo sed -i 's/^#VerbosePkgLists/VerbosePkgLists/' /etc/pacman.conf
-fi
+# 1. Utilidades de sistema y sistemas de archivos
+echo "ℹ️ Instalando utilidades del sistema y compresión..."
+sudo pacman -S --needed --noconfirm inxi exfatprogs p7zip unrar
 
-# 2. Actualización Base
-echo "ℹ️ Actualizando sistema con Pacman..."
-sudo pacman -Syu --noconfirm
+# 2. Aplicaciones GUI adicionales
+echo "ℹ️ Instalando aplicaciones adicionales de escritorio..."
+sudo pacman -S --needed --noconfirm gimp gparted vlc
 
-# 3. Habilitar multilib (si no está habilitado)
-echo "ℹ️ Habilitando repositorio multilib..."
-if ! grep -q '^\[multilib\]' /etc/pacman.conf; then
-    echo -e "\n[multilib]\nInclude = /etc/pacman.d/mirrorlist" | sudo tee -a /etc/pacman.conf
-    sudo pacman -Syu --noconfirm
-fi
-
-# 4. Instalar base-devel y herramientas esenciales
-echo "ℹ️ Instalando base-devel y herramientas de desarrollo..."
-sudo pacman -S --noconfirm base-devel git wget curl
-
-# 5. Instalar Yay (AUR Helper)
-echo "ℹ️ Instalando Yay (AUR Helper)..."
-if ! command -v yay &> /dev/null; then
-    cd /tmp
-    git clone https://aur.archlinux.org/yay.git
-    cd yay
-    makepkg -si --noconfirm
-    cd /tmp
-    rm -rf yay
-fi
-
-# 6. Flatpak + Flathub Completo
-echo "ℹ️ Configurando Flathub..."
-sudo pacman -S --noconfirm flatpak
-flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-
-# 7. Software Esencial
-echo "ℹ️ Instalando utilidades esenciales..."
-sudo pacman -S --noconfirm cmake curl btop htop inxi fuse2 exfatprogs hfsprogs vlc gimp gparted p7zip unrar zip unzip bzip2 xz
-
-# 8. Multimedia Codecs
+# 3. Codecs Multimedia extendidos (GStreamer)
 echo "ℹ️ Configurando codecs multimedia..."
-sudo pacman -S --noconfirm ffmpeg gst-plugins-good gst-plugins-bad gst-plugins-ugly gst-libav libdvdread libdvdnav lsdvd
+sudo pacman -S --needed --noconfirm \
+    gst-plugins-good \
+    gst-plugins-bad \
+    gst-plugins-ugly \
+    gst-libav
 
-# 9. Aceleración HW
-echo "ℹ️ Configurando aceleración de hardware de video (Mesa)..."
-sudo pacman -S --noconfirm libva-mesa-driver lib32-libva-mesa-driver || true
+# 4. Aceleración de video por Hardware para AMD (Mesa / VA-API)
+echo "ℹ️ Configurando aceleración de hardware de video (Mesa AMD)..."
+sudo pacman -S --needed --noconfirm libva-mesa-driver lib32-libva-mesa-driver || true
 
-echo "✅ Sistema base configurado correctamente (Se recomienda reiniciar)"
+# 5. Flatpak (Descomentar si deseas usar aplicaciones de Flathub)
+# echo "ℹ️ Configurando Flatpak..."
+# sudo pacman -S --needed --noconfirm flatpak
+# flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+echo "✅ Configuración post-install de Omarchy completada."
+
