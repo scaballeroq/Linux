@@ -1,15 +1,15 @@
 #!/bin/bash
-# virtualization.sh - Instalación y Optimización Avanzada de Virtualización (KVM/QEMU) para Arch Linux
+# virtualization.sh - Instalación y Optimización Avanzada de Virtualización (KVM/QEMU) para Omarchy (Arch Linux)
 
 set -euo pipefail
 
-echo "🚀 Configurando entorno de virtualización de alto rendimiento (KVM/QEMU) en Arch Linux..."
+echo "🚀 Configurando entorno de virtualización de alto rendimiento (KVM/QEMU) en Omarchy..."
 
 TARGET_USER="${SUDO_USER:-$USER}"
 
 # 1. Instalación de paquetes necesarios
 echo "ℹ️ Instalando QEMU, libvirt, virt-manager y herramientas auxiliares..."
-sudo pacman -S --noconfirm \
+sudo pacman -S --needed --noconfirm \
     qemu-full \
     libvirt \
     virt-manager \
@@ -23,15 +23,13 @@ sudo pacman -S --noconfirm \
     edk2-ovmf \
     swtpm \
     libguestfs \
-    tuned \
-    ebtables \
     polkit \
     libvirt-dbus \
     virt-install
 
 # 2. Controladores VirtIO para Windows (ISO estable oficial de Fedora)
-echo "ℹ️ Descargando controladores VirtIO para Windows (virtio-win.iso)..."
-VIRTIO_DIR="$HOME/Descargas/virtio-drivers"
+DOWNLOADS_DIR="$(xdg-user-dir DOWNLOAD 2>/dev/null || echo "$HOME/Downloads")"
+VIRTIO_DIR="$DOWNLOADS_DIR/virtio-drivers"
 mkdir -p "$VIRTIO_DIR"
 if [ ! -f "$VIRTIO_DIR/virtio-win.iso" ]; then
     echo "⬇️ Descargando la versión estable más reciente de virtio-win.iso..."
@@ -64,8 +62,8 @@ sudo modprobe vhost_net 2>/dev/null || true
 sudo modprobe vhost_vsock 2>/dev/null || true
 
 # 4. Habilitar y configurar libvirt
-echo "ℹ️ Habilitando servicio libvirt..."
-sudo systemctl enable --now libvirtd.service
+echo "ℹ️ Habilitando servicios de libvirt..."
+sudo systemctl enable --now libvirtd.service virtlogd.socket 2>/dev/null || sudo systemctl enable --now libvirtd.service
 
 # 5. Verificación de capacidades KVM del Host
 echo "ℹ️ Verificando soporte de hardware KVM..."
@@ -93,7 +91,16 @@ echo "ℹ️ Configurando pool de almacenamiento por defecto..."
 sudo virsh pool-start default 2>/dev/null || true
 sudo virsh pool-autostart default 2>/dev/null || true
 
-# 8. Configuración de Bridge Linux (br0) solo para interfaces Ethernet cableadas
+# 8. Compatibilidad con Firewall (UFW) de Omarchy
+if command -v ufw >/dev/null 2>&1; then
+    echo "ℹ️ Configurando reglas de UFW para permitir tráfico en virbr0 (DHCP/DNS para VMs)..."
+    sudo ufw allow in on virbr0 comment "libvirt virbr0 in" 2>/dev/null || true
+    sudo ufw allow out on virbr0 comment "libvirt virbr0 out" 2>/dev/null || true
+    sudo ufw route allow in on virbr0 2>/dev/null || true
+    sudo ufw route allow out on virbr0 2>/dev/null || true
+fi
+
+# 9. Configuración de Bridge Linux (br0) solo para interfaces Ethernet cableadas
 echo "ℹ️ Comprobando compatibilidad de Bridge de red (br0)..."
 PHYS_IFACE=$(ip route | grep default | awk '{print $5}' | head -n1 || true)
 
@@ -123,11 +130,6 @@ else
     echo "ℹ️ Las máquinas virtuales utilizarán la red virtual NAT por defecto (virbr0), compatible con Wi-Fi."
 fi
 
-# 9. Perfil de Rendimiento Tuned (virtual-host)
-echo "ℹ️ Aplicando optimizaciones de rendimiento con tuned (virtual-host)..."
-sudo systemctl enable --now tuned.service || true
-sudo tuned-adm profile virtual-host || true
-
 # 10. Permisos de Usuario y Listas de Control de Acceso (ACL)
 echo "ℹ️ Configurando grupos de usuario (libvirt, kvm)..."
 sudo usermod -aG libvirt,kvm "$TARGET_USER" 2>/dev/null || sudo usermod -aG libvirt "$TARGET_USER"
@@ -138,15 +140,19 @@ sudo setfacl -R -b /var/lib/libvirt/images 2>/dev/null || true
 sudo setfacl -R -m u:"$TARGET_USER":rwX /var/lib/libvirt/images 2>/dev/null || true
 sudo setfacl -d -m u:"$TARGET_USER":rwX /var/lib/libvirt/images 2>/dev/null || true
 
-# 11. Variable de Entorno LIBVIRT_DEFAULT_URI
-echo "ℹ️ Configurando LIBVIRT_DEFAULT_URI en el entorno del usuario..."
-mkdir -p ~/.bashrc.d
-cat <<EOF > ~/.bashrc.d/virtualization.sh
-# Configuración KVM/QEMU conectando al modo de sistema por defecto
-export LIBVIRT_DEFAULT_URI="qemu:///system"
+# 11. Configuración de URI por Defecto (XDG estándar + ~/.bashrc)
+echo "ℹ️ Configurando conexión por defecto a qemu:///system..."
+mkdir -p ~/.config/libvirt
+cat <<EOF > ~/.config/libvirt/libvirt.conf
+uri_default = "qemu:///system"
 EOF
 
+if ! grep -q 'LIBVIRT_DEFAULT_URI' ~/.bashrc 2>/dev/null; then
+    echo -e '\n# Libvirt KVM System Default URI\nexport LIBVIRT_DEFAULT_URI="qemu:///system"' >> ~/.bashrc
+fi
+
 echo "================================================================="
-echo "✅ Entorno de Virtualización KVM/QEMU para Arch Linux configurado con éxito."
+echo "✅ Entorno de Virtualización KVM/QEMU para Omarchy configurado con éxito."
 echo "💡 Recuerda reiniciar o cerrar sesión para aplicar los cambios de grupo (libvirt, kvm)."
 echo "================================================================="
+
