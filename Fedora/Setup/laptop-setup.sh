@@ -1,56 +1,55 @@
 #!/bin/bash
-# laptop-setup.sh - Optimización para portátiles de desarrollo en Fedora 44 + GNOME
+# laptop-setup.sh - Optimización para portátiles en Fedora 44 (KDE Plasma 6)
+#
+# Configura:
+# 1. Servicios de energía modernos (TuneD / tuned-ppd / power-profiles-daemon)
+# 2. Conectividad Bluetooth y control de gráficos híbridos (switcheroo-control)
+# 3. Utilidades de brillo (brightnessctl)
+# 4. Configuración del Touchpad para KDE Plasma (Tap-to-click)
 
 set -euo pipefail
 
-echo "🚀 Iniciando optimización para portátil de desarrollo en Fedora 44 + GNOME..."
+echo "================================================================="
+echo "💻 Iniciando optimización para portátil en Fedora 44 (KDE Plasma)"
+echo "================================================================="
 
-# 1. Herramientas de Hardware y Conectividad
-echo "ℹ️ Instalando servicios de energía, bluetooth y gráficos híbridos..."
+# 1. Herramientas de Hardware, Energía y Conectividad
+echo "ℹ️ [1/3] Instalando servicios de energía, bluetooth y gráficos híbridos..."
 sudo dnf5 install -y \
-    power-profiles-daemon \
+    tuned \
+    tuned-ppd \
     switcheroo-control \
     bluez \
     bluez-tools \
-    brightnessctl \
-    tuned \
-    tuned-ppd 2>/dev/null || sudo dnf5 install -y power-profiles-daemon switcheroo-control bluez brightnessctl
+    brightnessctl 2>/dev/null || true
 
 # 2. Habilitación de servicios
-echo "ℹ️ Habilitando servicios de energía y bluetooth..."
-sudo systemctl enable --now power-profiles-daemon 2>/dev/null || true
+echo "ℹ️ [2/3] Habilitando servicios de energía, bluetooth y GPU híbrida..."
+sudo systemctl enable --now tuned 2>/dev/null || true
+sudo systemctl enable --now tuned-ppd 2>/dev/null || true
 sudo systemctl enable --now switcheroo-control 2>/dev/null || true
 sudo systemctl enable --now bluetooth 2>/dev/null || true
 
-# 3. Configuración de GSettings para Portátil (Touchpad, VRR, HiDPI)
-if command -v gsettings &> /dev/null; then
-    echo "ℹ️ Aplicando optimizaciones de Touchpad y pantalla para GNOME..."
-    gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true 2>/dev/null || true
-    gsettings set org.gnome.desktop.peripherals.touchpad natural-scroll true 2>/dev/null || true
-    gsettings set org.gnome.desktop.peripherals.touchpad two-finger-scrolling-enabled true 2>/dev/null || true
-    gsettings set org.gnome.desktop.interface show-battery-percentage true 2>/dev/null || true
-    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 1800 2>/dev/null || true
+# 3. Configuración de Touchpad para KDE Plasma 6 (y fallback GNOME)
+echo "ℹ️ [3/3] Configurando opciones de Touchpad en KDE Plasma..."
+
+# A) KDE Plasma 6 (kcminputrc)
+if command -v kwriteconfig6 &>/dev/null; then
+    # Habilitar pulsar para hacer clic (Tap-to-click) en Touchpad
+    kwriteconfig6 --file kcminputrc --group "Libinput" --group "Touchpad" --key "tapToClick" "true" 2>/dev/null || true
+    kwriteconfig6 --file kcminputrc --group "Libinput" --key "tapToClick" "true" 2>/dev/null || true
 fi
 
-# 4. Servicio Systemd para fijar brillo al 95%
-echo "ℹ️ Creando servicio de persistencia de brillo al 95%..."
-sudo tee /etc/systemd/system/persist-screen-brightness.service > /dev/null << 'EOF'
-[Unit]
-Description=Fijar brillo de pantalla al 95% en el arranque
-After=graphical.target systemd-user-sessions.service
-
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/brightnessctl set 95%
-RemainAfterExit=yes
-
-[Install]
-WantedBy=graphical.target
-EOF
-
-sudo systemctl daemon-reload
-sudo systemctl enable persist-screen-brightness.service 2>/dev/null || true
+# B) Fallback para aplicaciones GNOME / GTK si están instaladas
+if command -v gsettings &>/dev/null; then
+    gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true 2>/dev/null || true
+    gsettings set org.gnome.desktop.peripherals.touchpad two-finger-scrolling-enabled true 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface show-battery-percentage true 2>/dev/null || true
+fi
 
 echo "================================================================="
-echo "✅ Optimización para portátil de desarrollo en Fedora 44 completada."
+echo "✅ Optimización para portátil en Fedora 44 completada."
+echo "💡 El perfil de energía (Ahorro / Equilibrado / Rendimiento) se gestiona"
+echo "   automáticamente desde el widget de batería de KDE Plasma."
 echo "================================================================="
+
