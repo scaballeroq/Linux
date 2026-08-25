@@ -5,25 +5,23 @@ echo "=== Google Antigravity IDE Installer ==="
 
 # --- 1. Dependencies ---
 echo "[1/4] Installing dependencies..."
-sudo apt update -qq
-sudo apt install -y \
+sudo dnf5 install -y \
   ca-certificates \
   curl \
   tar \
   desktop-file-utils \
   python3 \
-  libnss3 \
-  libatk1.0-0 \
-  libatk-bridge2.0-0 \
-  libcups2 \
-  libdrm2 \
-  libxkbcommon0 \
-  libxcomposite1 \
-  libxdamage1 \
-  libxrandr2 \
-  libgbm1 \
-  libasound2t64 \
-  libsecret-1-0
+  nss \
+  at-spi2-atk \
+  cups-libs \
+  libdrm \
+  libxkbcommon \
+  libXcomposite \
+  libXdamage \
+  libXrandr \
+  mesa-libgbm \
+  alsa-lib \
+  libsecret
 
 # --- 2. Helper script ---
 echo "[2/4] Creating update helper..."

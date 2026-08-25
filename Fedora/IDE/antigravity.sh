@@ -72,7 +72,7 @@ legacy_package_state=$(rpm -q antigravity 2>/dev/null || true)
 case "$legacy_package_state" in
 '' | ?n* | ?c*) ;;
 *)
-	printf 'Remove the legacy Antigravity APT package before installing the current desktop app (state: %s).\n' "$legacy_package_state" >&2
+	printf 'Remove the legacy Antigravity RPM package before installing the current desktop app (state: %s).\n' "$legacy_package_state" >&2
 	exit 1
 	;;
 esac
