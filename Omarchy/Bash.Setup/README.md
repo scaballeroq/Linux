@@ -12,7 +12,7 @@ Configuración modular de Bash adaptada y optimizada para **Omarchy (Arch Linux 
 | **`environment.sh`** | Rutas dinámicas al `$PATH` (`~/.local/bin`, `~/.cargo/bin`, `~/go/bin`, `~/bin`) y respeto a variables de Omarchy. |
 | **`functions.sh`** | Funciones utilitarias (`mkcd`, `extract`, `backup`, conversiones multimedia FFMPEG + ImageMagick). |
 | **`options.sh`** | Opciones de Shell interactivas (`autocd`, `globstar`, `cdspell`, completado insensible a mayúsculas). |
-| **`podman-functions.sh`** | Funciones y atajos para contenedores Podman (`psh`, `plogs`, `prmf`, `pstats`, `pclean-total`). |
+| **`docker-functions.sh`** | Funciones y atajos para Docker, Docker Compose y Lazydocker (`dsh`, `dlogs`, `drmf`, `dstats`, `dclean-total`, `lzd`, `dutils`). |
 | **`rclone_aliases.sh`** | Sincronización personalizada con Google Drive y OneDrive. |
 | **`yt-dlp_aliases.sh`** | Atajos de descarga con `yt-dlp` (`ytvideo`, `ytaudio`, `ytlista`, `ytdl-subs`). |
 

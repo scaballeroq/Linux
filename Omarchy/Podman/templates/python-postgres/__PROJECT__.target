@@ -1,6 +1,0 @@
-[Unit]
-Description=Proyecto __PROJECT__
-After=__PROJECT__.network
-
-[Install]
-WantedBy=default.target

@@ -147,68 +147,42 @@ steam:
     ./Juegos/steam.sh
 
 # =============================================================================
-# PODMAN
+# DOCKER & LAZYDOCKER
 # =============================================================================
 
-# Todos los servicios de Podman
-podman-all: podman-base podman-nginx podman-postgres podman-redis podman-mongodb podman-mysql podman-minio podman-portainer podman-dozzle podman-grafana podman-prometheus podman-adminer podman-mailhog podman-rabbitmq podman-keycloak podman-wordpress podman-browserless podman-storybook podman-jaeger
-    echo "✅ Todos los servicios de Podman configurados."
+# Configuración y permisos de Docker y Lazydocker (preinstalados en Omarchy)
+docker-setup:
+    ./Docker/install/docker-setup.sh
 
-# Podman base
-podman-base:
-    ./Podman/podman.sh
+# Configuración personalizada de Lazydocker
+lazydocker-setup:
+    ./Docker/install/lazydocker-setup.sh
 
-# Servicios individuales de Podman
-podman-nginx:
-    ./Podman/podman-nginx.sh
+# Iniciar servicios globales compartidos (Traefik, Keycloak, PostgreSQL, Redis)
+docker-shared-up:
+    ./Docker/lib/docker-utils.sh shared up
 
-podman-postgres:
-    ./Podman/podman-postgres.sh
+# Detener servicios globales compartidos
+docker-shared-down:
+    ./Docker/lib/docker-utils.sh shared down
 
-podman-redis:
-    ./Podman/podman-redis.sh
+# Ver logs de servicios globales compartidos
+docker-shared-logs:
+    ./Docker/lib/docker-utils.sh shared logs
 
-podman-mongodb:
-    ./Podman/podman-mongodb.sh
+# Ver estado de servicios globales compartidos
+docker-shared-status:
+    ./Docker/lib/docker-utils.sh shared status
 
-podman-mysql:
-    ./Podman/podman-mysql.sh
+# Limpieza completa de contenedores, imágenes huérfanas y volúmenes de Docker
+docker-clean:
+    docker system prune -af --volumes
 
-podman-minio:
-    ./Podman/podman-minio.sh
+# Abrir Lazydocker (interfaz gráfica TUI)
+lazydocker:
+    lazydocker
 
-podman-portainer:
-    ./Podman/podman-portainer.sh
+# Alias rápido para Lazydocker
+lzd:
+    lazydocker
 
-podman-dozzle:
-    ./Podman/podman-dozzle.sh
-
-podman-grafana:
-    ./Podman/podman-grafana.sh
-
-podman-prometheus:
-    ./Podman/podman-prometheus.sh
-
-podman-adminer:
-    ./Podman/podman-adminer.sh
-
-podman-mailhog:
-    ./Podman/podman-mailhog.sh
-
-podman-rabbitmq:
-    ./Podman/podman-rabbitmq.sh
-
-podman-keycloak:
-    ./Podman/podman-keycloak.sh
-
-podman-wordpress:
-    ./Podman/podman-wordpress.sh
-
-podman-browserless:
-    ./Podman/podman-browserless.sh
-
-podman-storybook:
-    ./Podman/podman-storybook.sh
-
-podman-jaeger:
-    ./Podman/podman-jaeger.sh
