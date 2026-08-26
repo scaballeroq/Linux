@@ -1,7 +1,7 @@
 # CachyOS Environment Configuration Justfile
 
-# Instala todo el entorno (Post-install, Laptop, Tuning, Shell, Virtualización, Mise, Cockpit, etc.)
-setup-all: post-install laptop tuning shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome
+# Instala todo el entorno (Post-install, Workspace, Laptop, Tuning, Extensions, Shell, Virtualización, Mise, Cockpit, etc.)
+setup-all: post-install workspace laptop tuning extensions shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome
     echo "🚀 Entorno completo de CachyOS configurado. Por favor, reinicia el sistema."
 
 # Administración Web
@@ -12,13 +12,29 @@ cockpit:
 post-install:
     ./Setup/post-install.sh
 
+# Automontaje permanente de la partición Workspace (/home/caballero/Workspace) en /etc/fstab
+workspace:
+    ./Setup/mount-workspace.sh
+
+# Compilador de Kernel Linux optimizado para x86_64-v3 y ajustado a tu portátil
+build-kernel:
+    ./Setup/build-custom-kernel.sh
+
 # Optimización específica para Portátiles de desarrollo (Touchpad, Batería, Bluetooth, HiDPI)
 laptop:
     ./Setup/laptop-setup.sh
 
-# Optimizaciones avanzadas de CachyOS (Sysctl, Ananicy-cpp, Distrobox, Extensiones GNOME)
+# Autenticación y desbloqueo por huella dactilar (fprintd, PAM, sudo, polkit)
+fingerprint:
+    ./Setup/fingerprint-setup.sh
+
+# Optimizaciones avanzadas de CachyOS (Sysctl, Ananicy-cpp, Distrobox)
 tuning:
     ./Setup/cachyos-tuning.sh
+
+# Instalación automatizada de conectores y las 17 extensiones de GNOME
+extensions:
+    ./Setup/gnome-extensions.sh
 
 # Utilidades de terminal y prompt
 shell:
@@ -48,8 +64,8 @@ gnome:
 fastfetch:
     ./Setup/fastfetch.sh
 
-# Instalación de IDEs (Neovim, VS Code, Antigravity)
-ides: nvim vscode antigravity
+# Instalación de IDEs (Neovim, VS Code, Antigravity, OpenCode)
+ides: nvim vscode antigravity opencode
     echo "✅ IDEs instalados."
 
 # Control de versiones (Git, Delta, Lazygit, GH CLI)
@@ -65,6 +81,15 @@ vscode:
 
 antigravity:
     ./IDE/antigravity.sh
+
+antigravity-cli:
+    ./IDE/antigravity-cli.sh
+
+antigravity-ide:
+    ./IDE/antigravity-ide.sh
+
+opencode:
+    ./IDE/opencode.sh
 
 # Multimedia (yt-dlp, ffmpeg)
 yt-dlp:

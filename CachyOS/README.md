@@ -36,7 +36,8 @@ Scripts para instalar y desplegar servicios en contenedores Podman de forma aisl
 Scripts de configuración del sistema operativo, personalización y endurecimiento:
 - **`post-install.sh`**: Script maestro de post-instalación para CachyOS (Pacman / repositorios optimizados).
 - **`laptop-setup.sh`**: Optimización para portátiles de desarrollo (Touchpad, Bluetooth, `power-profiles-daemon`, `switcheroo-control`, HiDPI, VRR).
-- **`cachyos-tuning.sh`**: [NUEVO] Ajustes de Kernel (`sysctl`), `ananicy-cpp`, `distrobox`, `cachyos-kernel-manager`, `gnome-browser-connector` y descargas automatizadas de tus 17 extensiones personalizadas de GNOME.
+- **`fingerprint-setup.sh`**: [NUEVO] Configuración de desbloqueo y autenticación admin por huella dactilar (`fprintd`, PAM `sudo`, `polkit-1`, `system-local-login`).
+- **`cachyos-tuning.sh`**: Ajustes de Kernel (`sysctl`), `ananicy-cpp`, `distrobox`, `cachyos-kernel-manager`, `gnome-browser-connector` y descargas automatizadas de tus 17 extensiones personalizadas de GNOME.
 - **`apariencia.sh`**: Instalación de temas e iconos (Papirus).
 - **`cockpit.sh`**: Instalación y configuración de Cockpit (administración web).
 - **`fastfetch.sh`**: Información estética del sistema al inicio (Fastfetch).
