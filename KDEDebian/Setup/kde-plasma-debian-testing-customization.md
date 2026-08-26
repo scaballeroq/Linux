@@ -20,6 +20,11 @@ sudo apt update && sudo apt install -y \
     pipx \
     python3-pip \
     python3-pyqt6 \
+    python3-setuptools \
+    python3-dbus \
+    libdbus-1-dev \
+    pkgconf \
+    ninja-build \
     qt6-base-dev \
     qt6-declarative-dev \
     qt6-svg-dev \
@@ -29,12 +34,23 @@ sudo apt update && sudo apt install -y \
     libkf6i18n-dev \
     libkf6windowsystem-dev \
     libkf6kio-dev \
+    libkf6colorscheme-dev \
+    libkf6kcmutils-dev \
+    libkf6iconthemes-dev \
+    libkf6style-dev \
+    libkf6xmlgui-dev \
+    libkf6globalaccel-dev \
+    libkf6newstuff-dev \
+    libkf6breezeicons-dev \
+    libkf6dbusaddons-dev \
+    libkf6crash-dev \
     libkdecorations3-dev \
-    libkwin-dev \
+    kwin-dev \
     qt6-style-kvantum \
-    qt6-style-kvantum-themes \
+    qt-style-kvantum-themes \
     plasma-widgets-addons \
-    plasma-workspace-dev
+    plasma-workspace-dev \
+    libplasma-dev
 ```
 
 Asegurar la ruta de binarios de Python para pipx:
@@ -87,7 +103,9 @@ cmake .. \
     -DCMAKE_INSTALL_PREFIX=/usr \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_TESTING=OFF \
-    -DKDE_INSTALL_USE_QT_SYS_PATHS=ON
+    -DKDE_INSTALL_USE_QT_SYS_PATHS=ON \
+    -DBUILD_QT5=OFF \
+    -DBUILD_QT6=ON
 make -j$(nproc)
 sudo make install
 ```
@@ -106,15 +124,15 @@ kpackagetool6 -t Aurorae/Theme -i ~/.local/share/aurorae/themes/Nothing 2>/dev/n
 
 ---
 
-## 4. Efecto de Desenfoque Global (Better Blur X)
+## 4. Efecto de Desenfoque Global (Better Blur DX)
 
 Para permitir desenfoque en ventanas que usan opacidad modificada:
 ```bash
 cd ~/src
-git clone https://github.com/taj-ny/better-blur-x.git || git clone https://github.com/esainane/better-blur.git
-cd better-blur*
+git clone https://github.com/xarblu/kwin-effects-better-blur-dx.git
+cd kwin-effects-better-blur-dx
 mkdir build && cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release
+cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DKDE_INSTALL_USE_QT_SYS_PATHS=ON
 make -j$(nproc)
 sudo make install
 ```
@@ -194,7 +212,7 @@ qdbus6 org.kde.KWin /KWin reconfigure
 - **Iconos:** `Tela-blue-dark`
 - **Cursores:** `Oxygen_White`
 - **Sonidos:** `Oxygen`
-- **Plugin de Wallpaper:** `Active Blur` o `KDE Wallpaper Effects` (difumina el fondo cuando hay ventanas activas).
+- **Plugin de Wallpaper:** `Blurred Wallpaper` (`bouteillerAlan/blurredwallpaper`) o `Plasma Wallpaper Effects` (`luisbocanegra/plasma-wallpaper-effects`) (difumina el fondo cuando hay ventanas activas).
 
 Comandos CLI para aplicar:
 ```bash

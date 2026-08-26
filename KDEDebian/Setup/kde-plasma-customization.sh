@@ -78,7 +78,7 @@ log_step "1/8: Instalando dependencias del sistema y librerías Qt6 / KF6..."
 
 $SUDO apt update
 
-# Paquetes base y librerías de compilación para KDE Plasma 6
+# Paquetes base y librerías completas de compilación para KDE Plasma 6 en Debian Testing
 DEPS=(
     build-essential
     cmake
@@ -91,6 +91,9 @@ DEPS=(
     python3-pip
     python3-pyqt6
     python3-setuptools
+    python3-dbus
+    libdbus-1-dev
+    pkgconf
     ninja-build
     qt6-base-dev
     qt6-declarative-dev
@@ -102,12 +105,22 @@ DEPS=(
     libkf6windowsystem-dev
     libkf6kio-dev
     libkf6colorscheme-dev
+    libkf6kcmutils-dev
+    libkf6iconthemes-dev
+    libkf6style-dev
+    libkf6xmlgui-dev
+    libkf6globalaccel-dev
+    libkf6newstuff-dev
+    libkf6breezeicons-dev
+    libkf6dbusaddons-dev
+    libkf6crash-dev
     libkdecorations3-dev
-    libkwin-dev
+    kwin-dev
     qt6-style-kvantum
-    qt6-style-kvantum-themes
+    qt-style-kvantum-themes
     plasma-widgets-addons
     plasma-workspace-dev
+    libplasma-dev
     papirus-icon-theme
     breeze-icon-theme
 )
@@ -129,7 +142,7 @@ log_success "Dependencias del sistema instaladas."
 log_step "2/8: Configurando KDE Material You Colors..."
 
 log_info "Instalando kde-material-you-colors mediante pipx..."
-pipx install kde-material-you-colors --force || pipx upgrade kde-material-you-colors || true
+pipx install --system-site-packages kde-material-you-colors --force || pipx install kde-material-you-colors --force || pipx upgrade kde-material-you-colors || true
 
 # Configurar servicio autostart
 mkdir -p "$HOME/.config/autostart"
@@ -184,7 +197,7 @@ set_kconfig "kdeglobals" "General" "ColorScheme" "BreezeDark"
 log_success "Kvantum configurado con tema Fluent-Dark y widgetStyle=kvantum-dark."
 
 # -----------------------------------------------------------------------------
-# 4. Compilación de Klassy (Decoración de Ventana difuminada)
+# 4. Compilación de Klassy (Decoración de Ventana difuminada - Solo Qt6/Plasma 6)
 # -----------------------------------------------------------------------------
 log_step "4/8: Compilando e instalando Klassy Window Decoration (Qt6/Plasma 6)..."
 
@@ -192,49 +205,49 @@ cd "$BUILD_DIR"
 if git clone --depth=1 https://github.com/paulmcauley/klassy.git; then
     cd klassy
     mkdir -p build && cd build
-    cmake .. \
+    log_info "Ejecutando CMake para Klassy con soporte exclusivo Qt6 / Plasma 6..."
+    if cmake .. \
         -DCMAKE_INSTALL_PREFIX=/usr \
         -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_TESTING=OFF \
-        -DKDE_INSTALL_USE_QT_SYS_PATHS=ON || cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
-    
-    make -j"$(nproc)"
-    $SUDO make install
-    log_success "Klassy compilado e instalado con éxito."
+        -DKDE_INSTALL_USE_QT_SYS_PATHS=ON \
+        -DBUILD_QT5=OFF \
+        -DBUILD_QT6=ON; then
+        
+        make -j"$(nproc)"
+        $SUDO make install
+        log_success "Klassy compilado e instalado con éxito."
 
-    # Configurar Klassy como decoración por defecto en kwinrc
-    set_kconfig "kwinrc" "org.kde.kdecoration2" "plugin" "org.kde.klassy"
-    set_kconfig "kwinrc" "org.kde.kdecoration2" "theme" "klassy"
-    set_kconfig "kwinrc" "org.kde.kdecoration2" "ButtonsOnRight" "IAX"
-    set_kconfig "kwinrc" "org.kde.kdecoration2" "ButtonsOnLeft" "M"
+        # Configurar Klassy como decoración por defecto en kwinrc
+        set_kconfig "kwinrc" "org.kde.kdecoration2" "plugin" "org.kde.klassy"
+        set_kconfig "kwinrc" "org.kde.kdecoration2" "theme" "klassy"
+        set_kconfig "kwinrc" "org.kde.kdecoration2" "ButtonsOnRight" "IAX"
+        set_kconfig "kwinrc" "org.kde.kdecoration2" "ButtonsOnLeft" "M"
+    else
+        log_warn "Error en configuración CMake de Klassy. Se mantendrá la decoración Breeze por defecto."
+    fi
 else
     log_warn "No se pudo clonar Klassy. Continuando con decoración Breeze estándar."
 fi
 
 # -----------------------------------------------------------------------------
-# 5. Efecto de Desenfoque Global (Better Blur / Better Blur X)
+# 5. Efecto de Desenfoque Global (Better Blur DX)
 # -----------------------------------------------------------------------------
-log_step "5/8: Compilando efecto de desenfoque de ventanas (Better Blur)..."
+log_step "5/8: Compilando efecto de desenfoque de ventanas (Better Blur DX)..."
 
 cd "$BUILD_DIR"
-BLUR_CLONED=false
-if git clone --depth=1 https://github.com/taj-ny/better-blur-x.git; then
-    cd better-blur-x
-    BLUR_CLONED=true
-elif git clone --depth=1 https://github.com/esainane/better-blur.git; then
-    cd better-blur
-    BLUR_CLONED=true
-fi
-
-if [ "$BLUR_CLONED" = true ]; then
+if git clone --depth=1 https://github.com/xarblu/kwin-effects-better-blur-dx.git 2>/dev/null; then
+    cd kwin-effects-better-blur-dx
     mkdir -p build && cd build
-    if cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release 2>/dev/null; then
+    if cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DKDE_INSTALL_USE_QT_SYS_PATHS=ON 2>/dev/null; then
         make -j"$(nproc)"
         $SUDO make install
-        log_success "Better Blur compilado e instalado correctamente."
+        log_success "Better Blur DX compilado e instalado correctamente."
     else
-        log_warn "No se pudo compilar Better Blur con los headers actuales. Se omitirá este plugin adicional."
+        log_warn "No se pudo compilar Better Blur DX. Se continuará con los efectos nativos de KWin."
     fi
+else
+    log_warn "No se pudo clonar Better Blur DX. Se continuará con los efectos nativos de KWin."
 fi
 
 # Reglas de translucidez y desenfoque nativo en KWin
@@ -266,9 +279,9 @@ if command -v plasma-apply-cursortheme &>/dev/null; then
 fi
 
 # -----------------------------------------------------------------------------
-# 7. Plasmoides y Extensiones de KWin (Panel Colorizer, Active Blur, Tiling)
+# 7. Plasmoides y Extensiones de KWin (Panel Colorizer, Blurred Wallpaper, Tiling)
 # -----------------------------------------------------------------------------
-log_step "7/8: Instalando Plasmoides y KWin Scripts (Panel Colorizer, Active Blur, Tiling)..."
+log_step "7/8: Instalando Plasmoides y KWin Scripts (Panel Colorizer, Blurred Wallpaper, Tiling)..."
 
 # 7.1 Panel Colorizer
 cd "$BUILD_DIR"
@@ -277,21 +290,33 @@ if git clone --depth=1 https://github.com/luisbocanegra/plasma-panel-colorizer.g
     cd plasma-panel-colorizer
     if command -v kpackagetool6 &>/dev/null; then
         kpackagetool6 -t Plasma/Applet -u package 2>/dev/null || kpackagetool6 -t Plasma/Applet -i package 2>/dev/null || true
-    elif command -v kpackagetool5 &>/dev/null; then
-        kpackagetool5 -t Plasma/Applet -u package 2>/dev/null || kpackagetool5 -t Plasma/Applet -i package 2>/dev/null || true
     fi
     log_success "Panel Colorizer instalado en el sistema."
 fi
 
-# 7.2 Active Blur Wallpaper Plugin
+# 7.2 Blurred Wallpaper Plugin & Wallpaper Effects
 cd "$BUILD_DIR"
-log_info "Instalando Wallpaper Plugin Active Blur..."
-if git clone --depth=1 https://github.com/luisbocanegra/plasma-active-blur.git; then
-    cd plasma-active-blur
-    if command -v kpackagetool6 &>/dev/null; then
+log_info "Instalando Wallpaper Plugin Blurred Wallpaper..."
+if git clone --depth=1 https://github.com/bouteillerAlan/blurredwallpaper.git 2>/dev/null; then
+    cd blurredwallpaper
+    if [ -d "package" ]; then
         kpackagetool6 -t Plasma/Wallpaper -u package 2>/dev/null || kpackagetool6 -t Plasma/Wallpaper -i package 2>/dev/null || true
+    else
+        kpackagetool6 -t Plasma/Wallpaper -u . 2>/dev/null || kpackagetool6 -t Plasma/Wallpaper -i . 2>/dev/null || true
     fi
-    log_success "Active Blur Wallpaper plugin instalado."
+    log_success "Blurred Wallpaper plugin instalado."
+fi
+
+cd "$BUILD_DIR"
+log_info "Instalando Plasma Wallpaper Effects..."
+if git clone --depth=1 https://github.com/luisbocanegra/plasma-wallpaper-effects.git 2>/dev/null; then
+    cd plasma-wallpaper-effects
+    if [ -d "package" ]; then
+        kpackagetool6 -t Plasma/Applet -u package 2>/dev/null || kpackagetool6 -t Plasma/Applet -i package 2>/dev/null || true
+    else
+        kpackagetool6 -t Plasma/Applet -u . 2>/dev/null || kpackagetool6 -t Plasma/Applet -i . 2>/dev/null || true
+    fi
+    log_success "Plasma Wallpaper Effects instalado."
 fi
 
 # 7.3 Dynamic Workspaces & Mouse Tiler
@@ -331,13 +356,13 @@ log_success "¡Automatización de instalación finalizada con éxito!"
 echo ""
 echo -e "${CYAN}=================================================================${RESET}"
 echo -e "${GREEN}📋 RESUMEN DE COMPONENTES INSTALADOS:${RESET}"
-echo -e "  ✔️ Dependencias y headers Qt6 / KF6"
+echo -e "  ✔️ Dependencias completas Qt6 / KF6 (KCMUtils, IconThemes, Style, etc.)"
 echo -e "  ✔️ Motor Kvantum + Tema Fluent-Dark"
 echo -e "  ✔️ Decoración de ventanas Klassy (Bordes y botones difuminados)"
 echo -e "  ✔️ KDE Material You Colors (Daemon de color dinámico en autostart)"
 echo -e "  ✔️ Tema de iconos Tela-blue-dark"
 echo -e "  ✔️ Plasmoide Panel Colorizer"
-echo -e "  ✔️ Wallpaper Plugin Active Blur"
+echo -e "  ✔️ Wallpaper Plugins (Blurred Wallpaper & Wallpaper Effects)"
 echo -e "  ✔️ KWin Scripts (Dynamic Workspaces & Mouse Tiler)"
 echo -e "${CYAN}=================================================================${RESET}"
 echo ""
@@ -352,6 +377,6 @@ echo -e "       • Derecho: Bandeja del sistema + Reloj digital."
 echo -e "     - Añade el widget 'Panel Colorizer' a tu panel y selecciona el preset 'Rounder Translucent' o 'Dock'."
 echo -e "  3. ${CYAN}Fondo de Pantalla y Efectos:${RESET}"
 echo -e "     - Clic derecho en el escritorio -> 'Configurar escritorio y fondo de pantalla'."
-echo -e "     - En 'Tipo de fondo', selecciona 'Active Blur' o tu fondo preferido."
+echo -e "     - En 'Tipo de fondo', selecciona 'Blurred Wallpaper' o tu imagen favorita."
 echo -e "     - 'KDE Material You Colors' adaptará automáticamente el color de acento del sistema."
 echo -e "${CYAN}=================================================================${RESET}"
