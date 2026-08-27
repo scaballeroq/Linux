@@ -1,5 +1,5 @@
 #!/bin/bash
-# vscode.sh - Instalación de Visual Studio Code para Fedora 44 (GNOME)
+# vscode.sh - Instalación de Visual Studio Code para Fedora 44 (KDE Plasma)
 
 set -euo pipefail
 

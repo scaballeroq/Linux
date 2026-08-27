@@ -70,9 +70,9 @@ done
 
 legacy_package_state=$(rpm -q antigravity 2>/dev/null || true)
 case "$legacy_package_state" in
-'' | ?n* | ?c*) ;;
+'' | *'no está instalado' | *'not installed' | *'ningún paquete' | *'no package') ;;
 *)
-	printf 'Remove the legacy Antigravity APT package before installing the current desktop app (state: %s).\n' "$legacy_package_state" >&2
+	printf 'Remove the legacy Antigravity RPM package before installing the current desktop app (state: %s).\n' "$legacy_package_state" >&2
 	exit 1
 	;;
 esac
@@ -161,8 +161,8 @@ cleanup() {
 		if command -v update-desktop-database >/dev/null 2>&1; then
 			update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
 		fi
-		if command -v gtk-update-icon-cache >/dev/null 2>&1; then
-			gtk-update-icon-cache -q /usr/share/icons/hicolor 2>/dev/null || true
+		if command -v kbuildsycoca6 >/dev/null 2>&1; then
+			kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
 		fi
 	fi
 	if [ "$committed" != yes ] && [ -n "$backup_root" ] && [ -d "$backup_root" ]; then
@@ -439,8 +439,8 @@ if command -v update-desktop-database >/dev/null 2>&1; then
 	update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
 fi
 
-if command -v gtk-update-icon-cache >/dev/null 2>&1; then
-	gtk-update-icon-cache -q /usr/share/icons/hicolor 2>/dev/null || true
+if command -v kbuildsycoca6 >/dev/null 2>&1; then
+	kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
 fi
 
 payload_permissions_ok=no

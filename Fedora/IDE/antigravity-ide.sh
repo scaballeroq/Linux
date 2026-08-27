@@ -5,25 +5,24 @@ echo "=== Google Antigravity IDE Installer ==="
 
 # --- 1. Dependencies ---
 echo "[1/4] Installing dependencies..."
-sudo apt update -qq
-sudo apt install -y \
+sudo dnf5 install -y \
   ca-certificates \
   curl \
   tar \
   desktop-file-utils \
   python3 \
-  libnss3 \
-  libatk1.0-0 \
-  libatk-bridge2.0-0 \
-  libcups2 \
-  libdrm2 \
-  libxkbcommon0 \
-  libxcomposite1 \
-  libxdamage1 \
-  libxrandr2 \
-  libgbm1 \
-  libasound2t64 \
-  libsecret-1-0
+  nss \
+  atk \
+  at-spi2-atk \
+  cups-libs \
+  libdrm \
+  libxkbcommon \
+  libXcomposite \
+  libXdamage \
+  libXrandr \
+  mesa-libgbm \
+  alsa-lib \
+  libsecret
 
 # --- 2. Helper script ---
 echo "[2/4] Creating update helper..."
@@ -158,8 +157,8 @@ cleanup() {
 		if command -v update-desktop-database >/dev/null 2>&1; then
 			update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
 		fi
-		if command -v gtk-update-icon-cache >/dev/null 2>&1; then
-			gtk-update-icon-cache -q /usr/share/icons/hicolor 2>/dev/null || true
+		if command -v kbuildsycoca6 >/dev/null 2>&1; then
+			kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
 		fi
 	fi
 	if [ "$committed" != yes ] && [ -n "$backup_root" ] && [ -d "$backup_root" ]; then
@@ -363,8 +362,8 @@ ln -sfn "$install_root/$install_dir/antigravity-ide" "$command_link"
 if command -v update-desktop-database >/dev/null 2>&1; then
 	update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
 fi
-if command -v gtk-update-icon-cache >/dev/null 2>&1; then
-	gtk-update-icon-cache -q /usr/share/icons/hicolor 2>/dev/null || true
+if command -v kbuildsycoca6 >/dev/null 2>&1; then
+	kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
 fi
 
 committed=yes
