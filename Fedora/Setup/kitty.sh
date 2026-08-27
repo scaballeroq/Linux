@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# kitty.sh - Instalación y Configuración Estética de Kitty Terminal para Fedora 44 + GNOME
+# kitty.sh - Instalación y Configuración Estética de Kitty Terminal para Fedora 44 + KDE Plasma
 #
 # Características configuradas:
 # - Esquema de color oscuro moderno (Catppuccin Mocha / Tokyo Night dark palette)
@@ -9,18 +9,27 @@
 # - Barra de pestañas estilo Powerline inclinada
 # - Padding interno elegante y cursor tipo barra con animación
 # - Control dinámico de opacidad con atajos de teclado
-# - Integración con Nautilus y atajos de escritorio GNOME
+# - Integración con Dolphin (ServiceMenu y terminal predeterminado) y atajo global Ctrl+Alt+T en KDE Plasma
 
 set -euo pipefail
 
+if [ "$EUID" -ne 0 ]; then
+    if ! command -v sudo &> /dev/null; then
+        echo "❌ Error: 'sudo' no está disponible. Ejecuta este script como root o instala sudo."
+        exit 1
+    fi
+    SUDO="sudo"
+else
+    SUDO=""
+fi
+
 echo "==========================================================="
-echo "🐱 Iniciando instalación y configuración estética de Kitty en GNOME"
+echo "🐱 Iniciando instalación y configuración estética de Kitty en Fedora 44 (KDE Plasma)"
 echo "==========================================================="
 
 # 1. Instalar Kitty y dependencias
-echo "📦 [1/4] Instalando Kitty Terminal..."
-sudo apt update
-sudo apt install -y kitty
+echo "📦 [1/4] Instalando Kitty Terminal con DNF5..."
+$SUDO dnf5 install -y kitty
 
 # 2. Crear directorio de configuración
 echo "⚙️ [2/4] Creando directorios de configuración..."
@@ -30,7 +39,7 @@ mkdir -p "$HOME/.config/kitty"
 echo "🎨 [3/4] Configurando tema oscuro, opacidad (85%) y efectos visuales..."
 cat <<'EOF' > "$HOME/.config/kitty/kitty.conf"
 # =============================================================================
-# KITTY CONFIGURATION - DEBIAN TESTING + GNOME
+# KITTY CONFIGURATION - FEDORA 44 + KDE PLASMA
 # =============================================================================
 
 # --- Fuentes & Tipografía ---
@@ -142,35 +151,58 @@ map ctrl+shift+t new_tab_with_cwd
 map ctrl+shift+enter new_window_with_cwd
 EOF
 
-# 4. Integración con Nautilus y GNOME GSettings
-echo "📁 [4/4] Configurando integración con el entorno GNOME..."
+# 4. Integración con Dolphin y KDE Plasma
+echo "📁 [4/4] Configurando integración con Dolphin y atajos de KDE Plasma..."
 
-# Si la extensión nautilus-open-any-terminal está disponible, configurar kitty como opción
-if command -v gsettings &>/dev/null; then
-    if gsettings list-schemas | grep -q "com.github.stunkymonkey.nautilus-open-any-terminal"; then
-        echo "ℹ️ Configurando Kitty en extensión Nautilus Open Any Terminal..."
-        gsettings set com.github.stunkymonkey.nautilus-open-any-terminal terminal kitty 2>/dev/null || true
-    fi
+# Configurar Kitty como terminal por defecto y atajo Ctrl+Alt+T en KDE Plasma
+if command -v kwriteconfig6 &> /dev/null; then
+    # Terminal predeterminado de KDE
+    kwriteconfig6 --file kdeglobals --group General --key TerminalApplication "kitty"
+    kwriteconfig6 --file kdeglobals --group General --key TerminalService "kitty.desktop"
+    
+    # Atajo global Ctrl+Alt+T
+    kwriteconfig6 --file kglobalshortcutsrc --group kitty.desktop --key _launch "Ctrl+Alt+T,none,kitty"
+    kwriteconfig6 --file kglobalshortcutsrc --group kitty.desktop --key _k_friendly_name "Kitty"
+    qdbus6 org.kde.kglobalaccel /kglobalaccel reloadConfig 2>/dev/null || true
+elif command -v kwriteconfig5 &> /dev/null; then
+    kwriteconfig5 --file kdeglobals --group General --key TerminalApplication "kitty"
+    kwriteconfig5 --file kdeglobals --group General --key TerminalService "kitty.desktop"
+    kwriteconfig5 --file kglobalshortcutsrc --group kitty.desktop --key _launch "Ctrl+Alt+T,none,kitty"
+    kwriteconfig5 --file kglobalshortcutsrc --group kitty.desktop --key _k_friendly_name "Kitty"
+    qdbus org.kde.kglobalaccel /kglobalaccel reloadConfig 2>/dev/null || true
 fi
 
-# Añadir script de extensión para Nautilus (Abrir en Kitty)
-NAUTILUS_SCRIPTS_DIR="$HOME/.local/share/nautilus/scripts"
-mkdir -p "$NAUTILUS_SCRIPTS_DIR"
-cat <<'EOF' > "$NAUTILUS_SCRIPTS_DIR/Abrir en Kitty"
-#!/usr/bin/env bash
-if [ -n "${NAUTILUS_SCRIPT_CURRENT_URI:-}" ]; then
-    TARGET_DIR=$(echo "$NAUTILUS_SCRIPT_CURRENT_URI" | sed 's|^file://||' | sed 's|%20| |g')
-    kitty --directory "$TARGET_DIR" &
-else
-    kitty &
-fi
+# Añadir acción de menú contextual para Dolphin (ServiceMenu "Abrir en Kitty")
+DOLPHIN_SERVICES_DIR="$HOME/.local/share/kio/servicemenus"
+mkdir -p "$DOLPHIN_SERVICES_DIR"
+
+cat <<'EOF' > "$DOLPHIN_SERVICES_DIR/open_in_kitty.desktop"
+[Desktop Entry]
+Type=Service
+MimeType=inode/directory;
+Actions=openInKitty;
+X-KDE-Priority=TopLevel
+
+[Desktop Action openInKitty]
+Name=Abrir en Kitty
+Name[es]=Abrir en Kitty
+Name[en]=Open in Kitty
+Icon=kitty
+Exec=kitty --directory %f
 EOF
-chmod +x "$NAUTILUS_SCRIPTS_DIR/Abrir en Kitty"
+chmod +x "$DOLPHIN_SERVICES_DIR/open_in_kitty.desktop"
+
+# Compatibilidad con Plasma 5 si existe el directorio
+if [ -d "$HOME/.local/share/kservices5/ServiceMenus" ]; then
+    cp "$DOLPHIN_SERVICES_DIR/open_in_kitty.desktop" "$HOME/.local/share/kservices5/ServiceMenus/" 2>/dev/null || true
+fi
 
 echo "==========================================================="
-echo "✅ Kitty se ha instalado y configurado correctamente en GNOME."
+echo "✅ Kitty se ha instalado y configurado correctamente en KDE Plasma."
 echo "💡 Características añadidas:"
-echo "   - Menú contextual en Nautilus: 'Scripts -> Abrir en Kitty' o vía nautilus-open-any-terminal."
+echo "   - Menú contextual en Dolphin: Clic derecho -> 'Abrir en Kitty'."
+echo "   - Terminal predeterminado del sistema (Shift+F4 en Dolphin)."
+echo "   - Atajo global: Ctrl+Alt+T para abrir Kitty en cualquier momento."
 echo "   - Atajos de opacidad al vuelo: Ctrl+Shift+A seguido de M (+5%), L (-5%) o 1 (Opaco 100%)."
 echo "   - Nueva pestaña en mismo directorio: Ctrl+Shift+T"
 echo "   - Nueva ventana dividida: Ctrl+Shift+Enter"
