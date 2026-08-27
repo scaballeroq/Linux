@@ -122,73 +122,29 @@ EOF
 cp -f "$HOME/.local/share/konsole/SoplosLinux.profile" "$HOME/.local/share/konsole/KDEDebian.profile" 2>/dev/null || true
 cp -f "$HOME/.local/share/konsole/SoplosLinuxDark.colorscheme" "$HOME/.local/share/konsole/KDEDebianDark.colorscheme" 2>/dev/null || true
 
+# Detectar ejecutable de configuración de KDE (kwriteconfig6 prioritario en KDE Plasma 6)
+if command -v kwriteconfig6 &>/dev/null; then
+    KWRITECFG="kwriteconfig6"
+elif command -v kwriteconfig5 &>/dev/null; then
+    KWRITECFG="kwriteconfig5"
+else
+    KWRITECFG="kwriteconfig"
+fi
+
 # 5. Establecer SoplosLinux como perfil por defecto en konsolerc
-python3 - <<'PYEOF'
-import configparser
-import os
-
-cfg_path = os.path.expanduser("~/.config/konsolerc")
-config = configparser.ConfigParser(interpolation=None, strict=False)
-if os.path.exists(cfg_path):
-    config.read(cfg_path, encoding='utf-8')
-
-if not config.has_section("Desktop Entry"):
-    config.add_section("Desktop Entry")
-config.set("Desktop Entry", "DefaultProfile", "SoplosLinux.profile")
-
-if not config.has_section("Favorite Profiles"):
-    config.add_section("Favorite Profiles")
-config.set("Favorite Profiles", "Favorites", "SoplosLinux.profile")
-
-with open(cfg_path, 'w', encoding='utf-8') as f:
-    config.write(f, space_around_delimiters=False)
-PYEOF
+echo "⚙️ [3/5] Configurando perfil por defecto en konsolerc..."
+$KWRITECFG --file konsolerc --group "Desktop Entry" --key "DefaultProfile" "SoplosLinux.profile"
+$KWRITECFG --file konsolerc --group "Favorite Profiles" --key "Favorites" "SoplosLinux.profile"
 
 # 6. Configurar atajo de teclado global Ctrl+Alt+T en KDE Plasma (kglobalshortcutsrc)
 echo "⌨️ [4/5] Configurando atajo de teclado (Ctrl+Alt+T) para Konsole..."
-python3 - <<'PYEOF'
-import configparser
-import os
-
-cfg_path = os.path.expanduser("~/.config/kglobalshortcutsrc")
-config = configparser.ConfigParser(interpolation=None, strict=False)
-if os.path.exists(cfg_path):
-    config.read(cfg_path, encoding='utf-8')
-
-if not config.has_section("org.kde.konsole.desktop"):
-    config.add_section("org.kde.konsole.desktop")
-
-config.set("org.kde.konsole.desktop", "_k_friendly_name", "Konsole")
-config.set("org.kde.konsole.desktop", "_launch", "Ctrl+Alt+T,Ctrl+Alt+T,Konsole")
-
-with open(cfg_path, 'w', encoding='utf-8') as f:
-    config.write(f, space_around_delimiters=False)
-PYEOF
+$KWRITECFG --file kglobalshortcutsrc --group "org.kde.konsole.desktop" --key "_k_friendly_name" "Konsole"
+$KWRITECFG --file kglobalshortcutsrc --group "org.kde.konsole.desktop" --key "_launch" "Ctrl+Alt+T,Ctrl+Alt+T,Konsole"
 
 # 7. Integración con Dolphin (Panel Terminal F4 y menú contextual)
 echo "📁 [5/5] Integrando terminal en gestor de archivos Dolphin..."
-python3 - <<'PYEOF'
-import configparser
-import os
-
-cfg_path = os.path.expanduser("~/.config/dolphinrc")
-config = configparser.ConfigParser(interpolation=None, strict=False)
-if os.path.exists(cfg_path):
-    config.read(cfg_path, encoding='utf-8')
-
-if not config.has_section("General"):
-    config.add_section("General")
-
-config.set("General", "ShowFullPathInTitlebar", "true")
-
-if not config.has_section("TerminalPanel"):
-    config.add_section("TerminalPanel")
-
-config.set("TerminalPanel", "AutoSyncDirs", "true")
-
-with open(cfg_path, 'w', encoding='utf-8') as f:
-    config.write(f, space_around_delimiters=False)
-PYEOF
+$KWRITECFG --file dolphinrc --group "General" --key "ShowFullPathInTitlebar" "true"
+$KWRITECFG --file dolphinrc --group "TerminalPanel" --key "AutoSyncDirs" "true"
 
 echo "==========================================================="
 echo "✅ ¡Konsole configurado con éxito en Soplos Linux Tyson!"

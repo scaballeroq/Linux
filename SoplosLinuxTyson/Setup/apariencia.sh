@@ -41,31 +41,19 @@ if command -v plasma-apply-cursortheme &> /dev/null; then
     plasma-apply-cursortheme breeze_cursors 2>/dev/null || true
 fi
 
+# Detectar ejecutable de configuración de KDE (kwriteconfig6 prioritario en KDE Plasma 6)
+if command -v kwriteconfig6 &>/dev/null; then
+    KWRITECFG="kwriteconfig6"
+elif command -v kwriteconfig5 &>/dev/null; then
+    KWRITECFG="kwriteconfig5"
+else
+    KWRITECFG="kwriteconfig"
+fi
+
 # Configuración directa en kdeglobals
-python3 - <<'PYEOF'
-import configparser
-import os
-
-cfg_path = os.path.expanduser("~/.config/kdeglobals")
-config = configparser.ConfigParser(interpolation=None, strict=False)
-if os.path.exists(cfg_path):
-    config.read(cfg_path, encoding='utf-8')
-
-if not config.has_section("General"):
-    config.add_section("General")
-config.set("General", "ColorScheme", "BreezeDark")
-
-if not config.has_section("Icons"):
-    config.add_section("Icons")
-config.set("Icons", "Theme", "Papirus-Dark")
-
-if not config.has_section("KDE"):
-    config.add_section("KDE")
-config.set("KDE", "widgetStyle", "Breeze")
-
-with open(cfg_path, 'w', encoding='utf-8') as f:
-    config.write(f, space_around_delimiters=False)
-PYEOF
+$KWRITECFG --file kdeglobals --group "General" --key "ColorScheme" "BreezeDark"
+$KWRITECFG --file kdeglobals --group "Icons" --key "Theme" "Papirus-Dark"
+$KWRITECFG --file kdeglobals --group "KDE" --key "widgetStyle" "Breeze"
 
 # Configuración de temas GTK para consistencia en KDE Plasma (~/.config/gtk-3.0/settings.ini y gtk-4.0)
 mkdir -p "$HOME/.config/gtk-3.0" "$HOME/.config/gtk-4.0"

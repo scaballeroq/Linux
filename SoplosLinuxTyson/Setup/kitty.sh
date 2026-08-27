@@ -8,20 +8,23 @@ echo "🐱 Iniciando instalación y configuración estética de Kitty en Soplos 
 echo "==========================================================="
 
 # 1. Instalar Kitty y dependencias
-echo "📦 [1/3] Instalando Kitty Terminal..."
+echo "📦 [1/4] Instalando Kitty Terminal y dependencias..."
 sudo apt update
-sudo apt install -y kitty
+sudo apt install -y kitty zsh
 
 # 2. Crear directorio de configuración
-echo "⚙️ [2/3] Creando directorios de configuración..."
+echo "⚙️ [2/4] Creando directorios de configuración..."
 mkdir -p "$HOME/.config/kitty"
 
 # 3. Generar kitty.conf con tema oscuro, opacidad y efectos
-echo "🎨 [3/3] Configurando tema oscuro, opacidad (85%) y efectos visuales..."
+echo "🎨 [3/4] Configurando tema oscuro, opacidad (85%) y efectos visuales..."
 cat <<'EOF' > "$HOME/.config/kitty/kitty.conf"
 # =============================================================================
 # KITTY CONFIGURATION - SOPLOS LINUX TYSON (DEBIAN TESTING + KDE PLASMA 6)
 # =============================================================================
+
+# --- Shell por defecto ---
+shell zsh
 
 # --- Fuentes & Tipografía ---
 font_family      JetBrainsMono Nerd Font
