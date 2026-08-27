@@ -1,0 +1,22 @@
+[Unit]
+Description=Redis para __PROJECT__
+After=__PROJECT__.network
+
+[Container]
+ContainerName=__PROJECT__-redis
+Image=docker.io/library/redis:7-alpine
+Network=__PROJECT__.network
+Volume=__PROJECT__-redis-data:/data
+PublishPort=6379:6379
+Command=redis-server --appendonly yes
+HealthCmd=redis-cli ping
+HealthStartPeriod=5s
+HealthInterval=5s
+HealthRetries=3
+HealthTimeout=3s
+
+[Volume]
+VolumeName=__PROJECT__-redis-data
+
+[Install]
+WantedBy=__PROJECT__.target
