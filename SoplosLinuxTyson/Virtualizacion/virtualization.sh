@@ -1,14 +1,23 @@
-#!/bin/bash
-# virtualization.sh - Instalación y Optimización Avanzada de Virtualización (KVM/QEMU) para Debian 13 (Trixie) con Kernel Custom x86_64-v3
+#!/usr/bin/env bash
+# =============================================================================
+# virtualization.sh - Instalación y Optimización de Virtualización KVM/QEMU
+# Soplos Linux Tyson (Debian Testing / Trixie - Portátil & Estación de Trabajo)
+# =============================================================================
+# Configura KVM, QEMU, libvirt, virt-manager, audio PipeWire nativo,
+# virtualización anidada, firewall nftables y controladores VirtIO.
+# =============================================================================
 
 set -euo pipefail
 
-echo "🚀 Configurando entorno de virtualización de alto rendimiento (KVM/QEMU) en Debian 13..."
+echo "🚀 Configurando entorno de virtualización KVM/QEMU en Soplos Linux Tyson..."
 
+# Detectar usuario real y directorio home (incluso si se ejecuta con sudo)
 TARGET_USER="${SUDO_USER:-$USER}"
+TARGET_HOME=$(getent passwd "$TARGET_USER" | cut -d: -f6)
+TARGET_HOME="${TARGET_HOME:-$HOME}"
 
 # 1. Instalación de paquetes necesarios
-echo "ℹ️ Instalando QEMU, libvirt, virt-manager y herramientas auxiliares vía APT..."
+echo "ℹ️ Instalando QEMU, libvirt, virt-manager, UEFI (OVMF), TPM 2.0 y herramientas..."
 sudo apt update
 sudo apt install -y \
     qemu-system-x86 \
@@ -20,8 +29,6 @@ sudo apt install -y \
     virtinst \
     dnsmasq \
     dmidecode \
-    vde2 \
-    bridge-utils \
     netcat-openbsd \
     iptables \
     nftables \
@@ -29,11 +36,12 @@ sudo apt install -y \
     swtpm \
     libosinfo-bin \
     guestfs-tools \
-    tuned
+    spice-vdagent \
+    acl
 
 # 2. Controladores VirtIO para Windows (ISO estable oficial de Fedora)
 echo "ℹ️ Descargando controladores VirtIO para Windows (virtio-win.iso)..."
-VIRTIO_DIR="$HOME/Descargas/virtio-drivers"
+VIRTIO_DIR="$TARGET_HOME/Descargas/virtio-drivers"
 mkdir -p "$VIRTIO_DIR"
 if [ ! -f "$VIRTIO_DIR/virtio-win.iso" ]; then
     echo "⬇️ Descargando la versión estable más reciente de virtio-win.iso..."
@@ -41,17 +49,18 @@ if [ ! -f "$VIRTIO_DIR/virtio-win.iso" ]; then
 else
     echo "✅ ISO de VirtIO ya presente en $VIRTIO_DIR/virtio-win.iso"
 fi
+chown -R "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/Descargas/virtio-drivers" 2>/dev/null || true
 
 # 3. Módulos del Kernel, Virtualización Anidada (Nested KVM) y vhost_net/vhost_vsock
-echo "ℹ️ Habilitando virtualización anidada (Nested KVM) y aceleración de red (vhost_net, vhost_vsock)..."
+echo "ℹ️ Habilitando virtualización anidada (Nested KVM) y aceleración de red/sockets..."
 sudo mkdir -p /etc/modprobe.d /etc/modules-load.d
 
-CPU_VENDOR=$(grep -m1 'vendor_id' /proc/cpuinfo | awk '{print $3}')
-if [ "$CPU_VENDOR" == "GenuineIntel" ]; then
+CPU_VENDOR=$(grep -m1 'vendor_id' /proc/cpuinfo | awk '{print $3}' 2>/dev/null || echo "")
+if [ "$CPU_VENDOR" = "GenuineIntel" ]; then
     echo "options kvm_intel nested=1" | sudo tee /etc/modprobe.d/kvm_intel.conf > /dev/null
     sudo modprobe -r kvm_intel 2>/dev/null || true
     sudo modprobe kvm_intel 2>/dev/null || true
-elif [ "$CPU_VENDOR" == "AuthenticAMD" ]; then
+elif [ "$CPU_VENDOR" = "AuthenticAMD" ]; then
     echo "options kvm_amd nested=1" | sudo tee /etc/modprobe.d/kvm_amd.conf > /dev/null
     sudo modprobe -r kvm_amd 2>/dev/null || true
     sudo modprobe kvm_amd 2>/dev/null || true
@@ -66,7 +75,7 @@ sudo modprobe vhost_net 2>/dev/null || true
 sudo modprobe vhost_vsock 2>/dev/null || true
 
 # 4. Ajustes de /etc/libvirt/qemu.conf (Audio PipeWire nativo e integración de usuario)
-echo "ℹ️ Configurando usuario y grupo en /etc/libvirt/qemu.conf para soporte de sonido PipeWire..."
+echo "ℹ️ Configurando usuario y grupo en /etc/libvirt/qemu.conf para soporte de audio PipeWire..."
 if [ -f /etc/libvirt/qemu.conf ]; then
     sudo sed -i "s/^#*user = .*/user = \"$TARGET_USER\"/" /etc/libvirt/qemu.conf 2>/dev/null || true
     sudo sed -i "s/^#*group = .*/group = \"kvm\"/" /etc/libvirt/qemu.conf 2>/dev/null || true
@@ -80,17 +89,18 @@ fi
 
 # 6. Verificación de capacidades KVM del Host
 echo "ℹ️ Verificando soporte de hardware KVM..."
-virt-host-validate qemu || echo "⚠️ Advertencia: Revisa que la virtualización VT-x / AMD-V esté habilitada en tu BIOS/UEFI."
+virt-host-validate qemu 2>/dev/null || echo "⚠️ Advertencia: Revisa que la virtualización VT-x / AMD-V esté habilitada en tu BIOS/UEFI."
 
-# 7. Configuración de Servicios y Sockets Modulares
-echo "ℹ️ Habilitando servicios y sockets modulares de libvirt..."
+# 7. Configuración de Servicios y Sockets Modulares de Libvirt
+echo "ℹ️ Habilitando servicios y sockets modulares de libvirt en systemd..."
 if systemctl list-unit-files | grep -q "virtqemud.socket"; then
-    sudo systemctl enable --now virtqemud.socket virtnetworkd.socket virtstoraged.socket 2>/dev/null || true
+    sudo systemctl enable --now virtqemud.socket virtnetworkd.socket virtstoraged.socket virtnodedevd.socket 2>/dev/null || true
+else
+    sudo systemctl enable --now libvirtd.service 2>/dev/null || true
 fi
-sudo systemctl enable --now libvirtd.service 2>/dev/null || true
 
-# 8. Configuración de Red Virtual y Storage Pool por Defecto
-echo "ℹ️ Configurando red virtual NAT por defecto..."
+# 8. Configuración de Red Virtual NAT (default) y Storage Pool por Defecto
+echo "ℹ️ Configurando red virtual NAT por defecto (virbr0)..."
 sudo virsh net-start default 2>/dev/null || true
 sudo virsh net-autostart default 2>/dev/null || true
 
@@ -98,67 +108,34 @@ echo "ℹ️ Configurando pool de almacenamiento por defecto..."
 sudo virsh pool-start default 2>/dev/null || true
 sudo virsh pool-autostart default 2>/dev/null || true
 
-# 9. Configuración de Bridge Linux (br0) opcional para acceso LAN directo
-echo "ℹ️ Configurando Bridge de red (br0) para acceso LAN directo..."
-PHYS_IFACE=$(ip route | grep default | awk '{print $5}' | head -n1)
-
-if [ -n "$PHYS_IFACE" ] && [ "$PHYS_IFACE" != "br0" ]; then
-    if ! nmcli con show br0 >/dev/null 2>&1; then
-        echo "Creando bridge br0 sobre la interfaz $PHYS_IFACE..."
-        sudo nmcli con add type bridge ifname br0 con-name br0
-        sudo nmcli con add type bridge-slave ifname "$PHYS_IFACE" con-name br0-port master br0
-        sudo nmcli con modify br0 ipv4.method auto
-        
-        cat <<EOF > /tmp/host-bridge.xml
-<network>
-  <name>host-bridge</name>
-  <forward mode='bridge'/>
-  <bridge name='br0'/>
-</network>
-EOF
-        sudo virsh net-define /tmp/host-bridge.xml 2>/dev/null || true
-        sudo virsh net-start host-bridge 2>/dev/null || true
-        sudo virsh net-autostart host-bridge 2>/dev/null || true
-        echo "✅ Bridge br0 creado y registrado en libvirt como 'host-bridge'."
-    else
-        echo "✅ El bridge br0 ya existe, omitiendo creación."
-    fi
-fi
-
-# 10. Perfil de Rendimiento Tuned (virtual-host)
-echo "ℹ️ Aplicando optimizaciones de rendimiento con tuned (virtual-host)..."
-sudo systemctl enable --now tuned.service || true
-sudo tuned-adm profile virtual-host || true
-
-# 11. Permisos de Usuario y Listas de Control de Acceso (ACL)
-echo "ℹ️ Configurando grupos de usuario (libvirt, kvm)..."
+# 9. Permisos de Usuario y Listas de Control de Acceso (ACL)
+echo "ℹ️ Configurando grupos de usuario ($TARGET_USER en libvirt, kvm)..."
 sudo usermod -aG libvirt,kvm "$TARGET_USER" 2>/dev/null || sudo usermod -aG libvirt "$TARGET_USER"
 
 echo "ℹ️ Configurando permisos ACL en el directorio de imágenes (/var/lib/libvirt/images)..."
-sudo apt install -y acl
 sudo mkdir -p /var/lib/libvirt/images
 sudo setfacl -R -b /var/lib/libvirt/images 2>/dev/null || true
 sudo setfacl -R -m u:"$TARGET_USER":rwX /var/lib/libvirt/images 2>/dev/null || true
 sudo setfacl -d -m u:"$TARGET_USER":rwX /var/lib/libvirt/images 2>/dev/null || true
 
-# 12. Variable de Entorno LIBVIRT_DEFAULT_URI
-echo "ℹ️ Configurando LIBVIRT_DEFAULT_URI en el entorno del usuario..."
-if [ -d "/etc/bashrc.d" ] || [ -d "$HOME/.bashrc.d" ]; then
-    mkdir -p ~/.bashrc.d
-    cat <<EOF > ~/.bashrc.d/virtualization.sh
-# Configuración KVM/QEMU conectando al modo de sistema por defecto
+# 10. Variable de Entorno LIBVIRT_DEFAULT_URI (Modular para Bash y Zsh)
+echo "ℹ️ Configurando LIBVIRT_DEFAULT_URI para el usuario $TARGET_USER..."
+
+# Configuración en ~/.bashrc.d
+mkdir -p "$TARGET_HOME/.bashrc.d"
+cat <<'EOF' > "$TARGET_HOME/.bashrc.d/virtualization.sh"
+# Configuración KVM/QEMU: Conectar automáticamente al hipervisor del sistema
 export LIBVIRT_DEFAULT_URI="qemu:///system"
 EOF
-    echo "✅ Configuración modular de Virtualización creada en ~/.bashrc.d/virtualization.sh"
-else
-    if ! grep -q "LIBVIRT_DEFAULT_URI" ~/.bashrc; then
-        echo '' >> ~/.bashrc
-        echo '# Configuración KVM/QEMU conectando al modo de sistema por defecto' >> ~/.bashrc
-        echo "export LIBVIRT_DEFAULT_URI='qemu:///system'" >> ~/.bashrc
-    fi
+
+# Configuración en ~/.zshrc.d si existe o se usa
+if [ -d "$TARGET_HOME/.zshrc.d" ]; then
+    ln -sf "$TARGET_HOME/.bashrc.d/virtualization.sh" "$TARGET_HOME/.zshrc.d/virtualization.sh"
 fi
 
+chown -R "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.bashrc.d" "$TARGET_HOME/.zshrc.d" 2>/dev/null || true
+
 echo "================================================================="
-echo "✅ Entorno de Virtualización KVM/QEMU para Debian 13 configurado con éxito."
-echo "💡 Recuerda reiniciar o cerrar sesión para aplicar los cambios de grupo (libvirt, kvm)."
+echo "✅ Entorno de Virtualización KVM/QEMU configurado con éxito."
+echo "💡 Recuerda cerrar sesión o reiniciar el portátil para aplicar los grupos (libvirt, kvm)."
 echo "================================================================="
