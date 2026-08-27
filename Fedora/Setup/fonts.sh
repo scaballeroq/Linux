@@ -1,5 +1,5 @@
 #!/bin/bash
-# fonts.sh - Instalación de Fuentes de Desarrollo (Nerd Fonts) para Fedora 44
+# fonts.sh - Instalacion de Fuentes de Desarrollo (Nerd Fonts) para Fedora 44
 
 set -euo pipefail
 
@@ -8,22 +8,22 @@ mkdir -p "$FONT_DIR"
 
 FONTS=("JetBrainsMono" "FiraCode" "CascadiaCode" "Meslo" "Hack")
 
-echo "ℹ️ Verificando e instalando Nerd Fonts..."
+echo "Verificando e instalando Nerd Fonts..."
 
 for font in "${FONTS[@]}"; do
     if [ ! -d "$FONT_DIR/$font" ]; then
-        echo "⬇️ Descargando $font Nerd Font..."
+        echo "Descargando $font Nerd Font..."
         mkdir -p "$FONT_DIR/$font"
         curl -fLo "/tmp/${font}.zip" "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${font}.zip"
         unzip -qo "/tmp/${font}.zip" -d "$FONT_DIR/$font"
         rm -f "/tmp/${font}.zip"
-        echo "✅ $font instalada."
+        echo "$font instalada."
     else
-        echo "✅ $font ya está instalada."
+        echo "$font ya esta instalada."
     fi
 done
 
-echo "ℹ️ Actualizando caché de fuentes del sistema..."
+echo "Actualizando cache de fuentes del sistema..."
 fc-cache -f "$FONT_DIR"
 
-echo "✅ Todas las fuentes se han instalado y configurado correctamente."
+echo "Todas las fuentes se han instalado y configurado correctamente."
