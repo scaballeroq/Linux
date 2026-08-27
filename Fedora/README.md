@@ -27,7 +27,6 @@ Scripts de configuración del sistema operativo, personalización de GNOME y end
 - **`post-install-intel.sh`**: Post-instalación optimizada para equipos de sobremesa **Intel Core** (Haswell i7-4790 / HD Graphics 4600) dedicados a centro multimedia y streaming (microcódigo Intel, driver VA-API `i965` / `intel-media-driver`, codecs, Kodi, sin virtualización).
 - **`gnome-settings.sh`**: Personalización automatizada de GNOME vía GSettings (Luz nocturna a 3500K, reloj 24h, porcentaje de batería, botones de ventana, VRR).
 - **`gnome-extensions.sh`**: Instalación automatizada y limpia de 12 extensiones de GNOME Shell con compilación de esquemas (ver [Guía de Extensiones GNOME](./Docs/gnome_extensions_es.md)).
-- **`ptyxis.sh`**: Instalación y perfil moderno de Ptyxis (translúcido al 85%, sin scrollbar, atajo `Ctrl+Alt+T` e integración en Nautilus).
 - **`kitty.sh`**: Terminal Kitty acelerada por GPU con opacidad (85%), efectos blur, tipografía JetBrainsMono Nerd Font e integración con GNOME/Nautilus.
 - **`apariencia.sh`**: Instalación de temas e iconos (Adwaita-Dark, Papirus-Dark e integración visual GTK/Qt).
 - **`laptop-setup.sh`**: Optimización para portátiles de desarrollo (Touchpad, Bluetooth, `power-profiles-daemon`, `switcheroo-control`, HiDPI, VRR en Wayland, persistencia de brillo al 95%).
@@ -93,7 +92,6 @@ just post-install-intel  # Post-instalación para Intel Media Center
 just kodi                # Instala Kodi y complementos de streaming
 just gnome               # Aplica configuración de GNOME vía GSettings
 just extensions          # Instala y compila las 12 extensiones de GNOME
-just ptyxis              # Instala y configura el emulador de terminal Ptyxis
 just plymouth            # Configura y activa el splash screen visual de arranque
 just ides                # Instala Neovim, VSCode, Antigravity y OpenCode
 just build-kernel        # Compila un kernel Linux nativo x86_64-v3

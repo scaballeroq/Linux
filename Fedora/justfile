@@ -2,15 +2,15 @@
 # (Fedora 44 Workstation + GNOME)
 
 # Instala todo el entorno por defecto (Auto-detección de CPU / Portátil AMD)
-setup-all: post-install workspace laptop fingerprint tuning extensions screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
+setup-all: post-install workspace laptop fingerprint tuning extensions screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome firefox
     echo "🚀 Entorno completo de Fedora 44 (Fedora Workstation + GNOME) configurado. Por favor, reinicia el sistema."
 
 # Perfil completo para Portátil de desarrollo (AMD Ryzen + Huella + Virtualización)
-setup-laptop-amd: post-install-amd workspace laptop fingerprint tuning extensions screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
+setup-laptop-amd: post-install-amd workspace laptop fingerprint tuning extensions screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome firefox
     echo "🚀 Entorno Portátil AMD Ryzen configurado con éxito. Por favor, reinicia el sistema."
 
 # Perfil para Sobremesa Centro Multimedia (Intel Haswell / Media Center - Sin virtualización ni batería)
-setup-media-desktop: post-install-intel workspace tuning extensions screensaver plymouth shell security fonts gnome apariencia fastfetch ptyxis firefox kodi
+setup-media-desktop: post-install-intel workspace tuning extensions screensaver plymouth shell security fonts gnome apariencia fastfetch firefox kodi
     echo "🚀 Entorno Sobremesa Intel Media Center configurado con éxito. Por favor, reinicia el sistema."
 
 # =============================================================================
@@ -92,10 +92,6 @@ apariencia:
 # Información estética del sistema (Fastfetch)
 fastfetch:
     ./Setup/fastfetch.sh
-
-# Terminal Ptyxis + integración Nautilus
-ptyxis:
-    ./Setup/ptyxis.sh
 
 # Terminal Kitty acelerada por GPU con tema oscuro y opacidad/blur
 kitty:

@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # System Setup on Fedora 44 Workstation (FedoraTesting)
 
-This guide details the base setup process, automatic workspace mount, custom `x86_64-v3` kernel compilation, GNOME desktop customization, Ptyxis terminal, GNOME Shell extensions, and Cockpit web administration panel on **Fedora 44 Workstation (Trixie)** with **GNOME**.
+This guide details the base setup process, automatic workspace mount, custom `x86_64-v3` kernel compilation, GNOME desktop customization, Kitty terminal, GNOME Shell extensions, and Cockpit web administration panel on **Fedora 44 Workstation (Trixie)** with **GNOME**.
 
 Configurations are automated via scripts located in the `Setup` directory.
 
@@ -50,7 +50,7 @@ Prepares the base system by enabling additional official repositories (`contrib`
 - **Monitoring**: `btop`, `htop`, `inxi`, `gnome-system-monitor`
 - **Utilities**: `curl`, `fuse3`, `exfatprogs`, `p7zip-full`, `unrar`, `zip`, `unzip`, `bzip2`, `xz-utils`
 - **Graphics & Multimedia**: `vlc`, `gimp`, `gparted`, `evince`, `seahorse`
-- **GNOME Suite**: `gnome-core`, `gnome-shell`, `gnome-control-center`, `gnome-tweaks`, `ptyxis`, `nautilus`, `file-roller`, `gnome-text-editor`, `gnome-calculator`, `gnome-disk-utility`, `power-profiles-daemon`, `ffmpegthumbnailer`
+- **GNOME Suite**: `gnome-core`, `gnome-shell`, `gnome-control-center`, `gnome-tweaks`, `nautilus`, `file-roller`, `gnome-text-editor`, `gnome-calculator`, `gnome-disk-utility`, `power-profiles-daemon`, `ffmpegthumbnailer`
 - **Universal Packages**: `flatpak`, `gnome-software`, `gnome-software-plugin-flatpak` with Flathub repo.
 
 ---
@@ -101,14 +101,7 @@ just gnome
 
 ---
 
-## 6. Modern Terminals (Ptyxis and Kitty)
-
-### Ptyxis (`ptyxis.sh`)
-Installs and configures Ptyxis with translucent dark styling (85% opacity), no scrollbar, global `Ctrl + Alt + T` shortcut, and Nautilus context menu integration via `nautilus-open-any-terminal`.
-
-```bash
-just ptyxis
-```
+## 6. Modern Terminal (Kitty)
 
 ### Kitty (`kitty.sh`)
 Installs and configures GPU-accelerated Kitty terminal with Catppuccin Mocha / Tokyo Night dark theme, 85% background opacity with blur, JetBrainsMono Nerd Font typography, slanted powerline tab bar, and on-the-fly opacity adjustments (`Ctrl+Shift+A` + `M`/`L`/`1`).

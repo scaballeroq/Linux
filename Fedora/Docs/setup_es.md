@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # Configuración del Sistema en Fedora 44 Workstation (FedoraTesting)
 
-Esta guía detalla el proceso de configuración base, automontaje de partición de trabajo, compilación de kernel nativo `x86_64-v3`, personalización de GNOME, terminal Ptyxis, extensiones GNOME Shell y panel de administración web aplicados a un sistema **Fedora 44 Workstation (Trixie)** con **GNOME**.
+Esta guía detalla el proceso de configuración base, automontaje de partición de trabajo, compilación de kernel nativo `x86_64-v3`, personalización de GNOME, terminal Kitty, extensiones GNOME Shell y panel de administración web aplicados a un sistema **Fedora 44 Workstation (Trixie)** con **GNOME**.
 
 Las configuraciones están automatizadas a través de los scripts ubicados en la carpeta `Setup`.
 
@@ -54,7 +54,7 @@ Prepara el sistema base configurando repositorios oficiales adicionales (`contri
 - **Monitorización**: `btop`, `htop`, `inxi`, `gnome-system-monitor`
 - **Utilidades**: `curl`, `fuse3`, `exfatprogs`, `p7zip-full`, `unrar`, `zip`, `unzip`, `bzip2`, `xz-utils`
 - **Gráficos y Multimedia**: `vlc`, `gimp`, `gparted`, `evince`, `seahorse`
-- **Entorno GNOME**: `gnome-core`, `gnome-shell`, `gnome-control-center`, `gnome-tweaks`, `ptyxis`, `nautilus`, `file-roller`, `gnome-text-editor`, `gnome-calculator`, `gnome-disk-utility`, `power-profiles-daemon`, `ffmpegthumbnailer`
+- **Entorno GNOME**: `gnome-core`, `gnome-shell`, `gnome-control-center`, `gnome-tweaks`, `nautilus`, `file-roller`, `gnome-text-editor`, `gnome-calculator`, `gnome-disk-utility`, `power-profiles-daemon`, `ffmpegthumbnailer`
 - **Paquetes universales**: `flatpak`, `gnome-software`, `gnome-software-plugin-flatpak` con repositorio Flathub activo.
 
 ---
@@ -124,14 +124,7 @@ just gnome
 
 ---
 
-## 7. Terminales Modernas (Ptyxis y Kitty)
-
-### Ptyxis (`ptyxis.sh`)
-Instala y configura Ptyxis (el emulador moderno para GNOME) con perfil oscuro translúcido (85% de opacidad), sin scrollbar, atajo de teclado `Ctrl + Alt + T` e integración directa en Nautilus mediante `nautilus-open-any-terminal`.
-
-```bash
-just ptyxis
-```
+## 7. Terminal Moderna (Kitty)
 
 ### Kitty (`kitty.sh`)
 Instala y configura Kitty (emulador acelerado por GPU) con perfil Catppuccin Mocha / Tokyo Night translúcido (85% opacidad) con efectos blur, tipografía JetBrainsMono Nerd Font, barra de pestañas Powerline inclinada y control dinámico de opacidad al vuelo (`Ctrl+Shift+A` + `M`/`L`/`1`).
