@@ -50,5 +50,8 @@ alias ytlista-audio="yt-dlp -f 'ba' -x --audio-format mp3 --audio-quality 0 --co
 # Descarga video con subtítulos (Optimizado para español)
 alias ytdl-subs="yt-dlp -f 'bestvideo[height<=1080]+bestaudio/best[height<=1080]' --merge-output-format mp4 $JS_RUNTIME --impersonate chrome --write-auto-subs --embed-subs --sub-langs 'es.*' --convert-subs srt --cookies-from-browser $YT_BROWSER --sleep-subtitles 15 --rm-cache-dir"
 
-echo "✅ Aliases de yt-dlp cargados (Navegador: $YT_BROWSER${JS_RUNTIME:+, JS: $JS_RUNTIME})"
+# =============================================================================
+# MENSAJE DE CARGA (Solo en sesiones interactivas)
+# =============================================================================
+[[ $- == *i* ]] && [ -t 1 ] && echo "✅ Aliases de yt-dlp cargados (Navegador: $YT_BROWSER${JS_RUNTIME:+, JS: $JS_RUNTIME})" || true
 

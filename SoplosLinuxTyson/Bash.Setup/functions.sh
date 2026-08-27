@@ -390,7 +390,7 @@ img2png() {
 }
 
 # =============================================================================
-# MENSAJE DE CARGA
+# MENSAJE DE CARGA (Solo en sesiones interactivas)
 # =============================================================================
-echo "✅ Funciones cargadas: 📂 Navegación, 💻 Sistema, 💾 Disco (Seguro), 🎬 Multimedia"
+[[ $- == *i* ]] && [ -t 1 ] && echo "✅ Funciones cargadas: 📂 Navegación, 💻 Sistema, 💾 Disco (Seguro), 🎬 Multimedia" || true
 

@@ -140,4 +140,7 @@ alias vminfo='virsh dominfo'
 alias update-antigravity='sudo "${UPDATE_ANTIGRAVITY_PATH:-/usr/local/bin/update-antigravity}"'
 alias update-antigravity-ide='sudo "${UPDATE_ANTIGRAVITY_IDE_PATH:-/usr/local/bin/update-antigravity-ide}"'
 
-echo "✅ Aliases modernizados cargados (APT, Systemd, Dracut, Kernel-Check, Rust tools, Git, Seguridad)"
+# =============================================================================
+# MENSAJE DE CARGA (Solo en sesiones interactivas)
+# =============================================================================
+[[ $- == *i* ]] && [ -t 1 ] && echo "✅ Aliases modernizados cargados (APT, Systemd, Dracut, Kernel-Check, Rust tools, Git, Seguridad)" || true

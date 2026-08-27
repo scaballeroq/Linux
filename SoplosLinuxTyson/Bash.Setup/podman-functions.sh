@@ -134,5 +134,8 @@ prmi-all() {
     fi
 }
 
-echo "✅ Funciones y utilidades de Podman cargadas"
+# =============================================================================
+# MENSAJE DE CARGA (Solo en sesiones interactivas)
+# =============================================================================
+[[ $- == *i* ]] && [ -t 1 ] && echo "✅ Funciones y utilidades de Podman cargadas" || true
 

@@ -48,9 +48,14 @@ plasma-info() {
     fi
     if command -v kf6-config &>/dev/null; then
         echo "🔧 KDE Frameworks:  $(kf6-config --version | head -n1 2>/dev/null)"
+    elif command -v kreadconfig6 &>/dev/null; then
+        echo "🔧 KDE Frameworks:  $(kreadconfig6 --version 2>/dev/null | head -n1)"
     fi
     echo "================================================================="
 }
 
-echo "✅ Configuración y utilidades de KDE Plasma 6 cargadas"
+# =============================================================================
+# MENSAJE DE CARGA (Solo en sesiones interactivas)
+# =============================================================================
+[[ $- == *i* ]] && [ -t 1 ] && echo "✅ Configuración y utilidades de KDE Plasma 6 cargadas" || true
 

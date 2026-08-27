@@ -52,7 +52,11 @@ unset -f _add_to_path
 
 # Activación de MISE (Gestor universal de lenguajes y runtimes)
 if command -v mise &> /dev/null; then
-    eval "$(mise activate bash)"
+    if [ -n "${ZSH_VERSION:-}" ]; then
+        eval "$(mise activate zsh 2>/dev/null || true)"
+    else
+        eval "$(mise activate bash 2>/dev/null || true)"
+    fi
 fi
 
 # Soporte para GPG en terminal (solo si hay TTY interactiva asignada)
@@ -68,6 +72,6 @@ export UPDATE_ANTIGRAVITY_PATH="${UPDATE_ANTIGRAVITY_PATH:-/usr/local/bin/update
 export UPDATE_ANTIGRAVITY_IDE_PATH="${UPDATE_ANTIGRAVITY_IDE_PATH:-/usr/local/bin/update-antigravity-ide}"
 
 # =============================================================================
-# MENSAJE DE CARGA
+# MENSAJE DE CARGA (Solo en sesiones interactivas)
 # =============================================================================
-echo "✅ Variables de entorno aplicadas (PATH, EDITOR, LESS, MISE...)"
+[[ $- == *i* ]] && [ -t 1 ] && echo "✅ Variables de entorno aplicadas (PATH, EDITOR, LESS, MISE...)" || true

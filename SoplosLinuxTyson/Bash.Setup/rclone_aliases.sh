@@ -129,6 +129,6 @@ unset RCLONE_REPOS_BASE
 unset RCLONE_EXT_BASE
 
 # =============================================================================
-# MENSAJE DE CARGA
+# MENSAJE DE CARGA (Solo en sesiones interactivas)
 # =============================================================================
-echo "✅ Aliases de rclone cargados"
+[[ $- == *i* ]] && [ -t 1 ] && echo "✅ Aliases de rclone cargados" || true
