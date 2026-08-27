@@ -1,9 +1,9 @@
 #!/bin/bash
-# laptop-setup.sh - Optimización para portátiles de desarrollo en Debian Testing + KDE Plasma 6
+# laptop-setup.sh - Optimización para portátiles de desarrollo en Soplos Linux Tyson (Debian Testing + KDE Plasma 6)
 
 set -euo pipefail
 
-echo "🚀 Iniciando optimización para portátil de desarrollo en Debian Testing + KDE Plasma..."
+echo "🚀 Iniciando optimización para portátil de desarrollo en Soplos Linux Tyson..."
 
 # 1. Herramientas de Hardware y Conectividad
 echo "ℹ️ Instalando servicios de energía, bluetooth y gráficos híbridos..."
@@ -17,14 +17,14 @@ sudo apt install -y \
     plasma-nm \
     bluedevil
 
-# Habilitar servicios clave de portátil
+# Habilitar servicios clave de portátil con systemd
 echo "ℹ️ Habilitando servicios systemd para portátil..."
 sudo systemctl enable --now bluetooth.service || true
 sudo systemctl enable --now power-profiles-daemon.service || true
 sudo systemctl enable --now switcheroo-control.service || true
 
-# 2. Configuraciones de KDE Plasma para Portátil (Touchpad, Pantalla y Energía)
-echo "ℹ️ Aplicando configuraciones de Touchpad, energía y pantalla para KDE Plasma..."
+# 2. Configuraciones de KDE Plasma 6 para Portátil (Touchpad, Pantalla y Energía)
+echo "ℹ️ Aplicando configuraciones de Touchpad, energía y pantalla para KDE Plasma 6..."
 
 # Configuración de Touchpad (kcminputrc)
 python3 - <<'PYEOF'
@@ -96,5 +96,5 @@ with open(cfg_path, 'w', encoding='utf-8') as f:
 PYEOF
 
 echo "================================================================="
-echo "✅ Configuración de portátil para Debian Testing + KDE Plasma aplicada."
+echo "✅ Configuración de portátil para Soplos Linux Tyson aplicada."
 echo "================================================================="

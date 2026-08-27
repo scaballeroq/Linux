@@ -1,22 +1,21 @@
 [Unit]
 Description=PostgreSQL para __PROJECT__
-After=__PROJECT__.network
+PartOf=__PROJECT__.target
+After=__PROJECT__-network.service
+Wants=__PROJECT__-network.service
 
 [Container]
 ContainerName=__PROJECT__-postgres
 Image=docker.io/library/postgres:17-alpine
 EnvironmentFile=__PROJECT_DIR__/.env
 Network=__PROJECT__.network
-Volume=__PROJECT__-pg-data:/var/lib/postgresql/data
+Volume=__PROJECT__-pg-data.volume:/var/lib/postgresql/data
 PublishPort=5432:5432
-HealthCmd=pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-__PROJECT__}
+HealthCmd=pg_isready -U postgres
 HealthStartPeriod=10s
 HealthInterval=5s
 HealthRetries=5
 HealthTimeout=5s
-
-[Volume]
-VolumeName=__PROJECT__-pg-data
 
 [Install]
 WantedBy=__PROJECT__.target

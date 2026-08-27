@@ -1,8 +1,7 @@
 #!/bin/bash
 # =============================================================================
 # kde-plasma-customization.sh - Automatización de Personalización KDE Plasma 6
-# Basado en configuraciones de The Linux Experiment & The Markella's
-# Debian Testing (Trixie/Sid) + KDE Plasma 6
+# Soplos Linux Tyson (Debian Testing + KDE Plasma 6)
 # =============================================================================
 
 set -euo pipefail
@@ -37,7 +36,7 @@ else
     SUDO=""
 fi
 
-# Detectar herramienta kwriteconfig (kwriteconfig6 o kwriteconfig5)
+# Detectar herramienta kwriteconfig (kwriteconfig6 prioritario en KDE Plasma 6)
 KWRITECFG=""
 if command -v kwriteconfig6 &>/dev/null; then
     KWRITECFG="kwriteconfig6"
@@ -352,7 +351,7 @@ elif command -v qdbus &>/dev/null; then
 fi
 
 echo ""
-log_success "¡Automatización de instalación finalizada con éxito!"
+log_success "¡Automatización de instalación finalizada con éxito en Soplos Linux Tyson!"
 echo ""
 echo -e "${CYAN}=================================================================${RESET}"
 echo -e "${GREEN}📋 RESUMEN DE COMPONENTES INSTALADOS:${RESET}"
@@ -364,19 +363,4 @@ echo -e "  ✔️ Tema de iconos Tela-blue-dark"
 echo -e "  ✔️ Plasmoide Panel Colorizer"
 echo -e "  ✔️ Wallpaper Plugins (Blurred Wallpaper & Wallpaper Effects)"
 echo -e "  ✔️ KWin Scripts (Dynamic Workspaces & Mouse Tiler)"
-echo -e "${CYAN}=================================================================${RESET}"
-echo ""
-echo -e "${YELLOW}🛠️  PASOS RESTANTES QUE DEBES REALIZAR MANUALMENTE (GUI):${RESET}"
-echo -e "  1. ${CYAN}Cerrar e Iniciar Sesión:${RESET} Cierra tu sesión actual o reinicia para que KWin y Qt carguen los nuevos motores de renderizado."
-echo -e "  2. ${CYAN}Diseño de Paneles Flotantes (Top Bar / Docks):${RESET}"
-echo -e "     - Haz clic derecho en el escritorio -> 'Entrar en modo edición'."
-echo -e "     - Divide la barra superior en 3 paneles 'Ajustar al contenido' (Fit Content):"
-echo -e "       • Izquierdo: Menú de aplicaciones + Pager + Monitor de recursos."
-echo -e "       • Central: Solo iconos de tareas (Dock de aplicaciones)."
-echo -e "       • Derecho: Bandeja del sistema + Reloj digital."
-echo -e "     - Añade el widget 'Panel Colorizer' a tu panel y selecciona el preset 'Rounder Translucent' o 'Dock'."
-echo -e "  3. ${CYAN}Fondo de Pantalla y Efectos:${RESET}"
-echo -e "     - Clic derecho en el escritorio -> 'Configurar escritorio y fondo de pantalla'."
-echo -e "     - En 'Tipo de fondo', selecciona 'Blurred Wallpaper' o tu imagen favorita."
-echo -e "     - 'KDE Material You Colors' adaptará automáticamente el color de acento del sistema."
 echo -e "${CYAN}=================================================================${RESET}"

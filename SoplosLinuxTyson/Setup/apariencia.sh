@@ -1,5 +1,5 @@
 #!/bin/bash
-# apariencia.sh - Instalación de temas, iconos y homogeneización Qt/GTK para Debian Testing + KDE Plasma 6
+# apariencia.sh - Instalación de temas, iconos y homogeneización Qt/GTK para Soplos Linux Tyson (Debian Testing + KDE Plasma 6)
 
 set -euo pipefail
 
@@ -28,7 +28,7 @@ $SUDO apt install -y \
     kdegraphics-thumbnailers \
     ffmpegthumbs 2>/dev/null || true
 
-# Configuración de tema e iconos en KDE (kdeglobals y GTK)
+# Configuración de tema e iconos en KDE Plasma 6 (kdeglobals y GTK)
 echo "ℹ️ Configurando esquema de color Breeze Dark e iconos Papirus-Dark..."
 
 # Aplicar esquema si plasma-apply-colorscheme está disponible
@@ -36,7 +36,7 @@ if command -v plasma-apply-colorscheme &> /dev/null; then
     plasma-apply-colorscheme BreezeDark 2>/dev/null || true
 fi
 
-# Aplicar iconos si plasma-apply-cursortheme / kwriteconfig está disponible
+# Aplicar cursores si plasma-apply-cursortheme está disponible
 if command -v plasma-apply-cursortheme &> /dev/null; then
     plasma-apply-cursortheme breeze_cursors 2>/dev/null || true
 fi
@@ -83,4 +83,4 @@ gtk-icon-theme-name=Papirus-Dark
 gtk-application-prefer-dark-theme=1
 EOF
 
-echo "✅ Temas, iconos e integración Qt/GTK configurados correctamente."
+echo "✅ Temas, iconos e integración Qt/GTK configurados correctamente en Soplos Linux Tyson."

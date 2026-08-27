@@ -2,80 +2,23 @@
 sidebar_position: 2
 ---
 
-# Configuración del Sistema en Debian Testing (KDEDebian)
+# Configuración del Sistema en Soplos Linux Tyson
 
-Esta guía detalla el proceso de configuración base, automontaje de partición de trabajo, compilación de kernel nativo `x86_64-v3`, personalización de KDE Plasma 6, terminal Konsole y panel de administración web aplicados a un sistema **Debian Testing (Trixie)** con **KDE Plasma 6**.
+Esta guía detalla el proceso de personalización de KDE Plasma 6, terminales Konsole/Kitty, shell unificado (Bash y Zsh con Starship), seguridad UFW para desarrollo con Podman y panel de administración web aplicados a **Soplos Linux Tyson** (derivada directa de **Debian Testing** con **KDE Plasma 6**, **dracut**, **GRUB** y **systemd**).
 
 Las configuraciones están automatizadas a través de los scripts ubicados en la carpeta `Setup`.
 
 ---
 
-## 1. Post-Instalación Base (`post-install.sh`)
+## 1. Personalización y Widgets de KDE Plasma 6 (`kde-settings.sh` y `kde-widgets.sh`)
 
-Prepara el sistema base configurando repositorios oficiales adicionales, instalando software esencial, PipeWire, la suite KDE Plasma y aceleración por hardware.
-
-1. **Actualización base del sistema**:
-   ```bash
-   sudo apt update && sudo apt upgrade -y
-   ```
-
-2. **Habilitación de repositorios Extra** (Contrib, Non-Free, Non-Free-Firmware):
-   ```bash
-   sudo apt install -y curl ca-certificates gnupg lsb-release
-   # En Debian Testing los repositorios principales entregan los paquetes más recientes
-   ```
-
-3. **Software Esencial y Utilidades**:
-   Instala utilidades de compilación, suite KDE y monitorización:
-   - Compilación: `build-essential`, `cmake`
-   - Memoria: `zram-tools` (ZRAM con ZSTD al 50%)
-   - Monitorización: `btop`, `htop`, `inxi`, `plasma-systemmonitor`
-   - Utilidades: `curl`, `fuse3`, `exfatprogs`, `p7zip`, `unrar`, `zip`, `unzip`, `bzip2`, `xz-utils`
-   - Gráficos y Multimedia: `vlc`, `gimp`, `gparted`
-   - Entorno KDE y Aplicaciones: `kde-plasma-desktop`, `plasma-workspace`, `dolphin`, `konsole`, `ark`, `spectacle`, `gwenview`, `kate`, `kcalc`, `kdeconnect`
-   - Paquetes universales: `flatpak`, `plasma-discover`, `plasma-discover-backend-flatpak`
-
-4. **Codecs Multimedia y Aceleración HW**:
-   ```bash
-   sudo apt install -y libavcodec-extra ffmpeg mesa-va-drivers mesa-vdpau-drivers vainfo
-   ```
-
----
-
-## 2. Automontaje de Partición Workspace (`mount-workspace.sh`)
-
-Monta automáticamente la partición de datos `/home/caballero/Workspace` mediante `/etc/fstab` usando su UUID `3d81e6d2-6011-484a-8123-6bcf68f365ba`.
-Utiliza las opciones `defaults,noatime,nofail` para evitar cualquier bloqueo del sistema durante el arranque si la partición secundaria estuviese desconectada.
-
-```bash
-./Setup/mount-workspace.sh
-# O usando just:
-just workspace
-```
-
----
-
-## 3. Compilador de Kernel Linux NATIVO x86_64-v3 (`build-custom-kernel.sh`)
-
-Script que consulta la API de `kernel.org` (`https://www.kernel.org/releases.json`) para descargar la última versión estable oficial del Kernel Linux, compilar paquetes `.deb` nativos con optimizaciones de arquitectura `x86_64-v3`, latencia a **1000Hz** y **Preemption Dinámica**.
-
-```bash
-./Setup/build-custom-kernel.sh
-# O usando just:
-just build-kernel
-```
-
----
-
-## 4. Personalización y Widgets de KDE Plasma 6 (`kde-settings.sh` y `kde-widgets.sh`)
-
-Configura de manera nativa y atomizada:
-- **Luz Nocturna (Night Color)** a 3500K.
+Configura de manera nativa y atómica:
+- **Luz Nocturna (Night Color)** desactivada.
 - **Reloj 24h** y porcentaje de batería.
 - **Botones de ventana**: minimizar, maximizar y cerrar a la derecha.
 - **Touchpad**: Tap-to-click y desplazamiento natural.
-- **Klipper**: Gestor de portapapeles persistente con búsqueda rápida.
-- **Efectos KWin**: Blur y translucidez a 60/120 FPS.
+- **Klipper**: Gestor de portapapeles persistente de 100 elementos con búsqueda rápida (`Meta + V`).
+- **Efectos KWin**: Blur y translucidez a 60/120 FPS, atajos de overview y tiling.
 
 ```bash
 just kde
@@ -84,32 +27,58 @@ just widgets
 
 ---
 
-## 5. Terminal Konsole Translúcida e Integración (`konsole.sh`)
+## 2. Terminal Konsole Translúcida y Kitty (`konsole.sh` y `kitty.sh`)
 
-Instala y configura Konsole con un perfil oscuro translúcido (85% opacidad) con efecto blur, fuente JetBrainsMono Nerd Font, atajo de teclado `Ctrl + Alt + T` e integración con Dolphin (`F4`).
+- **Konsole**: Perfil oscuro translúcido (85% opacidad) con efecto blur, fuente JetBrainsMono Nerd Font, atajo de teclado `Ctrl + Alt + T` e integración con Dolphin (`F4`).
+- **Kitty**: Terminal acelerada por GPU, atajos de opacidad dinámica y menú contextual en Dolphin.
 
 ```bash
 just konsole
+just kitty
 ```
 
 ---
 
-## 6. Entorno de Shell (`shell.sh`, `fastfetch.sh` y `fonts.sh`)
+## 3. Entorno de Shell Unificado (`shell.sh`, `fastfetch.sh` y `fonts.sh`)
 
-Instala utilidades modernas de consola (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`), tipografías para desarrollo (Nerd Fonts) y el prompt interactivo Starship.
+Instala utilidades modernas de consola (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`), tipografías para desarrollo (Nerd Fonts) y el prompt interactivo **Starship** unificado tanto para **Bash** como para **Zsh**.
+
+```bash
+just shell
+just fonts
+just fastfetch
+```
 
 ---
 
-## 7. Panel de Administración Web Cockpit (`cockpit.sh`)
+## 4. Seguridad y Firewall para Desarrollo con Podman (`seguridad.sh`)
+
+Configura UFW y Fail2ban para proteger el portátil en cualquier red Wi-Fi sin bloquear las funciones esenciales de desarrollo:
+- Tráfico en `localhost` / `127.0.0.1` permitido.
+- Reenvío e interfaces virtuales de **Podman** y **KVM** habilitadas.
+- Soporte para **KDE Connect** y descubrimiento mDNS / impresoras.
+- Rate-limiting para SSH y Cockpit.
+
+```bash
+just security
+```
+
+---
+
+## 5. Panel de Administración Web Cockpit (`cockpit.sh`)
 
 Instala Cockpit con módulos para administrar el equipo desde el navegador ([https://localhost:9090](https://localhost:9090)):
 - `cockpit-podman`: Gestión de contenedores Podman.
 - `cockpit-machines`: Gestión de MVs en KVM/QEMU.
 - `cockpit-storaged`: Estado de discos SSD/NVMe y datos SMART.
 
+```bash
+just cockpit
+```
+
 ---
 
-## 8. Temas e Iconos de Escritorio (`apariencia.sh`)
+## 6. Temas e Iconos de Escritorio (`apariencia.sh`)
 
 Aplica paquetes de diseño para un entorno visual limpio y homogéneo con temas Breeze Dark, Papirus-Dark y consistencia entre aplicaciones Qt y GTK.
 

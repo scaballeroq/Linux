@@ -1,91 +1,106 @@
-# Podman Professional - Quadlets para Desarrollo
+# 🐧 Podman Professional - Quadlets & systemd
 
-Gestion de contenedores con **Podman + Quadlets + systemd** para proyectos Python/PostgreSQL con proxy, autenticacion y servicios compartidos.
+Gestión avanzada de contenedores rootless con **Podman + Quadlets + systemd** para **Soplos Linux Tyson** (Debian Testing). Desarrollado para APIs FastAPI, PostgreSQL, Redis, proxies inversos Traefik y autenticación OIDC/OAuth2 con Keycloak.
 
 ---
 
-## Estructura
+## 📁 Estructura del Proyecto
 
 ```
 Podman/
-├── install/                  # Scripts de instalacion
-│   ├── podman-install.sh     # Instala Podman rootless
-│   └── quadlets-setup.sh     # Configura systemd para Quadlets
+├── install/                      # Scripts de instalación y aprovisionamiento
+│   ├── podman-install.sh         # Instala Podman rootless, Netavark y dependencias
+│   └── quadlets-setup.sh         # Configura el entorno systemd y directorios
 │
 ├── lib/
-│   └── podman-utils.sh       # CLI para gestionar proyectos
+│   └── podman-utils.sh           # CLI unificado para gestionar el ciclo de vida
 │
-├── templates/                # Plantillas de proyectos
-│   ├── python-postgres/      # Python + PostgreSQL
-│   ├── python-postgres-redis/# Python + PostgreSQL + Redis
-│   └── fullstack/            # Front + Back + PostgreSQL + Traefik + Keycloak
+├── templates/                    # Plantillas de proyectos listas para usar
+│   ├── python-postgres/          # FastAPI + PostgreSQL (con volumen persistente)
+│   ├── python-postgres-redis/    # FastAPI + PostgreSQL + Redis (Caché / Celery)
+│   └── fullstack/                # Vue 3 (Vite) + FastAPI + PostgreSQL + Traefik + Keycloak
 │
-├── services-shared/          # Servicios globales reutilizables
-│   ├── traefik.container     # Proxy inverso
-│   ├── keycloak.container    # OAuth2/OIDC (Google, Microsoft, GitHub)
-│   ├── postgres-global.container  # PostgreSQL compartido
-│   └── redis-global.container     # Redis compartido
+├── services-shared/              # Servicios globales multi-proyecto
+│   ├── proxy-net.network         # Red compartida Quadlet
+│   ├── traefik.container         # Proxy inverso con autodescubrimiento
+│   ├── traefik-config.volume     # Volumen de configuración de Traefik
+│   ├── postgres-global.container # PostgreSQL compartido multi-tenant
+│   ├── postgres-global-data.volume
+│   ├── redis-global.container    # Redis compartido
+│   ├── redis-global-data.volume
+│   └── keycloak.container        # Servidor central de autenticación OIDC
 │
-└── projects/                 # Tus proyectos (gitignored)
+└── projects/                     # Tus proyectos locales (ignorado en git)
 ```
 
 ---
 
-## Instalacion
+## 🚀 Instalación y Configuración Inicial
 
-### 1. Instalar Podman
+### 1. Instalar Podman y dependencias del sistema
 
 ```bash
 ./install/podman-install.sh
 ```
 
-Instala Podman rootless con todas las dependencias necesarias.
+Configura Podman en modo **rootless**, habilitando:
+- Backend de red **Netavark** y resolución DNS **Aardvark**.
+- Driver de almacenamiento **overlayfs**.
+- Persistencia de procesos de usuario vía `loginctl enable-linger`.
+- Socket de Podman compatible con la API de Docker (`podman.socket`).
+- Exportación automática de `DOCKER_HOST` en `~/.bashrc` y `~/.zshrc`.
 
-### 2. Configurar Quadlets
+### 2. Configurar el entorno de Quadlets
 
 ```bash
 ./install/quadlets-setup.sh
 ```
 
-Crea la estructura de systemd para gestionar contenedores como servicios.
+Prepara los directorios de usuario en `~/.config/containers/systemd/` y recarga el generador de servicios de systemd.
 
-### 3. Anadir CLI al PATH
+### 3. Añadir el CLI al PATH
+
+Añade la siguiente línea a tu archivo `~/.bashrc` o `~/.zshrc`:
 
 ```bash
-# En ~/.bashrc o ~/.zshrc
-export PATH="$HOME/Workspace/Repositorios/Debian/Podman/lib:$PATH"
+export PATH="$HOME/Workspace/Repositorios/Linux/SoplosLinuxTyson/Podman/lib:$PATH"
 ```
 
-O crea un alias:
+O crea un alias si lo prefieres:
 
 ```bash
-alias podman-utils="$HOME/Workspace/Repositorios/Debian/Podman/lib/podman-utils.sh"
+alias podman-utils="$HOME/Workspace/Repositorios/Linux/SoplosLinuxTyson/Podman/lib/podman-utils.sh"
 ```
 
 ---
 
-## Uso Rapido
+## 💻 Guía Rápida de Uso
 
-### Crear un proyecto
+### Crear un nuevo proyecto desde plantilla
 
 ```bash
-# Python + PostgreSQL
+# FastAPI + PostgreSQL
 podman-utils create python-postgres mi-api
 
-# Python + PostgreSQL + Redis (Celery, cache, etc.)
-podman-utils create python-postgres-redis mi-api
+# FastAPI + PostgreSQL + Redis
+podman-utils create python-postgres-redis mi-api-redis
 
-# Fullstack con proxy y autenticacion
-podman-utils create fullstack mi-app
+# Aplicación Fullstack con Traefik y Keycloak
+podman-utils create fullstack mi-app-web
 ```
 
-### Configurar credenciales
+Al crear un proyecto:
+1. Se genera la carpeta en `projects/<nombre>/`.
+2. Se instancia el archivo `.env` a partir de `.env.example` con los nombres y puertos adaptados.
+3. Se configuran y enlazan automáticamente los archivos Quadlet (`.container`, `.volume`, `.network`, `.target`) en `~/.config/containers/systemd/`.
+4. Se recarga `systemd --user`.
+
+### Configurar credenciales (.env)
 
 ```bash
-nano projects/mi-api/.env
+podman-utils env mi-api
+# O directamente: nano projects/mi-api/.env
 ```
-
-Cambia las contraseñas por defecto antes de iniciar.
 
 ### Iniciar el proyecto
 
@@ -93,264 +108,135 @@ Cambia las contraseñas por defecto antes de iniciar.
 podman-utils start mi-api
 ```
 
-### Ver logs
+Inicia todos los contenedores coordinados por el target `mi-api.target` respetando las dependencias (`Requires=` y `After=`).
+
+### Ver estado y contenedores
 
 ```bash
-# Todos los servicios
+podman-utils status mi-api
+# O ver la lista de todos tus proyectos:
+podman-utils list
+```
+
+### Inspeccionar logs en vivo
+
+```bash
+# Ver logs de todo el proyecto (todos los servicios combinados)
 podman-utils logs mi-api
 
-# Un servicio especifico
+# Ver logs de un servicio específico
 podman-utils logs mi-api backend
 podman-utils logs mi-api postgres
 ```
 
-### Ver estado
+### Ejecutar comandos o entrar a una terminal dentro del contenedor
 
 ```bash
-podman-utils status mi-api
+# Abrir terminal bash/sh interactiva en el contenedor backend
+podman-utils exec mi-api backend
+
+# Ejecutar una consola psql interactiva en la base de datos
+podman-utils exec mi-api postgres psql -U postgres
+
+# Ejecutar un comando puntual
+podman-utils exec mi-api backend pip list
 ```
 
-### Detener
+### Habilitar inicio automático en el arranque del equipo (Boot)
 
 ```bash
+podman-utils enable mi-api
+```
+
+Gracias al `loginctl enable-linger`, el proyecto se iniciará en segundo plano aunque el usuario no haya iniciado sesión gráfica todavía. Para deshabilitarlo:
+
+```bash
+podman-utils disable mi-api
+```
+
+### Detener o reiniciar
+
+```bash
+# Detener todos los contenedores del proyecto
 podman-utils stop mi-api
-```
 
-### Reiniciar
-
-```bash
+# Reiniciar
 podman-utils restart mi-api
 ```
 
-### Eliminar proyecto (datos incluidos)
+### Destruir proyecto (Limpieza total)
 
 ```bash
 podman-utils destroy mi-api
 ```
 
----
-
-## Templates
-
-### python-postgres
-
-| Servicio | Puerto | Descripcion |
-|----------|--------|-------------|
-| PostgreSQL | 5432 | Base de datos |
-| Backend Python | 8000 | API con uvicorn + hot-reload |
-
-**Ideal para:** APIs REST con FastAPI, Flask o Django + PostgreSQL.
-
-### python-postgres-redis
-
-| Servicio | Puerto | Descripcion |
-|----------|--------|-------------|
-| PostgreSQL | 5432 | Base de datos |
-| Redis | 6379 | Cache, Celery, sesiones |
-| Backend Python | 8000 | API con uvicorn + hot-reload |
-
-**Ideal para:** APIs con tareas en segundo plano (Celery), cache, rate limiting.
-
-### fullstack
-
-| Servicio | Puerto | Descripcion |
-|----------|--------|-------------|
-| Traefik | 80, 443, 8080 | Proxy inverso + dashboard |
-| Keycloak | 8083 | Auth OAuth2/OIDC |
-| PostgreSQL | 5432 | Base de datos |
-| Backend Python | 8000 | API |
-| Frontend (Node) | 3000 | Frontend dev server |
-
-**Rutas con Traefik:**
-- `api.mi-app.localhost` -> Backend
-- `app.mi-app.localhost` -> Frontend
-- `auth.mi-app.localhost` -> Keycloak
-- `:8080` -> Dashboard de Traefik
-
-**Ideal para:** Aplicaciones completas con autenticacion OAuth (Google, Microsoft, GitHub).
+Detiene los servicios, desenlaza los Quadlets, elimina los contenedores, volúmenes de datos, red y el directorio del proyecto.
 
 ---
 
-## Servicios Globales
+## 📦 Plantillas Disponibles
 
-Servicios compartidos entre multiples proyectos.
+### 1. `python-postgres`
+- **PostgreSQL 17**: Base de datos con volumen Quadlet persistente `pg-data`.
+- **Backend Python 3.13 (FastAPI)**: Con `uvicorn --reload` para desarrollo y hot-reload sobre `src/`.
+- **Healthchecks nativos**: Verificación interna mediante la biblioteca estándar de Python y `pg_isready`.
 
-### Instalar
+### 2. `python-postgres-redis`
+- Incluye todo lo anterior más **Redis 7** para colas de tareas asíncronas (Celery/RQ), caché o publicación/suscripción.
+
+### 3. `fullstack`
+- **Traefik v3**: Proxy inverso local que expone los servicios en subdominios virtuales `*.localhost`.
+- **Keycloak 26**: Servidor OIDC con soporte para proveedores OAuth2 (Google, Microsoft, GitHub).
+- **Backend Python 3.13 (FastAPI)**: Disponible en `http://api.mi-app.localhost`.
+- **Frontend Vue 3 (Vite)**: Servidor de desarrollo con hot-reload en `http://app.mi-app.localhost`.
+- **PostgreSQL 17**: Persistencia de datos para la aplicación y Keycloak.
+
+---
+
+## 🌐 Servicios Globales Compartidos
+
+Si prefieres tener un único proxy Traefik o base de datos central para múltiples proyectos:
 
 ```bash
-# Proxy inverso global (un solo Traefik para todos los proyectos)
+# Instalar todos los servicios globales compartidos
+podman-utils install-global all
+
+# O instalar uno específico:
 podman-utils install-global traefik
-
-# PostgreSQL compartido (multi-tenant)
 podman-utils install-global postgres-global
-
-# Redis compartido
 podman-utils install-global redis-global
-
-# Keycloak global (un solo servidor de auth)
 podman-utils install-global keycloak
 ```
 
-### Iniciar/Detener
+Iniciar o gestionar servicios globales directamente con `systemd`:
 
 ```bash
 systemctl --user start traefik.service
-systemctl --user stop postgres-global.service
-```
-
-### Desinstalar
-
-```bash
-podman-utils uninstall-global traefik
+systemctl --user status postgres-global.service
 ```
 
 ---
 
-## Gestion Directa con systemd
+## 📋 Resumen de Comandos de `podman-utils`
 
-Los Quadlets generan servicios systemd automaticamente:
-
-```bash
-# Ver todos los servicios del proyecto
-systemctl --user list-units "mi-api*"
-
-# Iniciar un servicio especifico
-systemctl --user start mi-api-postgres.service
-
-# Habilitar auto-start al boot
-systemctl --user enable mi-api.target
-
-# Ver logs con journalctl
-journalctl --user -u mi-api-backend -f
-journalctl --user -u mi-api-postgres --since "10 minutes ago"
-```
-
----
-
-## Configurar OAuth (Google, Microsoft, GitHub)
-
-### 1. Crear credenciales en el proveedor
-
-**Google:**
-1. Ve a https://console.cloud.google.com/apis/credentials
-2. Crea un proyecto y configura OAuth 2.0
-3. URI de redireccion: `http://auth.mi-app.localhost/auth/realms/master/broker/google/endpoint`
-
-**Microsoft:**
-1. Ve a https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade
-2. Registra una app
-3. URI de redireccion: `http://auth.mi-app.localhost/auth/realms/master/broker/microsoft/endpoint`
-
-**GitHub:**
-1. Ve a https://github.com/settings/developers
-2. Crea un OAuth App
-3. Callback URL: `http://auth.mi-app.localhost/auth/realms/master/broker/github/endpoint`
-
-### 2. Configurar en .env
-
-```bash
-# En projects/mi-app/.env
-GOOGLE_CLIENT_ID=tu-client-id.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=tu-client-secret
-MICROSOFT_CLIENT_ID=tu-client-id
-MICROSOFT_CLIENT_SECRET=tu-client-secret
-GITHUB_CLIENT_ID=tu-client-id
-GITHUB_CLIENT_SECRET=tu-client-secret
-```
-
-### 3. Configurar Identity Providers en Keycloak
-
-1. Abre http://auth.mi-app.localhost/auth/admin/master/console/
-2. Login con admin/admin
-3. Ve a Identity Providers
-4. Anade Google, Microsoft o GitHub con las credenciales del .env
-
----
-
-## Hot Reload (Desarrollo)
-
-Los contenedores de backend y frontend montan el codigo fuente como volumen:
-
-```
-projects/mi-api/
-├── src/              # Tu codigo Python (montado en /app)
-│   └── main.py       # Se recarga automaticamente con uvicorn --reload
-├── frontend/         # Tu codigo frontend (montado en /app)
-│   └── package.json
-└── requirements.txt  # Dependencias Python
-```
-
-Cualquier cambio en `src/` o `frontend/` se refleja automaticamente sin reiniciar el contenedor.
-
----
-
-## Troubleshooting
-
-### Los contenedores no arrancan
-
-```bash
-# Ver logs del servicio
-journalctl --user -u mi-api-backend -e
-
-# Ver logs de Podman
-podman logs mi-api-backend
-
-# Verificar que systemd tiene los archivos
-ls -la ~/.config/containers/systemd/
-```
-
-### Puerto ya en uso
-
-```bash
-# Ver que usa el puerto
-ss -tlnp | grep 5432
-
-# Cambiar el puerto en el archivo .container
-# PublishPort=5433:5432
-
-# Recargar
-podman-utils link mi-api
-podman-utils restart mi-api
-```
-
-### Quadlets no genera servicios
-
-```bash
-# Verificar version de Podman (requiere 4.0+)
-podman --version
-
-# Reinstalar quadlets
-./install/quadlets-setup.sh
-
-# Verificar directorio
-ls ~/.config/containers/systemd/
-```
-
-### Reset completo de un proyecto
-
-```bash
-podman-utils destroy mi-api
-rm -rf projects/mi-api
-rm -f ~/.config/containers/systemd/mi-api*
-systemctl --user daemon-reload
-```
-
----
-
-## Comandos de podman-utils
-
-| Comando | Descripcion |
-|---------|-------------|
-| `create <template> <nombre>` | Crear proyecto desde plantilla |
-| `start <nombre>` | Iniciar proyecto |
-| `stop <nombre>` | Detener proyecto |
-| `restart <nombre>` | Reiniciar proyecto |
-| `logs <nombre> [servicio]` | Ver logs en tiempo real |
-| `status <nombre>` | Ver estado del proyecto |
-| `destroy <nombre>` | Eliminar proyecto (datos incluidos) |
-| `link <nombre>` | Enlazar proyecto a systemd |
-| `unlink <nombre>` | Desenlazar proyecto de systemd |
-| `install-global <servicio>` | Instalar servicio compartido |
-| `uninstall-global <servicio>` | Desinstalar servicio compartido |
-| `list` | Listar proyectos |
-| `list-templates` | Listar plantillas disponibles |
+| Comando | Parámetros | Descripción |
+|---|---|---|
+| `create` | `<template> <nombre>` | Crea un nuevo proyecto y genera sus Quadlets |
+| `start` | `<nombre>` | Inicia el proyecto con `systemd` |
+| `stop` | `<nombre>` | Detiene todos los contenedores del proyecto |
+| `restart` | `<nombre>` | Reinicia el proyecto |
+| `status` | `<nombre>` | Muestra el estado del target, servicios y Podman |
+| `logs` | `<nombre> [servicio]` | Muestra logs en tiempo real vía `journalctl` |
+| `exec` | `<nombre> <servicio> [cmd]` | Abre una shell o ejecuta comandos en el contenedor |
+| `ps` | `[nombre]` | Lista contenedores activos formateados |
+| `enable` | `<nombre>` | Habilita el arranque automático en el boot |
+| `disable` | `<nombre>` | Deshabilita el arranque automático en el boot |
+| `env` | `<nombre>` | Abre el `.env` del proyecto en el editor |
+| `validate` | `<nombre>` | Valida la sintaxis y estado de los archivos Quadlet |
+| `destroy` | `<nombre>` | Elimina completamente el proyecto y sus volúmenes |
+| `link` | `<nombre>` | Enlaza los archivos Quadlet a `~/.config/containers/systemd` |
+| `unlink` | `<nombre>` | Desenlaza los archivos Quadlet de `systemd` |
+| `install-global` | `<servicio\|all>` | Instala servicios compartidos en `systemd` |
+| `uninstall-global` | `<servicio>` | Desinstala un servicio compartido |
+| `list` | | Lista todos los proyectos locales y su estado |
+| `list-templates` | | Lista las plantillas disponibles |

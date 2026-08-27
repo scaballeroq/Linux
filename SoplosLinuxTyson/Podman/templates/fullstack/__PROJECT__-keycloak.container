@@ -1,15 +1,16 @@
 [Unit]
 Description=Keycloak Auth para __PROJECT__
-After=__PROJECT__.network __PROJECT__-postgres.service
+PartOf=__PROJECT__.target
+After=__PROJECT__-network.service __PROJECT__-postgres.service
 Requires=__PROJECT__-postgres.service
 
 [Container]
 ContainerName=__PROJECT__-keycloak
-Image=quay.io/keycloak/keycloak:26
+Image=quay.io/keycloak/keycloak:26.1
 EnvironmentFile=__PROJECT_DIR__/.env
 Network=__PROJECT__.network
 PublishPort=8083:8080
-Command=start-dev --http-relative-path=/auth
+Exec=start-dev
 Label=traefik.enable=true
 Label=traefik.http.routers.__PROJECT__-keycloak.rule=Host(`auth.__PROJECT__.localhost`)
 Label=traefik.http.routers.__PROJECT__-keycloak.entrypoints=web

@@ -1,24 +1,35 @@
 #!/bin/bash
 # =============================================================================
-# ALIASES PARA YT-DLP (yt-dlp_aliases.sh) - Adaptado para Ubuntu
+# ALIASES PARA YT-DLP (yt-dlp_aliases.sh) - Soplos Linux Tyson
 # =============================================================================
 
-# Motor de JS para yt-dlp (Soportado a partir de la versión 2025.11.12)
+# Motor de JS para yt-dlp (YouTube EJS / JS challenge solver)
 JS_RUNTIME=""
 if command -v yt-dlp &> /dev/null; then
-    YT_VERSION=$(yt-dlp --version | head -n1)
-    # Comprobación de versión (Formato YYYY.MM.DD)
-    if [[ "$YT_VERSION" > "2025.11.11" ]]; then
-        if command -v deno &> /dev/null; then
-            JS_RUNTIME="--js-runtimes deno"
-        elif command -v mise &> /dev/null && mise where deno &>/dev/null; then
-            JS_RUNTIME="--js-runtimes deno:$(mise where deno)/bin/deno"
-        fi
+    if command -v deno &> /dev/null; then
+        JS_RUNTIME="--js-runtimes deno"
+    elif command -v node &> /dev/null; then
+        JS_RUNTIME="--js-runtimes node"
+    elif command -v quickjs &> /dev/null; then
+        JS_RUNTIME="--js-runtimes quickjs"
+    elif command -v mise &> /dev/null && mise where deno &>/dev/null; then
+        JS_RUNTIME="--js-runtimes deno:$(mise where deno)/bin/deno"
+    elif command -v mise &> /dev/null && mise where node &>/dev/null; then
+        JS_RUNTIME="--js-runtimes node:$(mise where node)/bin/node"
     fi
 fi
 
-# Navegador predeterminado para cookies (Ubuntu suele usar firefox o chrome)
+# Navegador para extracción de cookies
 YT_BROWSER="firefox"
+if ! command -v firefox &> /dev/null; then
+    if command -v google-chrome &> /dev/null; then
+        YT_BROWSER="chrome"
+    elif command -v chromium &> /dev/null; then
+        YT_BROWSER="chromium"
+    elif command -v brave-browser &> /dev/null; then
+        YT_BROWSER="brave"
+    fi
+fi
 
 # 1. DESCARGA DE VÍDEO
 # Descargar el mejor vídeo (hasta 1080p)
@@ -39,4 +50,5 @@ alias ytlista-audio="yt-dlp -f 'ba' -x --audio-format mp3 --audio-quality 0 --co
 # Descarga video con subtítulos (Optimizado para español)
 alias ytdl-subs="yt-dlp -f 'bestvideo[height<=1080]+bestaudio/best[height<=1080]' --merge-output-format mp4 $JS_RUNTIME --impersonate chrome --write-auto-subs --embed-subs --sub-langs 'es.*' --convert-subs srt --cookies-from-browser $YT_BROWSER --sleep-subtitles 15 --rm-cache-dir"
 
-echo "✅ Aliases de yt-dlp cargados ($YT_BROWSER, $JS_RUNTIME)"
+echo "✅ Aliases de yt-dlp cargados (Navegador: $YT_BROWSER${JS_RUNTIME:+, JS: $JS_RUNTIME})"
+

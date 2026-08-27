@@ -1,5 +1,5 @@
 #!/bin/bash
-# fonts.sh - Instalación de Fuentes de Desarrollo (Optimizado) para Debian
+# fonts.sh - Instalación de Fuentes de Desarrollo (Nerd Fonts) para Soplos Linux Tyson
 
 set -euo pipefail
 
@@ -27,11 +27,11 @@ for font in "${FONTS[@]}"; do
     fi
 done
 
-# Eliminar archivos innecesarios (txt, md) que a veces vienen en los zips
-find "$FONT_DIR" -name "*.txt" -delete
-find "$FONT_DIR" -name "*.md" -delete
+# Eliminar archivos innecesarios (txt, md)
+find "$FONT_DIR" -name "*.txt" -delete 2>/dev/null || true
+find "$FONT_DIR" -name "*.md" -delete 2>/dev/null || true
 
 echo "ℹ️ Actualizando caché de fuentes..."
 fc-cache -f
 
-echo "✅ Fuentes instaladas y actualizadas correctamente."
+echo "✅ Fuentes instaladas y actualizadas correctamente en Soplos Linux Tyson."

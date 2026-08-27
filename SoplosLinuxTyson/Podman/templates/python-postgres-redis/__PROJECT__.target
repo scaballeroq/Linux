@@ -1,6 +1,7 @@
 [Unit]
 Description=Proyecto __PROJECT__
-After=__PROJECT__.network
+Wants=__PROJECT__-postgres.service __PROJECT__-redis.service __PROJECT__-backend.service
+After=__PROJECT__-network.service
 
 [Install]
 WantedBy=default.target

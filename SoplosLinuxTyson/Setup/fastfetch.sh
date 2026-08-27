@@ -1,10 +1,9 @@
 #!/bin/bash
-# fastfetch.sh - Instalación y configuración de Fastfetch (Optimizado) para Debian
+# fastfetch.sh - Instalación y configuración de Fastfetch para Soplos Linux Tyson (Debian Testing)
 
 set -euo pipefail
 
-echo "ℹ️ Instalando Fastfetch..."
-# Fastfetch está disponible en los repositorios oficiales de Debian 13 Trixie
+echo "ℹ️ Instalando Fastfetch en Soplos Linux Tyson..."
 sudo apt update
 sudo apt install -y fastfetch
 
@@ -21,4 +20,4 @@ elif [ -f "config.jsonc" ]; then
 fi
 
 echo "✅ Fastfetch instalado y configurado."
-fastfetch
+fastfetch || true

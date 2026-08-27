@@ -1,17 +1,12 @@
 #!/usr/bin/env bash
-#
-# konsole.sh - Configuración e Instalación de Konsole para Debian Testing + KDE Plasma 6
-# 
-# Este script instala y optimiza Konsole, el emulador de terminal nativo de KDE Plasma,
-# creando un perfil moderno con tema oscuro, transparencia (85%), efecto blur, tipografía Nerd Font
-# y sin barra de scroll.
-# 
-# También configura el atajo global (Ctrl+Alt+T) en KDE Plasma y la integración con Dolphin.
+# konsole.sh - Configuración e Instalación de Konsole para Soplos Linux Tyson (Debian Testing + KDE Plasma 6)
+# Crea un perfil moderno con tema oscuro, transparencia (85%), efecto blur, tipografía Nerd Font
+# y sin barra de scroll, con atajo global (Ctrl+Alt+T) e integración en Dolphin (F4).
 
 set -euo pipefail
 
 echo "==========================================================="
-echo "🚀 Iniciando configuración estética y funcional de Konsole en Debian + KDE Plasma"
+echo "🚀 Iniciando configuración estética y funcional de Konsole en Soplos Linux Tyson"
 echo "==========================================================="
 
 # 1. Actualizar e instalar paquetes necesarios
@@ -30,9 +25,9 @@ mkdir -p "$HOME/.local/share/konsole"
 mkdir -p "$HOME/.config"
 
 # 3. Crear esquema de color con Transparencia y Blur
-cat <<'EOF' > "$HOME/.local/share/konsole/KDEDebianDark.colorscheme"
+cat <<'EOF' > "$HOME/.local/share/konsole/SoplosLinuxDark.colorscheme"
 [General]
-Description=KDEDebian Dark Translucent
+Description=SoplosLinux Dark Translucent
 Opacity=0.85
 Blur=true
 Wallpaper=
@@ -104,15 +99,14 @@ Color=177,186,196
 Color=240,246,252
 EOF
 
-# 4. Crear Perfil KDEDebian.profile
-cat <<'EOF' > "$HOME/.local/share/konsole/KDEDebian.profile"
+# 4. Crear Perfil SoplosLinux.profile
+cat <<'EOF' > "$HOME/.local/share/konsole/SoplosLinux.profile"
 [General]
-Name=KDEDebian
+Name=SoplosLinux
 Parent=FALLBACK/
-Command=/bin/bash
 
 [Appearance]
-ColorScheme=KDEDebianDark
+ColorScheme=SoplosLinuxDark
 Font=JetBrainsMono Nerd Font,11,-1,5,50,0,0,0,0,0
 
 [Scrolling]
@@ -124,7 +118,11 @@ HistorySize=10000
 BlinkingCursorEnabled=true
 EOF
 
-# 5. Establecer KDEDebian como perfil por defecto en konsolerc
+# Compatibilidad
+cp -f "$HOME/.local/share/konsole/SoplosLinux.profile" "$HOME/.local/share/konsole/KDEDebian.profile" 2>/dev/null || true
+cp -f "$HOME/.local/share/konsole/SoplosLinuxDark.colorscheme" "$HOME/.local/share/konsole/KDEDebianDark.colorscheme" 2>/dev/null || true
+
+# 5. Establecer SoplosLinux como perfil por defecto en konsolerc
 python3 - <<'PYEOF'
 import configparser
 import os
@@ -136,11 +134,11 @@ if os.path.exists(cfg_path):
 
 if not config.has_section("Desktop Entry"):
     config.add_section("Desktop Entry")
-config.set("Desktop Entry", "DefaultProfile", "KDEDebian.profile")
+config.set("Desktop Entry", "DefaultProfile", "SoplosLinux.profile")
 
 if not config.has_section("Favorite Profiles"):
     config.add_section("Favorite Profiles")
-config.set("Favorite Profiles", "Favorites", "KDEDebian.profile")
+config.set("Favorite Profiles", "Favorites", "SoplosLinux.profile")
 
 with open(cfg_path, 'w', encoding='utf-8') as f:
     config.write(f, space_around_delimiters=False)
@@ -193,7 +191,7 @@ with open(cfg_path, 'w', encoding='utf-8') as f:
 PYEOF
 
 echo "==========================================================="
-echo "✅ ¡Konsole configurado con éxito!"
+echo "✅ ¡Konsole configurado con éxito en Soplos Linux Tyson!"
 echo "✨ Características aplicadas:"
 echo "   - Perfil oscuro translúcido con blur (85% opacidad)"
 echo "   - Tipografía JetBrainsMono Nerd Font"

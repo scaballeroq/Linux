@@ -1,9 +1,9 @@
 #!/bin/bash
-# hp-printer-setup.sh - Instalación y configuración de impresora HP LaserJet Pro M15w por USB en Debian Testing + KDE Plasma
+# hp-printer-setup.sh - Instalación y configuración de impresora HP LaserJet Pro M15w por USB en Soplos Linux Tyson (Debian Testing + KDE Plasma 6)
 
 set -euo pipefail
 
-echo "🚀 Iniciando configuración de impresora HP LaserJet Pro M15w (USB) en Debian Testing + KDE Plasma..."
+echo "🚀 Iniciando configuración de impresora HP LaserJet Pro M15w (USB) en Soplos Linux Tyson..."
 
 # 1. Identificar usuario principal
 TARGET_USER="${SUDO_USER:-$USER}"
@@ -23,8 +23,8 @@ sudo apt install -y \
     usbutils \
     wget 2>/dev/null || sudo apt install -y cups cups-client cups-filters hplip hplip-gui printer-driver-hpcups system-config-printer usbutils wget || true
 
-# 3. Habilitar e iniciar servicio CUPS
-echo "ℹ️ Habilitando e iniciando el servicio CUPS..."
+# 3. Habilitar e iniciar servicio CUPS con systemd
+echo "ℹ️ Habilitando e iniciando el servicio CUPS con systemd..."
 sudo systemctl enable --now cups.service
 
 # 4. Añadir usuario a los grupos de impresión lp y lpadmin
@@ -84,4 +84,4 @@ echo "   2) Puedes administrar impresoras desde KDE en 'Preferencias del Sistema
 echo "   3) Panel Web de CUPS disponible en: http://localhost:631"
 echo "   4) Para probar la impresión, puedes enviar una página de prueba con: hp-testpage"
 echo ""
-echo "✅ Configuración de HP LaserJet Pro M15w completada."
+echo "✅ Configuración de HP LaserJet Pro M15w completada en Soplos Linux Tyson."

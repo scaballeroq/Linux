@@ -1,11 +1,11 @@
 #!/bin/bash
-# kde-settings.sh - Personalización de KDE Plasma vía CLI (kwriteconfig / plasma-apply) para Debian Testing
+# kde-settings.sh - Personalización de KDE Plasma 6 vía CLI para Soplos Linux Tyson (Debian Testing)
 
 set -euo pipefail
 
-echo "🚀 Iniciando personalización de KDE Plasma 6 en Debian..."
+echo "🚀 Iniciando personalización de KDE Plasma 6 en Soplos Linux Tyson..."
 
-# Determinar ejecutable de configuración de KDE (kwriteconfig6 / kwriteconfig5 o fallback python)
+# Determinar ejecutable de configuración de KDE (kwriteconfig6 prioritario en KDE Plasma 6)
 KWRITECFG=""
 if command -v kwriteconfig6 &>/dev/null; then
     KWRITECFG="kwriteconfig6"
@@ -66,7 +66,7 @@ set_kconfig "powermanagementprofilesrc" "AC" "icon" "battery-charging"
 set_kconfig "powermanagementprofilesrc" "Battery" "icon" "battery-060"
 
 # 5. Tema oscuro completo en todo KDE Plasma (Brisa Oscuro / Breeze Dark)
-echo "ℹ️ Aplicando tema oscuro completo en KDE Plasma (Brisa Oscuro)..."
+echo "ℹ️ Aplicando tema oscuro completo en KDE Plasma 6 (Brisa Oscuro)..."
 
 # Aplicar tema global (Look and Feel)
 if command -v plasma-apply-lookandfeel &>/dev/null; then
@@ -138,21 +138,18 @@ set_kconfig "kwinrc" "Windows" "FocusStealingPreventionLevel" "1"
 # 7. Recargar configuración si Plasma está corriendo
 if pgrep -x "plasmashell" >/dev/null; then
     echo "🔄 Aplicando cambios a Plasma y KWin..."
-    qdbus org.kde.KWin /KWin reconfigure 2>/dev/null || true
-    qdbus org.kde.KWin /ColorCorrect org.kde.kwin.ColorCorrect.setNightColorActive false 2>/dev/null || true
-    killall plasmashell && kstart5 plasmashell 2>/dev/null || kstart plasmashell 2>/dev/null || systemctl --user restart plasma-plasmashell.service 2>/dev/null || true
-    echo "⚠️ Plasma se reiniciará en unos segundos..."
+    if command -v qdbus6 &>/dev/null; then
+        qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true
+        qdbus6 org.kde.KWin /ColorCorrect org.kde.kwin.ColorCorrect.setNightColorActive false 2>/dev/null || true
+    elif command -v qdbus &>/dev/null; then
+        qdbus org.kde.KWin /KWin reconfigure 2>/dev/null || true
+        qdbus org.kde.KWin /ColorCorrect org.kde.kwin.ColorCorrect.setNightColorActive false 2>/dev/null || true
+    fi
+    systemctl --user restart plasma-plasmashell.service 2>/dev/null || killall plasmashell && kstart6 plasmashell 2>/dev/null || true
 fi
 
 echo "================================================================="
-echo "✅ Personalización de KDE Plasma completada correctamente."
+echo "✅ Personalización de KDE Plasma 6 completada en Soplos Linux Tyson."
 echo "🌙 Modo Noche (Luz Nocturna): Desactivado"
-echo "🌙 Tema oscuro (Brisa Oscuro / Breeze Dark) aplicado en:"
-echo "   - Tema Global: org.kde.breezedark.desktop"
-echo "   - Esquema de color: BreezeDark"
-echo "   - Tema de escritorio Plasma: breeze-dark"
-echo "   - Decoración de ventanas: Breeze"
-echo "   - Iconos: breeze-dark"
-echo "   - Cursores: breeze_cursors"
-echo "   - Tema GTK: Breeze-Dark (prefer-dark-theme=1)"
+echo "🌙 Tema oscuro (Brisa Oscuro / Breeze Dark) aplicado."
 echo "================================================================="

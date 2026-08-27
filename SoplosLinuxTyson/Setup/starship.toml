@@ -1,4 +1,4 @@
-# 🚀 Starship Config: DevDebian (Optimized for Ubuntu + Nerd Fonts)
+# 🚀 Starship Config: Soplos Linux Tyson (Debian Testing + KDE Plasma 6 + Nerd Fonts)
 
 # Formato general del prompt (Una sola línea, limpia y con alto contraste)
 format = """
@@ -23,13 +23,15 @@ add_newline = true
 success_symbol = "[❯](bold cyan)"
 error_symbol = "[✖](bold red)"
 
-# Icono del SO (Muestra el logo de Debian)
+# Icono del SO (Muestra el logo de Debian / Soplos Linux)
 [os]
 format = "[$symbol]($style) "
-style = "bold orange"
+style = "bold red"
 disabled = false
 
 [os.symbols]
+Debian = " "
+Linux = "🐧 "
 Ubuntu = " "
 
 # Configuración del Directorio
@@ -83,7 +85,7 @@ symbol = "󰪮 "
 style = "bold blue"
 format = "via [$symbol($version)]($style) "
 
-# Docker
+# Docker / Podman
 [docker_context]
 symbol = " "
 style = "bold blue"

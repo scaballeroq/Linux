@@ -1,19 +1,10 @@
 #!/usr/bin/env bash
-#
-# kitty.sh - Instalación y Configuración Estética de Kitty Terminal para Debian Testing + KDE Plasma
-#
-# Características configuradas:
-# - Esquema de color oscuro moderno (Catppuccin Mocha / Tokyo Night dark palette)
-# - Opacidad/Transparencia (85%) con soporte para desenfoque (blur)
-# - Integración con tipografía JetBrainsMono Nerd Font (ligaduras y símbolos)
-# - Barra de pestañas estilo Powerline inclinada
-# - Padding interno elegante y cursor tipo barra con animación
-# - Control dinámico de opacidad con atajos de teclado
+# kitty.sh - Instalación y Configuración Estética de Kitty Terminal para Soplos Linux Tyson (Debian Testing + KDE Plasma 6)
 
 set -euo pipefail
 
 echo "==========================================================="
-echo "🐱 Iniciando instalación y configuración estética de Kitty"
+echo "🐱 Iniciando instalación y configuración estética de Kitty en Soplos Linux Tyson"
 echo "==========================================================="
 
 # 1. Instalar Kitty y dependencias
@@ -29,7 +20,7 @@ mkdir -p "$HOME/.config/kitty"
 echo "🎨 [3/3] Configurando tema oscuro, opacidad (85%) y efectos visuales..."
 cat <<'EOF' > "$HOME/.config/kitty/kitty.conf"
 # =============================================================================
-# KITTY CONFIGURATION - DEBIAN TESTING + KDE PLASMA
+# KITTY CONFIGURATION - SOPLOS LINUX TYSON (DEBIAN TESTING + KDE PLASMA 6)
 # =============================================================================
 
 # --- Fuentes & Tipografía ---
@@ -141,10 +132,10 @@ map ctrl+shift+t new_tab_with_cwd
 map ctrl+shift+enter new_window_with_cwd
 EOF
 
-# 4. Integración con el explorador de archivos Dolphin (Menú contextual "Abrir en Kitty")
-echo "📁 [4/4] Añadiendo opción 'Abrir en Kitty' en el menú contextual de Dolphin..."
+# 4. Integración con el explorador de archivos Dolphin (Menú contextual "Abrir en Kitty" para KDE Plasma 6)
+echo "📁 [4/4] Añadiendo opción 'Abrir en Kitty' en el menú contextual de Dolphin (KDE Plasma 6)..."
 mkdir -p "$HOME/.local/share/kio/servicemenus"
-mkdir -p "$HOME/.local/share/kservices5/ServiceMenus"
+mkdir -p "$HOME/.local/share/kservices6/ServiceMenus"
 
 cat <<'EOF' > "$HOME/.local/share/kio/servicemenus/open_in_kitty.desktop"
 [Desktop Entry]
@@ -163,18 +154,15 @@ Icon=kitty
 Exec=kitty --directory "%f"
 EOF
 
-# Compatibilidad adicional y permisos de ejecución requeridos por KDE
-cp -f "$HOME/.local/share/kio/servicemenus/open_in_kitty.desktop" "$HOME/.local/share/kservices5/ServiceMenus/open_in_kitty.desktop" 2>/dev/null || true
+# Compatibilidad y permisos de ejecución
+cp -f "$HOME/.local/share/kio/servicemenus/open_in_kitty.desktop" "$HOME/.local/share/kservices6/ServiceMenus/open_in_kitty.desktop" 2>/dev/null || true
 chmod +x "$HOME/.local/share/kio/servicemenus/open_in_kitty.desktop" 2>/dev/null || true
-chmod +x "$HOME/.local/share/kservices5/ServiceMenus/open_in_kitty.desktop" 2>/dev/null || true
-
 
 echo "==========================================================="
-echo "✅ Kitty se ha instalado y configurado correctamente."
+echo "✅ Kitty se ha instalado y configurado correctamente en Soplos Linux Tyson."
 echo "💡 Características añadidas:"
 echo "   - Menú contextual en Dolphin: 'Abrir en Kitty' al hacer clic derecho en cualquier carpeta o fondo."
-echo "   - Atajos de opacidad al vuelo: Ctrl+Shift+A seguido de M (+5%), L (-5%) o 1 (Opaco 100%)"
+echo "   - Atajos de opacidad: Ctrl+Shift+A seguido de M (+5%), L (-5%) o 1 (Opaco 100%)"
 echo "   - Nueva pestaña en mismo directorio: Ctrl+Shift+T"
 echo "   - Nueva ventana dividida: Ctrl+Shift+Enter"
 echo "==========================================================="
-

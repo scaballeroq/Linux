@@ -1,12 +1,12 @@
 # =============================================================================
-# ARCHIVO DE ALIASES PARA RCLONE (rclone_aliases.sh)
+# ARCHIVO DE ALIASES PARA RCLONE (rclone_aliases.sh) - Soplos Linux Tyson
 # =============================================================================
 # Este archivo contiene atajos para comandos de rclone, facilitando la
 # sincronización y copia con servicios en la nube como Google Drive y OneDrive.
 
 # 1. Asegurar que el directorio de logs existe
 RCLONE_LOG_DIR="$HOME/Workspace/rclone_logs"
-mkdir -p "$RCLONE_LOG_DIR"
+mkdir -p "$RCLONE_LOG_DIR" 2>/dev/null || true
 
 # 2. Opciones comunes optimizadas para Google Drive
 # - tpslimit 10: Evita errores de límite de tasa (Rate Limit / User Rate Limit Exceeded) de la API de Google.

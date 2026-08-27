@@ -1,29 +1,13 @@
-# KDEDebian Environment Configuration Justfile
-# (Debian Testing + KDE Plasma 6)
+# Soplos Linux Tyson Environment Configuration Justfile
+# (Debian Testing + KDE Plasma 6 + Podman + dracut + GRUB + systemd)
 
-# Instala todo el entorno (Post-install, Workspace, Laptop, Fingerprint, Tuning, Widgets, Screensaver, Shell, Virtualización, Mise, Cockpit, KDE, Konsole, etc.)
-setup-all: post-install workspace laptop fingerprint tuning widgets screensaver shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch kde konsole firefox
-    echo "🚀 Entorno completo de KDEDebian (Debian Testing + KDE Plasma 6) configurado. Por favor, reinicia el sistema."
+# Instala y configura todo el entorno para Soplos Linux Tyson
+setup-all: laptop fingerprint tuning widgets shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch kde konsole firefox
+    echo "🚀 Entorno completo de Soplos Linux Tyson (KDE Plasma 6) configurado. Por favor, reinicia la sesión o el sistema."
 
 # =============================================================================
 # CONFIGURACIÓN BASE DEL SISTEMA
 # =============================================================================
-
-# Configuración base post-instalación (Repositorios contrib, non-free, firmware, ZRAM, PipeWire, KDE Suite)
-post-install:
-    ./Setup/post-install.sh
-
-# Automontaje permanente de la partición Workspace (/home/caballero/Workspace) en /etc/fstab
-workspace:
-    ./Setup/mount-workspace.sh
-
-# Compilador de Kernel Linux optimizado para x86_64-v3 y ajustado a tu portátil
-build-kernel:
-    ./Setup/build-custom-kernel.sh
-
-# Actualización del último Kernel Linux oficial y Firmware desde repositorios de Debian Testing
-kernel-update:
-    ./Setup/install-backports-kernel.sh
 
 # Optimización para portátiles de desarrollo (Touchpad, Batería, Bluetooth, HiDPI, VRR)
 laptop:
@@ -37,7 +21,7 @@ fingerprint:
 printer:
     ./Setup/hp-printer-setup.sh
 
-# Optimizaciones avanzadas de Debian Testing (Sysctl, Distrobox)
+# Optimizaciones avanzadas del sistema (Sysctl, Distrobox)
 tuning:
     ./Setup/debian-tuning.sh
 
@@ -48,27 +32,19 @@ widgets:
 # Alias para widgets
 kde-addons: widgets
 
-# Configuración de bloqueo de pantalla con KScreenLocker y salvapantallas
-screensaver:
-    ./Setup/screensaver-setup.sh
-
-# Utilidades de terminal y prompt (eza, bat, fzf, starship)
+# Utilidades de terminal y prompt Starship para Bash y Zsh
 shell:
     ./Setup/shell.sh
 
-# Seguridad básica (UFW firewall)
+# Seguridad y Firewall UFW para portátil de desarrollo con Podman
 security:
     ./Setup/seguridad.sh
-
-# Seguridad avanzada (DNS-over-TLS con systemd-resolved)
-security-dot:
-    ./Setup/seguridad-dot.sh
 
 # Fuentes de desarrollo (Nerd Fonts: JetBrainsMono, FiraCode, CascadiaCode...)
 fonts:
     ./Setup/fonts.sh
 
-# Personalización de KDE Plasma 6 (kwriteconfig, temas, luz nocturna, botones)
+# Personalización de KDE Plasma 6 (kwriteconfig6, temas, luz nocturna, botones)
 kde:
     ./Setup/kde-settings.sh
 
@@ -91,7 +67,6 @@ konsole:
 # Terminal Kitty acelerada por GPU con tema oscuro y opacidad/blur
 kitty:
     ./Setup/kitty.sh
-
 
 # Multimedia (yt-dlp, ffmpeg)
 yt-dlp:
@@ -131,20 +106,24 @@ mise:
 # =============================================================================
 
 # Todos los lenguajes
-languages: node python rust dotnet java
+languages: node python rust go dotnet java
     echo "✅ Lenguajes instalados."
 
-# Node.js LTS
+# Node.js LTS (npm, pnpm, yarn)
 node:
     ./ProgrammingLanguages/nodejs.sh
 
-# Python
+# Python (pip, uv)
 python:
     ./ProgrammingLanguages/python.sh
 
-# Rust
+# Rust (rustup, clippy, rustfmt, cargo-binstall)
 rust:
     ./ProgrammingLanguages/rust.sh
+
+# Go (Golang)
+go:
+    ./ProgrammingLanguages/go.sh
 
 # .NET SDK
 dotnet:

@@ -6,17 +6,21 @@
 mise:
     ./mise.sh
 
-# Node.js LTS
+# Node.js LTS (npm, pnpm, yarn)
 node:
     ./nodejs.sh
 
-# Python
+# Python (pip, uv)
 python:
     ./python.sh
 
-# Rust
+# Rust (rustup, clippy, rustfmt, cargo-binstall)
 rust:
     ./rust.sh
+
+# Go (Golang)
+go:
+    ./go.sh
 
 # .NET SDK
 dotnet:
@@ -34,6 +38,6 @@ angular:
 gemini:
     ./gemini.sh
 
-# Todos los lenguajes
-all: mise node python rust dotnet java angular gemini
-    echo "✅ Todos los lenguajes instalados."
+# Todos los lenguajes y herramientas
+all: mise node python rust go dotnet java angular gemini
+    echo "✅ Todos los lenguajes y herramientas instalados."

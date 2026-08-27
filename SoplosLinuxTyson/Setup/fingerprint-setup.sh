@@ -1,17 +1,17 @@
 #!/bin/bash
-# fingerprint-setup.sh - Configuración de autenticación por huella dactilar (fprintd) en Debian Testing (KDE Plasma, SDDM, Sudo & PolKit)
+# fingerprint-setup.sh - Configuración de autenticación por huella dactilar (fprintd) en Soplos Linux Tyson (KDE Plasma 6, SDDM, Sudo & PolKit)
 
 set -euo pipefail
 
-echo "🚀 Configurando desbloqueo y autenticación admin por huella dactilar en Debian + KDE Plasma..."
+echo "🚀 Configurando desbloqueo y autenticación admin por huella dactilar en Soplos Linux Tyson..."
 
 # 1. Instalación de paquetes necesarios
 echo "ℹ️ Instalando fprintd, libpam-fprintd e imagemagick vía APT..."
 sudo apt update
 sudo apt install -y fprintd libpam-fprintd imagemagick
 
-# 2. Habilitar servicio fprintd
-echo "ℹ️ Habilitando e iniciando servicio fprintd..."
+# 2. Habilitar servicio fprintd con systemd
+echo "ℹ️ Habilitando e iniciando servicio fprintd vía systemd..."
 sudo systemctl enable --now fprintd.service || true
 
 # 3. Configuración de PAM para sudo (autenticación admin en consola)
@@ -41,7 +41,7 @@ if [ -f /etc/pam.d/kde ]; then
     fi
 fi
 
-# 6. Configuración de PAM para PolKit (autenticación admin gráfica en KDE)
+# 6. Configuración de PAM para PolKit (autenticación admin gráfica en KDE Plasma)
 if [ -f /etc/pam.d/polkit-1 ]; then
     echo "ℹ️ Configurando PAM para autenticación gráfica de administración (/etc/pam.d/polkit-1)..."
     if ! grep -q "pam_fprintd.so" /etc/pam.d/polkit-1; then
@@ -79,4 +79,4 @@ if [[ "${REGISTER_NOW:-n}" =~ ^[Ss]$ ]]; then
     fprintd-enroll "${SUDO_USER:-$USER}" || echo "⚠️ El registro por consola no finalizó. Puedes probar desde Preferencias del Sistema en KDE."
 fi
 
-echo "✅ Configuración de huella dactilar completada en Debian + KDE Plasma."
+echo "✅ Configuración de huella dactilar completada en Soplos Linux Tyson."
