@@ -1,5 +1,5 @@
-#!/bin/bash
-# nodejs.sh - Instalación de Node.js LTS, npm, pnpm y yarn vía Mise
+#!/usr/bin/env bash
+# nodejs.sh - Instalación de la versión LTS de Node.js, npm, pnpm y yarn vía Mise
 
 set -euo pipefail
 
@@ -12,11 +12,11 @@ echo "ℹ️ Instalando dependencias de compilación para Node.js (necesarias pa
 sudo apt update
 sudo apt install -y build-essential curl python3 g++ make
 
-echo "ℹ️ Instalando Node.js LTS (22)..."
-mise use --global node@22
+echo "ℹ️ Instalando la última versión LTS de Node.js vía Mise..."
+mise use --global node@lts
 
 echo "ℹ️ Instalando gestores de paquetes modernos (pnpm y yarn) vía Mise..."
 mise use --global pnpm@latest yarn@latest
 mise reshim
 
-echo "✅ Node.js, npm, pnpm y yarn configurados correctamente con Mise."
+echo "✅ Node.js (LTS), npm, pnpm y yarn configurados correctamente con Mise."

@@ -1,5 +1,5 @@
-#!/bin/bash
-# python.sh - Instalación de Python 3.13 y uv vía Mise para Debian Testing / Trixie
+#!/usr/bin/env bash
+# python.sh - Instalación de la última versión estable de Python y uv vía Mise para Soplos Linux Tyson
 
 set -euo pipefail
 
@@ -15,14 +15,14 @@ sudo apt install -y build-essential libssl-dev zlib1g-dev \
     libncurses-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev \
     libffi-dev liblzma-dev
 
-echo "ℹ️ Instalando Python 3.13 vía Mise..."
-mise use --global python@3.13
+echo "ℹ️ Instalando la última versión estable de Python vía Mise..."
+mise use --global python@latest
 
 echo "ℹ️ Actualizando pip, setuptools y wheel..."
-mise exec python@3.13 -- python -m pip install --upgrade pip setuptools wheel
+mise exec python@latest -- python -m pip install --upgrade pip setuptools wheel
 
 echo "ℹ️ Instalando uv (gestor ultrarrápido de paquetes y entornos Python) vía Mise..."
 mise use --global uv@latest
 mise reshim
 
-echo "✅ Python 3.13, pip y uv configurados correctamente."
+echo "✅ Python (última versión estable), pip y uv configurados correctamente con Mise."
