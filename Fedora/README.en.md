@@ -42,7 +42,7 @@ Operating system setup, GNOME personalization, and security hardening:
 - **`shell.sh`**: Modern CLI utilities (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`) and Starship prompt.
 - **`screensaver-setup.sh`**: 3D/Matrix screensaver upon locking GNOME session.
 - **`plymouth-setup.sh`**: Visual boot splash screen installer and theme selector (Plymouth: BGRT UEFI OEM, Fedora 44 Ceratopsian, Spinner, and live desktop preview).
-- **`yt-dlp-setup.sh`**: Multimedia dependencies (yt-dlp, ffmpeg, and Deno JS engine via mise).
+- **`yt-dlp-setup.sh`**: Optimized multimedia stack (yt-dlp, FFmpeg, AtomicParsley, aria2 multi-thread downloader, Firefox/KWallet cookie decryption, and Deno JS engine).
 
 ### 🐳 [Podman](./Podman/)
 Rootless container ecosystem and Systemd Quadlets:

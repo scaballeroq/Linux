@@ -42,7 +42,7 @@ Scripts de configuración del sistema operativo, personalización de GNOME y end
 - **`shell.sh`**: Herramientas modernas de terminal (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd-find`, `duf`, `dust`) y Starship prompt.
 - **`screensaver-setup.sh`**: Configuración de salvapantallas 3D/Matrix al bloquear la pantalla en GNOME.
 - **`plymouth-setup.sh`**: Instalación, configuración y selector de Splash Screen visual de arranque con `dracut -f`.
-- **`yt-dlp-setup.sh`**: Dependencias multimedia (yt-dlp, ffmpeg y motor JS Deno vía mise).
+- **`yt-dlp-setup.sh`**: Stack multimedia optimizado (yt-dlp, FFmpeg, AtomicParsley, aceleración aria2, descifrado de cookies para Firefox/KWallet y motor JS Deno).
 
 ### 🐳 [Podman](./Podman/)
 Ecosistema completo para contenedores Rootless y Systemd Quadlets:
