@@ -213,17 +213,22 @@ steam:
     ./Juegos/steam.sh
 
 # =============================================================================
-# PODMAN - BASE
+# PODMAN Y CONTENEDORES QUADLETS
 # =============================================================================
 
-# Podman base (instalación y configuración rootless)
+# Configuración completa de Podman Rootless y Quadlets
+podman-setup:
+    ./Podman/install/podman-install.sh
+
+# Alias para configuración base
 podman-base:
     ./Podman/install/podman-install.sh
 
-# =============================================================================
-# PODMAN - SERVICIOS Y TEMPLATES
-# =============================================================================
-
-# Configuración Quadlets de Podman
+# Configuración de servicios Quadlets de Podman
 podman-quadlets:
     ./Podman/install/quadlets-setup.sh
+
+# Estado y diagnóstico de Podman y Quadlets
+podman-status:
+    ./Podman/install/podman-install.sh --status
+    ./Podman/lib/podman-utils.sh doctor
