@@ -21,4 +21,4 @@ EOF
 echo "ℹ️ Instalando Visual Studio Code..."
 sudo dnf5 install -y code
 
-echo "✅ Visual Studio Code instalado correctamente con integración para GNOME."
+echo "✅ Visual Studio Code instalado correctamente con integración para KDE Plasma."

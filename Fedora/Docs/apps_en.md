@@ -2,46 +2,56 @@
 sidebar_position: 9
 ---
 
-# Applications and Games on Fedora 44
+# Desktop Applications & User Tools on Fedora 44 (KDE Plasma 6)
 
-This guide details the installation of desktop applications, utility tools, and digital gaming platforms managed in the `Apps` and `Juegos` folders.
-
-The Fedora 44 (Trixie) ecosystem allows installing system utilities through traditional package managers (DNF5) and application environments like gaming platforms in sandbox environments using universal formats (Flatpak).
+This guide details the primary desktop applications, multimedia tools, and package formats integrated into the **Fedora 44 Workstation** environment with **KDE Plasma 6**.
 
 ---
 
-## 1. Meld: Visual Diff and Merge Tool (`meld.sh`)
+## 1. KDE Plasma Native Suite
 
-Meld is a graphical tool for comparing and merging files, directories, and version control repositories. It is highly recommended for visual resolution of Git merge conflicts.
-
-* **Installation**:
-  ```bash
-  sudo dnf5 update
-  sudo dnf5 install -y meld
-  ```
-
----
-
-## 2. Steam: Gaming Platform and Compatibility (`steam.sh`)
-
-To ensure the host operating system remains stable and avoid adding 32-bit (i386) multi-arch libraries at the system DNF5 level, Steam is installed as a sandboxed application using Flatpak/Flathub.
-
-1. **Steam Installation**:
-   ```bash
-   flatpak install flathub com.valvesoftware.Steam
-   ```
-
-2. **Compatibility Layer (Proton-GE)**:
-   Installs **Proton GloriousEggroll (Proton-GE)** to improve game performance, compatibility, and stability for running Windows games on Linux:
-   ```bash
-   flatpak install flathub com.valvesoftware.Steam.CompatibilityTool.Proton-GE
-   ```
+The system includes native, optimized KDE tools:
+- **Dolphin**: High-performance file manager with Kitty terminal integration (*Open in Kitty*), media previews, and Git integration.
+- **Kate / KWrite**: Advanced text editors with syntax highlighting and project support.
+- **Spectacle**: Wayland screenshot and screen recording tool linked to console shortcuts `captura` and `grabacion`.
+- **Ark**: Archiver for compressing and extracting 7z, tar, zip, rar, and zstd formats.
+- **Plasma System Monitor**: Resource monitor tracking GPU, CPU, and RAM metrics.
+- **KCalc**: Scientific and developer calculator.
 
 ---
 
-## Verification
+## 2. Media Center & Streaming (`kodi`)
 
-To verify that the applications are correctly installed:
+For desktop workstations dedicated to home theater and multimedia streaming:
+- **Kodi**: Media player platform with VA-API hardware acceleration.
+- **Plugins**: `kodi-inputstream-adaptive` (streaming playback), `kodi-inputstream-rtmp`, and `kodi-pvr-iptvsimple`.
 
-- **Meld**: Run `meld` in the terminal or launch it from your desktop application menu.
-- **Steam**: Open Steam from your desktop environment launcher (e.g. GNOME Applications Overview). Once logged in, you can activate Proton-GE in Steam's compatibility settings (Steam > Settings > Compatibility > Enable Steam Play).
+Quick installation:
+```bash
+just kodi
+# or sudo dnf5 install -y kodi kodi-inputstream-adaptive kodi-inputstream-rtmp kodi-pvr-iptvsimple
+```
+
+---
+
+## 3. Visual Diff & Merge Tool (`meld`)
+
+Meld is a visual diff tool for comparing files, directories, and Git version control branches:
+
+```bash
+sudo dnf5 install -y meld
+```
+
+---
+
+## 4. Universal Packages (Flatpak & Flathub)
+
+The system comes preconfigured with the global **Flathub** remote repository to deploy sandboxed third-party applications and gaming tools:
+
+```bash
+# Search apps on Flathub:
+flatpak search <name>
+
+# Install application:
+flatpak install flathub <app_id>
+```

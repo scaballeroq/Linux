@@ -2,87 +2,83 @@
 sidebar_position: 4
 ---
 
-# Git Configuration on Fedora 44
+# Git & Version Control Setup on Fedora 44
 
-This guide details the version control environment and optimized tools configured via the scripts in the `Git` folder.
+This guide details the version control environment and tools located in [`IDE/git.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora/IDE/git.sh) and [`IDE/github-cli.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora/IDE/github-cli.sh).
 
-The environment includes the classic **Git** client, the **Git-Delta** syntax-highlighting diff pager, the **Lazygit** terminal UI, and the official **GitHub CLI (gh)** utility.
+The toolchain includes **Git**, **Git-Delta** visual diff pager, **Lazygit** interactive TUI, and the official **GitHub CLI (gh)**.
 
 ---
 
-## 1. Git Automation (`git.sh`)
+## 1. Automated Git, Delta & Lazygit Setup (`IDE/git.sh`)
 
-The main Git script automates installation and defines version control best practices:
+Automates installation and best-practice configurations:
 
-1. **Git and Git-Delta Installation**:
+1. **Git & Git-Delta Installation**:
    ```bash
-   sudo dnf5 update
    sudo dnf5 install -y git git-delta
    ```
 
-2. **Global User Settings**:
+2. **Global User Configuration**:
    ```bash
    git config --global user.name "Sergio Caballero"
    git config --global user.email "scaballeroq@gmail.com"
    ```
 
 3. **Modern Best Practices**:
-   - Default branch: `main` (`init.defaultBranch main`).
-   - Clean syncing: Rebase by default on pull (`pull.rebase true`).
-   - Default editor: `nvim` (`core.editor nvim`).
+   - Default initial branch: `develop` (`init.defaultBranch develop`).
+   - Clean syncing: Default pull rebase (`pull.rebase true`).
+   - Default core editor: `nvim` (`core.editor nvim`).
 
-4. **Visual Enhancements (Git-Delta)**:
-   Significantly improves diff readability in the console by replacing the native pager, activating semantic colors, simple navigation, and enhanced conflict styles (`zdiff3`):
+4. **Enhanced Visual Highlighting (Git-Delta)**:
+   Replaces the native diff pager with semantic syntax highlighting, side-by-side view, line numbers, and 3-way conflict styling (`zdiff3`):
    ```bash
    git config --global core.pager "delta"
    git config --global interactive.diffFilter "delta --color-only"
    git config --global delta.navigate true
    git config --global delta.light false
+   git config --global delta.side-by-side true
+   git config --global delta.line-numbers true
    git config --global merge.conflictstyle zdiff3
    ```
 
-5. **Lazygit Installation (TUI)**:
-   If not already present in `/usr/local/bin`, the script automatically downloads and installs the latest pre-compiled binary from GitHub:
+5. **Lazygit TUI Installation**:
+   Installs Lazygit via Fedora COPR or precompiled GitHub releases:
    ```bash
-   LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": "v\K[^"]*')
-   curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
-   tar xf lazygit.tar.gz lazygit
-   sudo install lazygit /usr/local/bin
-   rm lazygit lazygit.tar.gz
+   sudo dnf5 copr enable -y dejan/lazygit
+   sudo dnf5 install -y lazygit
    ```
 
 ---
 
-## 2. Console GitHub Client (`github-cli.sh`)
+## 2. GitHub Command-Line Interface (`IDE/github-cli.sh`)
 
-Installs the official GitHub console tool (`gh`) that allows you to manage repositories, Pull Requests, Issues, and secrets directly from the terminal.
+Installs the official GitHub CLI (`gh`) via DNF5 to manage repositories, Pull Requests, Issues, and secrets from the terminal:
 
-1. **Dependencies and Official Repository GPG Key**:
-   ```bash
-   sudo dnf5 update
-   sudo dnf5 install -y curl gpg
-   sudo mkdir -p -m 755 /etc/dnf5/keyrings
-   curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/dnf5/keyrings/githubcli-archive-keyring.gpg > /dev/null
-   sudo chmod go+r /etc/dnf5/keyrings/githubcli-archive-keyring.gpg
-   ```
+```bash
+sudo dnf5 install -y gh
+```
 
-2. **GitHub Repository Registration**:
-   ```bash
-   echo "deb [arch=$(rpm --print-architecture) signed-by=/etc/dnf5/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/dnf5/sources.list.d/github-cli.list > /dev/null
-   ```
+To authenticate with your GitHub account:
+```bash
+gh auth login
+```
 
-3. **Installation**:
-   ```bash
-   sudo dnf5 update
-   sudo dnf5 install -y gh
-   ```
+---
+
+## 3. Automation with Just
+
+To deploy the entire Git setup in a single step:
+
+```bash
+just git-setup
+# or ./IDE/git.sh && ./IDE/github-cli.sh
+```
 
 ---
 
 ## Verification
 
-To verify that the Git environment and its associated tools are properly configured:
-
-- **Git-Delta**: Run `git diff` inside any repository with local changes. You should see the differences formatted with line numbers and Delta's aesthetic colors.
-- **Lazygit**: Run `lazygit` inside a Git repository. The interactive TUI panel should open.
-- **GitHub CLI**: Run `gh --version` to check its installation. To authenticate your GitHub account, start the interactive setup via `gh auth login`.
+- **Git-Delta**: Run `git diff` on any repository with unstaged changes to verify the side-by-side visual diff.
+- **Lazygit**: Run `lazygit` inside a repository to open the terminal GUI.
+- **GitHub CLI**: Run `gh status` or `gh repo list` to check your authenticated session.

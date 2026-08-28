@@ -1,19 +1,31 @@
 # Manual de Virtualización de Alto Rendimiento (KVM/QEMU) en Fedora 44 Workstation
 
-Este manual detalla la configuración y optimización de **KVM / QEMU / virt-manager** para **Fedora 44** con kernel optimizado `x86_64-v3`, audio nativo PipeWire y aceleración de hardware.
+Este manual detalla la configuración y optimización de **KVM / QEMU / virt-manager** para **Fedora 44** con audio nativo PipeWire, aceleración por hardware y demonios modulares de Libvirt.
 
 ---
 
 ## 1. Instalación de Paquetes
-Instalamos QEMU, libvirt, virt-manager, firmware UEFI (OVMF) con soporte TPM 2.0 y herramientas de aceleración:
+Instalamos QEMU, libvirt, virt-manager, firmware UEFI (OVMF) con soporte TPM 2.0, controladores VirtIO y herramientas de aceleración:
 
 ```bash
-sudo dnf5 update
+sudo dnf5 group install -y --with-optional "Virtualization"
 sudo dnf5 install -y \
-    qemu-system-x86 qemu-utils libvirt-daemon-system libvirt-clients \
-    virt-manager virt-viewer virtinst dnsmasq dmidecode vde2 \
-    bridge-utils netcat-openbsd iptables nftables ovmf swtpm \
-    libosinfo-bin guestfs-tools tuned
+    qemu-kvm \
+    libvirt-daemon-kvm \
+    libvirt-client \
+    virt-manager \
+    virt-viewer \
+    virt-top \
+    virt-install \
+    virtio-win \
+    libguestfs-tools \
+    guestfs-tools \
+    bridge-utils \
+    swtpm \
+    swtpm-tools \
+    libosinfo \
+    tuned \
+    acl
 ```
 
 ---
@@ -37,7 +49,7 @@ sudo modprobe vhost_vsock
 ---
 
 ## 3. Integración de Sonido Nativo PipeWire (`/etc/libvirt/qemu.conf`)
-Para que las máquinas virtuales (Windows, macOS o Linux) reproduzcan audio directamente por el servidor PipeWire de tu usuario:
+Para que las máquinas virtuales reproduzcan audio directamente por el servidor PipeWire de tu usuario de escritorio:
 ```ini
 user = "caballero"
 group = "kvm"
@@ -53,10 +65,11 @@ firewall_backend = "nftables"
 
 ---
 
-## 5. Controladores VirtIO para Windows (`virtio-win.iso`)
-Descarga automática de la ISO estable más reciente del proyecto Fedora:
+## 5. Controladores VirtIO para Windows (`virtio-win`)
+En Fedora 44, los controladores VirtIO oficiales para Windows se instalan y actualizan mediante el paquete oficial `virtio-win`:
 ```bash
-curl -fsSL -o ~/Descargas/virtio-drivers/virtio-win.iso https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso
+sudo dnf5 install -y virtio-win
+# Las ISOs quedan disponibles en: /usr/share/virtio-win/virtio-win.iso
 ```
 
 ---
@@ -64,7 +77,6 @@ curl -fsSL -o ~/Descargas/virtio-drivers/virtio-win.iso https://fedorapeople.org
 ## 6. Sockets Modulares y Perfil Tuned (`virtual-host`)
 ```bash
 sudo systemctl enable --now virtqemud.socket virtnetworkd.socket virtstoraged.socket
-sudo systemctl enable --now libvirtd.service
 sudo systemctl enable --now tuned.service
 sudo tuned-adm profile virtual-host
 ```
@@ -81,5 +93,6 @@ export LIBVIRT_DEFAULT_URI="qemu:///system"
 ```
 
 ---
+
 > [!IMPORTANT]
 > Recuerda reiniciar la sesión o el equipo tras la instalación para aplicar los grupos `libvirt` y `kvm` a tu usuario.

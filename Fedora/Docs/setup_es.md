@@ -2,9 +2,9 @@
 sidebar_position: 2
 ---
 
-# Configuración del Sistema en Fedora 44 Workstation (FedoraTesting)
+# Configuración del Sistema en Fedora 44 Workstation (KDE Plasma 6)
 
-Esta guía detalla el proceso de configuración base, automontaje de partición de trabajo, compilación de kernel nativo `x86_64-v3`, terminal Kitty y panel de administración web aplicados a un sistema **Fedora 44** con **KDE Plasma**.
+Esta guía detalla el proceso de aprovisionamiento base, optimización de hardware, terminal Kitty, administración Cockpit y personalización visual aplicados a un sistema **Fedora 44** con **KDE Plasma 6** sobre **Wayland**.
 
 Las configuraciones están automatizadas a través de los scripts ubicados en la carpeta `Setup`.
 
@@ -12,141 +12,141 @@ Las configuraciones están automatizadas a través de los scripts ubicados en la
 
 ## 1. Post-Instalación Base (`post-install.sh`, `post-install-amd.sh`, `post-install-intel.sh`)
 
-Prepara el sistema base configurando repositorios oficiales adicionales (`contrib`, `non-free`, `non-free-firmware`), instalando software esencial, ZRAM, PipeWire, la suite GNOME y la pila gráfica/multimedia optimizada según el fabricante de la CPU/GPU.
+Prepara el sistema base configurando los repositorios oficiales de Fedora y **RPM Fusion** (free y nonfree), instalando software esencial, ZRAM, PipeWire, la suite de utilidades de KDE Plasma 6 y la pila gráfica/multimedia optimizada según el procesador.
 
 ### Scripts disponibles:
 
 - **Despachador Inteligente (`post-install.sh`)**:
-  Detecta automáticamente el procesador (`AuthenticAMD` vs `GenuineIntel`) o permite selección por banderas:
+  Detecta automáticamente el fabricante del procesador (`AuthenticAMD` vs `GenuineIntel`) o permite selección manual mediante banderas:
   ```bash
-  ./Setup/post-install.sh          # Auto-detección
-  ./Setup/post-install.sh --amd    # Forzar modo AMD
-  ./Setup/post-install.sh --intel  # Forzar modo Intel
+  ./Setup/post-install.sh          # Auto-detección inteligente
+  ./Setup/post-install.sh --amd    # Forzar modo AMD Ryzen
+  ./Setup/post-install.sh --intel  # Forzar modo Intel Core
   ```
 
 - **Perfil AMD Ryzen (`post-install-amd.sh`)**:
   Optimizado para procesadores AMD Ryzen y gráficos Radeon:
-  - Microcódigo: `amd64-microcode`
-  - Firmware GPU: `firmware-amd-graphics`
-  - Pila Gráfica: `mesa-va-drivers`, `mesa-vdpau-drivers`, `mesa-vulkan-drivers` (RADV), `radeontop`, `va-driver-all`.
+  - Microcódigo: `microcode_ctl`
+  - Firmware GPU: `linux-firmware`
+  - Pila Gráfica: `mesa-dri-drivers`, `mesa-vulkan-drivers` (RADV), `mesa-va-drivers`, `radeontop`.
   ```bash
-  ./Setup/post-install-amd.sh
-  # O usando just:
   just post-install-amd
   ```
 
 - **Perfil Intel Core / Media Center (`post-install-intel.sh`)**:
-  Optimizado para equipos de sobremesa con procesadores Intel Core (especialmente 4ª Gen Haswell i7-4790 y gráficos integrados Intel HD Graphics 4600) dedicados a centro multimedia y streaming (Kodi, Netflix, Prime Video):
-  - Microcódigo: `intel-microcode`
-  - Aceleración VA-API de vídeo: `i965-va-driver`, `i965-va-driver-shaders`, `intel-media-va-driver`, `intel-gpu-tools` (`intel_gpu_top`).
-  - Multimedia y Streaming: `kodi`, `kodi-inputstream-addnf5ive`, `kodi-inputstream-rtmp`, `kodi-pvr-iptvsimple`, codecs `ffmpeg`, `libavcodec-extra`, `gstreamer1.0-*`.
-  - **Sin virtualización KVM**: Excluye herramientas de virtualización y optimizaciones de batería de portátiles para mantener el sistema ligero y enfocado en multimedia.
+  Optimizado para equipos de sobremesa Intel Core (especialmente 4ª Gen Haswell i7-4790 con gráficos HD Graphics 4600) para centro multimedia y streaming (Kodi, Netflix, Prime Video):
+  - Microcódigo: `microcode_ctl`
+  - Aceleración VA-API de vídeo: `libva-intel-driver` (`i965`), `intel-media-driver`, `intel-gpu-tools`.
+  - Multimedia y Streaming: `kodi`, `kodi-inputstream-adaptive`, `kodi-inputstream-rtmp`, `kodi-pvr-iptvsimple`, codecs `ffmpeg`, `gstreamer1-plugins-*`.
+  - **Sin virtualización KVM**: Excluye herramientas de virtualización y demonios de batería de portátiles para mantener el sistema ligero y enfocado en reproducción de contenidos.
   ```bash
-  ./Setup/post-install-intel.sh
-  # O usando just:
   just post-install-intel
   ```
 
 ### Paquetes Comunes Instalados:
-- **Compilación**: `build-essential`, `cmake`
-- **Memoria**: `zram-tools` (ZRAM con ZSTD al 50%)
-- **Audio**: `pipewire`, `pipewire-alsa`, `pipewire-pulse`, `pipewire-jack`, `wireplumber`
-- **Monitorización**: `btop`, `htop`, `inxi`, `gnome-system-monitor`
-- **Utilidades**: `curl`, `fuse3`, `exfatprogs`, `p7zip-full`, `unrar`, `zip`, `unzip`, `bzip2`, `xz-utils`
-- **Gráficos y Multimedia**: `vlc`, `gimp`, `gparted`, `evince`, `seahorse`
-- **Entorno GNOME**: `gnome-core`, `gnome-shell`, `gnome-control-center`, `gnome-tweaks`, `nautilus`, `file-roller`, `gnome-text-editor`, `gnome-calculator`, `gnome-disk-utility`, `power-profiles-daemon`, `ffmpegthumbnailer`
-- **Paquetes universales**: `flatpak`, `gnome-software`, `gnome-software-plugin-flatpak` con repositorio Flathub activo.
+- **Compilación**: `@development-tools`, `cmake`, `gcc`, `gcc-c++`, `make`, `kernel-devel`, `kernel-headers`.
+- **Memoria**: `zram-generator` (ZRAM con algoritmo ZSTD al 50% de RAM).
+- **Audio**: `pipewire`, `pipewire-alsa`, `pipewire-pulseaudio`, `pipewire-jack-audio-connection-kit`, `wireplumber`.
+- **Monitorización**: `btop`, `htop`, `inxi`, `plasma-systemmonitor`.
+- **Utilidades**: `curl`, `fuse3`, `exfatprogs`, `p7zip`, `p7zip-plugins`, `unrar`, `zip`, `unzip`, `bzip2`, `xz`.
+- **Gráficos y Multimedia**: `vlc`, `gimp`, `gparted`, `kate`, `ark`, `kcalc`, `spectacle`.
+- **Entorno KDE Plasma 6**: `plasma-desktop`, `dolphin`, `konsole`, `kwriteconfig6`, `plasma-nm`, `plasma-pa`, `tuned-ppd`.
+- **Paquetes universales**: `flatpak`, `plasma-discover-flatpak` con repositorio Flathub activo.
 
 ---
 
-## 2. Automontaje de Partición Workspace (`mount-workspace.sh`)
+## 2. Optimización para Portátiles y Batería (`laptop-setup.sh`)
 
-Monta automáticamente la partición de datos `/home/caballero/Workspace` mediante `/etc/fstab` usando su UUID.
-Utiliza las opciones `defaults,noatime,nofail` para evitar cualquier bloqueo del sistema durante el arranque si la partición secundaria estuviese desconectada.
+Configura componentes esenciales para portátiles de desarrollo:
+- **Persistencia de Brillo al 95%**: Servicio systemd (`persist-screen-brightness.service`) que fija automáticamente el brillo de la pantalla al 95% al arrancar el equipo.
+- **Gestión de Energía y Perfiles**: Instala y activa `tuned` junto con `tuned-ppd` para traducción transparente de perfiles (Ahorro / Equilibrado / Rendimiento) en el widget de batería de KDE Plasma.
+- **Gráficos Híbridos**: Activa `switcheroo-control` para conmutación dinámica de GPUs.
+- **Touchpad en KDE Plasma 6**: Configura pulsar para hacer clic (*tap-to-click*), desplazamiento natural (*natural scroll*) y tiempos de suspensión por inactividad en `kcminputrc`, `touchpadrsrc` y `powerdevilrc`.
 
 ```bash
-./Setup/mount-workspace.sh
-# O usando just:
-just workspace
-```
-
----
-
-## 3. Compilador de Kernel Linux NATIVO x86_64-v3 (`build-custom-kernel.sh`)
-
-Script que consulta la API de `kernel.org` (`https://www.kernel.org/releases.json`) para descargar la última versión estable oficial del Kernel Linux, compilar paquetes `.rpm` nativos con optimizaciones de arquitectura `x86_64-v3`, latencia a **1000Hz** y **Preemption Dinámica**.
-
-```bash
-./Setup/build-custom-kernel.sh
-# O usando just:
-just build-kernel
-```
-
----
-
----
-
-## 4. Optimización para Portátiles y Brillo al 95% (`laptop-setup.sh`)
-
-Configura componentes esenciales para portátiles:
-- **Brillo automático al 95% al encender**: Registra un servicio systemd (`persist-screen-brightness.service`) que fija el brillo de pantalla al 95% al iniciar el sistema.
-- **Gestión de energía**: Instala y activa `power-profiles-daemon` y `switcheroo-control` (gráficos híbridos).
-- **Herramientas de brillo**: Instala `brightnessctl` y utilidades de hardware.
-- **Touchpad y energía**: Tap-to-click, scroll natural y suspensión en batería vía KDE Plasma (`kcminputrc` y `powerdevilrc`).
-
-```bash
-./Setup/laptop-setup.sh
-# O usando just:
 just laptop
+# o ./Setup/laptop-setup.sh
 ```
 
 ---
 
-## 5. Terminal Moderna (Kitty)
+## 3. Terminal Acelerada por GPU (Kitty) (`kitty.sh`)
 
-### Kitty (`kitty.sh`)
-Instala y configura Kitty (emulador acelerado por GPU) con perfil Catppuccin Mocha / Tokyo Night translúcido (75% opacidad) con efectos blur (32), tipografía JetBrainsMono Nerd Font, barra de pestañas Powerline inclinada y control dinámico de opacidad al vuelo (`Ctrl+Alt+Arriba`/`Abajo` o `Ctrl+Shift+F11`/`F10`).
+Instala y configura la terminal Kitty con renderizado por GPU, esquema oscuro Tokyo Night / Catppuccin Mocha, fondo translúcido al 75% con blur suave (32), fuente tipográfica JetBrainsMono Nerd Font y barra de pestañas Powerline.
 
-```bash
-just kitty
-# O configurar una opacidad personalizada (ej: 70%):
-./Setup/kitty.sh --opacity 0.70
-```
+- **Comandos y Banderas**:
+  ```bash
+  just kitty
+  # O configurar opacidad personalizada (ej: 70%):
+  ./Setup/kitty.sh --opacity 0.70
+  # O ver ayuda interactiva:
+  ./Setup/kitty.sh --help
+  ```
+
+- **Atajos en Vivo dentro de Kitty**:
+  - `Ctrl+Alt+Arriba` / `Ctrl+Shift+F11`: Aumentar opacidad (+5%).
+  - `Ctrl+Alt+Abajo` / `Ctrl+Shift+F10`: Reducir opacidad (-5%).
+  - `Ctrl+Alt+0` / `Ctrl+Shift+F9`: Restaurar opacidad por defecto.
+  - `Ctrl+Alt+1`: Modo 100% opaco.
+  - `Ctrl+Shift+F5`: Recargar configuración en caliente.
+  - `Ctrl+Shift+T` / `Ctrl+Shift+Enter`: Nueva pestaña o división manteniendo el directorio actual.
+- **Integración con KDE Plasma**:
+  - Acción de menú contextual en Dolphin: Clic derecho -> *Abrir en Kitty*.
+  - Atajo global del escritorio: `Ctrl+Alt+T` para abrir Kitty inmediatamente.
 
 ---
 
-## 6. Optimizaciones Avanzadas de Rendimiento (`fedora-tuning.sh`)
+## 4. Optimizaciones Avanzadas de Rendimiento (`fedora-tuning.sh`)
 
-Aplica optimizaciones a nivel de Kernel Sysctl, límites de descriptores de archivos, timeouts de Systemd, exclusiones de Baloo y soporte para Distrobox:
-- **Sysctl**: `fs.inotify.max_user_watches=524288` e `instances=1024` para IDEs (VSCode/JetBrains) y KDE, `vm.max_map_count=16777216` para gaming y VMs, `vm.swappiness=100` optimizado para ZRAM y `vm.vfs_cache_pressure=50`.
-- **Límites de usuario (`limits.d`)**: `nofile` hasta 1,048,576 y `memlock unlimited`.
-- **Systemd**: `DefaultTimeoutStopSec=10s` para apagados y reinicios rápidos.
-- **KDE Baloo**: Exclusión automática de carpetas pesadas (`node_modules`, `.git`, `.venv`, `target`, `vendor`).
-- **Contenedores**: Instalación de `distrobox` y `podman`.
+Aplica optimizaciones profundas a nivel de Kernel Sysctl, límites de descriptores de archivos, Systemd y KDE Plasma:
+
+- **Sysctl Kernel (`/etc/sysctl.d/99-fedora-dev.conf`)**:
+  - `fs.inotify.max_user_watches=524288` e `instances=1024` (monitorización masiva de ficheros para IDEs y KDE).
+  - `fs.file-max=2097152`.
+  - `vm.max_map_count=16777216` (soporte para gaming, emuladores y bases de datos).
+  - `vm.swappiness=100` (optimizado para compresión ZRAM en Fedora).
+  - `vm.vfs_cache_pressure=50` (retención de caché para agilizar `git status` y compilaciones).
+  - `net.core.default_qdisc=fq` y `net.ipv4.tcp_congestion_control=bbr` (reducción de latencia TCP).
+- **Límites de Usuario (`/etc/security/limits.d/99-dev-limits.conf`)**:
+  - `nofile`: soft 524288, hard 1048576.
+  - `memlock`: `unlimited`.
+- **Systemd Timeouts (`/etc/systemd/system.conf.d/99-fast-shutdown.conf`)**:
+  - `DefaultTimeoutStopSec=10s` para evitar bloqueos de 90 segundos al apagar o reiniciar.
+- **Indexador KDE Baloo (`baloofilerc`)**:
+  - Exclusión automática de directorios pesados (`node_modules`, `.git`, `.venv`, `target`, `vendor`, `.cache`) para eliminar picos de CPU y uso de disco.
+- **Contenedores y Entornos Aislados**:
+  - Verificación e instalación de `distrobox` y `podman`.
 
 ```bash
 just tuning
 # o ./Setup/fedora-tuning.sh
 
-# Ver estado actual de rendimiento:
+# Ver diagnóstico actual:
 ./Setup/fedora-tuning.sh --status
 ```
 
 ---
 
-## 7. Salvapantallas 3D y Bloqueo (`screensaver-setup.sh`)
+## 5. Impresora HP LaserJet Pro M15w (`hp-printer-setup.sh`)
 
-Instala la suite XScreenSaver con efectos 3D OpenGL (Matrix, Tuberías, Flurry) y vincula el atajo de bloqueo.
+Configura la impresora HP LaserJet Pro M15w por USB o red local en Fedora 44:
+- Instala CUPS, HPLIP, `plasma-print-manager` y utilidades de impresión.
+- Habilita los servicios `cups.service` y `cups.socket`.
+- Añade el usuario al grupo `lp` y recarga reglas udev.
+- Descarga e instala automáticamente el plugin privativo de HP (`hp-plugin -i -q`).
 
 ```bash
-just screensaver
+just printer
+# o ./Setup/hp-printer-setup.sh
 ```
 
 ---
 
-## 8. Entorno de Shell (`shell.sh`, `fastfetch.sh` y `fonts.sh`)
+## 6. Entorno de Terminal y Shell (`shell.sh`, `fastfetch.sh`, `fonts.sh`)
 
-Instala utilidades modernas de consola (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`), tipografías para desarrollo (Nerd Fonts: JetBrainsMono, FiraCode, CascadiaCode) y el prompt interactivo Starship.
+- **Utilidades Modernas (`shell.sh`)**: Instala `eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd-find`, `duf`, `du-dust`, `procs`, `btop`, `jq` y el prompt **Starship** con integración en `~/.bashrc`.
+- **Fuentes Tipográficas (`fonts.sh`)**: Instala JetBrainsMono Nerd Font, FiraCode y CascadiaCode en `~/.local/share/fonts`.
+- **Fastfetch (`fastfetch.sh`)**: Muestra un resumen visual de hardware, kernel y entorno de escritorio.
 
 ```bash
 just shell
@@ -156,75 +156,65 @@ just fastfetch
 
 ---
 
-## 9. Panel de Administración Web Cockpit (`cockpit.sh`)
+## 7. Panel de Administración Web Cockpit (`cockpit.sh`)
 
-Instala y gestiona la consola web Cockpit con activación bajo demanda (`cockpit.socket` en Systemd) para administrar el equipo desde el navegador ([https://localhost:9090](https://localhost:9090)):
-- `cockpit-podman`: Gestión visual de contenedores, imágenes y pods de Podman.
+Instala y gestiona la consola web Cockpit con activación bajo demanda (`cockpit.socket`) en [https://localhost:9090](https://localhost:9090):
+- `cockpit-podman`: Gestión de contenedores, pods e imágenes.
 - `cockpit-machines`: Gestión de MVs en KVM/QEMU y libvirt.
-- `cockpit-storaged`: Estado de discos SSD/NVMe y telemetría SMART.
-- `cockpit-networkmanager`: Monitoreo y configuración de red.
-- `cockpit-selinux`: Análisis y resolución guiada de alertas SELinux.
-- `cockpit-files`: Gestor y explorador de archivos web.
+- `cockpit-storaged`: Telemetría SMART y particiones de disco.
+- `cockpit-networkmanager`: Estado de conexiones e interfaces de red.
+- `cockpit-selinux`: Diagnóstico guiado de alertas SELinux.
+- `cockpit-files`: Gestor de archivos web.
 
-- **Instalar y habilitar Cockpit**:
-  ```bash
-  just cockpit
-  # o ./Setup/cockpit.sh
-  ```
-- **Ver estado del servicio, socket y módulos**:
-  ```bash
-  ./Setup/cockpit.sh --status
-  ```
-- **Abrir directamente en el navegador**:
-  ```bash
-  ./Setup/cockpit.sh --open
-  ```
+```bash
+just cockpit
+# O ver estado del servicio:
+./Setup/cockpit.sh status
+```
 
 ---
 
-## 10. Temas e Iconos de Escritorio (`apariencia.sh`)
+## 8. Temas e Integración Visual (`apariencia.sh`)
 
-Instala temas, esquemas de color e iconos (Breeze Dark, Papirus-Dark) y asegura una homogeneización visual nativa y coherente entre KDE Plasma 6 (Qt6/Qt5), aplicaciones GTK 3/4 y paquetes Flatpak.
+Aplica y gestiona temas globales, esquemas de color e iconos en KDE Plasma 6 asegurando coherencia visual con aplicaciones GTK 3/4 y Flatpaks:
+- Tema Global: **Breeze Dark**
+- Iconos: **Papirus-Dark** / **Breeze-Dark**
+- Cursores: `breeze_cursors`
 
-- **Aplicar tema oscuro recomendado completo**:
-  ```bash
-  just apariencia
-  # o ./Setup/apariencia.sh
-  ```
-- **Ver estado visual y temas configurados**:
-  ```bash
-  ./Setup/apariencia.sh --status
-  ```
-- **Listar todos los temas globales, esquemas de color e iconos**:
-  ```bash
-  ./Setup/apariencia.sh --list
-  ```
-- **Aplicar tema claro**:
-  ```bash
-  ./Setup/apariencia.sh --light
-  ```
+```bash
+just apariencia
+# Opciones CLI:
+./Setup/apariencia.sh --status    # Muestra la apariencia activa
+./Setup/apariencia.sh --list      # Lista temas e iconos instalados
+./Setup/apariencia.sh --light     # Aplica modo claro (Breeze Light)
+./Setup/apariencia.sh --dark      # Aplica modo oscuro (Breeze Dark)
+```
 
 ---
 
-## 11. Splash Screen Visual de Arranque (`plymouth-setup.sh`)
+## 9. Splash Screen de Arranque Plymouth (`plymouth-setup.sh`)
 
-Instala y activa Plymouth con soporte para múltiples temas oficiales y modernos (`bgrt`, `ceratopsian`, `spinner`, etc.), asegurando un arranque gráfico limpio y silencioso sin parpadeos.
+Instala y gestiona el splash screen de inicio (Plymouth) en Fedora 44 + KDE Plasma con soporte para temas `breeze`, `bgrt` y `spinner`, regenerando automáticamente los initramfs con Dracut:
 
-- **Instalar y activar tema recomendado (BGRT / Ceratopsian)**:
-  ```bash
-  just plymouth
-  # o ./Setup/plymouth-setup.sh
-  ```
-- **Listar todos los temas disponibles**:
-  ```bash
-  ./Setup/plymouth-setup.sh --list
-  ```
-- **Activar un tema específico**:
-  ```bash
-  ./Setup/plymouth-setup.sh ceratopsian
-  ```
-- **Previsualizar el splash screen en el escritorio**:
-  ```bash
-  ./Setup/plymouth-setup.sh --preview
-  ```
+```bash
+just plymouth
+# Opciones CLI:
+./Setup/plymouth-setup.sh --list     # Lista temas disponibles
+./Setup/plymouth-setup.sh --preview  # Previsualiza el splash screen
+./Setup/plymouth-setup.sh --disable  # Desactiva el splash visual
+./Setup/plymouth-setup.sh breeze     # Aplica tema Breeze
+```
 
+---
+
+## 10. Stack Multimedia YT-DLP (`yt-dlp-setup.sh`)
+
+Instalación automatizada del ecosistema completo de descarga y procesamiento de vídeo:
+- Paquetes: `yt-dlp`, `ffmpeg`, `atomicparsley`, acelerador multiproceso `aria2` y runtime JavaScript `deno`.
+- Configuración en `~/.config/yt-dlp/config`: Integración con SponsorBlock, extracción de subtítulos, nombrado inteligente y conversión de metadatos.
+- Suite de alias en `Bash.Setup/yt-dlp_aliases.sh`.
+
+```bash
+just yt-dlp
+# o ./Setup/yt-dlp-setup.sh
+```

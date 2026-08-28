@@ -1,17 +1,17 @@
 # Fedora 44 Environment Configuration Justfile
-# (Fedora 44 + KDE Plasma)
+# (Fedora 44 + KDE Plasma 6)
 
 # Instala todo el entorno por defecto (Auto-detección de CPU / Portátil AMD)
-setup-all: post-install workspace laptop fingerprint tuning screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch firefox
-    echo "🚀 Entorno completo de Fedora 44 (KDE Plasma) configurado. Por favor, reinicia el sistema."
+setup-all: post-install laptop tuning plymouth shell security fonts apariencia fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+    @echo "🚀 Entorno completo de Fedora 44 (KDE Plasma 6) configurado. Por favor, reinicia el sistema."
 
-# Perfil completo para Portátil de desarrollo (AMD Ryzen + Huella + Virtualización)
-setup-laptop-amd: post-install-amd workspace laptop fingerprint tuning screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch firefox
-    echo "🚀 Entorno Portátil AMD Ryzen configurado con éxito. Por favor, reinicia el sistema."
+# Perfil completo para Portátil de desarrollo (AMD Ryzen + Virtualización + Contenedores)
+setup-laptop-amd: post-install-amd laptop tuning plymouth shell security fonts apariencia fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+    @echo "🚀 Entorno Portátil AMD Ryzen configurado con éxito. Por favor, reinicia el sistema."
 
 # Perfil para Sobremesa Centro Multimedia (Intel Haswell / Media Center - Sin virtualización ni batería)
-setup-media-desktop: post-install-intel workspace tuning screensaver plymouth shell security fonts apariencia fastfetch firefox kodi
-    echo "🚀 Entorno Sobremesa Intel Media Center configurado con éxito. Por favor, reinicia el sistema."
+setup-media-desktop: post-install-intel tuning plymouth shell security fonts apariencia fastfetch kitty yt-dlp kodi
+    @echo "🚀 Entorno Sobremesa Intel Media Center configurado con éxito. Por favor, reinicia el sistema."
 
 # =============================================================================
 # CONFIGURACIÓN BASE DEL SISTEMA
@@ -21,29 +21,17 @@ setup-media-desktop: post-install-intel workspace tuning screensaver plymouth sh
 post-install:
     ./Setup/post-install.sh
 
-# Configuración post-instalación para AMD Ryzen (Kernel, firmware-amd, RADV, Mesa, PipeWire, GNOME)
+# Configuración post-instalación para AMD Ryzen (Kernel, firmware-amd, RADV, Mesa, PipeWire, KDE Plasma)
 post-install-amd:
     ./Setup/post-install-amd.sh
 
-# Configuración post-instalación para Intel Haswell/Core (Kernel, microcódigo Intel, i965 VA-API, Kodi, PipeWire, GNOME)
+# Configuración post-instalación para Intel Haswell/Core (Kernel, microcódigo Intel, i965 VA-API, Kodi, PipeWire, KDE Plasma)
 post-install-intel:
     ./Setup/post-install-intel.sh
 
-# Automontaje permanente de la partición Workspace (/home/caballero/Workspace) en /etc/fstab
-workspace:
-    ./Setup/mount-workspace.sh
-
-# Compilador de Kernel Linux optimizado para x86_64-v3 y ajustado a tu hardware
-build-kernel:
-    ./Setup/build-custom-kernel.sh
-
-# Optimización para portátiles de desarrollo (Touchpad, Batería, Bluetooth, HiDPI, VRR)
+# Optimización para portátiles de desarrollo (Touchpad, Batería, Bluetooth, tuned-ppd, persistencia de brillo 95%)
 laptop:
     ./Setup/laptop-setup.sh
-
-# Autenticación y desbloqueo por huella dactilar (fprintd, PAM, sudo, polkit, GNOME)
-fingerprint:
-    ./Setup/fingerprint-setup.sh
 
 # Configuración e instalación de impresora HP LaserJet Pro M15w (USB)
 printer:
@@ -53,33 +41,23 @@ printer:
 tuning:
     ./Setup/fedora-tuning.sh
 
-
-# Configuración de salvapantallas 3D/Matrix al bloquear la pantalla
-screensaver:
-    ./Setup/screensaver-setup.sh
-
-# Configuración y activación de Splash Screen visual de arranque (Plymouth: BGRT / Spinner / Tema)
+# Configuración y activación de Splash Screen visual de arranque (Plymouth: Breeze / BGRT / Spinner)
 plymouth:
     ./Setup/plymouth-setup.sh
 
-# Utilidades de terminal y prompt (eza, bat, fzf, starship)
+# Utilidades de terminal y prompt (eza, bat, fzf, zoxide, ripgrep, starship)
 shell:
     ./Setup/shell.sh
 
-# Seguridad básica (Firewalld - Zona FedoraWorkstation)
+# Seguridad y cortafuegos (Firewalld - Zona FedoraWorkstation, DNS-over-TLS, MAC Randomization, Sysctl)
 security:
     ./Setup/seguridad.sh
-
-# Seguridad avanzada (DNS-over-TLS con systemd-resolved)
-security-dot:
-    ./Setup/seguridad-dot.sh
 
 # Fuentes de desarrollo (Nerd Fonts: JetBrainsMono, FiraCode, CascadiaCode...)
 fonts:
     ./Setup/fonts.sh
 
-
-# Apariencia (Temas Breeze Dark, iconos Papirus e integración visual GTK/Qt en KDE Plasma)
+# Apariencia (Temas Breeze Dark, iconos Papirus e integración visual GTK/Qt en KDE Plasma 6)
 apariencia:
     ./Setup/apariencia.sh
 
@@ -91,7 +69,7 @@ fastfetch:
 kitty:
     ./Setup/kitty.sh
 
-# Multimedia (yt-dlp, ffmpeg)
+# Multimedia (yt-dlp stack, FFmpeg, AtomicParsley, aria2, motor JS Deno)
 yt-dlp:
     ./Setup/yt-dlp-setup.sh
 
@@ -117,8 +95,8 @@ cockpit:
 
 # Git, Delta, Lazygit, GH CLI
 git-setup:
-    ./Git/git.sh
-    ./Git/github-cli.sh
+    ./IDE/git.sh
+    ./IDE/github-cli.sh
 
 # =============================================================================
 # GESTORES DE RUNTIMES
@@ -133,8 +111,8 @@ mise:
 # =============================================================================
 
 # Todos los lenguajes
-languages: node python rust dotnet java
-    echo "✅ Lenguajes instalados."
+languages: node python rust dotnet java angular gemini
+    @echo "✅ Lenguajes instalados."
 
 # Node.js LTS
 node:
@@ -156,10 +134,6 @@ dotnet:
 java:
     ./ProgrammingLanguages/java.sh
 
-# =============================================================================
-# HERRAMIENTAS DE IA
-# =============================================================================
-
 # Gemini CLI
 gemini:
     ./ProgrammingLanguages/gemini.sh
@@ -173,8 +147,8 @@ angular:
 # =============================================================================
 
 # Todos los IDEs
-ides: nvim vscode antigravity opencode
-    echo "✅ IDEs instalados."
+ides: nvim vscode antigravity antigravity-cli antigravity-ide opencode
+    @echo "✅ IDEs instalados."
 
 # Neovim + LazyVim
 nvim:
@@ -201,26 +175,15 @@ opencode:
     ./IDE/opencode.sh
 
 # =============================================================================
-# NAVEGADORES Y JUEGOS
-# =============================================================================
-
-# Firefox nativo (RPM)
-firefox:
-    ./Setup/firefox.sh
-
-# Steam y herramientas de juegos
-steam:
-    ./Juegos/steam.sh
-
-# =============================================================================
 # PODMAN Y CONTENEDORES QUADLETS
 # =============================================================================
 
 # Configuración completa de Podman Rootless y Quadlets
 podman-setup:
     ./Podman/install/podman-install.sh
+    ./Podman/install/quadlets-setup.sh
 
-# Alias para configuración base
+# Configuración base de Podman Rootless
 podman-base:
     ./Podman/install/podman-install.sh
 
