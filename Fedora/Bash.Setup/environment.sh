@@ -1,5 +1,5 @@
 # =============================================================================
-# VARIABLES DE ENTORNO (environment.sh) - Adaptado para Fedora 44 (GNOME)
+# VARIABLES DE ENTORNO (environment.sh) - Adaptado para Fedora 44 (KDE Plasma 6)
 # =============================================================================
 # Este archivo define variables de entorno globales para la sesión de usuario.
 
@@ -29,7 +29,20 @@ export LESS_TERMCAP_us=$'\E[1;32m'
 export LESS_TERMCAP_ue=$'\E[0m'
 
 # -----------------------------------------------------------------------------
-# 2. PATH PERSONALIZADO
+# 2. INTEGRACIÓN WAYLAND, QT Y APLICACIONES ELECTRON
+# -----------------------------------------------------------------------------
+# Compatibilidad Qt/Wayland con fallback automático a Xwayland
+export QT_QPA_PLATFORM="wayland;xcb"
+export QT_AUTO_SCREEN_SCALE_FACTOR=1
+
+# Firefox en modo Wayland nativo
+export MOZ_ENABLE_WAYLAND=1
+
+# Forzar Wayland nativo en aplicaciones Electron (VS Code, Antigravity, Discord, Obsidian)
+export ELECTRON_OZONE_PLATFORM_HINT="auto"
+
+# -----------------------------------------------------------------------------
+# 3. PATH PERSONALIZADO
 # -----------------------------------------------------------------------------
 # Scripts personales del usuario
 if [ -d "$HOME/bin" ] && [[ ":$PATH:" != *":$HOME/bin:"* ]]; then
@@ -41,7 +54,7 @@ if [ -d "$HOME/.local/bin" ] && [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
 fi
 
 # -----------------------------------------------------------------------------
-# 3. LENGUAJES Y RUNTIMES
+# 4. LENGUAJES Y RUNTIMES
 # -----------------------------------------------------------------------------
 # Cargo / Rust
 if [ -d "$HOME/.cargo/bin" ] && [[ ":$PATH:" != *":$HOME/.cargo/bin:"* ]]; then
@@ -53,8 +66,8 @@ if command -v mise &> /dev/null; then
     eval "$(mise activate bash)"
 fi
 
-# Soporte para GPG en la terminal
-export GPG_TTY=$(tty)
+# Soporte para GPG en la terminal (seguro para subshells y no-TTY)
+export GPG_TTY="$(tty 2>/dev/null || true)"
 
 # Podman Rootless Docker Host compatibility
 if [ -S "$XDG_RUNTIME_DIR/podman/podman.sock" ]; then
@@ -62,7 +75,7 @@ if [ -S "$XDG_RUNTIME_DIR/podman/podman.sock" ]; then
 fi
 
 # -----------------------------------------------------------------------------
-# 4. VARIOS
+# 5. VARIOS
 # -----------------------------------------------------------------------------
 # Rutas para actualización de Antigravity
 export UPDATE_ANTIGRAVITY_PATH="/usr/local/bin/update-antigravity"
@@ -71,4 +84,4 @@ export UPDATE_ANTIGRAVITY_IDE_PATH="/usr/local/bin/update-antigravity-ide"
 # =============================================================================
 # MENSAJE DE CARGA
 # =============================================================================
-echo "✅ Variables de entorno aplicadas (PATH, EDITOR, LESS...)"
+echo "✅ Variables de entorno aplicadas (PATH, EDITOR, LESS, Wayland/Qt...)"

@@ -36,26 +36,26 @@ mkcd() {
 # Ejemplo: 'up 3' equivale a 'cd ../../..'
 # Si no se da argumento, sube 1 nivel.
 up() {
+    local limit="${1:-1}"
     local d=""
-    local limit=$1
     for ((i=1 ; i <= limit ; i++)); do
-        d=$d/..
+        d="../$d"
     done
-    d=$(echo $d | sed 's/^\///')
-    if [ -z "$d" ]; then
-        d=..
-    fi
-    cd $d
+    cd "$d" || return 1
 }
 
 # -----------------------------------------------------------------------------
 # backup: Copia de seguridad rápida
-# Uso: backup <archivo>
+# Uso: backup <archivo_o_directorio>
 # -----------------------------------------------------------------------------
-# Crea una copia del archivo con extensión .bak y la fecha actual.
-# Ejemplo: archivo.txt -> archivo.txt.bak-20231220-120000
+# Crea una copia del archivo o directorio con extensión .bak y la fecha actual.
+# Ejemplo: archivo.txt -> archivo.txt.bak-20260828-120000
 backup() {
-    cp "$1"{,.bak-$(date +%Y%m%d-%H%M%S)}
+    if [ -z "${1:-}" ]; then
+        echo "Uso: backup <archivo_o_directorio>"
+        return 1
+    fi
+    cp -r "$1" "${1%/}.bak-$(date +%Y%m%d-%H%M%S)"
 }
 
 # -----------------------------------------------------------------------------
@@ -63,22 +63,25 @@ backup() {
 # Uso: extract <archivo_comprimido>
 # -----------------------------------------------------------------------------
 # Detecta automáticamente la extensión del archivo y usa el programa adecuado
-# para descomprimirlo. Simplifica no tener que recordar las flags de tar.
+# para descomprimirlo (incluye soporte para tar.xz, zstd, zip, 7z, tar.gz, etc.).
 extract() {
     if [ -f "$1" ]; then
         case "$1" in
-            *.tar.bz2)   tar xjf "$1"     ;;
-            *.tar.gz)    tar xzf "$1"     ;;
-            *.bz2)       bunzip2 "$1"     ;;
-            *.rar)       unrar x "$1"     ;;
-            *.gz)        gunzip "$1"      ;;
-            *.tar)       tar xf "$1"      ;;
-            *.tbz2)      tar xjf "$1"     ;;
-            *.tgz)       tar xzf "$1"     ;;
-            *.zip)       unzip "$1"       ;;
-            *.Z)         uncompress "$1"  ;;
-            *.7z)        7z x "$1"        ;;
-            *)           echo "'$1' no se puede extraer con esta función" ;;
+            *.tar.bz2|*.tbz2)     tar xjf "$1"     ;;
+            *.tar.gz|*.tgz)       tar xzf "$1"     ;;
+            *.tar.xz|*.txz)       tar xJf "$1"     ;;
+            *.tar.zst|*.tar.zstd) tar --zstd -xf "$1" ;;
+            *.bz2)                bunzip2 "$1"     ;;
+            *.rar)                unrar x "$1"     ;;
+            *.gz)                 gunzip "$1"      ;;
+            *.tar)                tar xf "$1"      ;;
+            *.zip)                unzip "$1"       ;;
+            *.Z)                  uncompress "$1"  ;;
+            *.7z)                 7z x "$1"        ;;
+            *.xz)                 unxz "$1"        ;;
+            *.zst)                unzstd "$1"      ;;
+            *.lzma)               unlzma "$1"      ;;
+            *)                    echo "'$1' no se puede extraer con esta función" ;;
         esac
     else
         echo "'$1' no es un archivo válido"
@@ -203,7 +206,7 @@ format-drive() {
 # webm2mp4: Convertir WebM a MP4
 # Uso: webm2mp4 <archivo.webm>
 # -----------------------------------------------------------------------------
-# Útil para convertir grabaciones de pantalla de GNOME a un formato más compatible.
+# Útil para convertir grabaciones de pantalla (Spectacle / OBS / WebM) a un formato más compatible.
 webm2mp4() {
   if [ $# -ne 1 ]; then echo "Uso: webm2mp4 <archivo.webm>"; return 1; fi
   if ! command -v ffmpeg &> /dev/null; then echo "❌ Faltan dependencias: ffmpeg"; return 1; fi

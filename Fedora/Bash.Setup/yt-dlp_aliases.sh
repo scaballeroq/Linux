@@ -1,19 +1,16 @@
-#!/bin/bash
 # =============================================================================
-# ALIASES PARA YT-DLP (yt-dlp_aliases.sh) - Adaptado para Fedora 44
+# ALIASES PARA YT-DLP (yt-dlp_aliases.sh) - Adaptado para Fedora 44 (KDE Plasma 6)
 # =============================================================================
 
 # Motor de JS para yt-dlp (Soportado a partir de la versión 2025.11.12)
 JS_RUNTIME=""
 if command -v yt-dlp &> /dev/null; then
-    YT_VERSION=$(yt-dlp --version | head -n1)
-    # Comprobación de versión (Formato YYYY.MM.DD)
-    if [[ "$YT_VERSION" > "2025.11.11" ]]; then
-        if command -v deno &> /dev/null; then
-            JS_RUNTIME="--js-runtimes deno"
-        elif command -v mise &> /dev/null && mise where deno &>/dev/null; then
-            JS_RUNTIME="--js-runtimes deno:$(mise where deno)/bin/deno"
-        fi
+    if command -v deno &> /dev/null; then
+        JS_RUNTIME="--js-runtimes deno"
+    elif command -v mise &> /dev/null && mise where deno &>/dev/null; then
+        JS_RUNTIME="--js-runtimes deno:$(mise where deno)/bin/deno"
+    elif command -v node &> /dev/null; then
+        JS_RUNTIME="--js-runtimes node"
     fi
 fi
 

@@ -11,6 +11,9 @@
 # Ej: 'cd Dcouments' -> te lleva a 'Documents'.
 shopt -s cdspell
 
+# dirspell: Intenta corregir errores tipográficos en nombres de directorio al autocompletar.
+shopt -s dirspell 2>/dev/null || true
+
 # autocd: Permite entrar en un directorio escribiendo solo su nombre.
 # Ej: Escribir 'Downloads' hace 'cd Downloads'.
 shopt -s autocd
@@ -31,21 +34,23 @@ shopt -s globstar
 # Útil si redimensionas la terminal a menudo, para que el texto se ajuste bien.
 shopt -s checkwinsize
 
+# no_empty_cmd_completion: No intentar autocompletar en una línea vacía.
+shopt -s no_empty_cmd_completion 2>/dev/null || true
+
 # -----------------------------------------------------------------------------
-# AUTOCOMPLETADO
+# AUTOCOMPLETADO (Solo en sesiones interactivas)
 # -----------------------------------------------------------------------------
+if [[ $- == *i* ]] && [ -t 0 ]; then
+    # completion-ignore-case: Ignorar mayúsculas/minúsculas al tabular.
+    bind 'set completion-ignore-case on' 2>/dev/null || true
 
-# completion-ignore-case: Ignorar mayúsculas/minúsculas al tabular.
-# Ej: Escribir 'cd doc<TAB>' completará 'Documents'.
-bind 'set completion-ignore-case on'
+    # show-all-if-ambiguous: Mostrar lista de opciones inmediatamente si hay varias.
+    bind 'set show-all-if-ambiguous on' 2>/dev/null || true
 
-# show-all-if-ambiguous: Mostrar lista de opciones inmediatamente si hay varias,
-# en lugar de esperar a una segunda pulsación de TAB.
-bind 'set show-all-if-ambiguous on'
+    # colored-stats: Usar colores para mostrar los tipos de archivos en las sugerencias.
+    bind 'set colored-stats on' 2>/dev/null || true
+fi
 
-# colored-stats: Usar colores para mostrar lso tipos de archivos en las
-# sugerencias de autocompletado.
-bind 'set colored-stats on'
 # =============================================================================
 # MENSAJE DE CARGA
 # =============================================================================

@@ -13,7 +13,7 @@ The core of the Bash terminal configuration:
 - **`aliases.sh`**: Common aliases and modern Rust CLI replacements (`eza`, `bat`, `duf`, `dust`).
 - **`environment.sh`**: Global shell variables (`PATH`, `EDITOR`, colored `less` man pages).
 - **`functions.sh`**: Advanced shell functions and multimedia tools (FFmpeg, ImageMagick, unified archive extraction).
-- **`gnome_settings.sh`**: Environment configurations, night light, dark theme toggles, and shortcuts to GNOME Control Center.
+- **`kde_settings.sh`**: KDE Plasma 6 environment settings, Wayland/KWin tools, System Settings shortcuts (kcmshell6), and Spectacle.
 - **`history.sh`**: Optimized Bash history (no duplicates, up to 20k entries).
 - **`options.sh`**: Bash runtime options (`shopt` and `bind`).
 - **`podman-functions.sh`**: Simplified container management aliases.

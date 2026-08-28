@@ -82,15 +82,51 @@ prmi-dangling() {
 }
 
 # -----------------------------------------------------------------------------
-# ALIASES RÁPIDOS
+# ALIASES RÁPIDOS Y QUADLETS
 # -----------------------------------------------------------------------------
 alias p='podman'
-alias ps='podman ps --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"'
+alias pps='podman ps --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"'
 alias psa='podman ps -a'
 alias pi='podman images'
 alias pv='podman volume ls'
-pstop-all() { podman stop $(podman ps -q); }
-prm-all() { podman rm $(podman ps -aq); }
-prmi-all() { podman rmi $(podman images -q); }
 
-echo "✅ Funciones de Podman cargadas"
+# Parada y eliminación segura
+pstop-all() {
+    local running
+    running=$(podman ps -q)
+    if [ -n "$running" ]; then
+        podman stop $running
+    else
+        echo "ℹ️ No hay contenedores en ejecución para detener."
+    fi
+}
+
+prm-all() {
+    local all_containers
+    all_containers=$(podman ps -aq)
+    if [ -n "$all_containers" ]; then
+        podman rm -f $all_containers
+    else
+        echo "ℹ️ No hay contenedores para eliminar."
+    fi
+}
+
+prmi-all() {
+    local all_images
+    all_images=$(podman images -q)
+    if [ -n "$all_images" ]; then
+        podman rmi -f $all_images
+    else
+        echo "ℹ️ No hay imágenes para eliminar."
+    fi
+}
+
+# Quadlets de Podman (Systemd User Units)
+alias quadlet-reload='systemctl --user daemon-reload'
+alias quadlet-status='systemctl --user status "container-*"'
+quadlet-logs() {
+    local service="${1:-container}"
+    journalctl --user -u "$service" -f -n 50
+}
+
+echo "✅ Funciones y atajos de Podman cargados (pps, pexec, Quadlets)"

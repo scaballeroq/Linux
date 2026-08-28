@@ -13,7 +13,7 @@ El núcleo de la configuración de la terminal Bash:
 - **`aliases.sh`**: Atajos comunes para DNF5, comandos frecuentemente utilizados y utilidades modernas en Rust (`eza`, `bat`, `duf`, `dust`, `procs`, `btm`).
 - **`environment.sh`**: Variables globales que afectan el comportamiento de la shell (`PATH`, `EDITOR`, `mise`, `GPG_TTY`, DOCKER_HOST).
 - **`functions.sh`**: Colección de funciones avanzadas y utilidades multimedia (FFmpeg, ImageMagick, extracción unificada).
-- **`gnome_settings.sh`**: Configuraciones de entorno para GNOME, luz nocturna, temas, reinicio de shell y accesos rápidos a Configuración.
+- **`kde_settings.sh`**: Configuraciones de entorno para KDE Plasma 6, Wayland/KWin, atajos a Preferencias del Sistema (kcmshell6) y Spectacle.
 - **`history.sh`**: Controla cómo bash recuerda los comandos (sin duplicados, hasta 20k líneas).
 - **`options.sh`**: Configura el comportamiento interno de Bash mediante `shopt` y `bind`.
 - **`podman-functions.sh`**: Funciones para gestión simplificada de contenedores (`pexec`, `plogs`, `pclean`).

@@ -30,8 +30,8 @@ shopt -s cmdhist
 
 # Lista de comandos a IGNORAR.
 # Estos comandos no se guardarán en el historial para mantenerlo limpio.
-# Se ignoran: ls, cd, pwd, exit, clear, history, comandos de job (bg/fg), etc.
-export HISTIGNORE="ls:ll:la:cd:pwd:exit:clear:history:bg:fg:..:..."
+# Se ignoran: ls, ll, la, cd, pwd, exit, clear, c, history, h, reload, bg, fg, .., ...
+export HISTIGNORE="ls:ll:la:cd:pwd:exit:clear:c:history:h:reload:bg:fg:..:...:ff:sysinfo"
 
 # =============================================================================
 # MENSAJE DE CARGA
