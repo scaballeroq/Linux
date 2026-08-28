@@ -1,16 +1,16 @@
-# Fedora 44 Workstation Environment Configuration Justfile
-# (Fedora 44 Workstation + GNOME)
+# Fedora 44 Environment Configuration Justfile
+# (Fedora 44 + KDE Plasma)
 
 # Instala todo el entorno por defecto (Auto-detección de CPU / Portátil AMD)
-setup-all: post-install workspace laptop fingerprint tuning extensions screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome firefox
-    echo "🚀 Entorno completo de Fedora 44 (Fedora Workstation + GNOME) configurado. Por favor, reinicia el sistema."
+setup-all: post-install workspace laptop fingerprint tuning screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch firefox
+    echo "🚀 Entorno completo de Fedora 44 (KDE Plasma) configurado. Por favor, reinicia el sistema."
 
 # Perfil completo para Portátil de desarrollo (AMD Ryzen + Huella + Virtualización)
-setup-laptop-amd: post-install-amd workspace laptop fingerprint tuning extensions screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome firefox
+setup-laptop-amd: post-install-amd workspace laptop fingerprint tuning screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch firefox
     echo "🚀 Entorno Portátil AMD Ryzen configurado con éxito. Por favor, reinicia el sistema."
 
 # Perfil para Sobremesa Centro Multimedia (Intel Haswell / Media Center - Sin virtualización ni batería)
-setup-media-desktop: post-install-intel workspace tuning extensions screensaver plymouth shell security fonts gnome apariencia fastfetch firefox kodi
+setup-media-desktop: post-install-intel workspace tuning screensaver plymouth shell security fonts apariencia fastfetch firefox kodi
     echo "🚀 Entorno Sobremesa Intel Media Center configurado con éxito. Por favor, reinicia el sistema."
 
 # =============================================================================
@@ -53,9 +53,6 @@ printer:
 tuning:
     ./Setup/fedora-tuning.sh
 
-# Instalación automatizada de conectores y las 12 extensiones de GNOME
-extensions:
-    ./Setup/gnome-extensions.sh
 
 # Configuración de salvapantallas 3D/Matrix al bloquear la pantalla
 screensaver:
@@ -81,9 +78,6 @@ security-dot:
 fonts:
     ./Setup/fonts.sh
 
-# Personalización de GNOME (gsettings, luz nocturna, 24h, temas)
-gnome:
-    ./Setup/gnome-settings.sh
 
 # Apariencia (Temas Adwaita Dark, iconos Papirus e integración GTK/Qt)
 apariencia:

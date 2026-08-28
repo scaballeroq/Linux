@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # Configuración del Sistema en Fedora 44 Workstation (FedoraTesting)
 
-Esta guía detalla el proceso de configuración base, automontaje de partición de trabajo, compilación de kernel nativo `x86_64-v3`, personalización de GNOME, terminal Kitty, extensiones GNOME Shell y panel de administración web aplicados a un sistema **Fedora 44 Workstation (Trixie)** con **GNOME**.
+Esta guía detalla el proceso de configuración base, automontaje de partición de trabajo, compilación de kernel nativo `x86_64-v3`, terminal Kitty y panel de administración web aplicados a un sistema **Fedora 44** con **KDE Plasma**.
 
 Las configuraciones están automatizadas a través de los scripts ubicados en la carpeta `Setup`.
 
@@ -84,47 +84,25 @@ just build-kernel
 
 ---
 
-## 4. Instalación Limpia de Extensiones GNOME (`gnome-extensions.sh`)
+---
 
-Instala `gnome-browser-connector`, `extension-manager` y descarga las 17 extensiones personalizadas utilizando el instalador nativo por DBus `gnome-extensions install --force` y compilando automáticamente los esquemas GSettings (`glib-compile-schemas`), evitando el estado de error o deshabilitado en el gestor de extensiones (ver [Guía de Extensiones GNOME](./gnome_extensions_es.md)).
-
-```bash
-just extensions
-```
-
-## 5. Optimización para Portátiles y Brillo al 95% (`ldnf5op-setup.sh`)
+## 4. Optimización para Portátiles y Brillo al 95% (`laptop-setup.sh`)
 
 Configura componentes esenciales para portátiles:
-- **Brillo automático al 95% al encender**: Registra un servicio systemd (`set-screen-brightness.service`) que fija el brillo de pantalla al 95% al iniciar el sistema y al iniciar sesión en GNOME.
+- **Brillo automático al 95% al encender**: Registra un servicio systemd (`persist-screen-brightness.service`) que fija el brillo de pantalla al 95% al iniciar el sistema.
 - **Gestión de energía**: Instala y activa `power-profiles-daemon` y `switcheroo-control` (gráficos híbridos).
 - **Herramientas de brillo**: Instala `brightnessctl` y utilidades de hardware.
-- **Touchpad y pantalla**: Tap-to-click, scroll natural, dos dedos, VRR y escalado fraccional.
+- **Touchpad y energía**: Tap-to-click, scroll natural y suspensión en batería vía KDE Plasma (`kcminputrc` y `powerdevilrc`).
 
 ```bash
-./Setup/ldnf5op-setup.sh
+./Setup/laptop-setup.sh
 # O usando just:
-just ldnf5op
+just laptop
 ```
 
 ---
 
-## 6. Personalización de GNOME vía GSettings (`gnome-settings.sh`)
-
-Configura de manera nativa y atomizada:
-- **Luz Nocturna (Night Light)** a 3500K.
-- **Reloj 24h** y porcentaje de batería en el panel superior.
-- **Botones de ventana**: minimizar, maximizar y cerrar a la derecha.
-- **Touchpad**: Tap-to-click, desplazamiento natural y dos dedos.
-- **VRR y Escalado Fraccional** en Mutter Wayland.
-- **Tema Oscuro Preferido**: `prefer-dark`.
-
-```bash
-just gnome
-```
-
----
-
-## 7. Terminal Moderna (Kitty)
+## 5. Terminal Moderna (Kitty)
 
 ### Kitty (`kitty.sh`)
 Instala y configura Kitty (emulador acelerado por GPU) con perfil Catppuccin Mocha / Tokyo Night translúcido (85% opacidad) con efectos blur, tipografía JetBrainsMono Nerd Font, barra de pestañas Powerline inclinada y control dinámico de opacidad al vuelo (`Ctrl+Shift+A` + `M`/`L`/`1`).

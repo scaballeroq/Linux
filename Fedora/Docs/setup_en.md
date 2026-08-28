@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # System Setup on Fedora 44 Workstation (FedoraTesting)
 
-This guide details the base setup process, automatic workspace mount, custom `x86_64-v3` kernel compilation, GNOME desktop customization, Kitty terminal, GNOME Shell extensions, and Cockpit web administration panel on **Fedora 44 Workstation (Trixie)** with **GNOME**.
+This guide details the base setup process, automatic workspace mount, custom `x86_64-v3` kernel compilation, Kitty terminal, and Cockpit web administration panel on **Fedora 44** with **KDE Plasma**.
 
 Configurations are automated via scripts located in the `Setup` directory.
 
@@ -75,33 +75,9 @@ just build-kernel
 
 ---
 
-## 4. Clean GNOME Extensions Installation (`gnome-extensions.sh`)
-
-Installs `gnome-browser-connector`, `extension-manager`, and cleanly downloads/registers the 17 curated GNOME extensions with GSettings schema compilation (`glib-compile-schemas`). See [GNOME Extensions Guide](./gnome_extensions_en.md).
-
-```bash
-just extensions
-```
-
 ---
 
-## 5. GNOME Personalization via GSettings (`gnome-settings.sh`)
-
-Configures:
-- **Night Light** at 3500K.
-- **24-hour clock** and battery percentage.
-- **Window controls**: minimize, maximize, close on the right.
-- **Touchpad**: Tap-to-click, natural scrolling, two-finger gestures.
-- **Mutter**: Variable Refresh Rate (VRR) & fractional scaling.
-- **Dark Mode**: Prefer dark theme.
-
-```bash
-just gnome
-```
-
----
-
-## 6. Modern Terminal (Kitty)
+## 4. Modern Terminal (Kitty)
 
 ### Kitty (`kitty.sh`)
 Installs and configures GPU-accelerated Kitty terminal with Catppuccin Mocha / Tokyo Night dark theme, 85% background opacity with blur, JetBrainsMono Nerd Font typography, slanted powerline tab bar, and on-the-fly opacity adjustments (`Ctrl+Shift+A` + `M`/`L`/`1`).

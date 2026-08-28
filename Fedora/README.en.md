@@ -25,9 +25,7 @@ Operating system setup, GNOME personalization, and security hardening:
 - **`post-install.sh`**: Smart dispatcher with automatic CPU vendor detection (AMD vs Intel) and CLI flags (`--amd`, `--intel`).
 - **`post-install-amd.sh`**: Post-installation optimized for **AMD Ryzen** CPUs and Radeon Graphics (AMD microcode, GPU firmware, RADV, Mesa, ZRAM, PipeWire, GNOME).
 - **`post-install-intel.sh`**: Post-installation optimized for **Intel Core** desktop PCs (Haswell i7-4790 / HD Graphics 4600) tailored for media center & streaming (Intel microcode, `i965` VA-API driver, codecs, Kodi, no virtualization).
-- **`gnome-settings.sh`**: Automated GNOME personalization via GSettings (Night Light at 3500K, 24h clock, window buttons, prefer dark theme, VRR).
-- **`gnome-extensions.sh`**: Clean, automated installation of 17 curated GNOME extensions with GSettings schema compilation (see [GNOME Extensions Guide](./Docs/gnome_extensions_en.md)).
-- **`kitty.sh`**: GPU-accelerated Kitty terminal setup with 85% opacity, blur effects, JetBrainsMono Nerd Font, and GNOME/Nautilus integration.
+- **`kitty.sh`**: GPU-accelerated Kitty terminal setup with 85% opacity, blur effects, JetBrainsMono Nerd Font, and Dolphin / KDE Plasma integration.
 - **`apariencia.sh`**: Themes, icons, and Qt/GTK style consistency (Adwaita-Dark and Papirus-Dark).
 - **`ldnf5op-setup.sh`**: Development ldnf5op optimizations (Touchpad gestures, Bluetooth, `power-profiles-daemon`, `switcheroo-control`, HiDPI, VRR on Wayland).
 - **`fingerprint-setup.sh`**: Fingerprint unlocking and PAM authentication (`fprintd`, `sudo`, `polkit-1`, `pam-auth-update`).
@@ -89,8 +87,6 @@ Or run individual components:
 just post-install-amd    # Post-installation exclusively for AMD Ryzen
 just post-install-intel  # Post-installation for Intel Media Center
 just kodi                # Install Kodi and streaming plugins
-just gnome               # Apply GNOME GSettings configuration
-just extensions          # Install and compile the 17 GNOME extensions
 just plymouth            # Setup and activate graphical boot splash screen
 just ides                # Install Neovim, VSCode, Antigravity, and OpenCode
 just build-kernel        # Compile a native x86_64-v3 Linux kernel
