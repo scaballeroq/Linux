@@ -25,7 +25,7 @@ Scripts de aprovisionamiento del sistema operativo, personalización visual y re
 - **`post-install.sh`**: Despachador inteligente con detección automática de CPU (AMD vs Intel) y soporte para banderas CLI (`--amd`, `--intel`).
 - **`post-install-amd.sh`**: Post-instalación optimizada para procesadores **AMD Ryzen** y gráficos Radeon (microcódigo AMD, firmware GPU, RADV, Mesa, PipeWire, ZRAM, RPM Fusion).
 - **`post-install-intel.sh`**: Post-instalación optimizada para equipos de sobremesa **Intel Core** (Haswell i7-4790 / HD Graphics 4600) para centro multimedia y streaming (microcódigo Intel, VA-API `i965`/`intel-media-driver`, codecs, Kodi, sin virtualización).
-- **`apariencia.sh`**: Gestor de temas y homogeneización visual para KDE Plasma 6 (Breeze Dark, iconos Papirus-Dark, cursores e integración GTK 3/4 y Flatpak).
+- **`apariencia.sh`**: Gestor de temas, motor de estilos SVG Kvantum (Qt5/Qt6), iconos Papirus-Dark, cursores e integración visual con GTK 3/4 y Flatpak.
 - **`kitty.sh`**: Terminal Kitty acelerada por GPU con opacidad personalizable (`--opacity`), desenfoque blur, tipografía JetBrainsMono Nerd Font, atajos al vuelo e integración con Dolphin.
 - **`laptop-setup.sh`**: Optimización para portátiles (Touchpad, gestos, Bluetooth, GPU híbrida con `switcheroo-control`, gestión de energía con `tuned-ppd` y servicio de persistencia de brillo al 95%).
 - **`hp-printer-setup.sh`**: Impresora HP LaserJet Pro M15w vía USB/Red (CUPS, HPLIP, Print Manager KDE y descarga de plugin privativo).
@@ -91,7 +91,7 @@ O ejecutar componentes de forma individual:
 ```bash
 just post-install-amd    # Post-instalación exclusiva para AMD Ryzen
 just post-install-intel  # Post-instalación para Intel Media Center
-just apariencia          # Aplica tema Breeze Dark + Papirus-Dark en KDE Plasma y GTK
+just apariencia          # Aplica temas, Kvantum (KvFlatDark) e iconos Papirus-Dark en KDE y GTK
 just kitty               # Configura terminal Kitty con opacidad y desenfoque
 just tuning              # Aplica sysctl, límites, systemd y Baloo
 just plymouth            # Configura y activa el splash screen visual de arranque

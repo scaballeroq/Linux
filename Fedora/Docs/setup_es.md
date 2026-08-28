@@ -176,18 +176,21 @@ just cockpit
 
 ## 8. Temas e Integración Visual (`apariencia.sh`)
 
-Aplica y gestiona temas globales, esquemas de color e iconos en KDE Plasma 6 asegurando coherencia visual con aplicaciones GTK 3/4 y Flatpaks:
-- Tema Global: **Breeze Dark**
+Aplica y gestiona temas globales, motor de estilos SVG Kvantum (Qt5/Qt6), esquemas de color e iconos en KDE Plasma 6 asegurando coherencia visual con aplicaciones GTK 3/4 y Flatpaks:
+- Motor de Widgets Qt: **Kvantum** (con temas SVG como `KvFlatDark`, `KvMojaveDark`, `MateriaDark`) / **Breeze**
+- Tema Global KDE: **Breeze Dark** / **Breeze Light**
 - Iconos: **Papirus-Dark** / **Breeze-Dark**
 - Cursores: `breeze_cursors`
 
 ```bash
 just apariencia
 # Opciones CLI:
-./Setup/apariencia.sh --status    # Muestra la apariencia activa
-./Setup/apariencia.sh --list      # Lista temas e iconos instalados
-./Setup/apariencia.sh --light     # Aplica modo claro (Breeze Light)
-./Setup/apariencia.sh --dark      # Aplica modo oscuro (Breeze Dark)
+./Setup/apariencia.sh --status              # Muestra la apariencia activa (KDE, Kvantum, GTK)
+./Setup/apariencia.sh --list                # Lista temas globales, iconos y temas Kvantum
+./Setup/apariencia.sh --dark                # Aplica modo oscuro con Kvantum (KvFlatDark + Papirus-Dark)
+./Setup/apariencia.sh --light               # Aplica modo claro con Kvantum (KvFlatLight + Papirus)
+./Setup/apariencia.sh --kvantum-theme KvArcDark  # Aplica un tema Kvantum personalizado
+./Setup/apariencia.sh --breeze-widgets      # Restablece widgets nativos Breeze (sin Kvantum)
 ```
 
 ---

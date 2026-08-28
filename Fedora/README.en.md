@@ -25,7 +25,7 @@ Operating system provisioning, visual customization, and performance hardening s
 - **`post-install.sh`**: Smart CPU dispatcher with automatic architecture detection (AMD vs Intel) and CLI flags (`--amd`, `--intel`).
 - **`post-install-amd.sh`**: Post-installation tailored for **AMD Ryzen** CPUs and Radeon Graphics (AMD microcode, GPU firmware, RADV, Mesa, PipeWire, ZRAM, RPM Fusion).
 - **`post-install-intel.sh`**: Post-installation tailored for **Intel Core** desktop PCs (Haswell i7-4790 / HD Graphics 4600) for media center & streaming (Intel microcode, VA-API `i965`/`intel-media-driver`, codecs, Kodi, no virtualization overhead).
-- **`apariencia.sh`**: Desktop theme manager and visual integration for KDE Plasma 6 (Breeze Dark, Papirus-Dark icons, cursors, GTK 3/4 and Flatpak synchronization).
+- **`apariencia.sh`**: Theme manager, Kvantum SVG style engine (Qt5/Qt6), Papirus-Dark icons, cursors, and visual synchronization with GTK 3/4 and Flatpaks.
 - **`kitty.sh`**: GPU-accelerated Kitty terminal with customizable opacity (`--opacity`), blur effects, JetBrainsMono Nerd Font, on-the-fly hotkeys, and Dolphin file manager integration.
 - **`laptop-setup.sh`**: Laptop performance and battery optimizations (Touchpad gestures, Bluetooth, hybrid graphics via `switcheroo-control`, energy management via `tuned-ppd`, and 95% brightness persistence service).
 - **`hp-printer-setup.sh`**: HP LaserJet Pro M15w printer configuration via USB/Network (CUPS, HPLIP, KDE Print Manager, and proprietary plugin download).
@@ -91,7 +91,7 @@ Or trigger individual components:
 ```bash
 just post-install-amd    # AMD Ryzen specific post-install
 just post-install-intel  # Intel Media Center post-install
-just apariencia          # Apply Breeze Dark + Papirus-Dark in KDE Plasma and GTK
+just apariencia          # Apply themes, Kvantum (KvFlatDark), and Papirus-Dark icons in KDE and GTK
 just kitty               # Setup Kitty terminal with custom opacity & blur
 just tuning              # Apply sysctl, user limits, systemd timeouts, and Baloo
 just plymouth            # Configure and enable graphical boot splash
