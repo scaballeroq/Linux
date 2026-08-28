@@ -49,7 +49,7 @@ fingerprint:
 printer:
     ./Setup/hp-printer-setup.sh
 
-# Optimizaciones avanzadas de Fedora 44 (Sysctl, Distrobox)
+# Optimizaciones avanzadas de rendimiento (Sysctl, límites, Systemd, Baloo, Distrobox para Fedora 44 + KDE Plasma)
 tuning:
     ./Setup/fedora-tuning.sh
 

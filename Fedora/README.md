@@ -30,7 +30,7 @@ Scripts de configuración del sistema operativo, personalización de GNOME y end
 - **`laptop-setup.sh`**: Optimización para portátiles de desarrollo (Touchpad, Bluetooth, `power-profiles-daemon`, `switcheroo-control`, HiDPI, VRR en Wayland, persistencia de brillo al 95%).
 - **`fingerprint-setup.sh`**: Desbloqueo y autenticación por huella dactilar (`fprintd`, `fprintd-pam`, `authselect` nativo en Fedora).
 - **`hp-printer-setup.sh`**: Impresora HP LaserJet Pro M15w vía USB (CUPS, HPLIP, plugin propietario y `system-config-printer`).
-- **`fedora-tuning.sh`**: Ajustes de Kernel Sysctl (`inotify`, `max_map_count`) y soporte de `distrobox`.
+- **`fedora-tuning.sh`**: Ajustes de Kernel Sysctl (`inotify`, `max_map_count`, `vfs_cache_pressure`), límites de descriptores de archivos, timeouts de parada en Systemd, optimización de Baloo y soporte de `distrobox` en Fedora 44 + KDE Plasma.
 - **`build-custom-kernel.sh`**: Compilador de Kernel Linux oficial optimizado para arquitectura `x86_64-v3`, latencia a 1000Hz y Preemption dinámica con Dracut y GRUB.
 - **`cockpit.sh`**: Panel de administración web Cockpit con módulos Podman, Virtualización y Almacenamiento.
 - **`fastfetch.sh`**: Información estética del sistema al abrir la terminal (Fastfetch).

@@ -113,9 +113,28 @@ just kitty
 
 ---
 
-## 8. Salvapantallas 3D y Bloqueo (`screensaver-setup.sh`)
+## 6. Optimizaciones Avanzadas de Rendimiento (`fedora-tuning.sh`)
 
-Instala la suite XScreenSaver con efectos 3D OpenGL (Matrix, Tuberías, Flurry), registra el demonio en autostart de GNOME y vincula el atajo `Super + L` para activar el salvapantallas animado al bloquear la pantalla.
+Aplica optimizaciones a nivel de Kernel Sysctl, límites de descriptores de archivos, timeouts de Systemd, exclusiones de Baloo y soporte para Distrobox:
+- **Sysctl**: `fs.inotify.max_user_watches=524288` e `instances=1024` para IDEs (VSCode/JetBrains) y KDE, `vm.max_map_count=16777216` para gaming y VMs, `vm.swappiness=100` optimizado para ZRAM y `vm.vfs_cache_pressure=50`.
+- **Límites de usuario (`limits.d`)**: `nofile` hasta 1,048,576 y `memlock unlimited`.
+- **Systemd**: `DefaultTimeoutStopSec=10s` para apagados y reinicios rápidos.
+- **KDE Baloo**: Exclusión automática de carpetas pesadas (`node_modules`, `.git`, `.venv`, `target`, `vendor`).
+- **Contenedores**: Instalación de `distrobox` y `podman`.
+
+```bash
+just tuning
+# o ./Setup/fedora-tuning.sh
+
+# Ver estado actual de rendimiento:
+./Setup/fedora-tuning.sh --status
+```
+
+---
+
+## 7. Salvapantallas 3D y Bloqueo (`screensaver-setup.sh`)
+
+Instala la suite XScreenSaver con efectos 3D OpenGL (Matrix, Tuberías, Flurry) y vincula el atajo de bloqueo.
 
 ```bash
 just screensaver
@@ -123,7 +142,7 @@ just screensaver
 
 ---
 
-## 9. Entorno de Shell (`shell.sh`, `fastfetch.sh` y `fonts.sh`)
+## 8. Entorno de Shell (`shell.sh`, `fastfetch.sh` y `fonts.sh`)
 
 Instala utilidades modernas de consola (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`), tipografías para desarrollo (Nerd Fonts: JetBrainsMono, FiraCode, CascadiaCode) y el prompt interactivo Starship.
 
@@ -135,7 +154,7 @@ just fastfetch
 
 ---
 
-## 10. Panel de Administración Web Cockpit (`cockpit.sh`)
+## 9. Panel de Administración Web Cockpit (`cockpit.sh`)
 
 Instala Cockpit con módulos para administrar el equipo desde el navegador ([https://localhost:9090](https://localhost:9090)):
 - `cockpit-podman`: Gestión de contenedores Podman.
@@ -148,7 +167,7 @@ just cockpit
 
 ---
 
-## 11. Temas e Iconos de Escritorio (`apariencia.sh`)
+## 10. Temas e Iconos de Escritorio (`apariencia.sh`)
 
 Instala temas, esquemas de color e iconos (Breeze Dark, Papirus-Dark) y asegura una homogeneización visual nativa y coherente entre KDE Plasma 6 (Qt6/Qt5), aplicaciones GTK 3/4 y paquetes Flatpak.
 
@@ -172,7 +191,7 @@ Instala temas, esquemas de color e iconos (Breeze Dark, Papirus-Dark) y asegura 
 
 ---
 
-## 12. Splash Screen Visual de Arranque (`plymouth-setup.sh`)
+## 11. Splash Screen Visual de Arranque (`plymouth-setup.sh`)
 
 Instala y activa Plymouth con soporte para múltiples temas oficiales y modernos (`bgrt`, `ceratopsian`, `spinner`, etc.), asegurando un arranque gráfico limpio y silencioso sin parpadeos.
 

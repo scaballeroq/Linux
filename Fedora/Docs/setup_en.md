@@ -88,7 +88,26 @@ just kitty
 
 ---
 
-## 7. 3D Screensaver and Lock Screen (`screensaver-setup.sh`)
+## 5. Advanced System & Kernel Tuning (`fedora-tuning.sh`)
+
+Applies Kernel Sysctl optimizations, file descriptor limits, Systemd shutdown timeouts, Baloo exclusion rules, and Distrobox container support:
+- **Sysctl**: `fs.inotify.max_user_watches=524288` and `instances=1024` for IDEs (VSCode/JetBrains) & KDE, `vm.max_map_count=16777216` for gaming and containers, `vm.swappiness=100` tuned for ZRAM, and `vm.vfs_cache_pressure=50`.
+- **User Limits (`limits.d`)**: `nofile` up to 1,048,576 and `memlock unlimited`.
+- **Systemd**: `DefaultTimeoutStopSec=10s` for instantaneous shutdowns.
+- **KDE Baloo**: Automated exclusion of heavy development directories (`node_modules`, `.git`, `.venv`, `target`, `vendor`).
+- **Containers**: Distrobox and Podman integration.
+
+```bash
+just tuning
+# or ./Setup/fedora-tuning.sh
+
+# Check current performance status:
+./Setup/fedora-tuning.sh --status
+```
+
+---
+
+## 6. 3D Screensaver and Lock Screen (`screensaver-setup.sh`)
 
 Installs XScreenSaver 3D/GL suite, registers the autostart daemon, and maps `Super + L` to lock the screen with active screensavers.
 
@@ -98,7 +117,7 @@ just screensaver
 
 ---
 
-## 8. Shell Environment (`shell.sh`, `fastfetch.sh`, `fonts.sh`)
+## 7. Shell Environment (`shell.sh`, `fastfetch.sh`, `fonts.sh`)
 
 Installs modern terminal CLI utilities (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`), Nerd Fonts, and Starship prompt.
 
@@ -110,7 +129,7 @@ just fastfetch
 
 ---
 
-## 9. Cockpit Web Management (`cockpit.sh`)
+## 8. Cockpit Web Management (`cockpit.sh`)
 
 Deploys Cockpit admin console with modules for Podman, KVM/QEMU VMs, and storage disks at [https://localhost:9090](https://localhost:9090).
 
@@ -120,7 +139,7 @@ just cockpit
 
 ---
 
-## 10. Themes and Desktop Appearance (`apariencia.sh`)
+## 9. Themes and Desktop Appearance (`apariencia.sh`)
 
 Installs themes, color schemes, and icon packs (Breeze Dark, Papirus-Dark) and establishes unified visual consistency across KDE Plasma 6 (Qt6/Qt5), GTK 3/4 applications, and Flatpaks.
 
@@ -144,7 +163,7 @@ Installs themes, color schemes, and icon packs (Breeze Dark, Papirus-Dark) and e
 
 ---
 
-## 11. Graphical Boot Splash (`plymouth-setup.sh`)
+## 10. Graphical Boot Splash (`plymouth-setup.sh`)
 
 Installs, configures, and activates Plymouth boot splash with support for multiple official and modern themes (`bgrt`, `ceratopsian`, `spinner`, etc.), ensuring a smooth, flicker-free startup.
 

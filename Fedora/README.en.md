@@ -30,7 +30,7 @@ Operating system setup, GNOME personalization, and security hardening:
 - **`ldnf5op-setup.sh`**: Development ldnf5op optimizations (Touchpad gestures, Bluetooth, `power-profiles-daemon`, `switcheroo-control`, HiDPI, VRR on Wayland).
 - **`fingerprint-setup.sh`**: Fingerprint unlocking and PAM authentication (`fprintd`, `sudo`, `polkit-1`, `pam-auth-update`).
 - **`hp-printer-setup.sh`**: HP LaserJet Pro M15w printer USB setup (CUPS, HPLIP, proprietary plugin, and `system-config-printer`).
-- **`fedora-tuning.sh`**: Kernel Sysctl tweaks (`inotify`, `max_map_count`) and `distrobox` container support.
+- **`fedora-tuning.sh`**: Advanced Kernel Sysctl tuning (`inotify`, `max_map_count`, `vfs_cache_pressure`), process file limits, Systemd fast shutdown timeouts, KDE Baloo indexer tweaks, and `distrobox` container support in Fedora 44 + KDE Plasma.
 - **`build-custom-kernel.sh`**: High-performance Linux kernel compiler optimized for `x86_64-v3` architecture, 1000Hz timer, and Dynamic Preemption.
 - **`cockpit.sh`**: Cockpit web administration console with Podman, KVM, and Storage modules.
 - **`fastfetch.sh`**: Aesthetic system information banner upon terminal launch.
