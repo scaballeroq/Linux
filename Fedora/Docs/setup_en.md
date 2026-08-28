@@ -122,11 +122,25 @@ just cockpit
 
 ## 10. Themes and Desktop Appearance (`apariencia.sh`)
 
-Applies Papirus-Dark and Adwaita styling across GTK and Qt applications.
+Installs themes, color schemes, and icon packs (Breeze Dark, Papirus-Dark) and establishes unified visual consistency across KDE Plasma 6 (Qt6/Qt5), GTK 3/4 applications, and Flatpaks.
 
-```bash
-just apariencia
-```
+- **Apply full recommended dark theme**:
+  ```bash
+  just apariencia
+  # or ./Setup/apariencia.sh
+  ```
+- **Show visual state and active themes**:
+  ```bash
+  ./Setup/apariencia.sh --status
+  ```
+- **List all installed global themes, color schemes, and icons**:
+  ```bash
+  ./Setup/apariencia.sh --list
+  ```
+- **Apply light theme**:
+  ```bash
+  ./Setup/apariencia.sh --light
+  ```
 
 ---
 

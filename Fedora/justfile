@@ -79,7 +79,7 @@ fonts:
     ./Setup/fonts.sh
 
 
-# Apariencia (Temas Adwaita Dark, iconos Papirus e integración GTK/Qt)
+# Apariencia (Temas Breeze Dark, iconos Papirus e integración visual GTK/Qt en KDE Plasma)
 apariencia:
     ./Setup/apariencia.sh
 

@@ -150,11 +150,25 @@ just cockpit
 
 ## 11. Temas e Iconos de Escritorio (`apariencia.sh`)
 
-Aplica temas e iconos Papirus-Dark y Adwaita, integrando visualmente aplicaciones GTK y Qt.
+Instala temas, esquemas de color e iconos (Breeze Dark, Papirus-Dark) y asegura una homogeneización visual nativa y coherente entre KDE Plasma 6 (Qt6/Qt5), aplicaciones GTK 3/4 y paquetes Flatpak.
 
-```bash
-just apariencia
-```
+- **Aplicar tema oscuro recomendado completo**:
+  ```bash
+  just apariencia
+  # o ./Setup/apariencia.sh
+  ```
+- **Ver estado visual y temas configurados**:
+  ```bash
+  ./Setup/apariencia.sh --status
+  ```
+- **Listar todos los temas globales, esquemas de color e iconos**:
+  ```bash
+  ./Setup/apariencia.sh --list
+  ```
+- **Aplicar tema claro**:
+  ```bash
+  ./Setup/apariencia.sh --light
+  ```
 
 ---
 

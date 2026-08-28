@@ -26,7 +26,7 @@ Operating system setup, GNOME personalization, and security hardening:
 - **`post-install-amd.sh`**: Post-installation optimized for **AMD Ryzen** CPUs and Radeon Graphics (AMD microcode, GPU firmware, RADV, Mesa, ZRAM, PipeWire, GNOME).
 - **`post-install-intel.sh`**: Post-installation optimized for **Intel Core** desktop PCs (Haswell i7-4790 / HD Graphics 4600) tailored for media center & streaming (Intel microcode, `i965` VA-API driver, codecs, Kodi, no virtualization).
 - **`kitty.sh`**: GPU-accelerated Kitty terminal setup with 85% opacity, blur effects, JetBrainsMono Nerd Font, and Dolphin / KDE Plasma integration.
-- **`apariencia.sh`**: Themes, icons, and Qt/GTK style consistency (Adwaita-Dark and Papirus-Dark).
+- **`apariencia.sh`**: Global themes, color schemes, and icon styling for KDE Plasma 6 (Breeze Dark, Papirus-Dark icons, and GTK/Qt/Flatpak visual consistency).
 - **`ldnf5op-setup.sh`**: Development ldnf5op optimizations (Touchpad gestures, Bluetooth, `power-profiles-daemon`, `switcheroo-control`, HiDPI, VRR on Wayland).
 - **`fingerprint-setup.sh`**: Fingerprint unlocking and PAM authentication (`fprintd`, `sudo`, `polkit-1`, `pam-auth-update`).
 - **`hp-printer-setup.sh`**: HP LaserJet Pro M15w printer USB setup (CUPS, HPLIP, proprietary plugin, and `system-config-printer`).
