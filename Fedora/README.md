@@ -25,7 +25,7 @@ Scripts de configuración del sistema operativo, personalización de GNOME y end
 - **`post-install.sh`**: Despachador inteligente con detección automática de procesador (AMD vs Intel) y soporte para banderas CLI (`--amd`, `--intel`).
 - **`post-install-amd.sh`**: Post-instalación optimizada para procesadores **AMD Ryzen** y gráficos Radeon (microcódigo AMD, firmware GPU, RADV, Mesa, ZRAM con `zram-generator`, PipeWire, GNOME, RPM Fusion).
 - **`post-install-intel.sh`**: Post-instalación optimizada para equipos de sobremesa **Intel Core** (Haswell i7-4790 / HD Graphics 4600) dedicados a centro multimedia y streaming (microcódigo Intel, driver VA-API `i965` / `intel-media-driver`, codecs, Kodi, sin virtualización).
-- **`kitty.sh`**: Terminal Kitty acelerada por GPU con opacidad (85%), efectos blur, tipografía JetBrainsMono Nerd Font e integración con Dolphin y KDE Plasma.
+- **`kitty.sh`**: Terminal Kitty acelerada por GPU con opacidad translúcida (75%), efectos blur (32), tipografía JetBrainsMono Nerd Font e integración con Dolphin y KDE Plasma.
 - **`apariencia.sh`**: Instalación de temas, esquemas e iconos (Breeze Dark, Papirus-Dark e integración visual homogénea GTK/Qt/Flatpak en KDE Plasma 6).
 - **`laptop-setup.sh`**: Optimización para portátiles de desarrollo (Touchpad, Bluetooth, `power-profiles-daemon`, `switcheroo-control`, HiDPI, VRR en Wayland, persistencia de brillo al 95%).
 - **`fingerprint-setup.sh`**: Desbloqueo y autenticación por huella dactilar (`fprintd`, `fprintd-pam`, `authselect` nativo en Fedora).

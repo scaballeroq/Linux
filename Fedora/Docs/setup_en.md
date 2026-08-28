@@ -80,10 +80,12 @@ just build-kernel
 ## 4. Modern Terminal (Kitty)
 
 ### Kitty (`kitty.sh`)
-Installs and configures GPU-accelerated Kitty terminal with Catppuccin Mocha / Tokyo Night dark theme, 85% background opacity with blur, JetBrainsMono Nerd Font typography, slanted powerline tab bar, and on-the-fly opacity adjustments (`Ctrl+Shift+A` + `M`/`L`/`1`).
+Installs and configures GPU-accelerated Kitty terminal with Catppuccin Mocha / Tokyo Night dark theme, 75% background opacity with blur (32), JetBrainsMono Nerd Font typography, slanted powerline tab bar, and on-the-fly opacity adjustments (`Ctrl+Shift+A` + `M`/`L`/`1`).
 
 ```bash
 just kitty
+# Or set a custom opacity level (e.g., 70%):
+./Setup/kitty.sh --opacity 0.70
 ```
 
 ---
