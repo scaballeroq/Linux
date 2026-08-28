@@ -65,11 +65,12 @@ Una vez instalado Mise, se despliegan de forma global los siguientes lenguajes:
   ```
 
 ### Python (`python.sh`)
-* **Dependencias**: Instala librerías del sistema para compilar extensiones de Python (`libssl-dev`, `zlib1g-dev`, `libffi-dev`, etc.).
-* **Instalación**: Instala la rama optimizada 3.12 y actualiza el gestor de paquetes pip:
+* **Dependencias**: Instala cabeceras y librerías del sistema para compilar extensiones nativas C/Rust (`openssl-devel`, `zlib-devel`, `libffi-devel`, `sqlite-devel`, `bzip2-devel`, `readline-devel`).
+* **Instalación Estable (Soporte Extendido)**: Instala la versión recomendada de producción con soporte extendido (3.12/3.13) y actualiza las herramientas de construcción (`pip`, `setuptools`, `wheel`):
   ```bash
-  mise use --global python@3.12
-  mise exec python@3.12 -- python -m pip install --upgrade pip
+  ./ProgrammingLanguages/python.sh
+  # o para una versión específica (ej: 3.13):
+  ./ProgrammingLanguages/python.sh --version 3.13
   ```
 
 ### .NET SDK (`dotnet.sh`)

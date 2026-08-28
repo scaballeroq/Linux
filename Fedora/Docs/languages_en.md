@@ -65,11 +65,12 @@ Once Mise is installed, the following development environments are deployed glob
   ```
 
 ### Python (`python.sh`)
-* **Dependencies**: Installs system libraries required to build C extensions for Python (`libssl-dev`, `zlib1g-dev`, `libffi-dev`, etc.).
-* **Installation**: Installs the optimized 3.12 branch and updates the pip package manager:
+* **Dependencies**: Installs system headers and libraries required to build native C/Rust extensions (`openssl-devel`, `zlib-devel`, `libffi-devel`, `sqlite-devel`, `bzip2-devel`, `readline-devel`).
+* **Stable Production Installation (Extended Support)**: Installs the recommended production release with extended bugfix support (3.12/3.13) and updates build tools (`pip`, `setuptools`, `wheel`):
   ```bash
-  mise use --global python@3.12
-  mise exec python@3.12 -- python -m pip install --upgrade pip
+  ./ProgrammingLanguages/python.sh
+  # or for a specific release (e.g., 3.13):
+  ./ProgrammingLanguages/python.sh --version 3.13
   ```
 
 ### .NET SDK (`dotnet.sh`)
