@@ -74,9 +74,10 @@ Once Mise is installed, the following development environments are deployed glob
   ```
 
 ### .NET SDK (`dotnet.sh`)
-* **Installation**: Installs the latest major version of the .NET SDK:
+* **Dependencies**: Installs `libicu`, `openssl-devel`, `krb5-devel`, and `zlib-devel` for CoreCLR runtime support.
+* **LTS Installation**: Installs the official .NET SDK LTS release via Mise (`dotnet@lts` / `dotnet@8`) and disables telemetry:
   ```bash
-  mise use --global dotnet@10
+  ./ProgrammingLanguages/dotnet.sh
   ```
 
 ### Gemini CLI (`gemini.sh`)
@@ -89,40 +90,32 @@ Once Mise is installed, the following development environments are deployed glob
 
 ## 3. Rust Environment (`rust.sh`)
 
-Rust is managed through its official standard toolchain installer **Rustup**.
+Rust is managed through its official standard toolchain installer **Rustup** tracking the **Stable** channel.
 
 1. **System Build Dependencies**:
    ```bash
-   sudo dnf5 install -y build-essential cmake libssl-dev pkg-config curl
+   sudo dnf5 install -y @development-tools cmake openssl-devel pkgconf-pkg-config curl lld clang-devel
    ```
 
-2. **Rustup Installation**:
-   Downloads the installation script without directly modifying the global environment path to preserve modular loading:
+2. **Rustup Installer & IDE Components**:
+   Downloads the Stable toolchain and adds `rust-analyzer` (LSP), `clippy`, `rustfmt`, and `rust-src`:
    ```bash
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+   ./ProgrammingLanguages/rust.sh
    ```
 
-3. **Modular Environment Loading**:
-   Adds the Cargo bin path variables inside `~/.bashrc.d/rust.sh`:
-   ```bash
-   if [ -f "$HOME/.cargo/env" ]; then
-       . "$HOME/.cargo/env"
-   fi
-   ```
+3. **KDE Plasma & Shell Session Integration**:
+   Registers `~/.cargo/bin` inside `~/.config/environment.d/10-rust.conf` (KDE Wayland session) and `~/.bashrc.d/rust.sh`.
 
 4. **Fast Binary Installer (`cargo-binstall`)**:
-   Downloads and integrates `cargo-binstall`, which installs Rust-written CLI tools directly from GitHub pre-compiled binaries instead of compiling them from source locally (saving massive compilation times):
-   ```bash
-   curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-   ```
+   Downloads and integrates `cargo-binstall`, which installs Rust-written CLI tools directly from GitHub pre-compiled binaries instead of compiling them from source locally.
 
 ---
 
-## 4. OpenJDK Java compatible with AutoFirma (`java.sh`)
+## 4. OpenJDK Java (LTS) compatible with AutoFirma (`java.sh`)
 
-AutoFirma requires Java Virtual Machine integration and NSS tools. These are installed system-wide via DNF5:
+Installs Fedora's official OpenJDK LTS package with full compiler support, Apache Maven, NSS tools for AutoFirma/FNMT, and configures the `JAVA_HOME` environment variable across KDE Plasma sessions:
 ```bash
-sudo dnf5 install -y default-jre default-jdk libnss3-tools
+./ProgrammingLanguages/java.sh
 ```
 
 ---

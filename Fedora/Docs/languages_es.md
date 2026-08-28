@@ -74,9 +74,10 @@ Una vez instalado Mise, se despliegan de forma global los siguientes lenguajes:
   ```
 
 ### .NET SDK (`dotnet.sh`)
-* **Instalación**: Instala la última versión mayor del SDK de .NET:
+* **Dependencias**: Instala `libicu`, `openssl-devel`, `krb5-devel` y `zlib-devel` para el runtime CoreCLR.
+* **Instalación LTS**: Instala la versión oficial LTS de .NET SDK vía Mise (`dotnet@lts` / `dotnet@8`) y desactiva la telemetría:
   ```bash
-  mise use --global dotnet@10
+  ./ProgrammingLanguages/dotnet.sh
   ```
 
 ### Gemini CLI (`gemini.sh`)
@@ -89,40 +90,32 @@ Una vez instalado Mise, se despliegan de forma global los siguientes lenguajes:
 
 ## 3. Entorno de Rust (`rust.sh`)
 
-Rust se gestiona mediante su herramienta estándar e independiente **Rustup**.
+Rust se gestiona mediante su herramienta estándar **Rustup** fijada al canal oficial **Stable**.
 
 1. **Compiladores y Herramientas del Sistema**:
    ```bash
-   sudo dnf5 install -y build-essential cmake libssl-dev pkg-config curl
+   sudo dnf5 install -y @development-tools cmake openssl-devel pkgconf-pkg-config curl lld clang-devel
    ```
 
-2. **Instalador Rustup**:
-   Se descarga el script de instalación sin modificar directamente el PATH global para mantener la estructura modular:
+2. **Instalador Rustup y Componentes IDE**:
+   Descarga la cadena Stable y añade `rust-analyzer` (LSP), `clippy`, `rustfmt` y `rust-src`:
    ```bash
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+   ./ProgrammingLanguages/rust.sh
    ```
 
-3. **Carga Modular de Entorno**:
-   Se añade a la carpeta `~/.bashrc.d/rust.sh` el cargador de variables de entorno de Cargo:
-   ```bash
-   if [ -f "$HOME/.cargo/env" ]; then
-       . "$HOME/.cargo/env"
-   fi
-   ```
+3. **Carga de Sesión KDE Plasma y Shell**:
+   Registra `~/.cargo/bin` en `~/.config/environment.d/10-rust.conf` (sesión Wayland de KDE) y `~/.bashrc.d/rust.sh`.
 
 4. **Instalador de Binarios Rápidos (`cargo-binstall`)**:
-   Descarga e integra `cargo-binstall`, que permite descargar e instalar herramientas escritas en Rust directamente en binarios precompilados de sus repositorios de GitHub en lugar de compilarlas desde cero (ahorrando tiempo valioso):
-   ```bash
-   curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-   ```
+   Descarga e integra `cargo-binstall`, que permite descargar e instalar herramientas escritas en Rust directamente en binarios precompilados de sus repositorios de GitHub en lugar de compilarlas desde cero.
 
 ---
 
-## 4. OpenJDK Java compatible con AutoFirma (`java.sh`)
+## 4. OpenJDK Java (LTS) compatible con AutoFirma (`java.sh`)
 
-AutoFirma requiere interactuar con el almacén de claves NSS y la máquina virtual Java de Fedora. Se instala a nivel de sistema DNF5:
+Instala la versión oficial OpenJDK LTS de Fedora con compilador completo, Apache Maven, herramientas NSS para AutoFirma/FNMT y configura la variable `JAVA_HOME` en la sesión de KDE Plasma:
 ```bash
-sudo dnf5 install -y default-jre default-jdk libnss3-tools
+./ProgrammingLanguages/java.sh
 ```
 
 ---
