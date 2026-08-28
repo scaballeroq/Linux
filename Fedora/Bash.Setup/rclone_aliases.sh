@@ -25,11 +25,9 @@ alias gdrive-imagenes="rclone sync \"\$HOME/Imágenes\" \"GoogleDrive:Imágenes\
 alias gdrive-documentos="rclone sync \"\$HOME/Documentos/\" \"GoogleDrive:Documentos\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_documentos.log\""
 alias gdrive-videos="rclone sync \"\$HOME/Vídeos\" \"GoogleDrive:Vídeos\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_videos.log\""
 alias gdrive-musica="rclone sync \"\$HOME/Música\" \"GoogleDrive:Música\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_musica.log\""
-alias gdrive-software="rclone sync \"$RCLONE_EXT_BASE/Software\" \"GoogleDrive:Workspace/Software\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_software.log\""
+alias gdrive-software="rclone sync \"\$HOME/Workspace/Software\" \"GoogleDrive:Workspace/Software\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_software.log\""
 alias gdrive-kdenlive="rclone sync \"\$HOME/Workspace/Kdenlive/\" \"GoogleDrive:Workspace/Kdenlive\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_kdenlive.log\""
-alias gdrive-repos="rclone sync \"$RCLONE_REPOS_BASE\" \"GoogleDrive:Workspace/Repositorios\" $RCLONE_OPTS --include \"*.zip\" --log-file \"$RCLONE_LOG_DIR/rclone_repos.log\""
-alias gdrive-repos-debian="rclone sync \"$RCLONE_REPOS_BASE/Debian\" \"GoogleDrive:Workspace/Repositorios/Debian\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_debian.log\""
-alias gdrive-repos-loladelacamara="rclone sync \"$RCLONE_REPOS_BASE/loladelacamara.es\" \"GoogleDrive:Workspace/Repositorios/loladelacamara.es\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_loladelacamara.log\""
+alias gdrive-repos="rclone sync \"\$HOME/Workspace/BKP_Repos/\" \"GoogleDrive:Workspace/BKP_Repos\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos.log\""
 
 # -----------------------------------------------------------------------------
 # 3.1. GOOGLE DRIVE (UPLOAD - SYNC DRY RUN) - SIMULACIONES DE SUBIDA (SYNC)
@@ -39,11 +37,9 @@ alias gdrive-imagenes-dry="rclone sync \"\$HOME/Imágenes\" \"GoogleDrive:Imáge
 alias gdrive-documentos-dry="rclone sync \"\$HOME/Documentos/\" \"GoogleDrive:Documentos\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_documentos_dry.log\""
 alias gdrive-videos-dry="rclone sync \"\$HOME/Vídeos\" \"GoogleDrive:Vídeos\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_videos_dry.log\""
 alias gdrive-musica-dry="rclone sync \"\$HOME/Música\" \"GoogleDrive:Música\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_musica_dry.log\""
-alias gdrive-software-dry="rclone sync \"$RCLONE_EXT_BASE/Software\" \"GoogleDrive:Workspace/Software\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_software_dry.log\""
+alias gdrive-software-dry="rclone sync \"\$HOME/Workspace/Software\" \"GoogleDrive:Workspace/Software\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_software_dry.log\""
 alias gdrive-kdenlive-dry="rclone sync \"\$HOME/Workspace/Kdenlive/\" \"GoogleDrive:Workspace/Kdenlive\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_kdenlive_dry.log\""
-alias gdrive-repos-dry="rclone sync \"$RCLONE_REPOS_BASE\" \"GoogleDrive:Workspace/Repositorios\" $RCLONE_OPTS --include \"*.zip\" --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_repos_dry.log\""
-alias gdrive-repos-debian-dry="rclone sync \"$RCLONE_REPOS_BASE/Debian\" \"GoogleDrive:Workspace/Repositorios/Debian\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_repos_debian_dry.log\""
-alias gdrive-repos-loladelacamara-dry="rclone sync \"$RCLONE_REPOS_BASE/loladelacamara.es\" \"GoogleDrive:Workspace/Repositorios/loladelacamara.es\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_repos_loladelacamara_dry.log\""
+alias gdrive-repos-dry="rclone sync \"\$HOME/Workspace/BKP_Repos/\" \"GoogleDrive:Workspace/BKP_Repos\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_repos_dry.log\""
 
 # -----------------------------------------------------------------------------
 # 3.2. GOOGLE DRIVE (UPLOAD - COPY) - SUBIR A LA NUBE (SIN ELIMINAR EN DESTINO)
@@ -53,11 +49,9 @@ alias gdrive-imagenes-copy="rclone copy \"\$HOME/Imágenes\" \"GoogleDrive:Imág
 alias gdrive-documentos-copy="rclone copy \"\$HOME/Documentos/\" \"GoogleDrive:Documentos\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_documentos_copy.log\""
 alias gdrive-videos-copy="rclone copy \"\$HOME/Vídeos\" \"GoogleDrive:Vídeos\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_videos_copy.log\""
 alias gdrive-musica-copy="rclone copy \"\$HOME/Música\" \"GoogleDrive:Música\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_musica_copy.log\""
-alias gdrive-software-copy="rclone copy \"$RCLONE_EXT_BASE/Software\" \"GoogleDrive:Workspace/Software\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_software_copy.log\""
+alias gdrive-software-copy="rclone copy \"\$HOME/Workspace/Software\" \"GoogleDrive:Workspace/Software\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_software_copy.log\""
 alias gdrive-kdenlive-copy="rclone copy \"\$HOME/Workspace/Kdenlive/\" \"GoogleDrive:Workspace/Kdenlive\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_kdenlive_copy.log\""
-alias gdrive-repos-copy="rclone copy \"$RCLONE_REPOS_BASE\" \"GoogleDrive:Workspace/Repositorios\" $RCLONE_OPTS --include \"*.zip\" --log-file \"$RCLONE_LOG_DIR/rclone_repos_copy.log\""
-alias gdrive-repos-debian-copy="rclone copy \"$RCLONE_REPOS_BASE/Debian\" \"GoogleDrive:Workspace/Repositorios/Debian\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_debian_copy.log\""
-alias gdrive-repos-loladelacamara-copy="rclone copy \"$RCLONE_REPOS_BASE/loladelacamara.es\" \"GoogleDrive:Workspace/Repositorios/loladelacamara.es\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_loladelacamara_copy.log\""
+alias gdrive-repos-copy="rclone copy \"\$HOME/Workspace/BKP_Repos/\" \"GoogleDrive:Workspace/BKP_Repos\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_copy.log\""
 
 # -----------------------------------------------------------------------------
 # 3.3. GOOGLE DRIVE (UPLOAD - COPY DRY RUN) - SIMULACIONES DE COPIA DE SUBIDA
@@ -67,11 +61,9 @@ alias gdrive-imagenes-copy-dry="rclone copy \"\$HOME/Imágenes\" \"GoogleDrive:I
 alias gdrive-documentos-copy-dry="rclone copy \"\$HOME/Documentos/\" \"GoogleDrive:Documentos\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_documentos_copy_dry.log\""
 alias gdrive-videos-copy-dry="rclone copy \"\$HOME/Vídeos\" \"GoogleDrive:Vídeos\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_videos_copy_dry.log\""
 alias gdrive-musica-copy-dry="rclone copy \"\$HOME/Música\" \"GoogleDrive:Música\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_musica_copy_dry.log\""
-alias gdrive-software-copy-dry="rclone copy \"$RCLONE_EXT_BASE/Software\" \"GoogleDrive:Workspace/Software\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_software_copy_dry.log\""
+alias gdrive-software-copy-dry="rclone copy \"\$HOME/Workspace/Software\" \"GoogleDrive:Workspace/Software\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_software_copy_dry.log\""
 alias gdrive-kdenlive-copy-dry="rclone copy \"\$HOME/Workspace/Kdenlive/\" \"GoogleDrive:Workspace/Kdenlive\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_kdenlive_copy_dry.log\""
-alias gdrive-repos-copy-dry="rclone copy \"$RCLONE_REPOS_BASE\" \"GoogleDrive:Workspace/Repositorios\" $RCLONE_OPTS --include \"*.zip\" --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_repos_copy_dry.log\""
-alias gdrive-repos-debian-copy-dry="rclone copy \"$RCLONE_REPOS_BASE/Debian\" \"GoogleDrive:Workspace/Repositorios/Debian\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_repos_debian_copy_dry.log\""
-alias gdrive-repos-loladelacamara-copy-dry="rclone copy \"$RCLONE_REPOS_BASE/loladelacamara.es\" \"GoogleDrive:Workspace/Repositorios/loladelacamara.es\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_repos_loladelacamara_copy_dry.log\""
+alias gdrive-repos-copy-dry="rclone copy \"\$HOME/Workspace/BKP_Repos/\" \"GoogleDrive:Workspace/BKP_Repos\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_repos_copy_dry.log\""
 
 # -----------------------------------------------------------------------------
 # 4. GOOGLE DRIVE (DOWNLOAD - SYNC) - BAJAR DE LA NUBE (ESPEJO)
