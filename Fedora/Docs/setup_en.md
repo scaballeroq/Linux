@@ -131,11 +131,27 @@ just fastfetch
 
 ## 8. Cockpit Web Management (`cockpit.sh`)
 
-Deploys Cockpit admin console with modules for Podman, KVM/QEMU VMs, and storage disks at [https://localhost:9090](https://localhost:9090).
+Installs and manages Cockpit web console with on-demand Systemd socket activation (`cockpit.socket`) to administer the machine directly in the browser ([https://localhost:9090](https://localhost:9090)):
+- `cockpit-podman`: Visual management of Podman containers, pods, and images.
+- `cockpit-machines`: KVM/QEMU and libvirt virtual machines management.
+- `cockpit-storaged`: SSD/NVMe disk health and SMART telemetry.
+- `cockpit-networkmanager`: Network interface and connection monitoring.
+- `cockpit-selinux`: SELinux policy analysis and guided remediation.
+- `cockpit-files`: Web file browser and manager.
 
-```bash
-just cockpit
-```
+- **Install and enable Cockpit**:
+  ```bash
+  just cockpit
+  # or ./Setup/cockpit.sh
+  ```
+- **Check socket, service, and module status**:
+  ```bash
+  ./Setup/cockpit.sh --status
+  ```
+- **Launch directly in default browser**:
+  ```bash
+  ./Setup/cockpit.sh --open
+  ```
 
 ---
 

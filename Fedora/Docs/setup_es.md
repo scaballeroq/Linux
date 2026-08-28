@@ -156,14 +156,27 @@ just fastfetch
 
 ## 9. Panel de Administración Web Cockpit (`cockpit.sh`)
 
-Instala Cockpit con módulos para administrar el equipo desde el navegador ([https://localhost:9090](https://localhost:9090)):
-- `cockpit-podman`: Gestión de contenedores Podman.
-- `cockpit-machines`: Gestión de MVs en KVM/QEMU.
-- `cockpit-storaged`: Estado de discos SSD/NVMe y datos SMART.
+Instala y gestiona la consola web Cockpit con activación bajo demanda (`cockpit.socket` en Systemd) para administrar el equipo desde el navegador ([https://localhost:9090](https://localhost:9090)):
+- `cockpit-podman`: Gestión visual de contenedores, imágenes y pods de Podman.
+- `cockpit-machines`: Gestión de MVs en KVM/QEMU y libvirt.
+- `cockpit-storaged`: Estado de discos SSD/NVMe y telemetría SMART.
+- `cockpit-networkmanager`: Monitoreo y configuración de red.
+- `cockpit-selinux`: Análisis y resolución guiada de alertas SELinux.
+- `cockpit-files`: Gestor y explorador de archivos web.
 
-```bash
-just cockpit
-```
+- **Instalar y habilitar Cockpit**:
+  ```bash
+  just cockpit
+  # o ./Setup/cockpit.sh
+  ```
+- **Ver estado del servicio, socket y módulos**:
+  ```bash
+  ./Setup/cockpit.sh --status
+  ```
+- **Abrir directamente en el navegador**:
+  ```bash
+  ./Setup/cockpit.sh --open
+  ```
 
 ---
 
