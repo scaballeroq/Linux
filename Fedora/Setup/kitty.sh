@@ -207,15 +207,37 @@ enable_audio_bell no
 visual_bell_duration 0.0
 
 # --- Atajos de teclado útiles ---
-# Control de opacidad en tiempo real:
-map ctrl+shift+a>m set_background_opacity +0.05
-map ctrl+shift+a>l set_background_opacity -0.05
-map ctrl+shift+a>d set_background_opacity default
-map ctrl+shift+a>1 set_background_opacity 1.0
+# 1. Control directo de opacidad (Ctrl+Alt + Flechas / +/-):
+map ctrl+alt+up          set_background_opacity +0.05
+map ctrl+alt+down        set_background_opacity -0.05
+map ctrl+alt+equal       set_background_opacity +0.05
+map ctrl+alt+plus        set_background_opacity +0.05
+map ctrl+alt+minus       set_background_opacity -0.05
+map ctrl+alt+kp_add      set_background_opacity +0.05
+map ctrl+alt+kp_subtract set_background_opacity -0.05
+map ctrl+alt+0           set_background_opacity default
+map ctrl+alt+1           set_background_opacity 1.0
+
+# 2. Control de opacidad mediante teclas de función (F9-F12):
+map ctrl+shift+f11       set_background_opacity +0.05
+map ctrl+shift+f10       set_background_opacity -0.05
+map ctrl+shift+f9        set_background_opacity default
+map ctrl+shift+f12       set_background_opacity 1.0
+
+# 3. Secuencia de dos pasos (Ctrl+Shift+A seguido de M/L/D/1):
+map ctrl+shift+a>m       set_background_opacity +0.05
+map ctrl+shift+a>shift+m set_background_opacity +0.05
+map ctrl+shift+a>l       set_background_opacity -0.05
+map ctrl+shift+a>shift+l set_background_opacity -0.05
+map ctrl+shift+a>d       set_background_opacity default
+map ctrl+shift+a>shift+d set_background_opacity default
+map ctrl+shift+a>1       set_background_opacity 1.0
+map ctrl+shift+a>0       set_background_opacity default
 
 # Gestión de pestañas y splits:
-map ctrl+shift+t new_tab_with_cwd
-map ctrl+shift+enter new_window_with_cwd
+map ctrl+shift+t         new_tab_with_cwd
+map ctrl+shift+enter     new_window_with_cwd
+map ctrl+shift+f5        load_config_file
 EOF
 
 # 4. Integración con Dolphin y KDE Plasma
@@ -274,10 +296,11 @@ killall -USR1 kitty 2>/dev/null || true
 echo "==========================================================="
 echo "✅ Kitty se ha configurado con opacidad al ${OPACITY} (${OPACITY_PERCENT}%) y blur ${BLUR_RADIUS}."
 echo "💡 Atajos rápidos en Kitty:"
+echo "   - Opacidad directa: Ctrl+Alt+Arriba (+5%) | Ctrl+Alt+Abajo (-5%) | Ctrl+Alt+0 (Default) | Ctrl+Alt+1 (100% Opaco)"
+echo "   - Opacidad por F-Keys: Ctrl+Shift+F11 (+5%) | Ctrl+Shift+F10 (-5%) | Ctrl+Shift+F9 (Default)"
 echo "   - Menú contextual en Dolphin: Clic derecho -> 'Abrir en Kitty'."
 echo "   - Atajo global en KDE: Ctrl+Alt+T para abrir Kitty en cualquier momento."
-echo "   - Ajustar opacidad al vuelo: Ctrl+Shift+A seguido de M (+5%), L (-5%), D (por defecto) o 1 (Opaco 100%)."
-echo "   - Recargar configuración: Ctrl+Shift+F5"
+echo "   - Recargar configuración en vivo: Ctrl+Shift+F5"
 echo "   - Nueva pestaña en mismo directorio: Ctrl+Shift+T"
 echo "   - Nueva ventana dividida: Ctrl+Shift+Enter"
 echo "==========================================================="

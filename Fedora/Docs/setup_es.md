@@ -105,7 +105,7 @@ just laptop
 ## 5. Terminal Moderna (Kitty)
 
 ### Kitty (`kitty.sh`)
-Instala y configura Kitty (emulador acelerado por GPU) con perfil Catppuccin Mocha / Tokyo Night translúcido (75% opacidad) con efectos blur (32), tipografía JetBrainsMono Nerd Font, barra de pestañas Powerline inclinada y control dinámico de opacidad al vuelo (`Ctrl+Shift+A` + `M`/`L`/`1`).
+Instala y configura Kitty (emulador acelerado por GPU) con perfil Catppuccin Mocha / Tokyo Night translúcido (75% opacidad) con efectos blur (32), tipografía JetBrainsMono Nerd Font, barra de pestañas Powerline inclinada y control dinámico de opacidad al vuelo (`Ctrl+Alt+Arriba`/`Abajo` o `Ctrl+Shift+F11`/`F10`).
 
 ```bash
 just kitty
