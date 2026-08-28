@@ -351,5 +351,6 @@ systemctl --user daemon-reload
 | `unlink <nombre>` | Desenlazar proyecto de systemd |
 | `install-global <servicio>` | Instalar servicio compartido |
 | `uninstall-global <servicio>` | Desinstalar servicio compartido |
-| `list` | Listar proyectos |
+| `list` / `ps` | Listar proyectos y su estado |
 | `list-templates` | Listar plantillas disponibles |
+| `doctor` / `check` | Diagnóstico de salud de Podman, socket, linger y Quadlets |
