@@ -12,24 +12,34 @@ La gestión de entornos se centraliza principalmente a través de **Mise** (runt
 
 ## 1. Gestor de Versiones Mise (`mise.sh`)
 
-Mise es una herramienta de terminal moderna que reemplaza a herramientas como `asdf`, `nvm` o `pyenv`. Se encarga de descargar y configurar rápidamente entornos de desarrollo locales o globales.
+Mise es una herramienta de terminal moderna de alto rendimiento escrita en Rust que reemplaza a herramientas como `asdf`, `nvm` o `pyenv`. Se encarga de descargar y configurar rápidamente entornos de desarrollo locales o globales.
 
-1. **Instalación y Repositorio Oficial**:
+1. **Instalación y Repositorio Oficial RPM (DNF5)**:
    ```bash
-   sudo dnf5 update
-   sudo dnf5 install -y curl gpg
-   sudo mkdir -p -m 755 /etc/dnf5/keyrings
-   curl -fsSL https://mise.jdx.dev/gpg-key.pub | sudo gpg --dearmor -o /etc/dnf5/keyrings/mise-archive-keyring.gpg
-   echo "deb [signed-by=/etc/dnf5/keyrings/mise-archive-keyring.gpg arch=$(rpm --print-architecture)] https://mise.jdx.dev/deb stable main" | sudo tee /etc/dnf5/sources.list.d/mise.list > /dev/null
-   sudo dnf5 update
+   sudo rpm --import https://mise.jdx.dev/gpg-key.pub
+   sudo tee /etc/yum.repos.d/mise.repo << 'EOF'
+   [mise]
+   name=Mise
+   baseurl=https://mise.jdx.dev/rpm
+   enabled=1
+   gpgcheck=1
+   gpgkey=https://mise.jdx.dev/gpg-key.pub
+   EOF
    sudo dnf5 install -y mise
    ```
 
-2. **Activación de Shell**:
-   Se crea de manera modular la inicialización de Mise en `~/.bashrc.d/mise.sh`:
-   ```bash
-   eval "$(mise activate bash)"
-   ```
+2. **Integración con Shell y Sesión KDE Plasma / Wayland**:
+   - **KDE Plasma / Wayland (`~/.config/environment.d/10-mise.conf`)**: Registra la ruta de shims `~/.local/share/mise/shims` en la sesión gráfica para que IDEs (VS Code, JetBrains), KRunner y Dolphin detecten Node/Python/Rust automáticamente.
+   - **Shell (`~/.bashrc.d/mise.sh`)**: Carga modularmente `eval "$(mise activate bash)"`.
+   - **Autocompletado**: Se genera el autocompletado en `~/.local/share/bash-completion/completions/mise`.
+
+```bash
+# Ejecución mediante just o script:
+./ProgrammingLanguages/mise.sh
+
+# Ver estado de herramientas:
+./ProgrammingLanguages/mise.sh --status
+```
 
 ---
 

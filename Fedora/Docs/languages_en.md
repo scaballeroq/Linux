@@ -12,24 +12,34 @@ Environment management is centralized through **Mise** (runtimes and SDKs) and *
 
 ## 1. Version Manager Mise (`mise.sh`)
 
-Mise is a modern CLI version manager that replaces older tools like `asdf`, `nvm`, or `pyenv`. It downloads and configures development environments globally or locally.
+Mise is a high-performance polyglot runtime and version manager written in Rust that replaces older tools like `asdf`, `nvm`, or `pyenv`. It downloads and configures development environments globally or locally.
 
-1. **Official Repository Registration and Installation**:
+1. **Official RPM Repository Registration and DNF5 Installation**:
    ```bash
-   sudo dnf5 update
-   sudo dnf5 install -y curl gpg
-   sudo mkdir -p -m 755 /etc/dnf5/keyrings
-   curl -fsSL https://mise.jdx.dev/gpg-key.pub | sudo gpg --dearmor -o /etc/dnf5/keyrings/mise-archive-keyring.gpg
-   echo "deb [signed-by=/etc/dnf5/keyrings/mise-archive-keyring.gpg arch=$(rpm --print-architecture)] https://mise.jdx.dev/deb stable main" | sudo tee /etc/dnf5/sources.list.d/mise.list > /dev/null
-   sudo dnf5 update
+   sudo rpm --import https://mise.jdx.dev/gpg-key.pub
+   sudo tee /etc/yum.repos.d/mise.repo << 'EOF'
+   [mise]
+   name=Mise
+   baseurl=https://mise.jdx.dev/rpm
+   enabled=1
+   gpgcheck=1
+   gpgkey=https://mise.jdx.dev/gpg-key.pub
+   EOF
    sudo dnf5 install -y mise
    ```
 
-2. **Shell Activation**:
-   Mise initialization is added to `~/.bashrc.d/mise.sh`:
-   ```bash
-   eval "$(mise activate bash)"
-   ```
+2. **Shell and KDE Plasma / Wayland Session Integration**:
+   - **KDE Plasma / Wayland (`~/.config/environment.d/10-mise.conf`)**: Registers shims path `~/.local/share/mise/shims` in the desktop session so GUI IDEs (VS Code, JetBrains), KRunner, and Dolphin detect Node/Python/Rust automatically.
+   - **Shell (`~/.bashrc.d/mise.sh`)**: Loads `eval "$(mise activate bash)"` modularly.
+   - **Shell Completions**: Generates native bash completion at `~/.local/share/bash-completion/completions/mise`.
+
+```bash
+# Execute via just or script:
+./ProgrammingLanguages/mise.sh
+
+# Check tool version status:
+./ProgrammingLanguages/mise.sh --status
+```
 
 ---
 
