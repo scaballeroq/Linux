@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # System Setup on Fedora 44 Workstation (FedoraTesting)
 
-This guide details the base setup process, automatic workspace mount, custom `x86_64-v3` kernel compilation, GNOME desktop customization, Ptyxis terminal, GNOME Shell extensions, and Cockpit web administration panel on **Fedora 44 Workstation (Trixie)** with **GNOME**.
+This guide details the base setup process, automatic workspace mount, custom `x86_64-v3` kernel compilation, Kitty terminal, and Cockpit web administration panel on **Fedora 44** with **KDE Plasma**.
 
 Configurations are automated via scripts located in the `Setup` directory.
 
@@ -50,7 +50,7 @@ Prepares the base system by enabling additional official repositories (`contrib`
 - **Monitoring**: `btop`, `htop`, `inxi`, `gnome-system-monitor`
 - **Utilities**: `curl`, `fuse3`, `exfatprogs`, `p7zip-full`, `unrar`, `zip`, `unzip`, `bzip2`, `xz-utils`
 - **Graphics & Multimedia**: `vlc`, `gimp`, `gparted`, `evince`, `seahorse`
-- **GNOME Suite**: `gnome-core`, `gnome-shell`, `gnome-control-center`, `gnome-tweaks`, `ptyxis`, `nautilus`, `file-roller`, `gnome-text-editor`, `gnome-calculator`, `gnome-disk-utility`, `power-profiles-daemon`, `ffmpegthumbnailer`
+- **GNOME Suite**: `gnome-core`, `gnome-shell`, `gnome-control-center`, `gnome-tweaks`, `nautilus`, `file-roller`, `gnome-text-editor`, `gnome-calculator`, `gnome-disk-utility`, `power-profiles-daemon`, `ffmpegthumbnailer`
 - **Universal Packages**: `flatpak`, `gnome-software`, `gnome-software-plugin-flatpak` with Flathub repo.
 
 ---
@@ -75,51 +75,41 @@ just build-kernel
 
 ---
 
-## 4. Clean GNOME Extensions Installation (`gnome-extensions.sh`)
-
-Installs `gnome-browser-connector`, `extension-manager`, and cleanly downloads/registers the 17 curated GNOME extensions with GSettings schema compilation (`glib-compile-schemas`). See [GNOME Extensions Guide](./gnome_extensions_en.md).
-
-```bash
-just extensions
-```
-
 ---
 
-## 5. GNOME Personalization via GSettings (`gnome-settings.sh`)
-
-Configures:
-- **Night Light** at 3500K.
-- **24-hour clock** and battery percentage.
-- **Window controls**: minimize, maximize, close on the right.
-- **Touchpad**: Tap-to-click, natural scrolling, two-finger gestures.
-- **Mutter**: Variable Refresh Rate (VRR) & fractional scaling.
-- **Dark Mode**: Prefer dark theme.
-
-```bash
-just gnome
-```
-
----
-
-## 6. Modern Terminals (Ptyxis and Kitty)
-
-### Ptyxis (`ptyxis.sh`)
-Installs and configures Ptyxis with translucent dark styling (85% opacity), no scrollbar, global `Ctrl + Alt + T` shortcut, and Nautilus context menu integration via `nautilus-open-any-terminal`.
-
-```bash
-just ptyxis
-```
+## 4. Modern Terminal (Kitty)
 
 ### Kitty (`kitty.sh`)
-Installs and configures GPU-accelerated Kitty terminal with Catppuccin Mocha / Tokyo Night dark theme, 85% background opacity with blur, JetBrainsMono Nerd Font typography, slanted powerline tab bar, and on-the-fly opacity adjustments (`Ctrl+Shift+A` + `M`/`L`/`1`).
+Installs and configures GPU-accelerated Kitty terminal with Catppuccin Mocha / Tokyo Night dark theme, 75% background opacity with blur (32), JetBrainsMono Nerd Font typography, slanted powerline tab bar, and on-the-fly opacity adjustments (`Ctrl+Alt+Up`/`Down` or `Ctrl+Shift+F11`/`F10`).
 
 ```bash
 just kitty
+# Or set a custom opacity level (e.g., 70%):
+./Setup/kitty.sh --opacity 0.70
 ```
 
 ---
 
-## 7. 3D Screensaver and Lock Screen (`screensaver-setup.sh`)
+## 5. Advanced System & Kernel Tuning (`fedora-tuning.sh`)
+
+Applies Kernel Sysctl optimizations, file descriptor limits, Systemd shutdown timeouts, Baloo exclusion rules, and Distrobox container support:
+- **Sysctl**: `fs.inotify.max_user_watches=524288` and `instances=1024` for IDEs (VSCode/JetBrains) & KDE, `vm.max_map_count=16777216` for gaming and containers, `vm.swappiness=100` tuned for ZRAM, and `vm.vfs_cache_pressure=50`.
+- **User Limits (`limits.d`)**: `nofile` up to 1,048,576 and `memlock unlimited`.
+- **Systemd**: `DefaultTimeoutStopSec=10s` for instantaneous shutdowns.
+- **KDE Baloo**: Automated exclusion of heavy development directories (`node_modules`, `.git`, `.venv`, `target`, `vendor`).
+- **Containers**: Distrobox and Podman integration.
+
+```bash
+just tuning
+# or ./Setup/fedora-tuning.sh
+
+# Check current performance status:
+./Setup/fedora-tuning.sh --status
+```
+
+---
+
+## 6. 3D Screensaver and Lock Screen (`screensaver-setup.sh`)
 
 Installs XScreenSaver 3D/GL suite, registers the autostart daemon, and maps `Super + L` to lock the screen with active screensavers.
 
@@ -129,7 +119,7 @@ just screensaver
 
 ---
 
-## 8. Shell Environment (`shell.sh`, `fastfetch.sh`, `fonts.sh`)
+## 7. Shell Environment (`shell.sh`, `fastfetch.sh`, `fonts.sh`)
 
 Installs modern terminal CLI utilities (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`), Nerd Fonts, and Starship prompt.
 
@@ -141,27 +131,57 @@ just fastfetch
 
 ---
 
-## 9. Cockpit Web Management (`cockpit.sh`)
+## 8. Cockpit Web Management (`cockpit.sh`)
 
-Deploys Cockpit admin console with modules for Podman, KVM/QEMU VMs, and storage disks at [https://localhost:9090](https://localhost:9090).
+Installs and manages Cockpit web console with on-demand Systemd socket activation (`cockpit.socket`) to administer the machine directly in the browser ([https://localhost:9090](https://localhost:9090)):
+- `cockpit-podman`: Visual management of Podman containers, pods, and images.
+- `cockpit-machines`: KVM/QEMU and libvirt virtual machines management.
+- `cockpit-storaged`: SSD/NVMe disk health and SMART telemetry.
+- `cockpit-networkmanager`: Network interface and connection monitoring.
+- `cockpit-selinux`: SELinux policy analysis and guided remediation.
+- `cockpit-files`: Web file browser and manager.
 
-```bash
-just cockpit
-```
+- **Install and enable Cockpit**:
+  ```bash
+  just cockpit
+  # or ./Setup/cockpit.sh
+  ```
+- **Check socket, service, and module status**:
+  ```bash
+  ./Setup/cockpit.sh --status
+  ```
+- **Launch directly in default browser**:
+  ```bash
+  ./Setup/cockpit.sh --open
+  ```
 
 ---
 
-## 10. Themes and Desktop Appearance (`apariencia.sh`)
+## 9. Themes and Desktop Appearance (`apariencia.sh`)
 
-Applies Papirus-Dark and Adwaita styling across GTK and Qt applications.
+Installs themes, color schemes, and icon packs (Breeze Dark, Papirus-Dark) and establishes unified visual consistency across KDE Plasma 6 (Qt6/Qt5), GTK 3/4 applications, and Flatpaks.
 
-```bash
-just apariencia
-```
+- **Apply full recommended dark theme**:
+  ```bash
+  just apariencia
+  # or ./Setup/apariencia.sh
+  ```
+- **Show visual state and active themes**:
+  ```bash
+  ./Setup/apariencia.sh --status
+  ```
+- **List all installed global themes, color schemes, and icons**:
+  ```bash
+  ./Setup/apariencia.sh --list
+  ```
+- **Apply light theme**:
+  ```bash
+  ./Setup/apariencia.sh --light
+  ```
 
 ---
 
-## 11. Graphical Boot Splash (`plymouth-setup.sh`)
+## 10. Graphical Boot Splash (`plymouth-setup.sh`)
 
 Installs, configures, and activates Plymouth boot splash with support for multiple official and modern themes (`bgrt`, `ceratopsian`, `spinner`, etc.), ensuring a smooth, flicker-free startup.
 

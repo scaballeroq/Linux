@@ -13,7 +13,7 @@ El núcleo de la configuración de la terminal Bash:
 - **`aliases.sh`**: Atajos comunes para DNF5, comandos frecuentemente utilizados y utilidades modernas en Rust (`eza`, `bat`, `duf`, `dust`, `procs`, `btm`).
 - **`environment.sh`**: Variables globales que afectan el comportamiento de la shell (`PATH`, `EDITOR`, `mise`, `GPG_TTY`, DOCKER_HOST).
 - **`functions.sh`**: Colección de funciones avanzadas y utilidades multimedia (FFmpeg, ImageMagick, extracción unificada).
-- **`gnome_settings.sh`**: Configuraciones de entorno para GNOME, luz nocturna, temas, reinicio de shell y accesos rápidos a Configuración.
+- **`kde_settings.sh`**: Configuraciones de entorno para KDE Plasma 6, Wayland/KWin, atajos a Preferencias del Sistema (kcmshell6) y Spectacle.
 - **`history.sh`**: Controla cómo bash recuerda los comandos (sin duplicados, hasta 20k líneas).
 - **`options.sh`**: Configura el comportamiento interno de Bash mediante `shopt` y `bind`.
 - **`podman-functions.sh`**: Funciones para gestión simplificada de contenedores (`pexec`, `plogs`, `pclean`).
@@ -25,15 +25,12 @@ Scripts de configuración del sistema operativo, personalización de GNOME y end
 - **`post-install.sh`**: Despachador inteligente con detección automática de procesador (AMD vs Intel) y soporte para banderas CLI (`--amd`, `--intel`).
 - **`post-install-amd.sh`**: Post-instalación optimizada para procesadores **AMD Ryzen** y gráficos Radeon (microcódigo AMD, firmware GPU, RADV, Mesa, ZRAM con `zram-generator`, PipeWire, GNOME, RPM Fusion).
 - **`post-install-intel.sh`**: Post-instalación optimizada para equipos de sobremesa **Intel Core** (Haswell i7-4790 / HD Graphics 4600) dedicados a centro multimedia y streaming (microcódigo Intel, driver VA-API `i965` / `intel-media-driver`, codecs, Kodi, sin virtualización).
-- **`gnome-settings.sh`**: Personalización automatizada de GNOME vía GSettings (Luz nocturna a 3500K, reloj 24h, porcentaje de batería, botones de ventana, VRR).
-- **`gnome-extensions.sh`**: Instalación automatizada y limpia de 12 extensiones de GNOME Shell con compilación de esquemas (ver [Guía de Extensiones GNOME](./Docs/gnome_extensions_es.md)).
-- **`ptyxis.sh`**: Instalación y perfil moderno de Ptyxis (translúcido al 85%, sin scrollbar, atajo `Ctrl+Alt+T` e integración en Nautilus).
-- **`kitty.sh`**: Terminal Kitty acelerada por GPU con opacidad (85%), efectos blur, tipografía JetBrainsMono Nerd Font e integración con GNOME/Nautilus.
-- **`apariencia.sh`**: Instalación de temas e iconos (Adwaita-Dark, Papirus-Dark e integración visual GTK/Qt).
+- **`kitty.sh`**: Terminal Kitty acelerada por GPU con opacidad translúcida (75%), efectos blur (32), tipografía JetBrainsMono Nerd Font e integración con Dolphin y KDE Plasma.
+- **`apariencia.sh`**: Instalación de temas, esquemas e iconos (Breeze Dark, Papirus-Dark e integración visual homogénea GTK/Qt/Flatpak en KDE Plasma 6).
 - **`laptop-setup.sh`**: Optimización para portátiles de desarrollo (Touchpad, Bluetooth, `power-profiles-daemon`, `switcheroo-control`, HiDPI, VRR en Wayland, persistencia de brillo al 95%).
 - **`fingerprint-setup.sh`**: Desbloqueo y autenticación por huella dactilar (`fprintd`, `fprintd-pam`, `authselect` nativo en Fedora).
 - **`hp-printer-setup.sh`**: Impresora HP LaserJet Pro M15w vía USB (CUPS, HPLIP, plugin propietario y `system-config-printer`).
-- **`fedora-tuning.sh`**: Ajustes de Kernel Sysctl (`inotify`, `max_map_count`) y soporte de `distrobox`.
+- **`fedora-tuning.sh`**: Ajustes de Kernel Sysctl (`inotify`, `max_map_count`, `vfs_cache_pressure`), límites de descriptores de archivos, timeouts de parada en Systemd, optimización de Baloo y soporte de `distrobox` en Fedora 44 + KDE Plasma.
 - **`build-custom-kernel.sh`**: Compilador de Kernel Linux oficial optimizado para arquitectura `x86_64-v3`, latencia a 1000Hz y Preemption dinámica con Dracut y GRUB.
 - **`cockpit.sh`**: Panel de administración web Cockpit con módulos Podman, Virtualización y Almacenamiento.
 - **`fastfetch.sh`**: Información estética del sistema al abrir la terminal (Fastfetch).
@@ -45,7 +42,7 @@ Scripts de configuración del sistema operativo, personalización de GNOME y end
 - **`shell.sh`**: Herramientas modernas de terminal (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd-find`, `duf`, `dust`) y Starship prompt.
 - **`screensaver-setup.sh`**: Configuración de salvapantallas 3D/Matrix al bloquear la pantalla en GNOME.
 - **`plymouth-setup.sh`**: Instalación, configuración y selector de Splash Screen visual de arranque con `dracut -f`.
-- **`yt-dlp-setup.sh`**: Dependencias multimedia (yt-dlp, ffmpeg y motor JS Deno vía mise).
+- **`yt-dlp-setup.sh`**: Stack multimedia optimizado (yt-dlp, FFmpeg, AtomicParsley, aceleración aria2, descifrado de cookies para Firefox/KWallet y motor JS Deno).
 
 ### 🐳 [Podman](./Podman/)
 Ecosistema completo para contenedores Rootless y Systemd Quadlets:
@@ -91,9 +88,6 @@ O ejecutar componentes de forma individual:
 just post-install-amd    # Post-instalación exclusiva para AMD Ryzen
 just post-install-intel  # Post-instalación para Intel Media Center
 just kodi                # Instala Kodi y complementos de streaming
-just gnome               # Aplica configuración de GNOME vía GSettings
-just extensions          # Instala y compila las 12 extensiones de GNOME
-just ptyxis              # Instala y configura el emulador de terminal Ptyxis
 just plymouth            # Configura y activa el splash screen visual de arranque
 just ides                # Instala Neovim, VSCode, Antigravity y OpenCode
 just build-kernel        # Compila un kernel Linux nativo x86_64-v3

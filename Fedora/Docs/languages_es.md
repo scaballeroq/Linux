@@ -12,24 +12,34 @@ La gestión de entornos se centraliza principalmente a través de **Mise** (runt
 
 ## 1. Gestor de Versiones Mise (`mise.sh`)
 
-Mise es una herramienta de terminal moderna que reemplaza a herramientas como `asdf`, `nvm` o `pyenv`. Se encarga de descargar y configurar rápidamente entornos de desarrollo locales o globales.
+Mise es una herramienta de terminal moderna de alto rendimiento escrita en Rust que reemplaza a herramientas como `asdf`, `nvm` o `pyenv`. Se encarga de descargar y configurar rápidamente entornos de desarrollo locales o globales.
 
-1. **Instalación y Repositorio Oficial**:
+1. **Instalación y Repositorio Oficial RPM (DNF5)**:
    ```bash
-   sudo dnf5 update
-   sudo dnf5 install -y curl gpg
-   sudo mkdir -p -m 755 /etc/dnf5/keyrings
-   curl -fsSL https://mise.jdx.dev/gpg-key.pub | sudo gpg --dearmor -o /etc/dnf5/keyrings/mise-archive-keyring.gpg
-   echo "deb [signed-by=/etc/dnf5/keyrings/mise-archive-keyring.gpg arch=$(rpm --print-architecture)] https://mise.jdx.dev/deb stable main" | sudo tee /etc/dnf5/sources.list.d/mise.list > /dev/null
-   sudo dnf5 update
+   sudo rpm --import https://mise.jdx.dev/gpg-key.pub
+   sudo tee /etc/yum.repos.d/mise.repo << 'EOF'
+   [mise]
+   name=Mise
+   baseurl=https://mise.jdx.dev/rpm
+   enabled=1
+   gpgcheck=1
+   gpgkey=https://mise.jdx.dev/gpg-key.pub
+   EOF
    sudo dnf5 install -y mise
    ```
 
-2. **Activación de Shell**:
-   Se crea de manera modular la inicialización de Mise en `~/.bashrc.d/mise.sh`:
-   ```bash
-   eval "$(mise activate bash)"
-   ```
+2. **Integración con Shell y Sesión KDE Plasma / Wayland**:
+   - **KDE Plasma / Wayland (`~/.config/environment.d/10-mise.conf`)**: Registra la ruta de shims `~/.local/share/mise/shims` en la sesión gráfica para que IDEs (VS Code, JetBrains), KRunner y Dolphin detecten Node/Python/Rust automáticamente.
+   - **Shell (`~/.bashrc.d/mise.sh`)**: Carga modularmente `eval "$(mise activate bash)"`.
+   - **Autocompletado**: Se genera el autocompletado en `~/.local/share/bash-completion/completions/mise`.
+
+```bash
+# Ejecución mediante just o script:
+./ProgrammingLanguages/mise.sh
+
+# Ver estado de herramientas:
+./ProgrammingLanguages/mise.sh --status
+```
 
 ---
 
@@ -38,29 +48,36 @@ Mise es una herramienta de terminal moderna que reemplaza a herramientas como `a
 Una vez instalado Mise, se despliegan de forma global los siguientes lenguajes:
 
 ### Node.js (`nodejs.sh` y `angular.sh`)
-* **Dependencias**: Instala `build-essential`, `python3`, `g++` y `make` vía DNF5, necesarios para compilar dependencias nativas de npm (`node-gyp`).
-* **Instalación**: Configura la versión LTS 22 global:
+* **Dependencias**: Instala `@development-tools`, `gcc-c++`, `make`, `curl` y `python3` vía DNF5, necesarios para compilar dependencias nativas de npm (`node-gyp`).
+* **Instalación LTS Dinámica**: Configura la versión LTS más reciente de Node.js de forma global y prepara Corepack (`pnpm` / `yarn`):
   ```bash
-  mise use --global node@22
+  ./ProgrammingLanguages/nodejs.sh
+  # o manualmente con mise:
+  mise use --global node@lts
   ```
-* **Actualización segura de NPM**: Se aplica una limpieza de caché de npm e instalación previa de `promise-retry` para evadir errores clásicos del instalador de npm en Fedora antes de subir a la versión más reciente (`npm install -g npm@latest`).
-* **Angular CLI**: Se instala globalmente el CLI oficial utilizando npm manejado por Mise:
+* **Corepack**: Habilita `pnpm` y `yarn` de forma nativa e integrada sin instalaciones globales conflictivas:
+  ```bash
+  corepack enable
+  ```
+* **Angular CLI**: Se instala globalmente el CLI oficial utilizando Mise:
   ```bash
   mise use --global npm:@angular/cli@latest
   ```
 
 ### Python (`python.sh`)
-* **Dependencias**: Instala librerías del sistema para compilar extensiones de Python (`libssl-dev`, `zlib1g-dev`, `libffi-dev`, etc.).
-* **Instalación**: Instala la rama optimizada 3.12 y actualiza el gestor de paquetes pip:
+* **Dependencias**: Instala cabeceras y librerías del sistema para compilar extensiones nativas C/Rust (`openssl-devel`, `zlib-devel`, `libffi-devel`, `sqlite-devel`, `bzip2-devel`, `readline-devel`).
+* **Instalación Estable (Soporte Extendido)**: Instala la versión recomendada de producción con soporte extendido (3.12/3.13) y actualiza las herramientas de construcción (`pip`, `setuptools`, `wheel`):
   ```bash
-  mise use --global python@3.12
-  mise exec python@3.12 -- python -m pip install --upgrade pip
+  ./ProgrammingLanguages/python.sh
+  # o para una versión específica (ej: 3.13):
+  ./ProgrammingLanguages/python.sh --version 3.13
   ```
 
 ### .NET SDK (`dotnet.sh`)
-* **Instalación**: Instala la última versión mayor del SDK de .NET:
+* **Dependencias**: Instala `libicu`, `openssl-devel`, `krb5-devel` y `zlib-devel` para el runtime CoreCLR.
+* **Instalación LTS**: Instala la versión oficial LTS de .NET SDK vía Mise (`dotnet@lts` / `dotnet@8`) y desactiva la telemetría:
   ```bash
-  mise use --global dotnet@10
+  ./ProgrammingLanguages/dotnet.sh
   ```
 
 ### Gemini CLI (`gemini.sh`)
@@ -73,40 +90,32 @@ Una vez instalado Mise, se despliegan de forma global los siguientes lenguajes:
 
 ## 3. Entorno de Rust (`rust.sh`)
 
-Rust se gestiona mediante su herramienta estándar e independiente **Rustup**.
+Rust se gestiona mediante su herramienta estándar **Rustup** fijada al canal oficial **Stable**.
 
 1. **Compiladores y Herramientas del Sistema**:
    ```bash
-   sudo dnf5 install -y build-essential cmake libssl-dev pkg-config curl
+   sudo dnf5 install -y @development-tools cmake openssl-devel pkgconf-pkg-config curl lld clang-devel
    ```
 
-2. **Instalador Rustup**:
-   Se descarga el script de instalación sin modificar directamente el PATH global para mantener la estructura modular:
+2. **Instalador Rustup y Componentes IDE**:
+   Descarga la cadena Stable y añade `rust-analyzer` (LSP), `clippy`, `rustfmt` y `rust-src`:
    ```bash
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+   ./ProgrammingLanguages/rust.sh
    ```
 
-3. **Carga Modular de Entorno**:
-   Se añade a la carpeta `~/.bashrc.d/rust.sh` el cargador de variables de entorno de Cargo:
-   ```bash
-   if [ -f "$HOME/.cargo/env" ]; then
-       . "$HOME/.cargo/env"
-   fi
-   ```
+3. **Carga de Sesión KDE Plasma y Shell**:
+   Registra `~/.cargo/bin` en `~/.config/environment.d/10-rust.conf` (sesión Wayland de KDE) y `~/.bashrc.d/rust.sh`.
 
 4. **Instalador de Binarios Rápidos (`cargo-binstall`)**:
-   Descarga e integra `cargo-binstall`, que permite descargar e instalar herramientas escritas en Rust directamente en binarios precompilados de sus repositorios de GitHub en lugar de compilarlas desde cero (ahorrando tiempo valioso):
-   ```bash
-   curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-   ```
+   Descarga e integra `cargo-binstall`, que permite descargar e instalar herramientas escritas en Rust directamente en binarios precompilados de sus repositorios de GitHub en lugar de compilarlas desde cero.
 
 ---
 
-## 4. OpenJDK Java compatible con AutoFirma (`java.sh`)
+## 4. OpenJDK Java (LTS) compatible con AutoFirma (`java.sh`)
 
-AutoFirma requiere interactuar con el almacén de claves NSS y la máquina virtual Java de Fedora. Se instala a nivel de sistema DNF5:
+Instala la versión oficial OpenJDK LTS de Fedora con compilador completo, Apache Maven, herramientas NSS para AutoFirma/FNMT y configura la variable `JAVA_HOME` en la sesión de KDE Plasma:
 ```bash
-sudo dnf5 install -y default-jre default-jdk libnss3-tools
+./ProgrammingLanguages/java.sh
 ```
 
 ---

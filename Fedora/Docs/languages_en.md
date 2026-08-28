@@ -12,24 +12,34 @@ Environment management is centralized through **Mise** (runtimes and SDKs) and *
 
 ## 1. Version Manager Mise (`mise.sh`)
 
-Mise is a modern CLI version manager that replaces older tools like `asdf`, `nvm`, or `pyenv`. It downloads and configures development environments globally or locally.
+Mise is a high-performance polyglot runtime and version manager written in Rust that replaces older tools like `asdf`, `nvm`, or `pyenv`. It downloads and configures development environments globally or locally.
 
-1. **Official Repository Registration and Installation**:
+1. **Official RPM Repository Registration and DNF5 Installation**:
    ```bash
-   sudo dnf5 update
-   sudo dnf5 install -y curl gpg
-   sudo mkdir -p -m 755 /etc/dnf5/keyrings
-   curl -fsSL https://mise.jdx.dev/gpg-key.pub | sudo gpg --dearmor -o /etc/dnf5/keyrings/mise-archive-keyring.gpg
-   echo "deb [signed-by=/etc/dnf5/keyrings/mise-archive-keyring.gpg arch=$(rpm --print-architecture)] https://mise.jdx.dev/deb stable main" | sudo tee /etc/dnf5/sources.list.d/mise.list > /dev/null
-   sudo dnf5 update
+   sudo rpm --import https://mise.jdx.dev/gpg-key.pub
+   sudo tee /etc/yum.repos.d/mise.repo << 'EOF'
+   [mise]
+   name=Mise
+   baseurl=https://mise.jdx.dev/rpm
+   enabled=1
+   gpgcheck=1
+   gpgkey=https://mise.jdx.dev/gpg-key.pub
+   EOF
    sudo dnf5 install -y mise
    ```
 
-2. **Shell Activation**:
-   Mise initialization is added to `~/.bashrc.d/mise.sh`:
-   ```bash
-   eval "$(mise activate bash)"
-   ```
+2. **Shell and KDE Plasma / Wayland Session Integration**:
+   - **KDE Plasma / Wayland (`~/.config/environment.d/10-mise.conf`)**: Registers shims path `~/.local/share/mise/shims` in the desktop session so GUI IDEs (VS Code, JetBrains), KRunner, and Dolphin detect Node/Python/Rust automatically.
+   - **Shell (`~/.bashrc.d/mise.sh`)**: Loads `eval "$(mise activate bash)"` modularly.
+   - **Shell Completions**: Generates native bash completion at `~/.local/share/bash-completion/completions/mise`.
+
+```bash
+# Execute via just or script:
+./ProgrammingLanguages/mise.sh
+
+# Check tool version status:
+./ProgrammingLanguages/mise.sh --status
+```
 
 ---
 
@@ -38,32 +48,36 @@ Mise is a modern CLI version manager that replaces older tools like `asdf`, `nvm
 Once Mise is installed, the following development environments are deployed globally:
 
 ### Node.js (`nodejs.sh` and `angular.sh`)
-* **Dependencies**: Installs `build-essential`, `python3`, `g++`, and `make` via DNF5, which are required to build native npm dependencies (`node-gyp`).
-* **Installation**: Configures the global Node.js LTS 22 release:
+* **Dependencies**: Installs `@development-tools`, `gcc-c++`, `make`, `curl`, and `python3` via DNF5, which are required to build native C++ npm dependencies (`node-gyp`).
+* **Dynamic LTS Installation**: Configures the latest active Node.js LTS release globally and prepares Corepack (`pnpm` / `yarn`):
   ```bash
-  mise use --global node@22
+  ./ProgrammingLanguages/nodejs.sh
+  # or manually with mise:
+  mise use --global node@lts
   ```
-* **Safe NPM Updates**: Cleans npm cache and pre-installs the `promise-retry` package to bypass common npm registry upgrade errors on Fedora, then updates NPM:
+* **Corepack**: Natively enables `pnpm` and `yarn` without global package conflicts:
   ```bash
-  mise exec node@22 -- npm install -g npm@latest
+  corepack enable
   ```
-* **Angular CLI**: Installs the official Angular CLI globally:
+* **Angular CLI**: Installs the official Angular CLI globally via Mise:
   ```bash
   mise use --global npm:@angular/cli@latest
   ```
 
 ### Python (`python.sh`)
-* **Dependencies**: Installs system libraries required to build C extensions for Python (`libssl-dev`, `zlib1g-dev`, `libffi-dev`, etc.).
-* **Installation**: Installs the optimized 3.12 branch and updates the pip package manager:
+* **Dependencies**: Installs system headers and libraries required to build native C/Rust extensions (`openssl-devel`, `zlib-devel`, `libffi-devel`, `sqlite-devel`, `bzip2-devel`, `readline-devel`).
+* **Stable Production Installation (Extended Support)**: Installs the recommended production release with extended bugfix support (3.12/3.13) and updates build tools (`pip`, `setuptools`, `wheel`):
   ```bash
-  mise use --global python@3.12
-  mise exec python@3.12 -- python -m pip install --upgrade pip
+  ./ProgrammingLanguages/python.sh
+  # or for a specific release (e.g., 3.13):
+  ./ProgrammingLanguages/python.sh --version 3.13
   ```
 
 ### .NET SDK (`dotnet.sh`)
-* **Installation**: Installs the latest major version of the .NET SDK:
+* **Dependencies**: Installs `libicu`, `openssl-devel`, `krb5-devel`, and `zlib-devel` for CoreCLR runtime support.
+* **LTS Installation**: Installs the official .NET SDK LTS release via Mise (`dotnet@lts` / `dotnet@8`) and disables telemetry:
   ```bash
-  mise use --global dotnet@10
+  ./ProgrammingLanguages/dotnet.sh
   ```
 
 ### Gemini CLI (`gemini.sh`)
@@ -76,40 +90,32 @@ Once Mise is installed, the following development environments are deployed glob
 
 ## 3. Rust Environment (`rust.sh`)
 
-Rust is managed through its official standard toolchain installer **Rustup**.
+Rust is managed through its official standard toolchain installer **Rustup** tracking the **Stable** channel.
 
 1. **System Build Dependencies**:
    ```bash
-   sudo dnf5 install -y build-essential cmake libssl-dev pkg-config curl
+   sudo dnf5 install -y @development-tools cmake openssl-devel pkgconf-pkg-config curl lld clang-devel
    ```
 
-2. **Rustup Installation**:
-   Downloads the installation script without directly modifying the global environment path to preserve modular loading:
+2. **Rustup Installer & IDE Components**:
+   Downloads the Stable toolchain and adds `rust-analyzer` (LSP), `clippy`, `rustfmt`, and `rust-src`:
    ```bash
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+   ./ProgrammingLanguages/rust.sh
    ```
 
-3. **Modular Environment Loading**:
-   Adds the Cargo bin path variables inside `~/.bashrc.d/rust.sh`:
-   ```bash
-   if [ -f "$HOME/.cargo/env" ]; then
-       . "$HOME/.cargo/env"
-   fi
-   ```
+3. **KDE Plasma & Shell Session Integration**:
+   Registers `~/.cargo/bin` inside `~/.config/environment.d/10-rust.conf` (KDE Wayland session) and `~/.bashrc.d/rust.sh`.
 
 4. **Fast Binary Installer (`cargo-binstall`)**:
-   Downloads and integrates `cargo-binstall`, which installs Rust-written CLI tools directly from GitHub pre-compiled binaries instead of compiling them from source locally (saving massive compilation times):
-   ```bash
-   curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-   ```
+   Downloads and integrates `cargo-binstall`, which installs Rust-written CLI tools directly from GitHub pre-compiled binaries instead of compiling them from source locally.
 
 ---
 
-## 4. OpenJDK Java compatible with AutoFirma (`java.sh`)
+## 4. OpenJDK Java (LTS) compatible with AutoFirma (`java.sh`)
 
-AutoFirma requires Java Virtual Machine integration and NSS tools. These are installed system-wide via DNF5:
+Installs Fedora's official OpenJDK LTS package with full compiler support, Apache Maven, NSS tools for AutoFirma/FNMT, and configures the `JAVA_HOME` environment variable across KDE Plasma sessions:
 ```bash
-sudo dnf5 install -y default-jre default-jdk libnss3-tools
+./ProgrammingLanguages/java.sh
 ```
 
 ---

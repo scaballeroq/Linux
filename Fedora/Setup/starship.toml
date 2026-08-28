@@ -1,4 +1,4 @@
-# 🚀 Starship Config: DevDebian (Optimized for Ubuntu + Nerd Fonts)
+# 🚀 Starship Config: Fedora Workstation (Optimized for Fedora + KDE Plasma + Nerd Fonts)
 
 # Formato general del prompt (Una sola línea, limpia y con alto contraste)
 format = """
@@ -23,14 +23,17 @@ add_newline = true
 success_symbol = "[❯](bold cyan)"
 error_symbol = "[✖](bold red)"
 
-# Icono del SO (Muestra el logo de Debian)
+# Icono del SO (Muestra el logotipo oficial de Fedora con Nerd Fonts)
 [os]
 format = "[$symbol]($style) "
-style = "bold orange"
+style = "bold #51a2da"
 disabled = false
 
 [os.symbols]
+Fedora = " "
 Ubuntu = " "
+Debian = " "
+Arch = " "
 
 # Configuración del Directorio
 [directory]

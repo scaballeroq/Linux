@@ -1,36 +1,112 @@
 #!/usr/bin/env bash
 #
-# kitty.sh - Instalación y Configuración Estética de Kitty Terminal para Fedora 44 (KDE Plasma & GNOME)
+# kitty.sh - Instalación y Configuración Estética de Kitty Terminal para Fedora 44 + KDE Plasma
 #
-# Características configuradas:
-# - Esquema de color oscuro moderno (Catppuccin Mocha / Tokyo Night dark palette)
-# - Opacidad/Transparencia (85%) con soporte para desenfoque (blur)
-# - Integración con tipografía JetBrainsMono Nerd Font (ligaduras y símbolos)
-# - Barra de pestañas estilo Powerline inclinada
-# - Padding interno elegante y cursor tipo barra con animación
-# - Control dinámico de opacidad con atajos de teclado
-# - Integración con Dolphin (KDE Plasma) y Nautilus (GNOME)
-# - Configuración como emulador de terminal predeterminado en KDE Plasma
+# Uso:
+#   ./kitty.sh                       -> Instala y aplica configuración estética con opacidad al 75% y blur 32
+#   ./kitty.sh --opacity 0.70        -> Configura una opacidad personalizada (ej: 0.70, 0.65, 0.80)
+#   ./kitty.sh 0.70                  -> Equivalente abreviado
+#   ./kitty.sh --help                -> Muestra la ayuda interactiva
 
 set -euo pipefail
 
+if [ "$EUID" -ne 0 ]; then
+    if ! command -v sudo &> /dev/null; then
+        echo "❌ Error: 'sudo' no está disponible. Ejecuta este script como root o instala sudo."
+        exit 1
+    fi
+    SUDO="sudo"
+else
+    SUDO=""
+fi
+
+# Detectar usuario real en caso de ejecución con sudo
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+else
+    USER_HOME="${HOME}"
+fi
+
+# Opacidad por defecto (0.75 = 75% opacidad / 25% transparencia translúcida con blur)
+OPACITY="0.75"
+BLUR_RADIUS="32"
+
+show_help() {
+    cat <<EOF
+🐱 Configuración Estética de Kitty Terminal - Fedora 44 (KDE Plasma 6)
+
+Uso:
+  $0 [OPCIÓN]
+
+Opciones:
+  (sin argumentos)           Instala Kitty y aplica opacidad al 75% (0.75) con desenfoque suave (blur 32).
+  --opacity <VALOR>, -o      Configura un valor de opacidad personalizado entre 0.10 y 1.0 (ej: 0.70, 0.65).
+  <VALOR_NUMÉRICO>           Atajo directo para opacidad (ej: $0 0.70).
+  --help, -h                 Muestra este mensaje de ayuda.
+
+Atajos al vuelo dentro de Kitty:
+  • Ctrl+Shift+A seguido de M: Aumentar opacidad (+5% más opaco)
+  • Ctrl+Shift+A seguido de L: Reducir opacidad (-5% más transparente)
+  • Ctrl+Shift+A seguido de D: Restaurar opacidad predeterminada
+  • Ctrl+Shift+A seguido de 1: Modo 100% opaco (sin transparencia)
+  • Ctrl+Shift+F5:             Recargar configuración de Kitty en caliente
+EOF
+}
+
+# Procesar argumentos
+if [ $# -gt 0 ]; then
+    case "$1" in
+        --help|-h|help)
+            show_help
+            exit 0
+            ;;
+        --opacity|-o)
+            if [ -n "${2:-}" ]; then
+                OPACITY="$2"
+            else
+                echo "❌ Error: Debes especificar un valor de opacidad (ej: 0.70)."
+                exit 1
+            fi
+            ;;
+        0.*|1.0|1)
+            OPACITY="$1"
+            ;;
+        *)
+            echo "❌ Opción no reconocida: $1"
+            show_help
+            exit 1
+            ;;
+    esac
+fi
+
+OPACITY_PERCENT=$(awk "BEGIN {print int($OPACITY * 100)}")
+
 echo "==========================================================="
-echo "🐱 Iniciando instalación y configuración estética de Kitty en Fedora 44"
+echo "🐱 Configurando Kitty Terminal en Fedora 44 (KDE Plasma)"
+echo "🎨 Nivel de opacidad seleccionado: ${OPACITY} (${OPACITY_PERCENT}% opaco, $((100 - OPACITY_PERCENT))% transparente)"
 echo "==========================================================="
 
-# 1. Instalar Kitty y dependencias en Fedora
-echo "📦 [1/4] Instalando Kitty Terminal vía DNF5..."
-sudo dnf5 install -y kitty
+# 1. Instalar Kitty y dependencias solo si no está instalado
+if ! command -v kitty &> /dev/null; then
+    echo "📦 [1/4] Instalando Kitty Terminal con DNF5..."
+    if [ -n "$SUDO" ]; then
+        $SUDO dnf5 install -y kitty
+    else
+        dnf5 install -y kitty
+    fi
+else
+    echo "📦 [1/4] Kitty Terminal ya se encuentra instalado."
+fi
 
 # 2. Crear directorio de configuración
-echo "⚙️ [2/4] Creando directorios de configuración..."
-mkdir -p "$HOME/.config/kitty"
+echo "⚙️ [2/4] Creando directorios de configuración en $USER_HOME/.config/kitty..."
+mkdir -p "$USER_HOME/.config/kitty"
 
-# 3. Generar kitty.conf con tema oscuro, opacidad y efectos
-echo "🎨 [3/4] Configurando tema oscuro, opacidad (85%) y efectos visuales..."
-cat <<'EOF' > "$HOME/.config/kitty/kitty.conf"
+# 3. Generar kitty.conf con tema oscuro, opacidad translúcida y efectos
+echo "🎨 [3/4] Generando configuración (Opacidad ${OPACITY}, Blur ${BLUR_RADIUS})..."
+cat <<EOF > "$USER_HOME/.config/kitty/kitty.conf"
 # =============================================================================
-# KITTY CONFIGURATION - FEDORA 44 (KDE PLASMA / WAYLAND)
+# KITTY CONFIGURATION - FEDORA 44 + KDE PLASMA
 # =============================================================================
 
 # --- Fuentes & Tipografía ---
@@ -42,9 +118,9 @@ font_size        11.5
 disable_ligatures never
 
 # --- Transparencia y Opacidad ---
-background_opacity         0.85
+background_opacity         ${OPACITY}
 dynamic_background_opacity yes
-background_blur            20
+background_blur            ${BLUR_RADIUS}
 
 # --- Ventana y Márgenes ---
 window_padding_width 10
@@ -121,7 +197,7 @@ color14 #94e2d5
 color7  #bac2de
 color15 #a6adc8
 
-# --- Rendimiento y Gráficos (Wayland/GPU) ---
+# --- Rendimiento y Gráficos ---
 repaint_delay   10
 input_delay     3
 sync_to_monitor yes
@@ -131,34 +207,69 @@ enable_audio_bell no
 visual_bell_duration 0.0
 
 # --- Atajos de teclado útiles ---
-# Control de opacidad en tiempo real:
-map ctrl+shift+a>m set_background_opacity +0.05
-map ctrl+shift+a>l set_background_opacity -0.05
-map ctrl+shift+a>d set_background_opacity default
-map ctrl+shift+a>1 set_background_opacity 1.0
+# 1. Control directo de opacidad (Ctrl+Alt + Flechas / +/-):
+map ctrl+alt+up          set_background_opacity +0.05
+map ctrl+alt+down        set_background_opacity -0.05
+map ctrl+alt+equal       set_background_opacity +0.05
+map ctrl+alt+plus        set_background_opacity +0.05
+map ctrl+alt+minus       set_background_opacity -0.05
+map ctrl+alt+kp_add      set_background_opacity +0.05
+map ctrl+alt+kp_subtract set_background_opacity -0.05
+map ctrl+alt+0           set_background_opacity default
+map ctrl+alt+1           set_background_opacity 1.0
+
+# 2. Control de opacidad mediante teclas de función (F9-F12):
+map ctrl+shift+f11       set_background_opacity +0.05
+map ctrl+shift+f10       set_background_opacity -0.05
+map ctrl+shift+f9        set_background_opacity default
+map ctrl+shift+f12       set_background_opacity 1.0
+
+# 3. Secuencia de dos pasos (Ctrl+Shift+A seguido de M/L/D/1):
+map ctrl+shift+a>m       set_background_opacity +0.05
+map ctrl+shift+a>shift+m set_background_opacity +0.05
+map ctrl+shift+a>l       set_background_opacity -0.05
+map ctrl+shift+a>shift+l set_background_opacity -0.05
+map ctrl+shift+a>d       set_background_opacity default
+map ctrl+shift+a>shift+d set_background_opacity default
+map ctrl+shift+a>1       set_background_opacity 1.0
+map ctrl+shift+a>0       set_background_opacity default
 
 # Gestión de pestañas y splits:
-map ctrl+shift+t new_tab_with_cwd
-map ctrl+shift+enter new_window_with_cwd
+map ctrl+shift+t         new_tab_with_cwd
+map ctrl+shift+enter     new_window_with_cwd
+map ctrl+shift+f5        load_config_file
 EOF
 
-# 4. Integración con el escritorio (KDE Plasma Dolphin y GNOME Nautilus)
-echo "📁 [4/4] Configurando integración con KDE Plasma (Dolphin) y gestores de archivos..."
+# 4. Integración con Dolphin y KDE Plasma
+echo "📁 [4/4] Configurando integración con Dolphin y atajos de KDE Plasma..."
 
-# A) Integración con KDE Plasma (Terminal por defecto)
-if command -v kwriteconfig6 &>/dev/null; then
-    echo "ℹ️ Estableciendo Kitty como terminal preferida en KDE Plasma 6..."
-    kwriteconfig6 --file kdeglobals --group General --key TerminalApplication kitty 2>/dev/null || true
-    kwriteconfig6 --file kdeglobals --group General --key TerminalService kitty.desktop 2>/dev/null || true
-elif command -v kwriteconfig5 &>/dev/null; then
-    kwriteconfig5 --file kdeglobals --group General --key TerminalApplication kitty 2>/dev/null || true
-    kwriteconfig5 --file kdeglobals --group General --key TerminalService kitty.desktop 2>/dev/null || true
+# Configurar Kitty como terminal por defecto y atajo Ctrl+Alt+T en KDE Plasma
+if command -v kwriteconfig6 &> /dev/null; then
+    # Terminal predeterminado de KDE
+    kwriteconfig6 --file kdeglobals --group General --key TerminalApplication "kitty" 2>/dev/null || true
+    kwriteconfig6 --file kdeglobals --group General --key TerminalService "kitty.desktop" 2>/dev/null || true
+    
+    # Atajo global Ctrl+Alt+T
+    kwriteconfig6 --file kglobalshortcutsrc --group kitty.desktop --key _launch "Ctrl+Alt+T,none,kitty" 2>/dev/null || true
+    kwriteconfig6 --file kglobalshortcutsrc --group kitty.desktop --key _k_friendly_name "Kitty" 2>/dev/null || true
+    if command -v qdbus6 &>/dev/null; then
+        qdbus6 org.kde.kglobalaccel /kglobalaccel reloadConfig 2>/dev/null || true
+    fi
+elif command -v kwriteconfig5 &> /dev/null; then
+    kwriteconfig5 --file kdeglobals --group General --key TerminalApplication "kitty" 2>/dev/null || true
+    kwriteconfig5 --file kdeglobals --group General --key TerminalService "kitty.desktop" 2>/dev/null || true
+    kwriteconfig5 --file kglobalshortcutsrc --group kitty.desktop --key _launch "Ctrl+Alt+T,none,kitty" 2>/dev/null || true
+    kwriteconfig5 --file kglobalshortcutsrc --group kitty.desktop --key _k_friendly_name "Kitty" 2>/dev/null || true
+    if command -v qdbus &>/dev/null; then
+        qdbus org.kde.kglobalaccel /kglobalaccel reloadConfig 2>/dev/null || true
+    fi
 fi
 
-# B) Menú contextual en Dolphin de KDE Plasma ("Abrir terminal Kitty aquí")
-DOLPHIN_MENUS_DIR="$HOME/.local/share/kio/servicemenus"
-mkdir -p "$DOLPHIN_MENUS_DIR"
-cat <<'EOF' > "$DOLPHIN_MENUS_DIR/open_kitty_here.desktop"
+# Añadir acción de menú contextual para Dolphin (ServiceMenu "Abrir en Kitty")
+DOLPHIN_SERVICES_DIR="$USER_HOME/.local/share/kio/servicemenus"
+mkdir -p "$DOLPHIN_SERVICES_DIR"
+
+cat <<'EOF' > "$DOLPHIN_SERVICES_DIR/open_in_kitty.desktop"
 [Desktop Entry]
 Type=Service
 MimeType=inode/directory;
@@ -166,40 +277,30 @@ Actions=openInKitty;
 X-KDE-Priority=TopLevel
 
 [Desktop Action openInKitty]
-Name=Abrir terminal Kitty aquí
-Name[es]=Abrir terminal Kitty aquí
-Name[en]=Open Kitty terminal here
+Name=Abrir en Kitty
+Name[es]=Abrir en Kitty
+Name[en]=Open in Kitty
 Icon=kitty
 Exec=kitty --directory %f
 EOF
+chmod +x "$DOLPHIN_SERVICES_DIR/open_in_kitty.desktop" 2>/dev/null || true
 
-# C) Integración con Nautilus (GNOME) por compatibilidad
-NAUTILUS_SCRIPTS_DIR="$HOME/.local/share/nautilus/scripts"
-mkdir -p "$NAUTILUS_SCRIPTS_DIR"
-cat <<'EOF' > "$NAUTILUS_SCRIPTS_DIR/Abrir en Kitty"
-#!/usr/bin/env bash
-if [ -n "${NAUTILUS_SCRIPT_CURRENT_URI:-}" ]; then
-    TARGET_DIR=$(echo "$NAUTILUS_SCRIPT_CURRENT_URI" | sed 's|^file://||' | sed 's|%20| |g')
-    kitty --directory "$TARGET_DIR" &
-else
-    kitty &
+# Compatibilidad con Plasma 5 si existe el directorio
+if [ -d "$USER_HOME/.local/share/kservices5/ServiceMenus" ]; then
+    cp "$DOLPHIN_SERVICES_DIR/open_in_kitty.desktop" "$USER_HOME/.local/share/kservices5/ServiceMenus/" 2>/dev/null || true
 fi
-EOF
-chmod +x "$NAUTILUS_SCRIPTS_DIR/Abrir en Kitty" 2>/dev/null || true
 
-if command -v gsettings &>/dev/null; then
-    if gsettings list-schemas 2>/dev/null | grep -q "com.github.stunkymonkey.nautilus-open-any-terminal"; then
-        gsettings set com.github.stunkymonkey.nautilus-open-any-terminal terminal kitty 2>/dev/null || true
-    fi
-fi
+# Recargar configuración en caliente si hay instancias activas de Kitty
+killall -USR1 kitty 2>/dev/null || true
 
 echo "==========================================================="
-echo "✅ Kitty se ha instalado y configurado correctamente para Fedora 44 + KDE Plasma."
-echo "💡 Características añadidas:"
-echo "   - Menú contextual en Dolphin (KDE): Clic derecho -> 'Abrir terminal Kitty aquí'."
-echo "   - Terminal predeterminado registrado en KDE Plasma."
-echo "   - Atajos de opacidad al vuelo: Ctrl+Shift+A seguido de M (+5%), L (-5%) o 1 (Opaco 100%)."
+echo "✅ Kitty se ha configurado con opacidad al ${OPACITY} (${OPACITY_PERCENT}%) y blur ${BLUR_RADIUS}."
+echo "💡 Atajos rápidos en Kitty:"
+echo "   - Opacidad directa: Ctrl+Alt+Arriba (+5%) | Ctrl+Alt+Abajo (-5%) | Ctrl+Alt+0 (Default) | Ctrl+Alt+1 (100% Opaco)"
+echo "   - Opacidad por F-Keys: Ctrl+Shift+F11 (+5%) | Ctrl+Shift+F10 (-5%) | Ctrl+Shift+F9 (Default)"
+echo "   - Menú contextual en Dolphin: Clic derecho -> 'Abrir en Kitty'."
+echo "   - Atajo global en KDE: Ctrl+Alt+T para abrir Kitty en cualquier momento."
+echo "   - Recargar configuración en vivo: Ctrl+Shift+F5"
 echo "   - Nueva pestaña en mismo directorio: Ctrl+Shift+T"
 echo "   - Nueva ventana dividida: Ctrl+Shift+Enter"
 echo "==========================================================="
-

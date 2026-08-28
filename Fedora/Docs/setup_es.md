@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # Configuración del Sistema en Fedora 44 Workstation (FedoraTesting)
 
-Esta guía detalla el proceso de configuración base, automontaje de partición de trabajo, compilación de kernel nativo `x86_64-v3`, personalización de GNOME, terminal Ptyxis, extensiones GNOME Shell y panel de administración web aplicados a un sistema **Fedora 44 Workstation (Trixie)** con **GNOME**.
+Esta guía detalla el proceso de configuración base, automontaje de partición de trabajo, compilación de kernel nativo `x86_64-v3`, terminal Kitty y panel de administración web aplicados a un sistema **Fedora 44** con **KDE Plasma**.
 
 Las configuraciones están automatizadas a través de los scripts ubicados en la carpeta `Setup`.
 
@@ -54,7 +54,7 @@ Prepara el sistema base configurando repositorios oficiales adicionales (`contri
 - **Monitorización**: `btop`, `htop`, `inxi`, `gnome-system-monitor`
 - **Utilidades**: `curl`, `fuse3`, `exfatprogs`, `p7zip-full`, `unrar`, `zip`, `unzip`, `bzip2`, `xz-utils`
 - **Gráficos y Multimedia**: `vlc`, `gimp`, `gparted`, `evince`, `seahorse`
-- **Entorno GNOME**: `gnome-core`, `gnome-shell`, `gnome-control-center`, `gnome-tweaks`, `ptyxis`, `nautilus`, `file-roller`, `gnome-text-editor`, `gnome-calculator`, `gnome-disk-utility`, `power-profiles-daemon`, `ffmpegthumbnailer`
+- **Entorno GNOME**: `gnome-core`, `gnome-shell`, `gnome-control-center`, `gnome-tweaks`, `nautilus`, `file-roller`, `gnome-text-editor`, `gnome-calculator`, `gnome-disk-utility`, `power-profiles-daemon`, `ffmpegthumbnailer`
 - **Paquetes universales**: `flatpak`, `gnome-software`, `gnome-software-plugin-flatpak` con repositorio Flathub activo.
 
 ---
@@ -84,67 +84,59 @@ just build-kernel
 
 ---
 
-## 4. Instalación Limpia de Extensiones GNOME (`gnome-extensions.sh`)
+---
 
-Instala `gnome-browser-connector`, `extension-manager` y descarga las 17 extensiones personalizadas utilizando el instalador nativo por DBus `gnome-extensions install --force` y compilando automáticamente los esquemas GSettings (`glib-compile-schemas`), evitando el estado de error o deshabilitado en el gestor de extensiones (ver [Guía de Extensiones GNOME](./gnome_extensions_es.md)).
-
-```bash
-just extensions
-```
-
-## 5. Optimización para Portátiles y Brillo al 95% (`ldnf5op-setup.sh`)
+## 4. Optimización para Portátiles y Brillo al 95% (`laptop-setup.sh`)
 
 Configura componentes esenciales para portátiles:
-- **Brillo automático al 95% al encender**: Registra un servicio systemd (`set-screen-brightness.service`) que fija el brillo de pantalla al 95% al iniciar el sistema y al iniciar sesión en GNOME.
+- **Brillo automático al 95% al encender**: Registra un servicio systemd (`persist-screen-brightness.service`) que fija el brillo de pantalla al 95% al iniciar el sistema.
 - **Gestión de energía**: Instala y activa `power-profiles-daemon` y `switcheroo-control` (gráficos híbridos).
 - **Herramientas de brillo**: Instala `brightnessctl` y utilidades de hardware.
-- **Touchpad y pantalla**: Tap-to-click, scroll natural, dos dedos, VRR y escalado fraccional.
+- **Touchpad y energía**: Tap-to-click, scroll natural y suspensión en batería vía KDE Plasma (`kcminputrc` y `powerdevilrc`).
 
 ```bash
-./Setup/ldnf5op-setup.sh
+./Setup/laptop-setup.sh
 # O usando just:
-just ldnf5op
+just laptop
 ```
 
 ---
 
-## 6. Personalización de GNOME vía GSettings (`gnome-settings.sh`)
-
-Configura de manera nativa y atomizada:
-- **Luz Nocturna (Night Light)** a 3500K.
-- **Reloj 24h** y porcentaje de batería en el panel superior.
-- **Botones de ventana**: minimizar, maximizar y cerrar a la derecha.
-- **Touchpad**: Tap-to-click, desplazamiento natural y dos dedos.
-- **VRR y Escalado Fraccional** en Mutter Wayland.
-- **Tema Oscuro Preferido**: `prefer-dark`.
-
-```bash
-just gnome
-```
-
----
-
-## 7. Terminales Modernas (Ptyxis y Kitty)
-
-### Ptyxis (`ptyxis.sh`)
-Instala y configura Ptyxis (el emulador moderno para GNOME) con perfil oscuro translúcido (85% de opacidad), sin scrollbar, atajo de teclado `Ctrl + Alt + T` e integración directa en Nautilus mediante `nautilus-open-any-terminal`.
-
-```bash
-just ptyxis
-```
+## 5. Terminal Moderna (Kitty)
 
 ### Kitty (`kitty.sh`)
-Instala y configura Kitty (emulador acelerado por GPU) con perfil Catppuccin Mocha / Tokyo Night translúcido (85% opacidad) con efectos blur, tipografía JetBrainsMono Nerd Font, barra de pestañas Powerline inclinada y control dinámico de opacidad al vuelo (`Ctrl+Shift+A` + `M`/`L`/`1`).
+Instala y configura Kitty (emulador acelerado por GPU) con perfil Catppuccin Mocha / Tokyo Night translúcido (75% opacidad) con efectos blur (32), tipografía JetBrainsMono Nerd Font, barra de pestañas Powerline inclinada y control dinámico de opacidad al vuelo (`Ctrl+Alt+Arriba`/`Abajo` o `Ctrl+Shift+F11`/`F10`).
 
 ```bash
 just kitty
+# O configurar una opacidad personalizada (ej: 70%):
+./Setup/kitty.sh --opacity 0.70
 ```
 
 ---
 
-## 8. Salvapantallas 3D y Bloqueo (`screensaver-setup.sh`)
+## 6. Optimizaciones Avanzadas de Rendimiento (`fedora-tuning.sh`)
 
-Instala la suite XScreenSaver con efectos 3D OpenGL (Matrix, Tuberías, Flurry), registra el demonio en autostart de GNOME y vincula el atajo `Super + L` para activar el salvapantallas animado al bloquear la pantalla.
+Aplica optimizaciones a nivel de Kernel Sysctl, límites de descriptores de archivos, timeouts de Systemd, exclusiones de Baloo y soporte para Distrobox:
+- **Sysctl**: `fs.inotify.max_user_watches=524288` e `instances=1024` para IDEs (VSCode/JetBrains) y KDE, `vm.max_map_count=16777216` para gaming y VMs, `vm.swappiness=100` optimizado para ZRAM y `vm.vfs_cache_pressure=50`.
+- **Límites de usuario (`limits.d`)**: `nofile` hasta 1,048,576 y `memlock unlimited`.
+- **Systemd**: `DefaultTimeoutStopSec=10s` para apagados y reinicios rápidos.
+- **KDE Baloo**: Exclusión automática de carpetas pesadas (`node_modules`, `.git`, `.venv`, `target`, `vendor`).
+- **Contenedores**: Instalación de `distrobox` y `podman`.
+
+```bash
+just tuning
+# o ./Setup/fedora-tuning.sh
+
+# Ver estado actual de rendimiento:
+./Setup/fedora-tuning.sh --status
+```
+
+---
+
+## 7. Salvapantallas 3D y Bloqueo (`screensaver-setup.sh`)
+
+Instala la suite XScreenSaver con efectos 3D OpenGL (Matrix, Tuberías, Flurry) y vincula el atajo de bloqueo.
 
 ```bash
 just screensaver
@@ -152,7 +144,7 @@ just screensaver
 
 ---
 
-## 9. Entorno de Shell (`shell.sh`, `fastfetch.sh` y `fonts.sh`)
+## 8. Entorno de Shell (`shell.sh`, `fastfetch.sh` y `fonts.sh`)
 
 Instala utilidades modernas de consola (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`), tipografías para desarrollo (Nerd Fonts: JetBrainsMono, FiraCode, CascadiaCode) y el prompt interactivo Starship.
 
@@ -164,30 +156,57 @@ just fastfetch
 
 ---
 
-## 10. Panel de Administración Web Cockpit (`cockpit.sh`)
+## 9. Panel de Administración Web Cockpit (`cockpit.sh`)
 
-Instala Cockpit con módulos para administrar el equipo desde el navegador ([https://localhost:9090](https://localhost:9090)):
-- `cockpit-podman`: Gestión de contenedores Podman.
-- `cockpit-machines`: Gestión de MVs en KVM/QEMU.
-- `cockpit-storaged`: Estado de discos SSD/NVMe y datos SMART.
+Instala y gestiona la consola web Cockpit con activación bajo demanda (`cockpit.socket` en Systemd) para administrar el equipo desde el navegador ([https://localhost:9090](https://localhost:9090)):
+- `cockpit-podman`: Gestión visual de contenedores, imágenes y pods de Podman.
+- `cockpit-machines`: Gestión de MVs en KVM/QEMU y libvirt.
+- `cockpit-storaged`: Estado de discos SSD/NVMe y telemetría SMART.
+- `cockpit-networkmanager`: Monitoreo y configuración de red.
+- `cockpit-selinux`: Análisis y resolución guiada de alertas SELinux.
+- `cockpit-files`: Gestor y explorador de archivos web.
 
-```bash
-just cockpit
-```
+- **Instalar y habilitar Cockpit**:
+  ```bash
+  just cockpit
+  # o ./Setup/cockpit.sh
+  ```
+- **Ver estado del servicio, socket y módulos**:
+  ```bash
+  ./Setup/cockpit.sh --status
+  ```
+- **Abrir directamente en el navegador**:
+  ```bash
+  ./Setup/cockpit.sh --open
+  ```
 
 ---
 
-## 11. Temas e Iconos de Escritorio (`apariencia.sh`)
+## 10. Temas e Iconos de Escritorio (`apariencia.sh`)
 
-Aplica temas e iconos Papirus-Dark y Adwaita, integrando visualmente aplicaciones GTK y Qt.
+Instala temas, esquemas de color e iconos (Breeze Dark, Papirus-Dark) y asegura una homogeneización visual nativa y coherente entre KDE Plasma 6 (Qt6/Qt5), aplicaciones GTK 3/4 y paquetes Flatpak.
 
-```bash
-just apariencia
-```
+- **Aplicar tema oscuro recomendado completo**:
+  ```bash
+  just apariencia
+  # o ./Setup/apariencia.sh
+  ```
+- **Ver estado visual y temas configurados**:
+  ```bash
+  ./Setup/apariencia.sh --status
+  ```
+- **Listar todos los temas globales, esquemas de color e iconos**:
+  ```bash
+  ./Setup/apariencia.sh --list
+  ```
+- **Aplicar tema claro**:
+  ```bash
+  ./Setup/apariencia.sh --light
+  ```
 
 ---
 
-## 12. Splash Screen Visual de Arranque (`plymouth-setup.sh`)
+## 11. Splash Screen Visual de Arranque (`plymouth-setup.sh`)
 
 Instala y activa Plymouth con soporte para múltiples temas oficiales y modernos (`bgrt`, `ceratopsian`, `spinner`, etc.), asegurando un arranque gráfico limpio y silencioso sin parpadeos.
 

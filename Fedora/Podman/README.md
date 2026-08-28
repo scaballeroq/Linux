@@ -31,35 +31,34 @@ Podman/
 
 ---
 
-## Instalacion
+## Configuración y Despliegue en Fedora 44
 
-### 1. Instalar Podman
+Podman viene preinstalado de forma nativa en **Fedora 44**. El script de configuración optimiza el entorno Rootless, habilita persistencia (linger), activa el socket de API compatible con Docker y enlaza la CLI `podman-utils`.
+
+### 1. Configuración Completa de Podman Rootless y Quadlets
 
 ```bash
+# Mediante script:
 ./install/podman-install.sh
+
+# O mediante just:
+just podman-setup
 ```
 
-Instala Podman rootless con todas las dependencias necesarias.
+Esto automatiza:
+- Instalación de complementos (`podman-compose`, `podman-docker`, `passt`).
+- Persistencia de contenedores (`loginctl enable-linger $USER`).
+- Activación del socket de Podman en systemd user (`/run/user/$UID/podman/podman.sock`).
+- Inyección de `DOCKER_HOST` en `~/.config/environment.d/10-podman.conf` para IDEs (VS Code, JetBrains, DevContainers) en la sesión gráfica de KDE Plasma.
+- Despliegue de la estructura de Quadlets (`~/.config/containers/systemd/`).
+- Creación del symlink global `~/.local/bin/podman-utils`.
 
-### 2. Configurar Quadlets
-
-```bash
-./install/quadlets-setup.sh
-```
-
-Crea la estructura de systemd para gestionar contenedores como servicios.
-
-### 3. Anadir CLI al PATH
+### 2. Comprobar Diagnóstico
 
 ```bash
-# En ~/.bashrc o ~/.zshrc
-export PATH="$HOME/Workspace/Repositorios/Fedora/Podman/lib:$PATH"
-```
-
-O crea un alias:
-
-```bash
-alias podman-utils="$HOME/Workspace/Repositorios/Fedora/Podman/lib/podman-utils.sh"
+podman-utils doctor
+# o
+just podman-status
 ```
 
 ---
@@ -352,5 +351,6 @@ systemctl --user daemon-reload
 | `unlink <nombre>` | Desenlazar proyecto de systemd |
 | `install-global <servicio>` | Instalar servicio compartido |
 | `uninstall-global <servicio>` | Desinstalar servicio compartido |
-| `list` | Listar proyectos |
+| `list` / `ps` | Listar proyectos y su estado |
 | `list-templates` | Listar plantillas disponibles |
+| `doctor` / `check` | Diagnóstico de salud de Podman, socket, linger y Quadlets |

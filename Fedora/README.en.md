@@ -13,7 +13,7 @@ The core of the Bash terminal configuration:
 - **`aliases.sh`**: Common aliases and modern Rust CLI replacements (`eza`, `bat`, `duf`, `dust`).
 - **`environment.sh`**: Global shell variables (`PATH`, `EDITOR`, colored `less` man pages).
 - **`functions.sh`**: Advanced shell functions and multimedia tools (FFmpeg, ImageMagick, unified archive extraction).
-- **`gnome_settings.sh`**: Environment configurations, night light, dark theme toggles, and shortcuts to GNOME Control Center.
+- **`kde_settings.sh`**: KDE Plasma 6 environment settings, Wayland/KWin tools, System Settings shortcuts (kcmshell6), and Spectacle.
 - **`history.sh`**: Optimized Bash history (no duplicates, up to 20k entries).
 - **`options.sh`**: Bash runtime options (`shopt` and `bind`).
 - **`podman-functions.sh`**: Simplified container management aliases.
@@ -25,15 +25,12 @@ Operating system setup, GNOME personalization, and security hardening:
 - **`post-install.sh`**: Smart dispatcher with automatic CPU vendor detection (AMD vs Intel) and CLI flags (`--amd`, `--intel`).
 - **`post-install-amd.sh`**: Post-installation optimized for **AMD Ryzen** CPUs and Radeon Graphics (AMD microcode, GPU firmware, RADV, Mesa, ZRAM, PipeWire, GNOME).
 - **`post-install-intel.sh`**: Post-installation optimized for **Intel Core** desktop PCs (Haswell i7-4790 / HD Graphics 4600) tailored for media center & streaming (Intel microcode, `i965` VA-API driver, codecs, Kodi, no virtualization).
-- **`gnome-settings.sh`**: Automated GNOME personalization via GSettings (Night Light at 3500K, 24h clock, window buttons, prefer dark theme, VRR).
-- **`gnome-extensions.sh`**: Clean, automated installation of 17 curated GNOME extensions with GSettings schema compilation (see [GNOME Extensions Guide](./Docs/gnome_extensions_en.md)).
-- **`ptyxis.sh`**: Modern Ptyxis terminal setup (85% translucent profile, no scrollbar, `Ctrl+Alt+T` shortcut, and Nautilus context menu integration).
-- **`kitty.sh`**: GPU-accelerated Kitty terminal setup with 85% opacity, blur effects, JetBrainsMono Nerd Font, and GNOME/Nautilus integration.
-- **`apariencia.sh`**: Themes, icons, and Qt/GTK style consistency (Adwaita-Dark and Papirus-Dark).
+- **`kitty.sh`**: GPU-accelerated Kitty terminal setup with 75% opacity, blur effects (32), JetBrainsMono Nerd Font, and Dolphin / KDE Plasma integration.
+- **`apariencia.sh`**: Global themes, color schemes, and icon styling for KDE Plasma 6 (Breeze Dark, Papirus-Dark icons, and GTK/Qt/Flatpak visual consistency).
 - **`ldnf5op-setup.sh`**: Development ldnf5op optimizations (Touchpad gestures, Bluetooth, `power-profiles-daemon`, `switcheroo-control`, HiDPI, VRR on Wayland).
 - **`fingerprint-setup.sh`**: Fingerprint unlocking and PAM authentication (`fprintd`, `sudo`, `polkit-1`, `pam-auth-update`).
 - **`hp-printer-setup.sh`**: HP LaserJet Pro M15w printer USB setup (CUPS, HPLIP, proprietary plugin, and `system-config-printer`).
-- **`fedora-tuning.sh`**: Kernel Sysctl tweaks (`inotify`, `max_map_count`) and `distrobox` container support.
+- **`fedora-tuning.sh`**: Advanced Kernel Sysctl tuning (`inotify`, `max_map_count`, `vfs_cache_pressure`), process file limits, Systemd fast shutdown timeouts, KDE Baloo indexer tweaks, and `distrobox` container support in Fedora 44 + KDE Plasma.
 - **`build-custom-kernel.sh`**: High-performance Linux kernel compiler optimized for `x86_64-v3` architecture, 1000Hz timer, and Dynamic Preemption.
 - **`cockpit.sh`**: Cockpit web administration console with Podman, KVM, and Storage modules.
 - **`fastfetch.sh`**: Aesthetic system information banner upon terminal launch.
@@ -45,7 +42,7 @@ Operating system setup, GNOME personalization, and security hardening:
 - **`shell.sh`**: Modern CLI utilities (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`) and Starship prompt.
 - **`screensaver-setup.sh`**: 3D/Matrix screensaver upon locking GNOME session.
 - **`plymouth-setup.sh`**: Visual boot splash screen installer and theme selector (Plymouth: BGRT UEFI OEM, Fedora 44 Ceratopsian, Spinner, and live desktop preview).
-- **`yt-dlp-setup.sh`**: Multimedia dependencies (yt-dlp, ffmpeg, and Deno JS engine via mise).
+- **`yt-dlp-setup.sh`**: Optimized multimedia stack (yt-dlp, FFmpeg, AtomicParsley, aria2 multi-thread downloader, Firefox/KWallet cookie decryption, and Deno JS engine).
 
 ### 🐳 [Podman](./Podman/)
 Rootless container ecosystem and Systemd Quadlets:
@@ -90,9 +87,6 @@ Or run individual components:
 just post-install-amd    # Post-installation exclusively for AMD Ryzen
 just post-install-intel  # Post-installation for Intel Media Center
 just kodi                # Install Kodi and streaming plugins
-just gnome               # Apply GNOME GSettings configuration
-just extensions          # Install and compile the 17 GNOME extensions
-just ptyxis              # Install and configure Ptyxis terminal emulator
 just plymouth            # Setup and activate graphical boot splash screen
 just ides                # Install Neovim, VSCode, Antigravity, and OpenCode
 just build-kernel        # Compile a native x86_64-v3 Linux kernel

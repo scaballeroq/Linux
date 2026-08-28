@@ -8,7 +8,7 @@ echo "🐚 Configurando herramientas modernas de terminal y Starship"
 echo "================================================================="
 
 # 1. Instalación de utilidades modernas de terminal vía DNF5
-echo "ℹ️ [1/4] Instalando utilidades de terminal modernas vía DNF5..."
+echo "ℹ️ [1/5] Instalando utilidades de terminal modernas vía DNF5..."
 sudo dnf5 install -y \
     eza \
     bat \
@@ -21,10 +21,11 @@ sudo dnf5 install -y \
     procs \
     btop \
     curl \
-    git 2>/dev/null || true
+    git \
+    jq 2>/dev/null || sudo dnf5 install -y eza bat fzf zoxide ripgrep fd-find duf procs curl git jq 2>/dev/null || true
 
 # 2. Instalación de Starship Prompt
-echo "ℹ️ [2/4] Verificando Starship Prompt..."
+echo "ℹ️ [2/5] Verificando Starship Prompt..."
 if ! command -v starship &> /dev/null; then
     echo "⬇️ Instalando Starship Prompt..."
     curl -sS https://starship.rs/install.sh | sudo sh -s -- -y -b /usr/local/bin
@@ -33,7 +34,7 @@ else
 fi
 
 # 3. Configuración de Starship
-echo "🎨 [3/4] Configurando Starship..."
+echo "🎨 [3/5] Configurando Starship..."
 mkdir -p "$HOME/.config"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -f "$SCRIPT_DIR/starship.toml" ]; then
@@ -42,7 +43,7 @@ if [ -f "$SCRIPT_DIR/starship.toml" ]; then
 fi
 
 # 4. Integración en .bashrc
-echo "⚙️ [4/4] Configurando integración en ~/.bashrc..."
+echo "⚙️ [4/5] Configurando integración en ~/.bashrc..."
 mkdir -p "$HOME/.bashrc.d"
 
 if ! grep -q "starship init bash" "$HOME/.bashrc" 2>/dev/null; then
@@ -55,8 +56,15 @@ if ! grep -q "zoxide init bash" "$HOME/.bashrc" 2>/dev/null; then
     echo "✅ Zoxide integrado en ~/.bashrc"
 fi
 
+# 5. Symlink para fd si es necesario (Fedora usa fd-find)
+echo "🔗 [5/5] Verificando compatibilidad de comandos..."
+mkdir -p "$HOME/.local/bin"
+if [ -f /usr/bin/fdfind ] && [ ! -f "$HOME/.local/bin/fd" ]; then
+    ln -sf /usr/bin/fdfind "$HOME/.local/bin/fd"
+    echo "✅ Symlink fd -> fdfind creado en ~/.local/bin/"
+fi
+
 echo "================================================================="
 echo "✅ Entorno de terminal moderno configurado con éxito para Fedora 44."
 echo "💡 Recuerda ejecutar 'source ~/.bashrc' o abrir una nueva terminal."
 echo "================================================================="
-

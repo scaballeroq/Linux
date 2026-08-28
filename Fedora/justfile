@@ -1,16 +1,16 @@
-# Fedora 44 Workstation Environment Configuration Justfile
-# (Fedora 44 Workstation + GNOME)
+# Fedora 44 Environment Configuration Justfile
+# (Fedora 44 + KDE Plasma)
 
 # Instala todo el entorno por defecto (Auto-detección de CPU / Portátil AMD)
-setup-all: post-install workspace laptop fingerprint tuning extensions screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
-    echo "🚀 Entorno completo de Fedora 44 (Fedora Workstation + GNOME) configurado. Por favor, reinicia el sistema."
+setup-all: post-install workspace laptop fingerprint tuning screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch firefox
+    echo "🚀 Entorno completo de Fedora 44 (KDE Plasma) configurado. Por favor, reinicia el sistema."
 
 # Perfil completo para Portátil de desarrollo (AMD Ryzen + Huella + Virtualización)
-setup-laptop-amd: post-install-amd workspace laptop fingerprint tuning extensions screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
+setup-laptop-amd: post-install-amd workspace laptop fingerprint tuning screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch firefox
     echo "🚀 Entorno Portátil AMD Ryzen configurado con éxito. Por favor, reinicia el sistema."
 
 # Perfil para Sobremesa Centro Multimedia (Intel Haswell / Media Center - Sin virtualización ni batería)
-setup-media-desktop: post-install-intel workspace tuning extensions screensaver plymouth shell security fonts gnome apariencia fastfetch ptyxis firefox kodi
+setup-media-desktop: post-install-intel workspace tuning screensaver plymouth shell security fonts apariencia fastfetch firefox kodi
     echo "🚀 Entorno Sobremesa Intel Media Center configurado con éxito. Por favor, reinicia el sistema."
 
 # =============================================================================
@@ -49,13 +49,10 @@ fingerprint:
 printer:
     ./Setup/hp-printer-setup.sh
 
-# Optimizaciones avanzadas de Fedora 44 (Sysctl, Distrobox)
+# Optimizaciones avanzadas de rendimiento (Sysctl, límites, Systemd, Baloo, Distrobox para Fedora 44 + KDE Plasma)
 tuning:
     ./Setup/fedora-tuning.sh
 
-# Instalación automatizada de conectores y las 12 extensiones de GNOME
-extensions:
-    ./Setup/gnome-extensions.sh
 
 # Configuración de salvapantallas 3D/Matrix al bloquear la pantalla
 screensaver:
@@ -81,21 +78,14 @@ security-dot:
 fonts:
     ./Setup/fonts.sh
 
-# Personalización de GNOME (gsettings, luz nocturna, 24h, temas)
-gnome:
-    ./Setup/gnome-settings.sh
 
-# Apariencia (Temas Adwaita Dark, iconos Papirus e integración GTK/Qt)
+# Apariencia (Temas Breeze Dark, iconos Papirus e integración visual GTK/Qt en KDE Plasma)
 apariencia:
     ./Setup/apariencia.sh
 
 # Información estética del sistema (Fastfetch)
 fastfetch:
     ./Setup/fastfetch.sh
-
-# Terminal Ptyxis + integración Nautilus
-ptyxis:
-    ./Setup/ptyxis.sh
 
 # Terminal Kitty acelerada por GPU con tema oscuro y opacidad/blur
 kitty:
@@ -223,17 +213,22 @@ steam:
     ./Juegos/steam.sh
 
 # =============================================================================
-# PODMAN - BASE
+# PODMAN Y CONTENEDORES QUADLETS
 # =============================================================================
 
-# Podman base (instalación y configuración rootless)
+# Configuración completa de Podman Rootless y Quadlets
+podman-setup:
+    ./Podman/install/podman-install.sh
+
+# Alias para configuración base
 podman-base:
     ./Podman/install/podman-install.sh
 
-# =============================================================================
-# PODMAN - SERVICIOS Y TEMPLATES
-# =============================================================================
-
-# Configuración Quadlets de Podman
+# Configuración de servicios Quadlets de Podman
 podman-quadlets:
     ./Podman/install/quadlets-setup.sh
+
+# Estado y diagnóstico de Podman y Quadlets
+podman-status:
+    ./Podman/install/podman-install.sh --status
+    ./Podman/lib/podman-utils.sh doctor

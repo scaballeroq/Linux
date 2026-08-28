@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# podman-utils - CLI para gestionar proyectos Podman con Quadlets
+# podman-utils - CLI para gestión de proyectos y servicios Quadlets con Podman en Fedora 44
 # =============================================================================
 
 set -euo pipefail
@@ -9,6 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PODMAN_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 TEMPLATES_DIR="$PODMAN_DIR/templates"
 PROJECTS_DIR="$PODMAN_DIR/projects"
+SERVICES_SHARED="$PODMAN_DIR/services-shared"
 SYSTEMD_DIR="$HOME/.config/containers/systemd"
 SYSTEMD_GLOBAL="$SYSTEMD_DIR/global"
 
@@ -16,6 +17,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m'
 
 log_info()  { echo -e "${YELLOW}[INFO]${NC} $1"; }
@@ -34,21 +36,21 @@ cmd_create() {
         echo "Uso: podman-utils create <template> <nombre-proyecto>"
         echo ""
         echo "Templates disponibles:"
-        ls -1 "$TEMPLATES_DIR" 2>/dev/null | sed 's/^/  /' || echo "  (ninguno)"
+        ls -1 "$TEMPLATES_DIR" 2>/dev/null | sed 's/^/  • /' || echo "  (ninguno)"
         exit 1
     fi
 
     local template_dir="$TEMPLATES_DIR/$template"
     if [ ! -d "$template_dir" ]; then
-        log_error "Template '$template' no existe"
+        log_error "El template '$template' no existe."
         echo "Templates disponibles:"
-        ls -1 "$TEMPLATES_DIR" 2>/dev/null | sed 's/^/  /'
+        ls -1 "$TEMPLATES_DIR" 2>/dev/null | sed 's/^/  • /'
         exit 1
     fi
 
     local project_dir="$PROJECTS_DIR/$project"
     if [ -d "$project_dir" ]; then
-        log_error "El proyecto '$project' ya existe"
+        log_error "El proyecto '$project' ya existe en $project_dir."
         exit 1
     fi
 
@@ -62,7 +64,7 @@ cmd_create() {
     cp -r "$template_dir"/* "$project_dir"/
     cp "$template_dir"/.env.example "$project_dir/.env" 2>/dev/null || true
 
-    # Reemplazar placeholders en todos los archivos
+    # Reemplazar placeholders en todos los archivos del proyecto
     find "$project_dir" -type f \( -name "*.container" -o -name "*.network" -o -name "*.target" -o -name "*.volume" -o -name ".env*" \) | while read -r file; do
         sed -i "s/__PROJECT__/$project/g" "$file"
         sed -i "s/__PROJECT_UPPER__/$project_upper/g" "$file"
@@ -80,12 +82,13 @@ cmd_create() {
     systemctl --user daemon-reload 2>/dev/null || true
 
     echo ""
-    log_ok "Proyecto '$project' creado en: $project_dir"
+    log_ok "Proyecto '$project' creado exitosamente en: $project_dir"
     echo ""
-    echo "Siguientes pasos:"
-    echo "  1. Edita las credenciales: nano $project_dir/.env"
-    echo "  2. Inicia el proyecto:     podman-utils start $project"
-    echo "  3. Ver logs:               podman-utils logs $project"
+    echo "Pasos recomendados:"
+    echo "  1. Configura tus variables: nano $project_dir/.env"
+    echo "  2. Inicia los servicios:    podman-utils start $project"
+    echo "  3. Ver estado:              podman-utils status $project"
+    echo "  4. Ver logs en vivo:        podman-utils logs $project"
     echo ""
 }
 
@@ -97,15 +100,24 @@ cmd_start() {
     [ -z "$project" ] && { log_error "Uso: podman-utils start <proyecto>"; exit 1; }
 
     local project_dir="$PROJECTS_DIR/$project"
-    [ ! -d "$project_dir" ] && { log_error "Proyecto '$project' no existe"; exit 1; }
+    [ ! -d "$project_dir" ] && { log_error "El proyecto '$project' no existe en $PROJECTS_DIR."; exit 1; }
 
-    log_step "Iniciando proyecto '$project'..."
+    log_step "Iniciando proyecto '$project' mediante systemd user..."
     systemctl --user daemon-reload
-    systemctl --user start "${project}.target" 2>/dev/null || \
-        systemctl --user start "$(ls "$SYSTEMD_DIR/${project}"*.service 2>/dev/null | head -1)" || \
-        log_error "No se encontraron servicios para '$project'. Ejecuta: podman-utils link $project"
 
-    log_ok "Proyecto '$project' iniciado"
+    if [ -f "$project_dir/${project}.target" ]; then
+        systemctl --user start "${project}.target"
+    else
+        for c in "$project_dir"/*.container; do
+            [ -f "$c" ] || continue
+            local base
+            base="$(basename "$c" .container)"
+            systemctl --user start "${base}.service" 2>/dev/null || true
+        done
+    fi
+
+    log_ok "Comando de inicio enviado para el proyecto '$project'."
+    sleep 1
     cmd_status "$project"
 }
 
@@ -114,10 +126,18 @@ cmd_stop() {
     [ -z "$project" ] && { log_error "Uso: podman-utils stop <proyecto>"; exit 1; }
 
     log_step "Deteniendo proyecto '$project'..."
-    systemctl --user stop "${project}.target" 2>/dev/null || \
-        systemctl --user stop "$(ls "$SYSTEMD_DIR/${project}"*.service 2>/dev/null | xargs -r)" 2>/dev/null || true
+    if systemctl --user list-units --all | grep -q "${project}.target"; then
+        systemctl --user stop "${project}.target" 2>/dev/null || true
+    fi
 
-    log_ok "Proyecto '$project' detenido"
+    for c in "$PROJECTS_DIR/$project"/*.container; do
+        [ -f "$c" ] || continue
+        local base
+        base="$(basename "$c" .container)"
+        systemctl --user stop "${base}.service" 2>/dev/null || true
+    done
+
+    log_ok "Proyecto '$project' detenido."
 }
 
 cmd_restart() {
@@ -138,9 +158,9 @@ cmd_logs() {
     [ -z "$project" ] && { log_error "Uso: podman-utils logs <proyecto> [servicio]"; exit 1; }
 
     if [ -n "$service" ]; then
-        journalctl --user -u "${project}-${service}" -f --no-pager
+        journalctl --user -u "${project}-${service}.service" -f --no-pager
     else
-        journalctl --user -u "${project}*" -f --no-pager
+        journalctl --user -u "${project}*.service" -f --no-pager
     fi
 }
 
@@ -152,15 +172,15 @@ cmd_status() {
     [ -z "$project" ] && { log_error "Uso: podman-utils status <proyecto>"; exit 1; }
 
     echo ""
-    echo "=== Proyecto: $project ==="
+    echo -e "${CYAN}=================================================================${NC}"
+    echo -e "${CYAN}📊 ESTADO DEL PROYECTO: $project${NC}"
+    echo -e "${CYAN}=================================================================${NC}"
     echo ""
-
-    systemctl --user list-units "${project}*" --no-pager 2>/dev/null || \
-        echo "  (sin servicios activos)"
-
+    echo "• Unidades Systemd activas:"
+    systemctl --user list-units "${project}*" --no-pager 2>/dev/null || echo "  (Ninguna unidad activa)"
     echo ""
-    echo "Contenedores Podman:"
-    podman ps --filter "name=$project" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || true
+    echo "• Contenedores Podman asociados:"
+    podman ps --filter "name=$project" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || echo "  (Sin contenedores)"
     echo ""
 }
 
@@ -173,31 +193,39 @@ cmd_destroy() {
 
     local project_dir="$PROJECTS_DIR/$project"
     if [ ! -d "$project_dir" ]; then
-        log_error "Proyecto '$project' no existe"
+        log_error "El proyecto '$project' no existe."
         exit 1
     fi
 
-    log_step "Deteniendo servicios..."
+    log_step "Deteniendo servicios asociados a '$project'..."
     cmd_stop "$project" 2>/dev/null || true
 
-    log_step "Eliminando symlinks de systemd..."
+    log_step "Eliminando symlinks de systemd en ~/.config/containers/systemd/..."
     rm -f "$SYSTEMD_DIR/${project}"* 2>/dev/null || true
 
-    log_step "Eliminando contenedores..."
-    podman rm -f "$(podman ps -a --filter "name=$project" --format "{{.ID}}" 2>/dev/null)" 2>/dev/null || true
+    log_step "Eliminando contenedores de Podman..."
+    local c_ids
+    c_ids=$(podman ps -a --filter "name=$project" --format "{{.ID}}" 2>/dev/null || true)
+    if [ -n "$c_ids" ]; then
+        echo "$c_ids" | xargs -r podman rm -f 2>/dev/null || true
+    fi
 
-    log_step "Eliminando volumenes..."
-    podman volume rm "$(podman volume ls --filter "name=$project" --format "{{.Name}}" 2>/dev/null)" 2>/dev/null || true
+    log_step "Eliminando volúmenes del proyecto..."
+    local v_ids
+    v_ids=$(podman volume ls --filter "name=$project" --format "{{.Name}}" 2>/dev/null || true)
+    if [ -n "$v_ids" ]; then
+        echo "$v_ids" | xargs -r podman volume rm 2>/dev/null || true
+    fi
 
-    log_step "Eliminando red..."
+    log_step "Eliminando red del proyecto..."
     podman network rm "$project" 2>/dev/null || true
 
-    log_step "Eliminando directorio del proyecto..."
+    log_step "Eliminando directorio del proyecto en $project_dir..."
     rm -rf "$project_dir"
 
     systemctl --user daemon-reload 2>/dev/null || true
 
-    log_ok "Proyecto '$project' eliminado completamente"
+    log_ok "Proyecto '$project' eliminado completamente."
 }
 
 # =============================================================================
@@ -212,7 +240,6 @@ link_project_to_systemd() {
 
     mkdir -p "$SYSTEMD_DIR"
 
-    # Crear symlinks para cada archivo quadlet
     for file in "$project_dir"/*.container "$project_dir"/*.network "$project_dir"/*.target "$project_dir"/*.volume; do
         [ -f "$file" ] || continue
         local basename
@@ -227,7 +254,7 @@ cmd_link() {
 
     link_project_to_systemd "$project"
     systemctl --user daemon-reload
-    log_ok "Proyecto '$project' enlazado a systemd"
+    log_ok "Proyecto '$project' enlazado a ~/.config/containers/systemd/."
 }
 
 cmd_unlink() {
@@ -236,23 +263,22 @@ cmd_unlink() {
 
     rm -f "$SYSTEMD_DIR/${project}"* 2>/dev/null || true
     systemctl --user daemon-reload
-    log_ok "Proyecto '$project' desenlazado de systemd"
+    log_ok "Proyecto '$project' desenlazado de systemd."
 }
 
 # =============================================================================
-# GLOBAL SERVICES
+# GLOBAL SHARED SERVICES
 # =============================================================================
 cmd_install_global() {
     local service="${1:-}"
     [ -z "$service" ] && { log_error "Uso: podman-utils install-global <servicio>"; exit 1; }
 
-    local shared_dir="$PODMAN_DIR/services-shared"
-    local container_file="$shared_dir/${service}.container"
+    local container_file="$SERVICES_SHARED/${service}.container"
 
     if [ ! -f "$container_file" ]; then
-        log_error "Servicio '$service' no existe en services-shared/"
-        echo "Servicios disponibles:"
-        ls -1 "$shared_dir" 2>/dev/null | sed 's/\.container$//' | sed 's/^/  /'
+        log_error "El servicio '$service' no existe en $SERVICES_SHARED."
+        echo "Servicios compartidos disponibles:"
+        ls -1 "$SERVICES_SHARED" 2>/dev/null | sed 's/\.container$//' | sed 's/^/  • /'
         exit 1
     fi
 
@@ -268,8 +294,8 @@ cmd_install_global() {
     fi
 
     systemctl --user daemon-reload
-    log_ok "Servicio global '$service' instalado"
-    echo "  Iniciar: systemctl --user start ${service}.service"
+    log_ok "Servicio global '$service' instalado en ~/.config/containers/systemd/global/."
+    echo "  Para iniciar: systemctl --user start ${service}.service"
 }
 
 cmd_uninstall_global() {
@@ -279,18 +305,20 @@ cmd_uninstall_global() {
     systemctl --user stop "${service}.service" 2>/dev/null || true
     rm -f "$SYSTEMD_GLOBAL/${service}".* 2>/dev/null || true
     systemctl --user daemon-reload
-    log_ok "Servicio global '$service' desinstalado"
+    log_ok "Servicio global '$service' desinstalado."
 }
 
 # =============================================================================
 # LIST
 # =============================================================================
 cmd_list() {
-    echo "Proyectos:"
-    echo ""
+    echo "================================================================="
+    echo "📂 PROYECTOS PODMAN QUADLETS"
+    echo "================================================================="
 
-    if [ -z "$(ls -A "$PROJECTS_DIR" 2>/dev/null | grep -v .gitkeep)" ]; then
-        echo "  (ninguno)"
+    if [ ! -d "$PROJECTS_DIR" ] || [ -z "$(ls -A "$PROJECTS_DIR" 2>/dev/null | grep -v '^\.gitkeep$')" ]; then
+        echo "  (Ningún proyecto creado aún. Crea uno con: podman-utils create <template> <nombre>)"
+        echo "================================================================="
         return 0
     fi
 
@@ -308,14 +336,15 @@ cmd_list() {
         local containers
         containers=$(podman ps --filter "name=$name" --format "{{.Names}}" 2>/dev/null | tr '\n' ', ' | sed 's/,$//')
 
-        printf "  ${GREEN}%-20s${NC} %-10s %s\n" "$name" "[$status]" "$containers"
+        printf "  • ${GREEN}%-20s${NC} %-10s %s\n" "$name" "[$status]" "${containers:-sin contenedores corriendo}"
     done
-    echo ""
+    echo "================================================================="
 }
 
 cmd_list_templates() {
-    echo "Templates disponibles:"
-    echo ""
+    echo "================================================================="
+    echo "📋 PLANTILLAS DE PROYECTOS DISPONIBLES"
+    echo "================================================================="
 
     for dir in "$TEMPLATES_DIR"/*/; do
         [ -d "$dir" ] || continue
@@ -324,61 +353,116 @@ cmd_list_templates() {
         local desc=""
 
         case "$name" in
-            python-postgres)       desc="Python + PostgreSQL" ;;
-            python-postgres-redis) desc="Python + PostgreSQL + Redis" ;;
-            fullstack)             desc="Front + Back + PostgreSQL + Traefik + Keycloak" ;;
-            *)                     desc="" ;;
+            python-postgres)       desc="Python (FastAPI/Flask) + PostgreSQL" ;;
+            python-postgres-redis) desc="Python + PostgreSQL + Redis (Celery/Cache)" ;;
+            fullstack)             desc="Frontend + Backend + PostgreSQL + Traefik + Keycloak" ;;
+            *)                     desc="Plantilla personalizada" ;;
         esac
 
-        printf "  ${YELLOW}%-25s${NC} %s\n" "$name" "$desc"
+        printf "  • ${YELLOW}%-25s${NC} %s\n" "$name" "$desc"
     done
-    echo ""
+    echo "================================================================="
+}
+
+# =============================================================================
+# DOCTOR / DIAGNOSTICS
+# =============================================================================
+cmd_doctor() {
+    echo "================================================================="
+    echo "🩺 DIAGNÓSTICO DE PODMAN ROOTLESS - FEDORA 44 (KDE PLASMA)"
+    echo "================================================================="
+    
+    # 1. Podman CLI
+    if command -v podman &>/dev/null; then
+        log_ok "Podman: $(podman --version)"
+    else
+        log_error "Podman no está instalado."
+    fi
+
+    # 2. Systemd Socket
+    if systemctl --user is-active podman.socket &>/dev/null; then
+        log_ok "Socket de Podman: Activo (/run/user/$(id -u)/podman/podman.sock)"
+    else
+        log_info "Socket de Podman: Inactivo (Ejecuta: systemctl --user enable --now podman.socket)"
+    fi
+
+    # 3. Linger
+    local linger_val
+    linger_val=$(loginctl show-user "$USER" 2>/dev/null | grep -i "Linger=" | cut -d= -f2 || echo "no")
+    if [ "$linger_val" = "yes" ]; then
+        log_ok "Persistencia Linger: Habilitada (los contenedores se ejecutan en segundo plano)"
+    else
+        log_info "Persistencia Linger: Deshabilitada (Ejecuta: loginctl enable-linger $USER)"
+    fi
+
+    # 4. DOCKER_HOST
+    if [ -n "${DOCKER_HOST:-}" ]; then
+        log_ok "DOCKER_HOST: $DOCKER_HOST"
+    else
+        log_info "DOCKER_HOST: No exportado en el shell actual (Carga con: source ~/.bashrc)"
+    fi
+
+    # 5. Generador Quadlet
+    if [ -f /usr/lib/systemd/user-generators/podman-user-generator ]; then
+        log_ok "Generador Quadlet: Integrado en Systemd"
+    else
+        log_error "Generador Quadlet no encontrado en /usr/lib/systemd/user-generators/podman-user-generator."
+    fi
+
+    echo "================================================================="
 }
 
 # =============================================================================
 # USAGE
 # =============================================================================
 usage() {
-    echo "Uso: podman-utils <comando> [opciones]"
-    echo ""
-    echo "Proyectos:"
-    echo "  create <template> <nombre>   Crear proyecto desde plantilla"
-    echo "  start <nombre>               Iniciar proyecto"
-    echo "  stop <nombre>                Detener proyecto"
-    echo "  restart <nombre>             Reiniciar proyecto"
-    echo "  logs <nombre> [servicio]     Ver logs en tiempo real"
-    echo "  status <nombre>              Ver estado del proyecto"
-    echo "  destroy <nombre>             Eliminar proyecto (datos incluidos)"
-    echo "  link <nombre>                Enlazar proyecto a systemd"
-    echo "  unlink <nombre>              Desenlazar proyecto de systemd"
-    echo ""
-    echo "Servicios globales:"
-    echo "  install-global <servicio>    Instalar servicio compartido"
-    echo "  uninstall-global <servicio>  Desinstalar servicio compartido"
-    echo ""
-    echo "Informacion:"
-    echo "  list                         Listar proyectos"
-    echo "  list-templates               Listar plantillas disponibles"
-    echo ""
+    cat <<EOF
+🐳 podman-utils - Gestor de Proyectos y Contenedores Quadlets (Fedora 44)
+
+Uso:
+  podman-utils <comando> [argumentos]
+
+Proyectos:
+  create <template> <nombre>   Crea un nuevo proyecto a partir de una plantilla
+  start <nombre>               Inicia todos los contenedores del proyecto vía systemd
+  stop <nombre>                Detiene el proyecto y sus contenedores
+  restart <nombre>             Reinicia el proyecto
+  logs <nombre> [servicio]     Muestra los logs en vivo vía journalctl
+  status <nombre>              Muestra el estado detallado de contenedores y servicios
+  destroy <nombre>             Elimina por completo el proyecto (archivos, contenedores, volúmenes)
+  link <nombre>                Enlaza los archivos Quadlet del proyecto a systemd
+  unlink <nombre>              Desenlaza los archivos Quadlet de systemd
+
+Servicios Globales:
+  install-global <servicio>    Instala un servicio compartido (postgres, redis, traefik, keycloak)
+  uninstall-global <servicio>  Desinstala un servicio compartido
+
+Diagnóstico e Información:
+  list                         Lista todos los proyectos creados y su estado
+  list-templates               Muestra las plantillas disponibles
+  doctor                       Ejecuta un diagnóstico completo del entorno Podman y Quadlets
+  help                         Muestra este mensaje de ayuda
+EOF
 }
 
 # =============================================================================
-# MAIN
+# MAIN ENTRYPOINT
 # =============================================================================
 case "${1:-}" in
-    create)          shift; cmd_create "$@" ;;
-    start)           shift; cmd_start "$@" ;;
-    stop)            shift; cmd_stop "$@" ;;
-    restart)         shift; cmd_restart "$@" ;;
-    logs)            shift; cmd_logs "$@" ;;
-    status)          shift; cmd_status "$@" ;;
-    destroy)         shift; cmd_destroy "$@" ;;
-    link)            shift; cmd_link "$@" ;;
-    unlink)          shift; cmd_unlink "$@" ;;
-    install-global)  shift; cmd_install_global "$@" ;;
+    create)           shift; cmd_create "$@" ;;
+    start)            shift; cmd_start "$@" ;;
+    stop)             shift; cmd_stop "$@" ;;
+    restart)          shift; cmd_restart "$@" ;;
+    logs)             shift; cmd_logs "$@" ;;
+    status)           shift; cmd_status "$@" ;;
+    destroy)          shift; cmd_destroy "$@" ;;
+    link)             shift; cmd_link "$@" ;;
+    unlink)           shift; cmd_unlink "$@" ;;
+    install-global)   shift; cmd_install_global "$@" ;;
     uninstall-global) shift; cmd_uninstall_global "$@" ;;
-    list)            cmd_list ;;
-    list-templates)  cmd_list_templates ;;
-    help|--help|-h)  usage ;;
-    *)               usage; exit 1 ;;
+    list|ps)          cmd_list ;;
+    list-templates)   cmd_list_templates ;;
+    doctor|check)     cmd_doctor ;;
+    help|--help|-h)   usage ;;
+    *)                usage; exit 1 ;;
 esac

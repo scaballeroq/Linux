@@ -12,6 +12,7 @@ sudo dnf5 install -y \
   desktop-file-utils \
   python3 \
   nss \
+  atk \
   at-spi2-atk \
   cups-libs \
   libdrm \
@@ -156,8 +157,8 @@ cleanup() {
 		if command -v update-desktop-database >/dev/null 2>&1; then
 			update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
 		fi
-		if command -v gtk-update-icon-cache >/dev/null 2>&1; then
-			gtk-update-icon-cache -q /usr/share/icons/hicolor 2>/dev/null || true
+		if command -v kbuildsycoca6 >/dev/null 2>&1; then
+			kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
 		fi
 	fi
 	if [ "$committed" != yes ] && [ -n "$backup_root" ] && [ -d "$backup_root" ]; then
@@ -361,8 +362,8 @@ ln -sfn "$install_root/$install_dir/antigravity-ide" "$command_link"
 if command -v update-desktop-database >/dev/null 2>&1; then
 	update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
 fi
-if command -v gtk-update-icon-cache >/dev/null 2>&1; then
-	gtk-update-icon-cache -q /usr/share/icons/hicolor 2>/dev/null || true
+if command -v kbuildsycoca6 >/dev/null 2>&1; then
+	kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
 fi
 
 committed=yes
