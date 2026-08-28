@@ -48,16 +48,18 @@ Mise is a high-performance polyglot runtime and version manager written in Rust 
 Once Mise is installed, the following development environments are deployed globally:
 
 ### Node.js (`nodejs.sh` and `angular.sh`)
-* **Dependencies**: Installs `build-essential`, `python3`, `g++`, and `make` via DNF5, which are required to build native npm dependencies (`node-gyp`).
-* **Installation**: Configures the global Node.js LTS 22 release:
+* **Dependencies**: Installs `@development-tools`, `gcc-c++`, `make`, `curl`, and `python3` via DNF5, which are required to build native C++ npm dependencies (`node-gyp`).
+* **Dynamic LTS Installation**: Configures the latest active Node.js LTS release globally and prepares Corepack (`pnpm` / `yarn`):
   ```bash
-  mise use --global node@22
+  ./ProgrammingLanguages/nodejs.sh
+  # or manually with mise:
+  mise use --global node@lts
   ```
-* **Safe NPM Updates**: Cleans npm cache and pre-installs the `promise-retry` package to bypass common npm registry upgrade errors on Fedora, then updates NPM:
+* **Corepack**: Natively enables `pnpm` and `yarn` without global package conflicts:
   ```bash
-  mise exec node@22 -- npm install -g npm@latest
+  corepack enable
   ```
-* **Angular CLI**: Installs the official Angular CLI globally:
+* **Angular CLI**: Installs the official Angular CLI globally via Mise:
   ```bash
   mise use --global npm:@angular/cli@latest
   ```
