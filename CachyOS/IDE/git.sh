@@ -61,7 +61,17 @@ run_as_user git config --global pull.rebase true
 run_as_user git config --global rebase.autoStash true
 run_as_user git config --global push.autoSetupRemote true
 run_as_user git config --global fetch.prune true
-run_as_user git config --global core.editor "nvim"
+# Editor preferido para Git (detección inteligente)
+DEFAULT_EDITOR="nano"
+if command -v nvim &>/dev/null; then
+    DEFAULT_EDITOR="nvim"
+elif command -v micro &>/dev/null; then
+    DEFAULT_EDITOR="micro"
+elif command -v vim &>/dev/null; then
+    DEFAULT_EDITOR="vim"
+fi
+
+run_as_user git config --global core.editor "$DEFAULT_EDITOR"
 
 # Visualización y productividad en consola
 run_as_user git config --global column.ui auto
@@ -81,7 +91,7 @@ run_as_user git config --global delta.hyperlinks true
 # 3. Configuración de GitHub CLI (gh)
 echo "ℹ️ [3/3] Configurando opciones predeterminadas de GitHub CLI (gh)..."
 if command -v gh &>/dev/null; then
-    run_as_user gh config set editor "nvim" 2>/dev/null || true
+    run_as_user gh config set editor "$DEFAULT_EDITOR" 2>/dev/null || true
     run_as_user gh config set git_protocol "ssh" 2>/dev/null || true
 fi
 

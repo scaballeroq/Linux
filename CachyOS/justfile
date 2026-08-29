@@ -134,16 +134,8 @@ angular:
 # =============================================================================
 
 # Todos los IDEs
-ides: nvim vscode antigravity antigravity-cli antigravity-ide opencode
+ides: antigravity antigravity-cli antigravity-ide opencode
     @echo "✅ IDEs instalados."
-
-# Neovim + LazyVim
-nvim:
-    ./IDE/neovim.sh
-
-# Visual Studio Code
-vscode:
-    ./IDE/vscode.sh
 
 # Google Antigravity Desktop 2.0 (Completo)
 antigravity:

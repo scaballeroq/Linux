@@ -391,6 +391,7 @@ Type=Application
 Categories=Development;IDE;
 StartupNotify=true
 StartupWMClass=Antigravity
+MimeType=text/plain;inode/directory;
 X-LinuxCapable-Managed=$managed_id
 DESKTOP
 desktop-file-validate "$desktop_staged"
@@ -426,6 +427,22 @@ ln -sfn "$install_root/$top_dir/antigravity" "$command_link"
 mkdir -p "$(dirname "$icon_file")"
 install -m 0644 "$icon_staged" "$icon_file"
 install -m 0644 "$desktop_staged" "$desktop_file"
+
+# Menu contextual de Dolphin en KDE Plasma 6
+mkdir -p /usr/share/kio/servicemenus
+cat <<'SERVICEMENU' > /usr/share/kio/servicemenus/open_in_antigravity.desktop
+[Desktop Entry]
+Type=Service
+MimeType=inode/directory;
+Actions=openInAntigravity;
+X-KDE-Priority=TopLevel
+
+[Desktop Action openInAntigravity]
+Name=Open in Antigravity
+Name[es]=Abrir en Antigravity
+Icon=antigravity
+Exec=antigravity %f
+SERVICEMENU
 
 if command -v update-desktop-database >/dev/null 2>&1; then
 	update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
