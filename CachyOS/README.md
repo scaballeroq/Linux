@@ -39,7 +39,6 @@ Scripts de configuración del sistema operativo, personalización y endurecimien
 - **`post-install-amd.sh`**: Post-instalación optimizada para AMD Ryzen (ZRAM, RADV, Mesa, PipeWire).
 - **`post-install-intel.sh`**: Post-instalación optimizada para Intel Core (VA-API Intel, PipeWire).
 - **`laptop-setup.sh`**: Optimización para portátiles de desarrollo en KDE Plasma 6 (Touchpad, Bluetooth, PowerDevil, HiDPI, VRR).
-- **`fingerprint-setup.sh`**: Configuración de desbloqueo por huella dactilar (`fprintd`, PAM, `polkit`, SDDM, KDE).
 - **`cachyos-tuning.sh`**: Ajustes de Kernel (`sysctl`), Baloo, Systemd, Distrobox y límites de sistema.
 - **`cockpit.sh`**: Instalación y configuración de Cockpit (administración web).
 - **`fastfetch.sh`**: Información estética del sistema al inicio (Fastfetch).

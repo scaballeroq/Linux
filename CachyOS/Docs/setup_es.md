@@ -110,24 +110,7 @@ Instala y optimiza **Kitty**, un emulador de terminal moderno acelerado por GPU,
 
 ---
 
-## 4. Splash Screen de Arranque (`plymouth-setup.sh`)
-
-Gestiona el splash screen visual durante el arranque del sistema.
-
-```bash
-# Activar tema Breeze (recomendado para KDE)
-./Setup/plymouth-setup.sh breeze
-
-# Listar temas disponibles
-./Setup/plymouth-setup.sh --list
-
-# Desactivar splash gráfico
-./Setup/plymouth-setup.sh --disable
-```
-
----
-
-## 5. Seguridad (`seguridad.sh`)
+## 4. Seguridad (`seguridad.sh`)
 
 Endurecimiento del sistema con Firewalld, DNS-over-TLS y MAC Randomization.
 
@@ -139,7 +122,7 @@ Endurecimiento del sistema con Firewalld, DNS-over-TLS y MAC Randomization.
 
 ---
 
-## 6. Panel de Administración Cockpit (`cockpit.sh`)
+## 5. Panel de Administración Cockpit (`cockpit.sh`)
 
 Instala Cockpit para administrar el sistema mediante una interfaz web.
 
@@ -152,7 +135,7 @@ Acceso: [https://localhost:9090](https://localhost:9090)
 
 ---
 
-## 7. Soporte Multimedia y yt-dlp (`yt-dlp-setup.sh`)
+## 6. Soporte Multimedia y yt-dlp (`yt-dlp-setup.sh`)
 
 Configura las herramientas para descargas de video y procesamiento de audio digital.
 

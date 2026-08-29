@@ -33,10 +33,6 @@ post-install-intel:
 laptop:
     ./Setup/laptop-setup.sh
 
-# Autenticacion y desbloqueo por huella dactilar (fprintd, PAM, sudo, polkit)
-fingerprint:
-    ./Setup/fingerprint-setup.sh
-
 # Optimizaciones avanzadas de rendimiento (Sysctl, limites, Systemd, Baloo, Distrobox para CachyOS + KDE Plasma)
 tuning:
     ./Setup/cachyos-tuning.sh

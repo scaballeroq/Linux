@@ -7,15 +7,17 @@ echo "ℹ️ Instalando Fastfetch vía Pacman..."
 sudo pacman -S --needed --noconfirm fastfetch
 
 # Asegurar directorio de configuración
-mkdir -p ~/.config/fastfetch
+mkdir -p "$HOME/.config/fastfetch"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Copiar configuración local
-if [ -f "Setup/config.jsonc" ]; then
+if [ -f "$SCRIPT_DIR/config.jsonc" ]; then
+    echo "ℹ️ Aplicando configuración personalizada desde $SCRIPT_DIR/config.jsonc..."
+    cp "$SCRIPT_DIR/config.jsonc" "$HOME/.config/fastfetch/config.jsonc"
+elif [ -f "Setup/config.jsonc" ]; then
     echo "ℹ️ Aplicando configuración personalizada desde Setup/config.jsonc..."
-    cp Setup/config.jsonc ~/.config/fastfetch/config.jsonc
-elif [ -f "config.jsonc" ]; then
-    echo "ℹ️ Aplicando configuración personalizada desde config.jsonc..."
-    cp config.jsonc ~/.config/fastfetch/config.jsonc
+    cp Setup/config.jsonc "$HOME/.config/fastfetch/config.jsonc"
 fi
 
 echo "✅ Fastfetch instalado y configurado."

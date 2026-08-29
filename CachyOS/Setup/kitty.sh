@@ -22,10 +22,20 @@ fi
 
 # Detectar usuario real en caso de ejecucion con sudo
 if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    REAL_USER="$SUDO_USER"
     USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
 else
-    USER_HOME="${HOME}"
+    REAL_USER="${USER:-$(id -un)}"
+    USER_HOME="${HOME:-/home/$REAL_USER}"
 fi
+
+run_as_user() {
+    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+        sudo -u "$REAL_USER" env HOME="$USER_HOME" "$@"
+    else
+        "$@"
+    fi
+}
 
 # Opacidad por defecto (0.75 = 75% opacidad / 25% transparencia translucida con blur)
 OPACITY="0.75"
@@ -246,30 +256,30 @@ echo "📁 [4/4] Configurando integracion con Dolphin y atajos de KDE Plasma..."
 # Configurar Kitty como terminal por defecto y atajo Ctrl+Alt+T en KDE Plasma
 if command -v kwriteconfig6 &> /dev/null; then
     # Terminal predeterminado de KDE
-    kwriteconfig6 --file kdeglobals --group General --key TerminalApplication "kitty" 2>/dev/null || true
-    kwriteconfig6 --file kdeglobals --group General --key TerminalService "kitty.desktop" 2>/dev/null || true
+    run_as_user kwriteconfig6 --file kdeglobals --group General --key TerminalApplication "kitty" 2>/dev/null || true
+    run_as_user kwriteconfig6 --file kdeglobals --group General --key TerminalService "kitty.desktop" 2>/dev/null || true
 
     # Atajo global Ctrl+Alt+T
-    kwriteconfig6 --file kglobalshortcutsrc --group kitty.desktop --key _launch "Ctrl+Alt+T,none,kitty" 2>/dev/null || true
-    kwriteconfig6 --file kglobalshortcutsrc --group kitty.desktop --key _k_friendly_name "Kitty" 2>/dev/null || true
+    run_as_user kwriteconfig6 --file kglobalshortcutsrc --group kitty.desktop --key _launch "Ctrl+Alt+T,none,kitty" 2>/dev/null || true
+    run_as_user kwriteconfig6 --file kglobalshortcutsrc --group kitty.desktop --key _k_friendly_name "Kitty" 2>/dev/null || true
     if command -v qdbus6 &>/dev/null; then
-        qdbus6 org.kde.kglobalaccel /kglobalaccel reloadConfig 2>/dev/null || true
+        run_as_user qdbus6 org.kde.kglobalaccel /kglobalaccel reloadConfig 2>/dev/null || true
     fi
 elif command -v kwriteconfig5 &> /dev/null; then
-    kwriteconfig5 --file kdeglobals --group General --key TerminalApplication "kitty" 2>/dev/null || true
-    kwriteconfig5 --file kdeglobals --group General --key TerminalService "kitty.desktop" 2>/dev/null || true
-    kwriteconfig5 --file kglobalshortcutsrc --group kitty.desktop --key _launch "Ctrl+Alt+T,none,kitty" 2>/dev/null || true
-    kwriteconfig5 --file kglobalshortcutsrc --group kitty.desktop --key _k_friendly_name "Kitty" 2>/dev/null || true
+    run_as_user kwriteconfig5 --file kdeglobals --group General --key TerminalApplication "kitty" 2>/dev/null || true
+    run_as_user kwriteconfig5 --file kdeglobals --group General --key TerminalService "kitty.desktop" 2>/dev/null || true
+    run_as_user kwriteconfig5 --file kglobalshortcutsrc --group kitty.desktop --key _launch "Ctrl+Alt+T,none,kitty" 2>/dev/null || true
+    run_as_user kwriteconfig5 --file kglobalshortcutsrc --group kitty.desktop --key _k_friendly_name "Kitty" 2>/dev/null || true
     if command -v qdbus &>/dev/null; then
-        qdbus org.kde.kglobalaccel /kglobalaccel reloadConfig 2>/dev/null || true
+        run_as_user qdbus org.kde.kglobalaccel /kglobalaccel reloadConfig 2>/dev/null || true
     fi
 fi
 
 # Añadir accion de menu contextual para Dolphin (ServiceMenu "Abrir en Kitty")
 DOLPHIN_SERVICES_DIR="$USER_HOME/.local/share/kio/servicemenus"
-mkdir -p "$DOLPHIN_SERVICES_DIR"
+run_as_user mkdir -p "$DOLPHIN_SERVICES_DIR"
 
-cat <<'EOF' > "$DOLPHIN_SERVICES_DIR/open_in_kitty.desktop"
+cat <<'EOF' | run_as_user tee "$DOLPHIN_SERVICES_DIR/open_in_kitty.desktop" > /dev/null
 [Desktop Entry]
 Type=Service
 MimeType=inode/directory;
@@ -283,7 +293,7 @@ Name[en]=Open in Kitty
 Icon=kitty
 Exec=kitty --directory %f
 EOF
-chmod +x "$DOLPHIN_SERVICES_DIR/open_in_kitty.desktop" 2>/dev/null || true
+run_as_user chmod +x "$DOLPHIN_SERVICES_DIR/open_in_kitty.desktop" 2>/dev/null || true
 
 # Compatibilidad con Plasma 5 si existe el directorio
 if [ -d "$USER_HOME/.local/share/kservices5/ServiceMenus" ]; then

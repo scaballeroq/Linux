@@ -37,7 +37,6 @@ OS configuration, hardening, and styling scripts:
 - **`post-install-amd.sh`**: AMD Ryzen optimized post-install (ZRAM, RADV, Mesa, PipeWire).
 - **`post-install-intel.sh`**: Intel Core optimized post-install (VA-API Intel, PipeWire).
 - **`laptop-setup.sh`**: Laptop optimization (Touchpad, Bluetooth, HiDPI, VRR).
-- **`fingerprint-setup.sh`**: Fingerprint authentication setup (`fprintd`, PAM, `polkit`).
 - **`cachyos-tuning.sh`**: Kernel sysctl, Baloo, Systemd, Distrobox, and system limits tuning.
 - **`cockpit.sh`**: Cockpit web management console setup.
 - **`fastfetch.sh`**: System info fetch initialization.
