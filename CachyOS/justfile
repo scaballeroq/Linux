@@ -41,6 +41,10 @@ fingerprint:
 tuning:
     ./Setup/cachyos-tuning.sh
 
+# Estado actual de las optimizaciones y metricas de rendimiento
+tuning-status:
+    ./Setup/cachyos-tuning.sh --status
+
 # Utilidades de terminal y prompt (eza, bat, fzf, zoxide, ripgrep, starship)
 shell:
     ./Setup/shell.sh
