@@ -54,31 +54,16 @@ $SUDO pacman -S --needed --noconfirm \
     git \
     jq 2>/dev/null || true
 
-# 2. Integración de Zoxide (Smart cd) en Zsh y Bash
-echo "⚙️ [2/3] Configurando integración de Zoxide en shells..."
-
-# 2.1. Zsh (Shell nativa de CachyOS)
+# 2. Integración de Zoxide (Smart cd) en Zsh
+echo "⚙️ [2/3] Configurando integración de Zoxide en Zsh..."
 ZSHRC="$USER_HOME/.zshrc"
-if [ -f "$ZSHRC" ] || [[ "${SHELL:-}" == *"zsh"* ]]; then
-    run_as_user touch "$ZSHRC"
-    if ! grep -q "zoxide init zsh" "$ZSHRC" 2>/dev/null; then
-        echo -e '\n# Zoxide (Smart cd)\nif command -v zoxide &>/dev/null; then eval "$(zoxide init zsh)"; fi' | run_as_user tee -a "$ZSHRC" > /dev/null
-        echo "  ✅ Zoxide integrado en ~/.zshrc"
-    else
-        echo "  ℹ️ Zoxide ya estaba presente en ~/.zshrc"
-    fi
-fi
+run_as_user touch "$ZSHRC"
 
-# 2.2. Bash
-BASHRC="$USER_HOME/.bashrc"
-BASHRC_D="$USER_HOME/.bashrc.d"
-run_as_user mkdir -p "$BASHRC_D"
-
-if [ -f "$BASHRC" ]; then
-    if ! grep -q "zoxide init bash" "$BASHRC" 2>/dev/null; then
-        echo -e '\n# Zoxide (Smart cd)\nif command -v zoxide &>/dev/null; then eval "$(zoxide init bash)"; fi' | run_as_user tee -a "$BASHRC" > /dev/null
-        echo "  ✅ Zoxide integrado en ~/.bashrc"
-    fi
+if ! grep -q "zoxide init zsh" "$ZSHRC" 2>/dev/null; then
+    echo -e '\n# Zoxide (Smart cd)\nif command -v zoxide &>/dev/null; then eval "$(zoxide init zsh)"; fi' | run_as_user tee -a "$ZSHRC" > /dev/null
+    echo "  ✅ Zoxide integrado en ~/.zshrc"
+else
+    echo "  ℹ️ Zoxide ya estaba presente en ~/.zshrc"
 fi
 
 # 3. Verificación de directorios de usuario
@@ -86,9 +71,8 @@ echo "🔗 [3/3] Verificando directorios de usuario..."
 run_as_user mkdir -p "$USER_HOME/.local/bin"
 
 echo "================================================================="
-echo "✅ Utilidades modernas de terminal configuradas con éxito:"
+echo "✅ Utilidades modernas de terminal configuradas con éxito para CachyOS:"
 echo "  • Herramientas: eza, bat, fzf, zoxide, ripgrep, fd, duf, dust, btop, jq"
-echo "  • Shell Zsh:    Configuración nativa de CachyOS (p10k) + Zoxide"
-echo "  • Shell Bash:   ~/.bashrc + Zoxide"
-echo "💡 Nota: Starship está disponible como script opcional en ./Setup/starship.sh"
+echo "  • Shell activa: Zsh (CachyOS Powerlevel10k + Zoxide)"
+echo "💡 Nota: Starship está disponible como opción en ./Setup/starship.sh"
 echo "================================================================="
