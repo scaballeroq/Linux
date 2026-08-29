@@ -1,22 +1,21 @@
 #!/bin/bash
 # ==============================================================================
-# apariencia.sh - Gestor de Temas, Kvantum (Qt5/Qt6), Iconos y Homogeneizacion Visual
-# Optimizado para CachyOS + KDE Plasma 6
+# apariencia.sh - Gestor de Apariencia y Temas NATIVOS para CachyOS + KDE Plasma 6
+# 100% Nativo (Breeze Qt6 + Kirigami + Esquemas de Color + Iconos + GTK Sync)
 # ==============================================================================
 #
 # Uso:
 #   ./apariencia.sh                  -> Aplica tema nativo optimizado (BreezeDark + Papirus-Dark)
-#   ./apariencia.sh --catppuccin     -> Aplica la suite completa Catppuccin Mocha (Kvantum, Colores, Iconos, GTK, Wallpaper)
-#   ./apariencia.sh --nord           -> Aplica la suite completa Nordic / CachyOS-Nord (Kvantum, Colores, Iconos, GTK, Wallpaper)
-#   ./apariencia.sh --dracula        -> Aplica la suite completa Dracula (Kvantum, Colores, Iconos, Cursors, GTK, Wallpaper)
-#   ./apariencia.sh --orchis         -> Aplica la suite completa Orchis (Kvantum, Colores, Iconos, GTK, Wallpaper)
-#   ./apariencia.sh --breeze         -> Aplica el estilo nativo KDE Plasma 6 Breeze (BreezeDark + Papirus-Dark)
-#   ./apariencia.sh --dark, -d       -> Aplica tema oscuro predeterminado
-#   ./apariencia.sh --light, -l      -> Aplica tema claro (BreezeLight + Papirus)
-#   ./apariencia.sh --kvantum-theme <TEMA> -> Aplica un tema especifico de Kvantum
-#   ./apariencia.sh --install-themes -> Instala todos los paquetes y activos de temas (Catppuccin, Nord, Dracula, Orchis)
+#   ./apariencia.sh --catppuccin     -> Aplica la suite nativa Catppuccin Mocha (Colores, Iconos, GTK, Wallpaper)
+#   ./apariencia.sh --nord           -> Aplica la suite nativa Nordic / CachyOS-Nord (Colores, Iconos, GTK, Wallpaper)
+#   ./apariencia.sh --dracula        -> Aplica la suite nativa Dracula (Colores, Iconos, Cursors, GTK, Wallpaper)
+#   ./apariencia.sh --orchis         -> Aplica la suite nativa Orchis (Colores, Iconos, GTK, Wallpaper)
+#   ./apariencia.sh --breeze         -> Aplica el estilo nativo estándar KDE Plasma 6 (BreezeDark + Papirus-Dark)
+#   ./apariencia.sh --dark, -d       -> Aplica tema oscuro nativo predeterminado
+#   ./apariencia.sh --light, -l      -> Aplica tema claro nativo (BreezeLight + Papirus)
+#   ./apariencia.sh --install-themes -> Instala todos los paquetes y activos de temas nativos
 #   ./apariencia.sh --status, -s     -> Muestra el diagnostico visual actual
-#   ./apariencia.sh --list, -l       -> Muestra temas globales, esquemas, iconos y temas Kvantum disponibles
+#   ./apariencia.sh --list, -l       -> Muestra temas globales, esquemas de color e iconos instalados
 #   ./apariencia.sh --no-install     -> Aplica la configuracion visual omitiendo la descarga de paquetes
 #   ./apariencia.sh --help, -h       -> Muestra la ayuda interactiva
 #
@@ -85,17 +84,15 @@ set_kde_config() {
 set_wallpaper() {
     local WP_PATH="$1"
     if [ -f "$WP_PATH" ] && command -v plasma-apply-wallpaperimage &>/dev/null; then
-        run_as_user plasma-apply-wallpaperimage "$WP_PATH" &>/dev/null || true
+        timeout 5s run_as_user plasma-apply-wallpaperimage "$WP_PATH" &>/dev/null || true
         echo "🖼️ Fondo de pantalla aplicado: $(basename "$WP_PATH")"
     fi
 }
 
-# 1. Instalacion de paquetes esenciales para KDE Plasma 6 y Kvantum
+# 1. Instalacion de paquetes esenciales para KDE Plasma 6 (100% nativo)
 install_base_packages() {
     local PKGS_TO_INSTALL=()
     local ESSENTIAL_PKGS=(
-        "kvantum"
-        "kvantum-qt5"
         "papirus-icon-theme"
         "breeze-icons"
         "breeze-gtk"
@@ -107,7 +104,10 @@ install_base_packages() {
         "qt5-wayland"
         "qt6-wayland"
         "qqc2-desktop-style"
+        "qqc2-breeze-style"
         "adwaita-icon-theme"
+        "xdg-desktop-portal-kde"
+        "xdg-desktop-portal-gtk"
     )
 
     for pkg in "${ESSENTIAL_PKGS[@]}"; do
@@ -120,32 +120,20 @@ install_base_packages() {
         return 0
     fi
 
-    echo "📦 Instalando paquetes base de apariencia (${PKGS_TO_INSTALL[*]})..."
+    echo "📦 Instalando paquetes base de apariencia nativa (${PKGS_TO_INSTALL[*]})..."
     $SUDO pacman -S --needed --noconfirm "${PKGS_TO_INSTALL[@]}" 2>/dev/null || true
 }
 
-# Descarga e instalacion de activos Catppuccin (Kvantum, LookAndFeel, ColorSchemes, Wallpapers)
+# Descarga e instalacion de esquemas de color y activos nativos Catppuccin
 install_catppuccin_assets() {
-    echo "☕ Verificando activos de Catppuccin (Kvantum, Color-Schemes y Look&Feel)..."
-    local KVANTUM_DIR="$USER_HOME/.config/Kvantum"
     local COLOR_DIR="$USER_HOME/.local/share/color-schemes"
     local LNF_DIR="$USER_HOME/.local/share/plasma/look-and-feel"
     local WP_DIR="$USER_HOME/.local/share/wallpapers/Catppuccin"
 
-    run_as_user mkdir -p "$KVANTUM_DIR" "$COLOR_DIR" "$LNF_DIR" "$WP_DIR"
-
-    if [ ! -d "$KVANTUM_DIR/catppuccin-mocha-blue" ]; then
-        echo "⬇️ Descargando temas Kvantum de Catppuccin..."
-        local TEMP_DIR="/tmp/catppuccin-kv-$$"
-        rm -rf "$TEMP_DIR"
-        if git clone --depth 1 https://github.com/catppuccin/kvantum.git "$TEMP_DIR" &>/dev/null; then
-            run_as_user cp -r "$TEMP_DIR/themes/"* "$KVANTUM_DIR/" 2>/dev/null || true
-            rm -rf "$TEMP_DIR"
-        fi
-    fi
+    run_as_user mkdir -p "$COLOR_DIR" "$LNF_DIR" "$WP_DIR"
 
     if [ ! -f "$COLOR_DIR/CatppuccinMochaBlue.colors" ]; then
-        echo "⬇️ Descargando esquemas de color KDE de Catppuccin..."
+        echo "⬇️ Descargando esquemas de color nativos de Catppuccin..."
         local TEMP_DIR="/tmp/catppuccin-kde-$$"
         rm -rf "$TEMP_DIR"
         if git clone --depth 1 https://github.com/catppuccin/kde.git "$TEMP_DIR" &>/dev/null; then
@@ -156,32 +144,29 @@ install_catppuccin_assets() {
     fi
 
     if [ ! -f "$WP_DIR/catppuccin-mocha.png" ]; then
-        echo "⬇️ Descargando fondo de pantalla Catppuccin Mocha..."
+        echo "⬇️ Descargando fondo de pantalla Catppuccin Mocha 4K..."
         curl -sL "https://raw.githubusercontent.com/catppuccin/wallpapers/main/landscapes/evening-sky.png" -o "$WP_DIR/catppuccin-mocha.png" 2>/dev/null || true
     fi
 }
 
-# Instalador completo de todas las suites de temas
+# Instalador completo de todas las suites de temas nativos
 install_all_themes() {
     echo "================================================================="
-    echo "🎨 INSTALANDO PAQUETES Y ACTIVOS PARA TODAS LAS SUITES DE TEMAS"
+    echo "🎨 INSTALANDO PAQUETES Y ACTIVOS DE TEMAS NATIVOS (KDE PLASMA 6)"
     echo "================================================================="
     install_base_packages
 
     local SUITE_PKGS=(
         # Nordic
-        "kvantum-theme-nordic-git"
         "cachyos-nord-kde-theme-git"
         "nordic-theme-git"
         "colloid-nord-icon-theme-git"
         # Dracula
-        "ant-dracula-kvantum-theme-git"
         "ant-dracula-kde-theme-git"
         "ant-dracula-theme-git"
         "dracula-icons-git"
         "dracula-cursors-git"
         # Orchis
-        "kvantum-theme-orchis-git"
         "orchis-theme"
         "tela-circle-icon-theme-all"
         # Catppuccin
@@ -203,29 +188,10 @@ install_all_themes() {
     fi
 
     install_catppuccin_assets
-    echo "✅ Todas las suites de temas (Catppuccin, Nordic, Dracula, Orchis) estan instaladas."
+    echo "✅ Todas las suites de temas nativos (Catppuccin, Nordic, Dracula, Orchis) estan instaladas."
 }
 
-# 2. Configuracion del motor Kvantum
-configure_kvantum() {
-    local THEME="$1"
-    local KVANTUM_DIR="$USER_HOME/.config/Kvantum"
-    local KVANTUM_FILE="$KVANTUM_DIR/kvantum.kvconfig"
-
-    run_as_user mkdir -p "$KVANTUM_DIR"
-
-    # Escribir configuracion limpia de Kvantum
-    run_as_user tee "$KVANTUM_FILE" > /dev/null <<EOF
-[General]
-theme=$THEME
-EOF
-
-    set_kde_config "kdeglobals" "KDE" "widgetStyle" "kvantum"
-    set_kde_config "kdeglobals" "General" "widgetStyle" "kvantum"
-    echo "💠 Motor Kvantum configurado con el tema: $THEME"
-}
-
-# Sincronizacion general de apariencia
+# Sincronizacion centralizada de apariencia nativa
 apply_core_appearance() {
     local LOOK_AND_FEEL="$1"
     local COLOR_SCHEME="$2"
@@ -235,7 +201,11 @@ apply_core_appearance() {
     local WALLPAPER_PATH="$6"
     local PREFER_DARK="${7:-prefer-dark}"
 
-    echo "🎨 Aplicando Look & Feel ($LOOK_AND_FEEL) y Esquema de Color ($COLOR_SCHEME)..."
+    # Forzar siempre motor de widgets nativo Breeze (Qt6)
+    set_kde_config "kdeglobals" "KDE" "widgetStyle" "Breeze"
+    set_kde_config "kdeglobals" "General" "widgetStyle" "Breeze"
+
+    echo "🎨 Aplicando Esquema de Color ($COLOR_SCHEME) y Look & Feel ($LOOK_AND_FEEL)..."
     if [ -n "$LOOK_AND_FEEL" ] && command -v plasma-apply-lookandfeel &>/dev/null; then
         timeout 5s run_as_user plasma-apply-lookandfeel -a "$LOOK_AND_FEEL" 2>/dev/null || true
     fi
@@ -277,14 +247,13 @@ EOF
     fi
 
     if command -v flatpak &>/dev/null; then
-        run_as_user flatpak override --user --filesystem=xdg-config/Kvantum:ro 2>/dev/null || true
         run_as_user flatpak override --user --filesystem=xdg-config/gtk-3.0:ro 2>/dev/null || true
         run_as_user flatpak override --user --filesystem=xdg-config/gtk-4.0:ro 2>/dev/null || true
     fi
 
     set_kde_config "dolphinrc" "PreviewSettings" "Plugins" "audiothumbnail,directorythumbnail,djvuthumbnail,exrthumbnail,ffmpegthumbs,fontthumbnail,imagethumbnail,jpegthumbnail,kraimagethumbnail,svgthumbnail,textthumbnail,windowsexethumbnail"
 
-    # Aplicar Wallpaper
+    # Aplicar Fondo de pantalla
     if [ -n "$WALLPAPER_PATH" ]; then
         set_wallpaper "$WALLPAPER_PATH"
     fi
@@ -294,27 +263,25 @@ EOF
         run_as_user kbuildsycoca6 --noincremental &>/dev/null || true
     fi
 
-    # Notificar a KWin
+    # Notificar a KWin para actualizar sombras y decoraciones
     if command -v dbus-send &>/dev/null; then
         run_as_user dbus-send --type=method_call --dest=org.kde.KWin /KWin org.kde.KWin.reconfigure 2>/dev/null || true
     fi
 }
 
 # ==============================================================================
-# SUITES COMPLETAS DE TEMAS
+# SUITES DE TEMAS NATIVOS
 # ==============================================================================
 
-# 1. Suite Catppuccin Mocha (Pastel Oscuro)
+# 1. Suite Catppuccin Mocha (Pastel Oscuro Nativo)
 apply_theme_catppuccin() {
     echo "================================================================="
-    echo "☕ APLICANDO SUITE COMPLETA: CATPPUCCIN MOCHA"
+    echo "☕ APLICANDO SUITE NATIVA: CATPPUCCIN MOCHA (KDE PLASMA 6)"
     echo "================================================================="
     [ "$NO_INSTALL" = false ] && {
         $SUDO pacman -S --needed --noconfirm catppuccin-cursors-mocha colloid-catppuccin-gtk-theme-git colloid-catppuccin-theme-git 2>/dev/null || true
         install_catppuccin_assets
     }
-
-    configure_kvantum "catppuccin-mocha-blue"
 
     local ICON_THEME="Colloid-Catppuccin-Dark"
     [ ! -d "/usr/share/icons/$ICON_THEME" ] && ICON_THEME="Papirus-Dark"
@@ -330,7 +297,7 @@ apply_theme_catppuccin() {
     [ ! -f "$WALLPAPER" ] && WALLPAPER="/usr/share/wallpapers/cachyos-wallpapers/cachygalaxy99.jpg"
 
     apply_core_appearance \
-        "Catppuccin-Mocha-Global" \
+        "org.kde.breezedark.desktop" \
         "CatppuccinMochaBlue" \
         "$ICON_THEME" \
         "$GTK_THEME" \
@@ -338,21 +305,17 @@ apply_theme_catppuccin() {
         "$WALLPAPER" \
         "prefer-dark"
 
-    echo "✅ Suite Catppuccin Mocha aplicada con exito."
+    echo "✅ Suite Catppuccin Mocha (Nativa KDE 6) aplicada con exito."
 }
 
-# 2. Suite Nordic / CachyOS-Nord (Artico Azulado)
+# 2. Suite Nordic / CachyOS-Nord (Artico Azulado Nativo)
 apply_theme_nord() {
     echo "================================================================="
-    echo "🌌 APLICANDO SUITE COMPLETA: NORD / NORDIC"
+    echo "🌌 APLICANDO SUITE NATIVA: NORD / NORDIC (KDE PLASMA 6)"
     echo "================================================================="
     [ "$NO_INSTALL" = false ] && {
-        $SUDO pacman -S --needed --noconfirm kvantum-theme-nordic-git cachyos-nord-kde-theme-git nordic-theme-git colloid-nord-icon-theme-git 2>/dev/null || true
+        $SUDO pacman -S --needed --noconfirm cachyos-nord-kde-theme-git nordic-theme-git colloid-nord-icon-theme-git 2>/dev/null || true
     }
-
-    local KV_THEME="Nordic"
-    [ -d "/usr/share/Kvantum/Nordic-Darker" ] && KV_THEME="Nordic-Darker"
-    configure_kvantum "$KV_THEME"
 
     local ICON_THEME="Colloid-Nord-Dark"
     [ ! -d "/usr/share/icons/$ICON_THEME" ] && ICON_THEME="tela-circle-icon-theme-nord"
@@ -374,21 +337,17 @@ apply_theme_nord() {
         "$WALLPAPER" \
         "prefer-dark"
 
-    echo "✅ Suite Nordic aplicada con exito."
+    echo "✅ Suite Nordic (Nativa KDE 6) aplicada con exito."
 }
 
-# 3. Suite Dracula (Contraste Neon Vampirico)
+# 3. Suite Dracula (Contraste Neon Vampirico Nativo)
 apply_theme_dracula() {
     echo "================================================================="
-    echo "🧛 APLICANDO SUITE COMPLETA: DRACULA"
+    echo "🧛 APLICANDO SUITE NATIVA: DRACULA (KDE PLASMA 6)"
     echo "================================================================="
     [ "$NO_INSTALL" = false ] && {
-        $SUDO pacman -S --needed --noconfirm ant-dracula-kvantum-theme-git ant-dracula-kde-theme-git ant-dracula-theme-git dracula-icons-git dracula-cursors-git 2>/dev/null || true
+        $SUDO pacman -S --needed --noconfirm ant-dracula-kde-theme-git ant-dracula-theme-git dracula-icons-git dracula-cursors-git 2>/dev/null || true
     }
-
-    local KV_THEME="Ant-Dracula"
-    [ ! -d "/usr/share/Kvantum/$KV_THEME" ] && [ -d "/usr/share/Kvantum/Dracula" ] && KV_THEME="Dracula"
-    configure_kvantum "$KV_THEME"
 
     local ICON_THEME="Dracula"
     [ ! -d "/usr/share/icons/$ICON_THEME" ] && ICON_THEME="colloid-dracula-theme-git"
@@ -405,29 +364,25 @@ apply_theme_dracula() {
     [ ! -f "$WALLPAPER" ] && WALLPAPER="/usr/share/wallpapers/cachyos-wallpapers/cachygalaxy99.jpg"
 
     apply_core_appearance \
-        "Ant-Dracula" \
-        "Dracula" \
+        "org.kde.breezedark.desktop" \
+        "BreezeDark" \
         "$ICON_THEME" \
         "$GTK_THEME" \
         "$CURSOR_THEME" \
         "$WALLPAPER" \
         "prefer-dark"
 
-    echo "✅ Suite Dracula aplicada con exito."
+    echo "✅ Suite Dracula (Nativa KDE 6) aplicada con exito."
 }
 
 # 4. Suite Orchis (Material Design Moderno con Acentos)
 apply_theme_orchis() {
     echo "================================================================="
-    echo "🌿 APLICANDO SUITE COMPLETA: ORCHIS DARK"
+    echo "🌿 APLICANDO SUITE NATIVA: ORCHIS DARK (KDE PLASMA 6)"
     echo "================================================================="
     [ "$NO_INSTALL" = false ] && {
-        $SUDO pacman -S --needed --noconfirm kvantum-theme-orchis-git orchis-theme tela-circle-icon-theme-all 2>/dev/null || true
+        $SUDO pacman -S --needed --noconfirm orchis-theme tela-circle-icon-theme-all 2>/dev/null || true
     }
-
-    local KV_THEME="Orchis-dark"
-    [ ! -d "/usr/share/Kvantum/$KV_THEME" ] && [ -d "/usr/share/Kvantum/Orchis-teal-dark" ] && KV_THEME="Orchis-teal-dark"
-    configure_kvantum "$KV_THEME"
 
     local ICON_THEME="Tela-circle-dark"
     [ ! -d "/usr/share/icons/$ICON_THEME" ] && ICON_THEME="Tela-circle"
@@ -449,24 +404,14 @@ apply_theme_orchis() {
         "$WALLPAPER" \
         "prefer-dark"
 
-    echo "✅ Suite Orchis Dark aplicada con exito."
+    echo "✅ Suite Orchis Dark (Nativa KDE 6) aplicada con exito."
 }
 
-# 5. Suite Nativa KDE Plasma 6 Breeze (Maxima Estabilidad y Rendimiento)
+# 5. Suite Nativa KDE Plasma 6 Breeze (Predeterminada)
 apply_theme_breeze() {
     echo "================================================================="
     echo "⚡ APLICANDO ESTILO NATIVO KDE PLASMA 6 (BREEZE)"
     echo "================================================================="
-    set_kde_config "kdeglobals" "KDE" "widgetStyle" "Breeze"
-    set_kde_config "kdeglobals" "General" "widgetStyle" "Breeze"
-
-    local KVANTUM_DIR="$USER_HOME/.config/Kvantum"
-    run_as_user mkdir -p "$KVANTUM_DIR"
-    run_as_user tee "$KVANTUM_DIR/kvantum.kvconfig" > /dev/null <<EOF
-[General]
-theme=KvDark
-EOF
-
     apply_core_appearance \
         "org.kde.breezedark.desktop" \
         "BreezeDark" \
@@ -476,41 +421,15 @@ EOF
         "/usr/share/wallpapers/cachyos-wallpapers/cachygalaxy99.jpg" \
         "prefer-dark"
 
-    echo "✅ Estilo nativo Breeze aplicado (Kvantum desactivado, widgets nativos Qt6)."
+    echo "✅ Estilo nativo Breeze Dark aplicado (Widgets nativos Qt6/Kirigami)."
 }
 
 # 6. Diagnostico visual
 show_status() {
-    local KVANTUM_THEME="Inactivo / No configurado"
-    if [ -f "$USER_HOME/.config/Kvantum/kvantum.kvconfig" ]; then
-        local READ_THEME
-        READ_THEME=$(grep -E '^theme=' "$USER_HOME/.config/Kvantum/kvantum.kvconfig" 2>/dev/null | cut -d= -f2 || true)
-        if [ -n "$READ_THEME" ]; then
-            KVANTUM_THEME="$READ_THEME"
-            if [ ! -d "/usr/share/Kvantum/$READ_THEME" ] && [ ! -d "$USER_HOME/.config/Kvantum/$READ_THEME" ]; then
-                KVANTUM_THEME="$READ_THEME (⚠️ Tema no encontrado en disco)"
-            fi
-        fi
-    fi
-
-    local QT5_KVANTUM_STATUS="No instalado"
-    if pacman -Q kvantum-qt5 &>/dev/null || [ -f "/usr/lib/qt/plugins/styles/libkvantum.so" ]; then
-        QT5_KVANTUM_STATUS="Instalado (Soporte Qt5 activo)"
-    fi
-
-    local QT6_KVANTUM_STATUS="No instalado"
-    if pacman -Q kvantum &>/dev/null || [ -f "/usr/lib/qt6/plugins/styles/libkvantum.so" ]; then
-        QT6_KVANTUM_STATUS="Instalado (Soporte Qt6 activo)"
-    fi
-
     echo "================================================================="
-    echo "🔍 ESTADO VISUAL ACTUAL (KDE PLASMA 6, KVANTUM & GTK)"
+    echo "🔍 ESTADO VISUAL ACTUAL (KDE PLASMA 6 NATIVO & GTK)"
     echo "================================================================="
     echo "• Motor de Widgets KDE:   $(run_as_user kreadconfig6 --file kdeglobals --group KDE --key widgetStyle 2>/dev/null || echo 'Breeze')"
-    echo "• Tema Kvantum Activo:    $KVANTUM_THEME"
-    echo "• Plugin Kvantum Qt6:     $QT6_KVANTUM_STATUS"
-    echo "• Plugin Kvantum Qt5:     $QT5_KVANTUM_STATUS"
-    echo "-----------------------------------------------------------------"
     echo "• Tema Global Look&Feel:  $(run_as_user kreadconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage 2>/dev/null || echo 'Breeze')"
     echo "• Esquema de color KDE:   $(run_as_user kreadconfig6 --file kdeglobals --group General --key ColorScheme 2>/dev/null || echo 'Desconocido')"
     echo "• Tema de iconos KDE:     $(run_as_user kreadconfig6 --file kdeglobals --group Icons --key Theme 2>/dev/null || echo 'Breeze')"
@@ -542,18 +461,6 @@ list_themes() {
     fi
     echo ""
     echo "================================================================="
-    echo "💠 TEMAS SVG DE KVANTUM DISPONIBLES (QT5 / QT6)"
-    echo "================================================================="
-    local KVANTUM_PATHS=()
-    [ -d "/usr/share/Kvantum" ] && KVANTUM_PATHS+=("/usr/share/Kvantum"/*/)
-    [ -d "$USER_HOME/.config/Kvantum" ] && KVANTUM_PATHS+=("$USER_HOME/.config/Kvantum"/*/)
-    if [ ${#KVANTUM_PATHS[@]} -gt 0 ]; then
-        printf "%s\n" "${KVANTUM_PATHS[@]}" 2>/dev/null | xargs -n1 basename 2>/dev/null | sort -u | grep -vE '^\.|\*$' || echo "No se encontraron temas instalados"
-    else
-        echo "No se encontraron temas instalados"
-    fi
-    echo ""
-    echo "================================================================="
     echo "🖼️ TEMAS DE ICONOS INSTALADOS EN EL SISTEMA"
     echo "================================================================="
     ls -d /usr/share/icons/*/ "$USER_HOME/.local/share/icons/"*/ 2>/dev/null | xargs -n1 basename | sort -u | grep -vE 'default|hicolor|locolor' || true
@@ -562,25 +469,25 @@ list_themes() {
 
 show_help() {
     cat <<EOF
-🎨 Gestor de Apariencia y Suites de Temas - CachyOS (KDE Plasma 6)
+🎨 Gestor de Apariencia y Suites de Temas NATIVOS - CachyOS (KDE Plasma 6)
 
 Uso:
   $0 [OPCION]
 
-Suites completas de temas (Kvantum + Colores + Iconos + GTK + Wallpapers):
-  --catppuccin                  Aplica la suite Catppuccin Mocha completa.
-  --nord, --nordic              Aplica la suite Nordic / CachyOS-Nord completa.
-  --dracula                     Aplica la suite Dracula completa.
-  --orchis                      Aplica la suite Orchis Dark completa.
-  --breeze                      Aplica el estilo nativo limpio de KDE Plasma 6 (BreezeDark + Papirus).
+Suites completas de temas NATIVOS (Breeze Qt6 + Colores + Iconos + GTK + Wallpapers):
+  --catppuccin                  Aplica la suite Catppuccin Mocha nativa.
+  --nord, --nordic              Aplica la suite Nordic / CachyOS-Nord nativa.
+  --dracula                     Aplica la suite Dracula nativa.
+  --orchis                      Aplica la suite Orchis Dark nativa.
+  --breeze                      Aplica el estilo nativo estándar de KDE Plasma 6 (BreezeDark + Papirus).
 
 Opciones avanzadas y gestion:
-  --install-themes              Descarga e instala todos los paquetes y activos de las 4 suites.
-  --kvantum-theme <TEMA>        Aplica un tema SVG especifico de Kvantum (ej. KvArcDark, KvAdaptaDark).
-  --dark, -d                    Aplica tema oscuro predeterminado.
-  --light, -l                   Aplica tema claro predeterminado.
-  --status, -s                  Diagnostica el estado visual activo (Kvantum, Look&Feel, Iconos, GTK).
-  --list, -l                    Lista todos los temas globales, esquemas, Kvantum e iconos instalados.
+  --install-themes              Descarga e instala todos los paquetes y activos de las suites nativas.
+  --uninstall-kvantum           Desinstala Kvantum y todos sus paquetes de temas del sistema.
+  --dark, -d                    Aplica tema oscuro nativo predeterminado.
+  --light, -l                   Aplica tema claro nativo (BreezeLight + Papirus).
+  --status, -s                  Diagnostica el estado visual activo (Widgets, Look&Feel, Iconos, GTK).
+  --list, -l                    Lista todos los temas globales, esquemas e iconos instalados.
   --no-install                  Aplica la suite omitiendo la instalacion de paquetes pacman.
   --help, -h                    Muestra este mensaje de ayuda.
 EOF
@@ -592,7 +499,6 @@ EOF
 
 NO_INSTALL=false
 ACTION=""
-ARG_THEME=""
 
 for arg in "$@"; do
     case "$arg" in
@@ -613,6 +519,9 @@ for arg in "$@"; do
             ;;
         --install-themes)
             ACTION="install-themes"
+            ;;
+        --uninstall-kvantum)
+            ACTION="uninstall-kvantum"
             ;;
         --catppuccin)
             ACTION="catppuccin"
@@ -635,25 +544,23 @@ for arg in "$@"; do
         --light|light)
             ACTION="light"
             ;;
-        --kvantum|-k)
-            ACTION="kvantum"
-            ;;
-        --kvantum-theme)
-            ACTION="kvantum-theme"
-            ;;
         *)
-            if [ "$ACTION" = "kvantum-theme" ] && [ -z "$ARG_THEME" ]; then
-                ARG_THEME="$arg"
-            elif [ -z "$ACTION" ]; then
-                echo "❌ Opcion no reconocida: $arg"
-                show_help
-                exit 1
-            fi
+            echo "❌ Opcion no reconocida: $arg"
+            show_help
+            exit 1
             ;;
     esac
 done
 
 case "${ACTION:-default}" in
+    uninstall-kvantum)
+        echo "🗑️ Desinstalando Kvantum y paquetes asociados de CachyOS..."
+        $SUDO pacman -Rns --noconfirm ant-dracula-kvantum-theme-git kvantum kvantum-qt5 kvantum-theme-materia kvantum-theme-nordic-git kvantum-theme-orchis-git 2>/dev/null || \
+        $SUDO pacman -R --noconfirm kvantum kvantum-qt5 2>/dev/null || true
+        rm -rf "$USER_HOME/.config/Kvantum"
+        echo "✅ Kvantum y sus paquetes de temas han sido desinstalados."
+        exit 0
+        ;;
     install-themes)
         install_all_themes
         ;;
@@ -682,39 +589,12 @@ case "${ACTION:-default}" in
             "/usr/share/wallpapers/cachyos-wallpapers/paper.png" \
             "default"
         ;;
-    kvantum)
-        configure_kvantum "KvDark"
-        apply_core_appearance \
-            "org.kde.breezedark.desktop" \
-            "BreezeDark" \
-            "Papirus-Dark" \
-            "Breeze-Dark" \
-            "breeze_cursors" \
-            "" \
-            "prefer-dark"
-        ;;
-    kvantum-theme)
-        if [ -z "$ARG_THEME" ]; then
-            echo "❌ Error: Debes especificar el nombre del tema Kvantum."
-            echo "Uso: $0 --kvantum-theme <NOMBRE_TEMA> (ej. catppuccin-mocha-blue, Nordic, Ant-Dracula, Orchis-dark)"
-            exit 1
-        fi
-        configure_kvantum "$ARG_THEME"
-        apply_core_appearance \
-            "" \
-            "" \
-            "Papirus-Dark" \
-            "Breeze-Dark" \
-            "breeze_cursors" \
-            "" \
-            "prefer-dark"
-        ;;
     default)
         if [ "$NO_INSTALL" = true ]; then
             apply_theme_breeze
         else
             echo "================================================================="
-            echo "🎨 CONFIGURADOR DE APARIENCIA - CACHYOS (KDE PLASMA 6)"
+            echo "🎨 CONFIGURADOR DE APARIENCIA NATIVA - CACHYOS (KDE PLASMA 6)"
             echo "================================================================="
             install_base_packages
             apply_theme_breeze

@@ -129,10 +129,10 @@ Gestiona el splash screen visual durante el arranque del sistema.
 
 ## 5. Apariencia y Temas (`apariencia.sh`)
 
-Gestor completo de apariencia y suites de temas para KDE Plasma 6 con Kvantum (Qt5/Qt6), Papirus/Colloid, integración GTK y fondos de pantalla.
+Gestor completo de apariencia y suites de temas nativos para KDE Plasma 6 con Breeze (Qt6), Papirus/Colloid, integración GTK y fondos de pantalla.
 
 ```bash
-# Aplicar suites temáticas completas (Kvantum + Colores + Iconos + GTK + Wallpaper)
+# Aplicar suites temáticas nativas (Breeze Qt6 + Colores + Iconos + GTK + Wallpaper)
 ./Setup/apariencia.sh --catppuccin     # Catppuccin Mocha
 ./Setup/apariencia.sh --nord           # Nordic / CachyOS-Nord
 ./Setup/apariencia.sh --dracula        # Dracula

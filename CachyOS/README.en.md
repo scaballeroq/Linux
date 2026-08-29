@@ -39,7 +39,7 @@ OS configuration, hardening, and styling scripts:
 - **`laptop-setup.sh`**: Laptop optimization (Touchpad, Bluetooth, HiDPI, VRR).
 - **`fingerprint-setup.sh`**: Fingerprint authentication setup (`fprintd`, PAM, `polkit`).
 - **`cachyos-tuning.sh`**: Kernel sysctl, Baloo, Systemd, Distrobox, and system limits tuning.
-- **`apariencia.sh`**: Theme manager with Kvantum, Papirus, Breeze, and GTK/Qt integration.
+- **`apariencia.sh`**: Native theme manager for KDE Plasma 6 (Breeze, Catppuccin, Nord, Dracula, Orchis) with Papirus icons and GTK/Qt integration.
 - **`cockpit.sh`**: Cockpit web management console setup.
 - **`fastfetch.sh`**: System info fetch initialization.
 - **`fonts.sh`**: Automated Nerd Fonts installer.

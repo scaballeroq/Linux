@@ -85,6 +85,10 @@ theme-breeze:
 theme-install-all:
     ./Setup/apariencia.sh --install-themes
 
+# Desinstala Kvantum y sus paquetes de temas del sistema
+uninstall-kvantum:
+    ./Setup/apariencia.sh --uninstall-kvantum
+
 # Informacion estetica del sistema (Fastfetch)
 fastfetch:
     ./Setup/fastfetch.sh
