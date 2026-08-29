@@ -57,9 +57,33 @@ security:
 fonts:
     ./Setup/fonts.sh
 
-# Apariencia (Temas Breeze Dark, iconos Papirus e integracion visual GTK/Qt en KDE Plasma 6)
+# Apariencia y suites de temas (Breeze, Catppuccin, Nord, Dracula, Orchis)
 apariencia:
     ./Setup/apariencia.sh
+
+# Aplicar suite Catppuccin Mocha
+theme-catppuccin:
+    ./Setup/apariencia.sh --catppuccin
+
+# Aplicar suite Nordic / CachyOS-Nord
+theme-nord:
+    ./Setup/apariencia.sh --nord
+
+# Aplicar suite Dracula
+theme-dracula:
+    ./Setup/apariencia.sh --dracula
+
+# Aplicar suite Orchis Dark
+theme-orchis:
+    ./Setup/apariencia.sh --orchis
+
+# Aplicar estilo nativo KDE Plasma 6 Breeze
+theme-breeze:
+    ./Setup/apariencia.sh --breeze
+
+# Instalar todos los paquetes y activos de temas
+theme-install-all:
+    ./Setup/apariencia.sh --install-themes
 
 # Informacion estetica del sistema (Fastfetch)
 fastfetch:

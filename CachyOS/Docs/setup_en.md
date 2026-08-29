@@ -126,19 +126,21 @@ Manages the visual splash screen during system boot.
 
 ## 5. Appearance and Themes (`apariencia.sh`)
 
-Complete appearance manager for KDE Plasma 6 with Kvantum, Papirus, and GTK/Qt integration.
+Complete appearance manager and theme suite for KDE Plasma 6 with Kvantum (Qt5/Qt6), Papirus/Colloid, GTK integration, and wallpapers.
 
 ```bash
-# Apply dark theme with Kvantum
-./Setup/apariencia.sh --dark
+# Apply complete theme suites (Kvantum + Colors + Icons + GTK + Wallpaper)
+./Setup/apariencia.sh --catppuccin     # Catppuccin Mocha
+./Setup/apariencia.sh --nord           # Nordic / CachyOS-Nord
+./Setup/apariencia.sh --dracula        # Dracula
+./Setup/apariencia.sh --orchis         # Orchis Dark
+./Setup/apariencia.sh --breeze         # Native KDE Plasma 6 (BreezeDark + Papirus)
 
-# Apply light theme
-./Setup/apariencia.sh --light
+# Install all theme packages and assets
+./Setup/apariencia.sh --install-themes
 
-# Check current visual status
+# Check visual status or list themes
 ./Setup/apariencia.sh --status
-
-# List available themes
 ./Setup/apariencia.sh --list
 ```
 
