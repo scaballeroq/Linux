@@ -2,15 +2,15 @@
 # (CachyOS + KDE Plasma 6)
 
 # Instala todo el entorno por defecto (Auto-deteccion de CPU / Portatil AMD)
-setup-all: post-install laptop tuning plymouth shell security fonts apariencia fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+setup-all: post-install laptop tuning shell security fonts apariencia fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
     @echo "🚀 Entorno completo de CachyOS (KDE Plasma 6) configurado. Por favor, reinicia el sistema."
 
 # Perfil completo para Portatil de desarrollo (AMD Ryzen + Virtualizacion + Contenedores)
-setup-laptop-amd: post-install-amd laptop tuning plymouth shell security fonts apariencia fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+setup-laptop-amd: post-install-amd laptop tuning shell security fonts apariencia fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
     @echo "🚀 Entorno Portatil AMD Ryzen configurado con exito. Por favor, reinicia el sistema."
 
 # Perfil para Sobremesa (Intel Core - Sin virtualizacion ni bateria)
-setup-media-desktop: post-install-intel tuning plymouth shell security fonts apariencia fastfetch kitty yt-dlp
+setup-media-desktop: post-install-intel tuning shell security fonts apariencia fastfetch kitty yt-dlp
     @echo "🚀 Entorno Sobremesa Intel configurado con exito. Por favor, reinicia el sistema."
 
 # =============================================================================
@@ -41,10 +41,6 @@ fingerprint:
 tuning:
     ./Setup/cachyos-tuning.sh
 
-# Configuracion y activacion de Splash Screen visual de arranque (Plymouth: Breeze / BGRT / Spinner)
-plymouth:
-    ./Setup/plymouth-setup.sh
-
 # Utilidades de terminal y prompt (eza, bat, fzf, zoxide, ripgrep, starship)
 shell:
     ./Setup/shell.sh
@@ -72,18 +68,6 @@ kitty:
 # Multimedia (yt-dlp stack, FFmpeg, AtomicParsley, aria2, motor JS Deno)
 yt-dlp:
     ./Setup/yt-dlp-setup.sh
-
-# Compilador de Kernel Linux optimizado para x86_64-v3 y ajustado a tu portatil
-build-kernel:
-    ./Setup/build-custom-kernel.sh
-
-# Automontaje permanente de la particion Workspace en /etc/fstab
-workspace:
-    ./Setup/mount-workspace.sh
-
-# Terminal Ptyxis (alternativa a Kitty)
-ptyxis:
-    ./Setup/ptyxis.sh
 
 # =============================================================================
 # CONFIGURACION DE RED Y VIRTUALIZACION
@@ -211,11 +195,3 @@ podman-status:
 # Steam + Proton Cachyos
 steam:
     ./Juegos/steam.sh
-
-# =============================================================================
-# APPS ADICIONALES
-# =============================================================================
-
-# Meld (diff/merge tool)
-meld:
-    ./Apps/meld.sh

@@ -44,7 +44,6 @@ OS configuration, hardening, and styling scripts:
 - **`fastfetch.sh`**: System info fetch initialization.
 - **`fonts.sh`**: Automated Nerd Fonts installer.
 - **`kitty.sh`**: GPU-accelerated Kitty terminal with opacity/blur and Catppuccin theme.
-- **`plymouth-setup.sh`**: Boot splash screen manager (Breeze, BGRT, Spinner).
 - **`seguridad.sh`**: Hardening with Firewalld, DNS-over-TLS, MAC Randomization, and sysctl.
 - **`shell.sh`**: Modern CLI utilities (`eza`, `bat`, `fd`, `zoxide`, `ripgrep`) & `Starship` prompt.
 - **`yt-dlp-setup.sh`**: Multimedia dependencies.
@@ -64,8 +63,7 @@ Runtime management with **mise**.
 - **`mise.sh`**: Mise version manager installer.
 - **`angular.sh`**, **`dotnet.sh`**, **`gemini.sh`**, **`java.sh`**, **`nodejs.sh`**, **`python.sh`**, **`rust.sh`**
 
-### 📦 [Apps](./Apps/) & 🎮 [Juegos](./Juegos/)
-- **`meld.sh`**: Diff/merge tool.
+### 🎮 [Juegos](./Juegos/)
 - **`steam.sh`**: Steam with Proton CachyOS.
 
 ---
@@ -75,7 +73,7 @@ Runtime management with **mise**.
 ```bash
 git clone https://github.com/scaballeroq/Environment-Configuration.git
 cd Repos-Linux/CachyOS
-chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/install/*.sh Podman/lib/*.sh Apps/*.sh Juegos/*.sh
+chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/install/*.sh Podman/lib/*.sh Juegos/*.sh
 just setup-all
 ```
 

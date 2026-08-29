@@ -130,8 +130,8 @@ check-kernel-update() {
     echo "📌 Última versión en Kernel.org: v$latest_kernel"
     echo "================================================================="
     if [ "$latest_kernel" != "Desconocido" ] && [[ "$active_kernel" != *"$latest_kernel"* ]]; then
-        echo "💡 Hay una versión más reciente disponible. Para actualizar ejecuta:"
-        echo "   just build-kernel"
+        echo "💡 Hay una versión más reciente disponible en el sistema/repositorios:"
+        echo "   sudo pacman -Syu"
     else
         echo "✅ Tu kernel está actualizado a la última versión estable."
     fi
