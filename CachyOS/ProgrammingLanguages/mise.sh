@@ -62,6 +62,7 @@ cat << 'EOF' | run_as_user tee "$ENV_DIR/10-mise.conf" > /dev/null
 # Integración de Mise con la sesión gráfica de KDE Plasma 6 / Wayland
 PATH=${HOME}/.local/share/mise/shims:${HOME}/.local/bin:${PATH}
 MISE_SHELL=bash
+COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 EOF
 
 # 3. Integración en Shells (Bash y Zsh)

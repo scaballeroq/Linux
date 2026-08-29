@@ -29,11 +29,13 @@ else
     USER_HOME="${HOME:-/home/$REAL_USER}"
 fi
 
+export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+
 run_as_user() {
     if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-        sudo -u "$REAL_USER" env HOME="$USER_HOME" PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" "$@"
+        sudo -u "$REAL_USER" env HOME="$USER_HOME" COREPACK_ENABLE_DOWNLOAD_PROMPT=0 PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" "$@"
     else
-        PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" "$@"
+        COREPACK_ENABLE_DOWNLOAD_PROMPT=0 PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" "$@"
     fi
 }
 
@@ -53,8 +55,14 @@ if ! command -v mise &> /dev/null && [ ! -x "$USER_HOME/.local/bin/mise" ]; then
 fi
 
 # 2. Dependencias de compilación para módulos nativos (node-gyp / C++)
-echo "ℹ️ [1/3] Instalando dependencias de compilación para módulos nativos (node-gyp)..."
-$SUDO pacman -S --needed --noconfirm base-devel curl python gcc make 2>/dev/null || true
+echo "ℹ️ [1/3] Verificando dependencias de compilación para módulos nativos (node-gyp)..."
+MISSING_PKGS=$(pacman -T base-devel curl python gcc make 2>/dev/null || true)
+if [ -n "$MISSING_PKGS" ]; then
+    echo "  ⬇️ Instalando paquetes faltantes: $MISSING_PKGS..."
+    $SUDO pacman -S --needed --noconfirm $MISSING_PKGS
+else
+    echo "  ✅ Dependencias ya instaladas."
+fi
 
 # 3. Instalar la última versión LTS de Node.js de forma global con Mise
 echo "ℹ️ [2/3] Descargando e instalando la última versión Node.js LTS vía Mise..."
