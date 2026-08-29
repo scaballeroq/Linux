@@ -35,12 +35,13 @@ run_as_user() {
 }
 
 # 1. Herramientas de Hardware, Conectividad y Gestion de Energia
-echo "ℹ️ [1/3] Instalando servicios de energia, bluetooth y graficos hibridos..."
+echo "ℹ️ [1/3] Instalando servicios de energia, bluetooth, audio y graficos hibridos..."
 $SUDO pacman -S --needed --noconfirm \
     power-profiles-daemon \
     switcheroo-control \
     bluez \
     bluez-utils \
+    bluedevil \
     brightnessctl \
     acpid \
     cachyos-rate-mirrors 2>/dev/null || true
@@ -53,12 +54,12 @@ $SUDO systemctl enable --now switcheroo-control.service || true
 $SUDO systemctl enable --now acpid.service 2>/dev/null || true
 
 # 2. Configuraciones de KDE Plasma 6 para Portatil (Touchpad, Pantalla y Energia)
-echo "ℹ️ [3/3] Aplicando configuraciones de Touchpad, KWin y PowerDevil para KDE Plasma 6..."
+echo "ℹ️ [3/3] Aplicando configuraciones de Touchpad, gestos 1:1 Wayland, KWin y PowerDevil..."
 
 KWRITE=$(command -v kwriteconfig6 2>/dev/null || command -v kwriteconfig5 2>/dev/null || true)
 
 if [ -n "$KWRITE" ]; then
-    # Gestos y Touchpad: Tap-to-click y desplazamiento natural
+    # Gestos y Touchpad: Tap-to-click, desplazamiento natural y tap con dos dedos (clic derecho)
     run_as_user "$KWRITE" --file kcminputrc --group Touchpad --key tapToClick true 2>/dev/null || true
     run_as_user "$KWRITE" --file kcminputrc --group Touchpad --key naturalScroll true 2>/dev/null || true
     run_as_user "$KWRITE" --file kcminputrc --group Touchpad --key twoFingerTap "2" 2>/dev/null || true
@@ -68,12 +69,17 @@ if [ -n "$KWRITE" ]; then
     # KWin: Frecuencia de actualizacion adaptativa / VRR en Wayland
     run_as_user "$KWRITE" --file kwinrc --group Compositing --key AdaptiveSync "true" 2>/dev/null || true
 
+    # KWin: Gestos tactiles 1:1 en Wayland (3 dedos para escritorios, 4 dedos para Overview/Grid)
+    run_as_user "$KWRITE" --file kwinrc --group Wayland --key VirtualDesktopGestures "true" 2>/dev/null || true
+    run_as_user "$KWRITE" --file kglobalshortcutsrc --group kwin --key "Overview" "Meta+W,none,Toggle Overview" 2>/dev/null || true
+    run_as_user "$KWRITE" --file kglobalshortcutsrc --group kwin --key "Grid" "Meta+G,none,Toggle Desktop Grid" 2>/dev/null || true
+
     # PowerDevil: Gestion inteligente de suspension y bateria
     run_as_user "$KWRITE" --file powerdevilrc --group BatteryManagement --key BatteryCriticalAction "1" 2>/dev/null || true
     run_as_user "$KWRITE" --file powerdevilrc --group BatteryManagement --key BatteryLowLevel "15" 2>/dev/null || true
     run_as_user "$KWRITE" --file powerdevilrc --group BatteryManagement --key BatteryCriticalLevel "5" 2>/dev/null || true
 
-    echo "✅ Parametros de Touchpad, KWin y bateria configurados en KDE Plasma 6."
+    echo "✅ Parametros de Touchpad, gestos Wayland 1:1, KWin y bateria configurados en KDE Plasma 6."
 fi
 
 # Permisos de brillo para usuarios sin requerir root en cada cambio

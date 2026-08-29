@@ -106,8 +106,8 @@ sudo pacman -S --needed --noconfirm \
 
 systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
 
-# 8. Software Esencial de Sistema
-echo "Instalando utilidades esenciales para CachyOS..."
+# 8. Software Esencial de Sistema e Integracion KDE Plasma 6
+echo "Instalando utilidades esenciales y plugins de KDE Plasma 6 (Dolphin Thumbnails, KIO)..."
 sudo pacman -S --needed --noconfirm \
     base-devel \
     cmake \
@@ -129,7 +129,16 @@ sudo pacman -S --needed --noconfirm \
     xz \
     fastfetch \
     ca-certificates \
-    gnupg 2>/dev/null || true
+    gnupg \
+    ffmpegthumbs \
+    kdegraphics-thumbnailers \
+    kimageformats \
+    qt6-imageformats \
+    taglib \
+    poppler \
+    kde-gtk-config \
+    breeze-gtk \
+    xdg-desktop-portal-kde 2>/dev/null || true
 
 # 9. Integracion de Flatpak & Flathub
 echo "Configurando Flatpak y Flathub..."

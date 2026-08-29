@@ -70,17 +70,23 @@ Temas populares de Kvantum incluidos:
 EOF
 }
 
-# 1. Instalacion de paquetes esenciales para KDE Plasma 6, Kvantum (Qt5/Qt6) y GTK
+# 1. Instalacion de paquetes esenciales para KDE Plasma 6, Kvantum (Qt5/Qt6), Miniaturas Dolphin y GTK
 install_packages() {
-    echo "📦 [1/4] Verificando e instalando Kvantum, temas, iconos e integracion GTK/Qt..."
+    echo "📦 [1/4] Verificando e instalando Kvantum, temas, iconos, miniaturas de Dolphin e integracion GTK/Qt..."
     $SUDO pacman -S --needed --noconfirm \
         kvantum \
         papirus-icon-theme \
         breeze-icons \
         breeze-gtk \
+        kde-gtk-config \
+        ffmpegthumbs \
+        kdegraphics-thumbnailers \
+        kimageformats \
+        qt6-imageformats \
+        taglib \
         adwaita-icon-theme \
         xdg-desktop-portal-kde 2>/dev/null || true
-    echo "✅ Paquetes de Kvantum, personalizacion e integracion listos."
+    echo "✅ Paquetes de Kvantum, personalizacion, miniaturas e integracion listos."
 }
 
 # Configuracion del motor Kvantum y su tema activo
@@ -242,6 +248,11 @@ EOF
         run_as_user gsettings set org.gnome.desktop.interface gtk-theme "$GTK_THEME" 2>/dev/null || true
         run_as_user gsettings set org.gnome.desktop.interface icon-theme "$ICON_THEME" 2>/dev/null || true
         run_as_user gsettings set org.gnome.desktop.interface cursor-theme "$CURSOR_THEME" 2>/dev/null || true
+    fi
+
+    # Configurar plugins de vistas previas y miniaturas en Dolphin
+    if command -v kwriteconfig6 &>/dev/null; then
+        run_as_user kwriteconfig6 --file dolphinrc --group PreviewSettings --key Plugins "audiothumbnail,directorythumbnail,djvuthumbnail,exrthumbnail,ffmpegthumbs,fontthumbnail,imagethumbnail,jpegthumbnail,kraimagethumbnail,svgthumbnail,textthumbnail,windowsexethumbnail" 2>/dev/null || true
     fi
 
     # Notificar al compositor KWin para refrescar decoracion y efectos visuales

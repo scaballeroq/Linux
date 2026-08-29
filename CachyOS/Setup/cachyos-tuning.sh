@@ -1,8 +1,8 @@
 #!/bin/bash
-# cachyos-tuning.sh - Optimizaciones de Kernel Sysctl, Limites de Sistema, Baloo y Distrobox para CachyOS + KDE Plasma
+# cachyos-tuning.sh - Optimizaciones de Kernel Sysctl, Limites, Ananicy-CPP, UKSMD, Baloo y Distrobox para CachyOS + KDE Plasma 6
 #
 # Uso:
-#   ./cachyos-tuning.sh               -> Aplica todas las optimizaciones recomendadas (Kernel, Limites, Baloo, Systemd y Distrobox)
+#   ./cachyos-tuning.sh               -> Aplica todas las optimizaciones recomendadas (Kernel, Limites, Ananicy-CPP, UKSMD, Baloo, Systemd y Distrobox)
 #   ./cachyos-tuning.sh --status      -> Muestra el estado actual de los parametros de rendimiento del sistema
 #   ./cachyos-tuning.sh --no-install  -> Aplica optimizaciones de configuracion sin reinstalar paquetes
 #   ./cachyos-tuning.sh --help        -> Muestra la ayuda interactiva
@@ -36,24 +36,26 @@ Uso:
   $0 [OPCION]
 
 Opciones:
-  (sin argumentos)       Aplica todas las optimizaciones recomendadas (Sysctl, Limites, Baloo, Systemd y Distrobox).
-  --status, -s           Muestra los valores actuales de sysctl, descriptores de archivos, ZRAM y Baloo.
+  (sin argumentos)       Aplica todas las optimizaciones recomendadas (Sysctl, Limites, Ananicy-CPP, UKSMD, Baloo, Systemd y Distrobox).
+  --status, -s           Muestra los valores actuales de sysctl, descriptores de archivos, ZRAM, Ananicy-CPP, UKSMD y Baloo.
   --no-install           Aplica las configuraciones de kernel y entorno sin descargar paquetes.
   --help, -h             Muestra este mensaje de ayuda.
 
 Optimizaciones incluidas:
   1. Sysctl Kernel:      Inotify elevado (IDEs/KDE), max_map_count (Gaming/VMs), swappiness, vfs_cache_pressure y TCP BBR.
   2. Limites de Usuario: Descriptores de archivos (nofile) y memoria bloqueada (memlock) para desarrollo intensivo.
-  3. Systemd Timeouts:   Reduccion de DefaultTimeoutStopSec a 10s para apagados y reinicios instantaneos sin bloqueos.
-  4. KDE Plasma Baloo:   Exclusión de carpetas pesadas (node_modules, .git, .venv, target, etc.) para evitar picos de CPU/disco.
-  5. Contenedores:       Instalacion de Distrobox y Podman para entornos de desarrollo aislados.
+  3. Ananicy-CPP:        Auto-Nice en tiempo real para priorizar KWin, juegos y tareas interactivas sobre tareas de fondo.
+  4. UKSMD Daemon:       Ultra Kernel Samepage Merging para ahorro inteligente de memoria RAM en KVM y contenedores Podman.
+  5. Systemd Timeouts:   Reduccion de DefaultTimeoutStopSec a 10s para apagados y reinicios instantaneos sin bloqueos.
+  6. KDE Plasma Baloo:   Exclusión de carpetas pesadas (node_modules, .git, .venv, target, etc.) para evitar picos de CPU/disco.
+  7. Contenedores:       Instalacion de Distrobox y Podman para entornos de desarrollo aislados.
 EOF
 }
 
 # 1. Mostrar estado actual
 show_status() {
     echo "================================================================="
-    echo "🔍 ESTADO DE RENDIMIENTO Y OPTIMIZACIONES - CACHYOS (KDE PLASMA)"
+    echo "🔍 ESTADO DE RENDIMIENTO Y OPTIMIZACIONES - CACHYOS (KDE PLASMA 6)"
     echo "================================================================="
     echo "• fs.inotify.max_user_watches:   $(sysctl -n fs.inotify.max_user_watches 2>/dev/null || echo 'n/a')"
     echo "• fs.inotify.max_user_instances: $(sysctl -n fs.inotify.max_user_instances 2>/dev/null || echo 'n/a')"
@@ -63,6 +65,8 @@ show_status() {
     echo "• vm.vfs_cache_pressure:         $(sysctl -n vm.vfs_cache_pressure 2>/dev/null || echo 'n/a')"
     echo "• net.ipv4.tcp_congestion_control: $(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo 'n/a')"
     echo "• Limite nofile (ulimit -n):     $(ulimit -n 2>/dev/null || echo 'n/a')"
+    echo "• Ananicy-CPP (Auto-Nice):       $(systemctl is-active ananicy-cpp.service 2>/dev/null || echo 'inactivo / no instalado')"
+    echo "• UKSMD (Ahorro RAM / KSM):      $(systemctl is-active uksmd.service 2>/dev/null || echo 'inactivo / no instalado')"
     echo "• Distrobox instalado:           $(command -v distrobox &>/dev/null && echo 'Si' || echo 'No')"
     echo "• Baloo Indexer (KDE):           $(if [ -f "$USER_HOME/.config/baloofilerc" ]; then grep -i "Indexing-Enabled" "$USER_HOME/.config/baloofilerc" 2>/dev/null || echo 'Habilitado (por defecto)'; else echo 'No configurado'; fi)"
     echo "================================================================="
@@ -70,7 +74,7 @@ show_status() {
 
 # 2. Configuracion de Sysctl para Kernel de Desarrollo y Alto Rendimiento
 apply_sysctl_tuning() {
-    echo "⚙️ [1/5] Aplicando parametros de Kernel Sysctl para desarrollo, KDE Plasma y gaming..."
+    echo "⚙️ [1/6] Aplicando parametros de Kernel Sysctl para desarrollo, KDE Plasma y gaming..."
 
     # Habilitar modulo BBR si esta disponible
     $SUDO modprobe tcp_bbr 2>/dev/null || true
@@ -103,7 +107,7 @@ EOF
 
 # 3. Configuracion de Limites de Descriptores de Proceso (limits.d)
 apply_limits_tuning() {
-    echo "📈 [2/5] Configurando limites de descriptores de archivos y memoria bloqueada..."
+    echo "📈 [2/6] Configurando limites de descriptores de archivos y memoria bloqueada..."
     $SUDO tee /etc/security/limits.d/99-dev-limits.conf > /dev/null << 'EOF'
 # Limites ampliados para desarrollo masivo, IDEs y compilaciones en paralelo
 *          soft    nofile     524288
@@ -114,9 +118,23 @@ EOF
     echo "✅ Limites de seguridad (limits.d) configurados."
 }
 
-# 4. Optimizacion de Timeouts de Apagado de Systemd
+# 4. Servicios de Alto Rendimiento de CachyOS (Ananicy-CPP + UKSMD)
+apply_cachyos_services() {
+    echo "🚀 [3/6] Verificando e instalando Ananicy-CPP (Auto-Nice) y UKSMD (Deduplicacion RAM)..."
+    $SUDO pacman -S --needed --noconfirm \
+        ananicy-cpp \
+        cachyos-ananicy-rules \
+        uksmd 2>/dev/null || $SUDO pacman -S --needed --noconfirm ananicy-cpp uksmd 2>/dev/null || true
+
+    # Habilitar servicios en systemd
+    $SUDO systemctl enable --now ananicy-cpp.service 2>/dev/null || true
+    $SUDO systemctl enable --now uksmd.service 2>/dev/null || true
+    echo "✅ Ananicy-CPP y UKSMD habilitados correctamente."
+}
+
+# 5. Optimizacion de Timeouts de Apagado de Systemd
 apply_systemd_tuning() {
-    echo "⏱️ [3/5] Ajustando timeouts de parada de servicios en Systemd (evita esperas de 90s al apagar)..."
+    echo "⏱️ [4/6] Ajustando timeouts de parada de servicios en Systemd (evita esperas de 90s al apagar)..."
     $SUDO mkdir -p /etc/systemd/system.conf.d
     $SUDO tee /etc/systemd/system.conf.d/99-fast-shutdown.conf > /dev/null << 'EOF'
 [Manager]
@@ -125,9 +143,9 @@ EOF
     echo "✅ Timeout de apagado en Systemd configurado a 10 segundos."
 }
 
-# 5. Optimizacion del Indexador de Archivos de KDE Plasma (Baloo)
+# 6. Optimizacion del Indexador de Archivos de KDE Plasma (Baloo)
 apply_baloo_tuning() {
-    echo "🗂️ [4/5] Configurando exclusiones inteligentes para el indexador Baloo de KDE Plasma..."
+    echo "🗂️ [5/6] Configurando exclusiones inteligentes para el indexador Baloo de KDE Plasma..."
     local BALOO_CONF="$USER_HOME/.config/baloofilerc"
     mkdir -p "$(dirname "$BALOO_CONF")"
 
@@ -149,9 +167,9 @@ EOF
     echo "✅ Exclusiones de desarrollo de KDE Baloo configuradas."
 }
 
-# 6. Herramientas de Desarrollo y Contenedores (Distrobox + Podman)
+# 7. Herramientas de Desarrollo y Contenedores (Distrobox + Podman)
 install_dev_tools() {
-    echo "📦 [5/5] Verificando e instalando Distrobox y Podman para entornos aislados..."
+    echo "📦 [6/6] Verificando e instalando Distrobox y Podman para entornos aislados..."
     $SUDO pacman -S --needed --noconfirm distrobox podman 2>/dev/null || true
     echo "✅ Distrobox y Podman instalados."
 }
@@ -183,6 +201,7 @@ case "${1:-}" in
         echo "================================================================="
         apply_sysctl_tuning
         apply_limits_tuning
+        apply_cachyos_services
         apply_systemd_tuning
         apply_baloo_tuning
         install_dev_tools

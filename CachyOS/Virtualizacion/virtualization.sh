@@ -126,8 +126,10 @@ EOF
     fi
 fi
 
-# 10. Perfil de Rendimiento Tuned (virtual-host)
-echo "ℹ️ Aplicando optimizaciones de rendimiento con tuned (virtual-host)..."
+# 10. Perfil de Rendimiento Tuned (virtual-host) y Deduplicacion de Memoria (UKSMD)
+echo "ℹ️ Aplicando optimizaciones de rendimiento con tuned (virtual-host) y UKSMD (ahorro de RAM)..."
+sudo pacman -S --needed --noconfirm uksmd 2>/dev/null || true
+sudo systemctl enable --now uksmd.service 2>/dev/null || true
 sudo systemctl enable --now tuned.service 2>/dev/null || true
 sudo tuned-adm profile virtual-host 2>/dev/null || true
 
