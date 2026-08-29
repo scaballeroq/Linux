@@ -124,29 +124,7 @@ Manages the visual splash screen during system boot.
 
 ---
 
-## 5. Appearance and Themes (`apariencia.sh`)
-
-Complete native appearance manager and theme suites for KDE Plasma 6 with Breeze (Qt6), Papirus/Colloid, GTK integration, and wallpapers.
-
-```bash
-# Apply complete native theme suites (Breeze Qt6 + Colors + Icons + GTK + Wallpaper)
-./Setup/apariencia.sh --catppuccin     # Catppuccin Mocha
-./Setup/apariencia.sh --nord           # Nordic / CachyOS-Nord
-./Setup/apariencia.sh --dracula        # Dracula
-./Setup/apariencia.sh --orchis         # Orchis Dark
-./Setup/apariencia.sh --breeze         # Native KDE Plasma 6 (BreezeDark + Papirus)
-
-# Install all theme packages and assets
-./Setup/apariencia.sh --install-themes
-
-# Check visual status or list themes
-./Setup/apariencia.sh --status
-./Setup/apariencia.sh --list
-```
-
----
-
-## 6. Security (`seguridad.sh`)
+## 5. Security (`seguridad.sh`)
 
 System hardening with Firewalld, DNS-over-TLS, and MAC Randomization.
 
@@ -158,7 +136,7 @@ System hardening with Firewalld, DNS-over-TLS, and MAC Randomization.
 
 ---
 
-## 7. Web Administration Panel Cockpit (`cockpit.sh`)
+## 6. Web Administration Panel Cockpit (`cockpit.sh`)
 
 Installs Cockpit for system administration via a web interface.
 
@@ -171,7 +149,7 @@ Access: [https://localhost:9090](https://localhost:9090)
 
 ---
 
-## 8. Multimedia Support and yt-dlp (`yt-dlp-setup.sh`)
+## 7. Multimedia Support and yt-dlp (`yt-dlp-setup.sh`)
 
 Configures tools for video downloads and digital audio processing.
 

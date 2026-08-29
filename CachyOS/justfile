@@ -2,15 +2,15 @@
 # (CachyOS + KDE Plasma 6)
 
 # Instala todo el entorno por defecto (Auto-deteccion de CPU / Portatil AMD)
-setup-all: post-install laptop tuning shell security fonts apariencia fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+setup-all: post-install laptop tuning shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
     @echo "🚀 Entorno completo de CachyOS (KDE Plasma 6) configurado. Por favor, reinicia el sistema."
 
 # Perfil completo para Portatil de desarrollo (AMD Ryzen + Virtualizacion + Contenedores)
-setup-laptop-amd: post-install-amd laptop tuning shell security fonts apariencia fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+setup-laptop-amd: post-install-amd laptop tuning shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
     @echo "🚀 Entorno Portatil AMD Ryzen configurado con exito. Por favor, reinicia el sistema."
 
 # Perfil para Sobremesa (Intel Core - Sin virtualizacion ni bateria)
-setup-media-desktop: post-install-intel tuning shell security fonts apariencia fastfetch kitty yt-dlp
+setup-media-desktop: post-install-intel tuning shell security fonts fastfetch kitty yt-dlp
     @echo "🚀 Entorno Sobremesa Intel configurado con exito. Por favor, reinicia el sistema."
 
 # =============================================================================
@@ -56,38 +56,6 @@ security:
 # Fuentes de desarrollo (Nerd Fonts: JetBrainsMono, FiraCode, CascadiaCode...)
 fonts:
     ./Setup/fonts.sh
-
-# Apariencia y suites de temas (Breeze, Catppuccin, Nord, Dracula, Orchis)
-apariencia:
-    ./Setup/apariencia.sh
-
-# Aplicar suite Catppuccin Mocha
-theme-catppuccin:
-    ./Setup/apariencia.sh --catppuccin
-
-# Aplicar suite Nordic / CachyOS-Nord
-theme-nord:
-    ./Setup/apariencia.sh --nord
-
-# Aplicar suite Dracula
-theme-dracula:
-    ./Setup/apariencia.sh --dracula
-
-# Aplicar suite Orchis Dark
-theme-orchis:
-    ./Setup/apariencia.sh --orchis
-
-# Aplicar estilo nativo KDE Plasma 6 Breeze
-theme-breeze:
-    ./Setup/apariencia.sh --breeze
-
-# Instalar todos los paquetes y activos de temas
-theme-install-all:
-    ./Setup/apariencia.sh --install-themes
-
-# Desinstala Kvantum y sus paquetes de temas del sistema
-uninstall-kvantum:
-    ./Setup/apariencia.sh --uninstall-kvantum
 
 # Informacion estetica del sistema (Fastfetch)
 fastfetch:

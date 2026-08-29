@@ -41,7 +41,6 @@ Scripts de configuración del sistema operativo, personalización y endurecimien
 - **`laptop-setup.sh`**: Optimización para portátiles de desarrollo en KDE Plasma 6 (Touchpad, Bluetooth, PowerDevil, HiDPI, VRR).
 - **`fingerprint-setup.sh`**: Configuración de desbloqueo por huella dactilar (`fprintd`, PAM, `polkit`, SDDM, KDE).
 - **`cachyos-tuning.sh`**: Ajustes de Kernel (`sysctl`), Baloo, Systemd, Distrobox y límites de sistema.
-- **`apariencia.sh`**: Gestor de temas nativos de KDE Plasma 6 (Breeze, Catppuccin, Nord, Dracula, Orchis) con iconos Papirus e integración GTK/Qt.
 - **`cockpit.sh`**: Instalación y configuración de Cockpit (administración web).
 - **`fastfetch.sh`**: Información estética del sistema al inicio (Fastfetch).
 - **`fonts.sh`**: Instalación automatizada de fuentes de desarrollo (Nerd Fonts).
