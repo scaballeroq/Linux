@@ -46,12 +46,12 @@ Prepara el sistema base optimizando espejos, instalando software esencial y conf
 
 ---
 
-## 2. Entorno de Terminal y Shell (`shell.sh`, `fastfetch.sh` y `fonts.sh`)
+## 2. Entorno de Terminal y Shell (`shell.sh`, `starship.sh`, `fastfetch.sh` y `fonts.sh`)
 
-Instala utilidades modernas de consola, tipografías para desarrollo y el prompt interactivo Starship.
+Instala utilidades modernas de consola, tipografías para desarrollo y permite gestionar de forma opcional el prompt interactivo Starship.
 
-### Utilidades Modernas de Terminal
-Se instalan alternativas modernas a comandos clásicos:
+### Utilidades Modernas de Terminal (`shell.sh`)
+Se instalan alternativas modernas a comandos clásicos y se activa la integración de `zoxide` respetando la configuración nativa de Zsh y Powerlevel10k en CachyOS:
 - `eza` (reemplazo de `ls`)
 - `bat` (reemplazo de `cat` con sintaxis coloreada)
 - `fzf` (buscador difuso)
@@ -63,12 +63,19 @@ Se instalan alternativas modernas a comandos clásicos:
 - `procs` (reemplazo moderno de `ps`)
 - `btop` (monitor de recursos)
 
-### Prompt Starship
-Se descarga y configura la versión más reciente del prompt de Starship:
+### Prompt Starship Opcional (`starship.sh`)
+CachyOS incluye de serie el prompt **Powerlevel10k (p10k)** en Zsh. Si prefieres usar **Starship**, puedes activarlo o desactivarlo fácilmente:
 ```bash
-curl -sS https://starship.rs/install.sh | sudo sh -s -- -y -b /usr/local/bin
+# Instalar y activar Starship
+./Setup/starship.sh
+
+# Desactivar y restaurar el prompt nativo p10k de CachyOS
+./Setup/starship.sh --disable
+
+# Ver estado actual
+./Setup/starship.sh --status
 ```
-La configuración es modular. Se copia `Setup/starship.toml` a `~/.config/starship.toml`.
+La configuración de Starship se gestiona mediante `Setup/starship.toml` en `~/.config/starship.toml`.
 
 ### Fuentes de Desarrollo (Nerd Fonts)
 Descarga e instala fuentes optimizadas para programación y símbolos de terminal (`JetBrainsMono`, `FiraCode`, `CascadiaCode`, `Meslo` y `Hack`):

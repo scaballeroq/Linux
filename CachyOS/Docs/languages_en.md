@@ -61,15 +61,9 @@ Once Mise is installed, the following development environments are deployed glob
   ```
 
 ### .NET SDK (`dotnet.sh`)
-* **Installation**: Installs the latest major version of the .NET SDK:
+* **Installation**: Installs the LTS version of the .NET SDK:
   ```bash
-  mise use --global dotnet@10
-  ```
-
-### Gemini CLI (`gemini.sh`)
-* **Installation**: Installs the Google Gemini command-line helper interface:
-  ```bash
-  mise use --global npm:@google/gemini-cli@latest
+  mise use --global dotnet@8
   ```
 
 ---
@@ -80,7 +74,7 @@ Rust is managed through its official standard toolchain installer **Rustup**.
 
 1. **System Build Dependencies**:
    ```bash
-   sudo apt install -y build-essential cmake libssl-dev pkg-config curl
+   sudo pacman -S --needed --noconfirm base-devel cmake openssl pkgconf curl
    ```
 
 2. **Rustup Installation**:
@@ -105,11 +99,11 @@ Rust is managed through its official standard toolchain installer **Rustup**.
 
 ---
 
-## 4. OpenJDK Java compatible with AutoFirma (`java.sh`)
+## 4. OpenJDK Java (`java.sh`)
 
-AutoFirma requires Java Virtual Machine integration and NSS tools. These are installed system-wide via APT:
+Installs OpenJDK LTS for CachyOS via Pacman:
 ```bash
-sudo apt install -y default-jre default-jdk libnss3-tools
+sudo pacman -S --needed --noconfirm jdk-openjdk
 ```
 
 ---
@@ -135,9 +129,17 @@ python:
 rust:
     ./rust.sh
 
-# Installs Gemini CLI
-gemini:
-    ./gemini.sh
+# Installs .NET
+dotnet:
+    ./dotnet.sh
+
+# Installs Java
+java:
+    ./java.sh
+
+# Installs Angular CLI
+angular:
+    ./angular.sh
 ```
 
 You can execute any recipe with `just <recipe>` inside the `ProgrammingLanguages` folder.

@@ -45,7 +45,8 @@ Scripts de configuración del sistema operativo, personalización y endurecimien
 - **`fonts.sh`**: Instalación automatizada de fuentes de desarrollo (Nerd Fonts).
 - **`kitty.sh`**: Terminal Kitty acelerada por GPU con opacidad/blur y tema Catppuccin.
 - **`seguridad.sh`**: Endurecimiento con Firewalld, DNS-over-TLS, MAC Randomization y sysctl.
-- **`shell.sh`**: Herramientas modernas de terminal (`eza`, `bat`, `fd`, `zoxide`, `ripgrep`) y prompt (`Starship`).
+- **`shell.sh`**: Herramientas modernas de terminal (`eza`, `bat`, `fd`, `zoxide`, `ripgrep`, `btop`, `jq`).
+- **`starship.sh`**: Prompt Starship opcional con comandos de activación/desactivación.
 - **`yt-dlp-setup.sh`**: Dependencias para manejo multimedia (yt-dlp, ffmpeg, deno).
 
 ### 💻 [IDE](./IDE/)
@@ -58,7 +59,7 @@ Scripts de configuración del sistema operativo, personalización y endurecimien
 ### ⚡ [ProgrammingLanguages](./ProgrammingLanguages/)
 Gestión de runtimes con **mise**.
 - **`mise.sh`**: Mise version manager installer.
-- **`angular.sh`**, **`dotnet.sh`**, **`gemini.sh`**, **`java.sh`**, **`nodejs.sh`**, **`python.sh`**, **`rust.sh`**
+- **`angular.sh`**, **`dotnet.sh`**, **`java.sh`**, **`nodejs.sh`**, **`python.sh`**, **`rust.sh`**
 
 ### 🎮 [Juegos](./Juegos/)
 - **`steam.sh`**: Steam con Proton CachyOS.

@@ -45,12 +45,12 @@ Prepares the base system by optimizing mirrors, installing essential software, a
 
 ---
 
-## 2. Terminal and Shell Environment (`shell.sh`, `fastfetch.sh`, and `fonts.sh`)
+## 2. Terminal and Shell Environment (`shell.sh`, `starship.sh`, `fastfetch.sh`, and `fonts.sh`)
 
-Installs modern console utilities, development fonts, and the Starship interactive prompt.
+Installs modern console utilities, development fonts, and provides an optional manager for the Starship prompt.
 
-### Modern Terminal Utilities
-Modern alternatives to classic commands are installed:
+### Modern Terminal Utilities (`shell.sh`)
+Modern alternatives to classic commands are installed with `zoxide` integration, respecting CachyOS default Zsh and Powerlevel10k configuration:
 - `eza` (replaces `ls`)
 - `bat` (replaces `cat` with syntax highlighting)
 - `fzf` (fuzzy finder)
@@ -62,10 +62,17 @@ Modern alternatives to classic commands are installed:
 - `procs` (modern replacement for `ps`)
 - `btop` (resource monitor)
 
-### Starship Prompt
-Downloads and configures the latest version of the Starship prompt:
+### Optional Starship Prompt (`starship.sh`)
+CachyOS includes **Powerlevel10k (p10k)** by default in Zsh. If you prefer to use **Starship**, you can easily enable or disable it:
 ```bash
-curl -sS https://starship.rs/install.sh | sudo sh -s -- -y -b /usr/local/bin
+# Install and enable Starship
+./Setup/starship.sh
+
+# Disable and restore CachyOS native p10k prompt
+./Setup/starship.sh --disable
+
+# Check current status
+./Setup/starship.sh --status
 ```
 Configuration is copied from `Setup/starship.toml` to `~/.config/starship.toml`.
 

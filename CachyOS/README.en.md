@@ -42,9 +42,10 @@ OS configuration, hardening, and styling scripts:
 - **`fastfetch.sh`**: System info fetch initialization.
 - **`fonts.sh`**: Automated Nerd Fonts installer.
 - **`kitty.sh`**: GPU-accelerated Kitty terminal with opacity/blur and Catppuccin theme.
-- **`seguridad.sh`**: Hardening with Firewalld, DNS-over-TLS, MAC Randomization, and sysctl.
-- **`shell.sh`**: Modern CLI utilities (`eza`, `bat`, `fd`, `zoxide`, `ripgrep`) & `Starship` prompt.
-- **`yt-dlp-setup.sh`**: Multimedia dependencies.
+- **`seguridad.sh`**: Security hardening with Firewalld, DNS-over-TLS, MAC Randomization and sysctl.
+- **`shell.sh`**: Modern terminal utilities (`eza`, `bat`, `fd`, `zoxide`, `ripgrep`, `btop`, `jq`).
+- **`starship.sh`**: Optional Starship prompt with enable/disable commands.
+- **`yt-dlp-setup.sh`**: Multimedia setup dependencies (yt-dlp, ffmpeg, deno).
 
 ### 💻 [IDE](./IDE/)
 - **`antigravity.sh`**: Google Antigravity Desktop setup.
@@ -56,7 +57,7 @@ OS configuration, hardening, and styling scripts:
 ### ⚡ [ProgrammingLanguages](./ProgrammingLanguages/)
 Runtime management with **mise**.
 - **`mise.sh`**: Mise version manager installer.
-- **`angular.sh`**, **`dotnet.sh`**, **`gemini.sh`**, **`java.sh`**, **`nodejs.sh`**, **`python.sh`**, **`rust.sh`**
+- **`angular.sh`**, **`dotnet.sh`**, **`java.sh`**, **`nodejs.sh`**, **`python.sh`**, **`rust.sh`**
 
 ### 🎮 [Juegos](./Juegos/)
 - **`steam.sh`**: Steam with Proton CachyOS.

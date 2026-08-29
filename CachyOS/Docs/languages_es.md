@@ -58,15 +58,9 @@ Una vez instalado Mise, se despliegan de forma global los siguientes lenguajes:
   ```
 
 ### .NET SDK (`dotnet.sh`)
-* **Instalación**: Instala la última versión mayor del SDK de .NET:
+* **Instalación**: Instala la versión de soporte LTS del SDK de .NET:
   ```bash
-  mise use --global dotnet@10
-  ```
-
-### Gemini CLI (`gemini.sh`)
-* **Instalación**: Herramienta de interfaz de comandos de Google Gemini:
-  ```bash
-  mise use --global npm:@google/gemini-cli@latest
+  mise use --global dotnet@8
   ```
 
 ---
@@ -77,7 +71,7 @@ Rust se gestiona mediante su herramienta estándar e independiente **Rustup**.
 
 1. **Compiladores y Herramientas del Sistema**:
    ```bash
-   sudo apt install -y build-essential cmake libssl-dev pkg-config curl
+   sudo pacman -S --needed --noconfirm base-devel cmake openssl pkgconf curl
    ```
 
 2. **Instalador Rustup**:
@@ -102,11 +96,11 @@ Rust se gestiona mediante su herramienta estándar e independiente **Rustup**.
 
 ---
 
-## 4. OpenJDK Java compatible con AutoFirma (`java.sh`)
+## 4. OpenJDK Java (`java.sh`)
 
-AutoFirma requiere interactuar con el almacén de claves NSS y la máquina virtual Java de Debian. Se instala a nivel de sistema APT:
+Instalación de OpenJDK LTS para CachyOS vía Pacman:
 ```bash
-sudo apt install -y default-jre default-jdk libnss3-tools
+sudo pacman -S --needed --noconfirm jdk-openjdk
 ```
 
 ---
@@ -132,9 +126,17 @@ python:
 rust:
     ./rust.sh
 
-# Instala Gemini CLI
-gemini:
-    ./gemini.sh
+# Instala .NET
+dotnet:
+    ./dotnet.sh
+
+# Instala Java
+java:
+    ./java.sh
+
+# Instala Angular CLI
+angular:
+    ./angular.sh
 ```
 
 Puedes ejecutar cualquiera de estas tareas con el comando `just <tarea>` en la raíz de la carpeta `ProgrammingLanguages`.

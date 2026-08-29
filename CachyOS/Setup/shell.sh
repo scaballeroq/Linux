@@ -1,23 +1,45 @@
 #!/bin/bash
-# shell.sh - Instalacion de herramientas modernas de terminal y prompt Starship para CachyOS (KDE Plasma / Wayland)
+# ==============================================================================
+# shell.sh - Instalación de herramientas modernas de terminal para CachyOS
+# (eza, bat, fzf, zoxide, ripgrep, fd, duf, dust, procs, btop, jq)
+# ==============================================================================
 
 set -euo pipefail
 
 echo "================================================================="
-echo "🐚 Configurando herramientas modernas de terminal y Starship"
+echo "🐚 Configurando utilidades modernas de terminal para CachyOS"
 echo "================================================================="
 
-# Detectar AUR helper
-AUR_HELPER=""
-if command -v paru &> /dev/null; then
-    AUR_HELPER="paru"
-elif command -v yay &> /dev/null; then
-    AUR_HELPER="yay"
+if [ "$EUID" -ne 0 ]; then
+    if ! command -v sudo &> /dev/null; then
+        echo "❌ Error: 'sudo' no esta disponible."
+        exit 1
+    fi
+    SUDO="sudo"
+else
+    SUDO=""
 fi
 
-# 1. Instalacion de utilidades modernas de terminal via Pacman
-echo "ℹ️ [1/5] Instalando utilidades de terminal modernas via Pacman..."
-sudo pacman -S --needed --noconfirm \
+# Detectar usuario real en caso de ejecucion con sudo
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    REAL_USER="$SUDO_USER"
+    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+else
+    REAL_USER="${USER:-$(id -un)}"
+    USER_HOME="${HOME:-/home/$REAL_USER}"
+fi
+
+run_as_user() {
+    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+        sudo -u "$REAL_USER" env HOME="$USER_HOME" "$@"
+    else
+        "$@"
+    fi
+}
+
+# 1. Instalación de utilidades modernas de terminal vía Pacman
+echo "ℹ️ [1/3] Instalando utilidades CLI modernas..."
+$SUDO pacman -S --needed --noconfirm \
     eza \
     bat \
     fzf \
@@ -32,50 +54,41 @@ sudo pacman -S --needed --noconfirm \
     git \
     jq 2>/dev/null || true
 
-# Instalar via AUR si no estan en repos oficiales
-if [ -n "$AUR_HELPER" ]; then
-    echo "ℹ️ Instalando herramientas adicionales via AUR..."
-    $AUR_HELPER -S --needed --noconfirm \
-        starship 2>/dev/null || true
+# 2. Integración de Zoxide (Smart cd) en Zsh y Bash
+echo "⚙️ [2/3] Configurando integración de Zoxide en shells..."
+
+# 2.1. Zsh (Shell nativa de CachyOS)
+ZSHRC="$USER_HOME/.zshrc"
+if [ -f "$ZSHRC" ] || [[ "${SHELL:-}" == *"zsh"* ]]; then
+    run_as_user touch "$ZSHRC"
+    if ! grep -q "zoxide init zsh" "$ZSHRC" 2>/dev/null; then
+        echo -e '\n# Zoxide (Smart cd)\nif command -v zoxide &>/dev/null; then eval "$(zoxide init zsh)"; fi' | run_as_user tee -a "$ZSHRC" > /dev/null
+        echo "  ✅ Zoxide integrado en ~/.zshrc"
+    else
+        echo "  ℹ️ Zoxide ya estaba presente en ~/.zshrc"
+    fi
 fi
 
-# 2. Instalacion de Starship Prompt
-echo "ℹ️ [2/5] Verificando Starship Prompt..."
-if ! command -v starship &> /dev/null; then
-    echo "⬇️ Instalando Starship Prompt..."
-    curl -sS https://starship.rs/install.sh | sudo sh -s -- -y -b /usr/local/bin
-else
-    echo "✅ Starship Prompt ya esta instalado ($(starship --version | head -n1))."
+# 2.2. Bash
+BASHRC="$USER_HOME/.bashrc"
+BASHRC_D="$USER_HOME/.bashrc.d"
+run_as_user mkdir -p "$BASHRC_D"
+
+if [ -f "$BASHRC" ]; then
+    if ! grep -q "zoxide init bash" "$BASHRC" 2>/dev/null; then
+        echo -e '\n# Zoxide (Smart cd)\nif command -v zoxide &>/dev/null; then eval "$(zoxide init bash)"; fi' | run_as_user tee -a "$BASHRC" > /dev/null
+        echo "  ✅ Zoxide integrado en ~/.bashrc"
+    fi
 fi
 
-# 3. Configuracion de Starship
-echo "🎨 [3/5] Configurando Starship..."
-mkdir -p "$HOME/.config"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [ -f "$SCRIPT_DIR/starship.toml" ]; then
-    cp "$SCRIPT_DIR/starship.toml" "$HOME/.config/starship.toml"
-    echo "✅ Configuracion starship.toml copiada a ~/.config/starship.toml"
-fi
-
-# 4. Integracion en .bashrc
-echo "⚙️ [4/5] Configurando integracion en ~/.bashrc..."
-mkdir -p "$HOME/.bashrc.d"
-
-if ! grep -q "starship init bash" "$HOME/.bashrc" 2>/dev/null; then
-    echo 'eval "$(starship init bash)"' >> "$HOME/.bashrc"
-    echo "✅ Starship integrado en ~/.bashrc"
-fi
-
-if ! grep -q "zoxide init bash" "$HOME/.bashrc" 2>/dev/null; then
-    echo 'eval "$(zoxide init bash)"' >> "$HOME/.bashrc"
-    echo "✅ Zoxide integrado en ~/.bashrc"
-fi
-
-# 5. Verificacion de comandos
-echo "🔗 [5/5] Verificando compatibilidad de comandos..."
-mkdir -p "$HOME/.local/bin"
+# 3. Verificación de directorios de usuario
+echo "🔗 [3/3] Verificando directorios de usuario..."
+run_as_user mkdir -p "$USER_HOME/.local/bin"
 
 echo "================================================================="
-echo "✅ Entorno de terminal moderno configurado con exito para CachyOS."
-echo "💡 Recuerda ejecutar 'source ~/.bashrc' o abrir una nueva terminal."
+echo "✅ Utilidades modernas de terminal configuradas con éxito:"
+echo "  • Herramientas: eza, bat, fzf, zoxide, ripgrep, fd, duf, dust, btop, jq"
+echo "  • Shell Zsh:    Configuración nativa de CachyOS (p10k) + Zoxide"
+echo "  • Shell Bash:   ~/.bashrc + Zoxide"
+echo "💡 Nota: Starship está disponible como script opcional en ./Setup/starship.sh"
 echo "================================================================="

@@ -41,9 +41,17 @@ tuning:
 tuning-status:
     ./Setup/cachyos-tuning.sh --status
 
-# Utilidades de terminal y prompt (eza, bat, fzf, zoxide, ripgrep, starship)
+# Utilidades de terminal modernas (eza, bat, fzf, zoxide, ripgrep)
 shell:
     ./Setup/shell.sh
+
+# Starship Prompt opcional (Instalar / Activar)
+starship:
+    ./Setup/starship.sh
+
+# Desactivar Starship y restaurar prompt nativo de CachyOS (p10k)
+starship-disable:
+    ./Setup/starship.sh --disable
 
 # Seguridad y cortafuegos (Firewalld, DNS-over-TLS, MAC Randomization, Sysctl)
 security:
@@ -98,7 +106,7 @@ mise:
 # =============================================================================
 
 # Todos los lenguajes
-languages: node python rust dotnet java angular gemini
+languages: node python rust dotnet java angular
     @echo "✅ Lenguajes instalados."
 
 # Node.js LTS
@@ -120,10 +128,6 @@ dotnet:
 # Java (OpenJDK)
 java:
     ./ProgrammingLanguages/java.sh
-
-# Gemini CLI
-gemini:
-    ./ProgrammingLanguages/gemini.sh
 
 # Angular CLI
 angular:

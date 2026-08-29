@@ -30,10 +30,6 @@ java:
 angular:
     ./angular.sh
 
-# Gemini CLI
-gemini:
-    ./gemini.sh
-
 # Todos los lenguajes
-all: mise node python rust dotnet java angular gemini
+all: mise node python rust dotnet java angular
     @echo "✅ Todos los lenguajes instalados."
