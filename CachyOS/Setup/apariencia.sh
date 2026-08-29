@@ -223,10 +223,10 @@ apply_core_appearance() {
     set_kde_config "kdeglobals" "KDE" "widgetStyle" "Breeze"
     set_kde_config "kdeglobals" "General" "widgetStyle" "Breeze"
 
-    # 2. Aplicar Look and Feel Global
-    if [ -n "$LOOK_AND_FEEL" ] && command -v plasma-apply-lookandfeel &>/dev/null; then
-        echo "• Aplicando Look & Feel: $LOOK_AND_FEEL"
-        run_as_user plasma-apply-lookandfeel -a "$LOOK_AND_FEEL" 2>/dev/null || true
+    # 2. Registrar Look and Feel Global de forma segura (sin destruir la barra de tareas)
+    if [ -n "$LOOK_AND_FEEL" ]; then
+        echo "• Registrando Look & Feel: $LOOK_AND_FEEL"
+        set_kde_config "kdeglobals" "KDE" "LookAndFeelPackage" "$LOOK_AND_FEEL"
     fi
 
     # 3. Aplicar Esquema de Color Oficial
@@ -308,11 +308,10 @@ EOF
         run_as_user qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true
     fi
 
-    # 12. Recarga en caliente del entorno Plasmashell
-    if systemctl --user is-active plasma-plasmashell.service &>/dev/null; then
-        run_as_user systemctl --user restart plasma-plasmashell.service 2>/dev/null || true
-    elif command -v qdbus6 &>/dev/null; then
-        run_as_user qdbus6 org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.refreshCurrentShell 2>/dev/null || true
+    # 12. Garantizar que Plasmashell permanezca siempre activo
+    if ! systemctl --user is-active plasma-plasmashell.service &>/dev/null; then
+        run_as_user systemctl --user reset-failed plasma-plasmashell.service 2>/dev/null || true
+        run_as_user systemctl --user start plasma-plasmashell.service 2>/dev/null || true
     fi
 }
 
