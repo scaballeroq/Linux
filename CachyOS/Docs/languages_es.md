@@ -14,22 +14,15 @@ La gestión de entornos se centraliza principalmente a través de **Mise** (runt
 
 Mise es una herramienta de terminal moderna que reemplaza a herramientas como `asdf`, `nvm` o `pyenv`. Se encarga de descargar y configurar rápidamente entornos de desarrollo locales o globales.
 
-1. **Instalación y Repositorio Oficial**:
+1. **Instalación en CachyOS**:
    ```bash
-   sudo apt update
-   sudo apt install -y curl gpg
-   sudo mkdir -p -m 755 /etc/apt/keyrings
-   curl -fsSL https://mise.jdx.dev/gpg-key.pub | sudo gpg --dearmor -o /etc/apt/keyrings/mise-archive-keyring.gpg
-   echo "deb [signed-by=/etc/apt/keyrings/mise-archive-keyring.gpg arch=$(dpkg --print-architecture)] https://mise.jdx.dev/deb stable main" | sudo tee /etc/apt/sources.list.d/mise.list > /dev/null
-   sudo apt update
-   sudo apt install -y mise
+   sudo pacman -S --needed --noconfirm mise
    ```
 
-2. **Activación de Shell**:
-   Se crea de manera modular la inicialización de Mise en `~/.bashrc.d/mise.sh`:
-   ```bash
-   eval "$(mise activate bash)"
-   ```
+2. **Activación de Shell y Entorno Gráfico**:
+   - Para KDE Plasma 6 y entornos gráficos: `~/.config/environment.d/10-mise.conf`
+   - Para Zsh: `~/.zshrc` (`eval "$(mise activate zsh)"`)
+   - Para Bash: `~/.bashrc.d/mise.sh`
 
 ---
 
@@ -38,12 +31,16 @@ Mise es una herramienta de terminal moderna que reemplaza a herramientas como `a
 Una vez instalado Mise, se despliegan de forma global los siguientes lenguajes:
 
 ### Node.js (`nodejs.sh` y `angular.sh`)
-* **Dependencias**: Instala `build-essential`, `python3`, `g++` y `make` vía APT, necesarios para compilar dependencias nativas de npm (`node-gyp`).
-* **Instalación**: Configura la versión LTS 22 global:
+* **Dependencias**: Instala `base-devel`, `curl`, `python`, `gcc` y `make` vía Pacman, necesarios para compilar dependencias nativas de npm (`node-gyp`).
+* **Instalación**: Instala y fija automáticamente la **última versión LTS activa** de Node.js:
   ```bash
-  mise use --global node@22
+  mise use --global node@lts
   ```
-* **Actualización segura de NPM**: Se aplica una limpieza de caché de npm e instalación previa de `promise-retry` para evadir errores clásicos del instalador de npm en Debian antes de subir a la versión más reciente (`npm install -g npm@latest`).
+* **Corepack (pnpm / yarn)**: Se activa Corepack para disponer de `pnpm` y `yarn` de forma nativa e inmediata:
+  ```bash
+  mise exec node@lts -- corepack enable
+  mise reshim
+  ```
 * **Angular CLI**: Se instala globalmente el CLI oficial utilizando npm manejado por Mise:
   ```bash
   mise use --global npm:@angular/cli@latest

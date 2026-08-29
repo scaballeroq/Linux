@@ -14,22 +14,15 @@ Environment management is centralized through **Mise** (runtimes and SDKs) and *
 
 Mise is a modern CLI version manager that replaces older tools like `asdf`, `nvm`, or `pyenv`. It downloads and configures development environments globally or locally.
 
-1. **Official Repository Registration and Installation**:
+1. **Installation on CachyOS**:
    ```bash
-   sudo apt update
-   sudo apt install -y curl gpg
-   sudo mkdir -p -m 755 /etc/apt/keyrings
-   curl -fsSL https://mise.jdx.dev/gpg-key.pub | sudo gpg --dearmor -o /etc/apt/keyrings/mise-archive-keyring.gpg
-   echo "deb [signed-by=/etc/apt/keyrings/mise-archive-keyring.gpg arch=$(dpkg --print-architecture)] https://mise.jdx.dev/deb stable main" | sudo tee /etc/apt/sources.list.d/mise.list > /dev/null
-   sudo apt update
-   sudo apt install -y mise
+   sudo pacman -S --needed --noconfirm mise
    ```
 
-2. **Shell Activation**:
-   Mise initialization is added to `~/.bashrc.d/mise.sh`:
-   ```bash
-   eval "$(mise activate bash)"
-   ```
+2. **Session and Shell Activation**:
+   - For KDE Plasma 6 & desktop environments: `~/.config/environment.d/10-mise.conf`
+   - For Zsh: `~/.zshrc` (`eval "$(mise activate zsh)"`)
+   - For Bash: `~/.bashrc.d/mise.sh`
 
 ---
 
@@ -38,14 +31,15 @@ Mise is a modern CLI version manager that replaces older tools like `asdf`, `nvm
 Once Mise is installed, the following development environments are deployed globally:
 
 ### Node.js (`nodejs.sh` and `angular.sh`)
-* **Dependencies**: Installs `build-essential`, `python3`, `g++`, and `make` via APT, which are required to build native npm dependencies (`node-gyp`).
-* **Installation**: Configures the global Node.js LTS 22 release:
+* **Dependencies**: Installs `base-devel`, `curl`, `python`, `gcc`, and `make` via Pacman, required to build native npm dependencies (`node-gyp`).
+* **Installation**: Installs and sets the **latest active Node.js LTS** release globally:
   ```bash
-  mise use --global node@22
+  mise use --global node@lts
   ```
-* **Safe NPM Updates**: Cleans npm cache and pre-installs the `promise-retry` package to bypass common npm registry upgrade errors on Debian, then updates NPM:
+* **Corepack (pnpm / yarn)**: Enables Corepack out of the box for fast and native `pnpm` and `yarn` package management:
   ```bash
-  mise exec node@22 -- npm install -g npm@latest
+  mise exec node@lts -- corepack enable
+  mise reshim
   ```
 * **Angular CLI**: Installs the official Angular CLI globally:
   ```bash
