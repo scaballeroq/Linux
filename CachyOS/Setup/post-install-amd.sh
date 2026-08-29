@@ -38,11 +38,24 @@ fi
 echo "Actualizando base del sistema..."
 sudo pacman -Syu --noconfirm
 
-# 2. Habilitar repositorios multilib (para gaming/Wine)
+# 2. Habilitar repositorios multilib (para gaming/Wine) y Chaotic-AUR
 echo "Habilitando repositorio multilib..."
 if ! grep -q "^\[multilib\]" "$PACMAN_CONF"; then
     echo -e "\n[multilib]\nInclude = /etc/pacman.d/mirrorlist" | sudo tee -a "$PACMAN_CONF" > /dev/null
-    sudo pacman -Syu --noconfirm
+fi
+
+echo "Configurando e integrando repositorio Chaotic-AUR..."
+if ! grep -q "^\[chaotic-aur\]" "$PACMAN_CONF"; then
+    sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com 2>/dev/null || true
+    sudo pacman-key --lsign-key 3056513887B78AEB 2>/dev/null || true
+    sudo pacman -U --needed --noconfirm \
+        'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' \
+        'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' 2>/dev/null || true
+    echo -e "\n[chaotic-aur]\nInclude = /etc/pacman.d/chaotic-mirrorlist" | sudo tee -a "$PACMAN_CONF" > /dev/null
+    sudo pacman -Sy --noconfirm || true
+    echo "✅ Repositorio Chaotic-AUR configurado correctamente."
+else
+    echo "✅ Repositorio Chaotic-AUR ya está presente en $PACMAN_CONF."
 fi
 
 # 3. Compresion de Memoria ZRAM
