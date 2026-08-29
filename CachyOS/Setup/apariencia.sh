@@ -59,7 +59,7 @@ set_kde_config() {
     local val="$4"
 
     if command -v kwriteconfig6 &>/dev/null; then
-        run_as_user kwriteconfig6 --file "$file" --group "$group" --key "$key" "$val"
+        run_as_user kwriteconfig6 --file "$file" --group "$group" --key "$key" "$val" --notify 2>/dev/null || run_as_user kwriteconfig6 --file "$file" --group "$group" --key "$key" "$val"
     elif command -v kwriteconfig5 &>/dev/null; then
         run_as_user kwriteconfig5 --file "$file" --group "$group" --key "$key" "$val"
     else
@@ -80,11 +80,23 @@ set_kde_config() {
     fi
 }
 
-# Helper para aplicar fondo de pantalla en KDE Plasma 6
+# Helper para aplicar fondo de pantalla en KDE Plasma 6 de forma instantanea
 set_wallpaper() {
     local WP_PATH="$1"
-    if [ -f "$WP_PATH" ] && command -v plasma-apply-wallpaperimage &>/dev/null; then
-        timeout 5s run_as_user plasma-apply-wallpaperimage "$WP_PATH" &>/dev/null || true
+    if [ -f "$WP_PATH" ]; then
+        if command -v qdbus6 &>/dev/null; then
+            run_as_user qdbus6 org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "
+                var allDesktops = desktops();
+                for (var i = 0; i < allDesktops.length; i++) {
+                    var d = allDesktops[i];
+                    d.wallpaperPlugin = 'org.kde.image';
+                    d.currentConfigGroup = Array('Wallpaper', 'org.kde.image', 'General');
+                    d.writeConfig('Image', 'file://$WP_PATH');
+                }
+            " &>/dev/null || true
+        elif command -v plasma-apply-wallpaperimage &>/dev/null; then
+            run_as_user plasma-apply-wallpaperimage "$WP_PATH" &>/dev/null || true
+        fi
         echo "🖼️ Fondo de pantalla aplicado: $(basename "$WP_PATH")"
     fi
 }
@@ -199,31 +211,59 @@ apply_core_appearance() {
     local GTK_THEME="$4"
     local CURSOR_THEME="$5"
     local WALLPAPER_PATH="$6"
-    local PREFER_DARK="${7:-prefer-dark}"
+    local ACCENT_COLOR="${7:-}"
+    local PLASMA_THEME="${8:-breeze-dark}"
+    local PREFER_DARK="${9:-prefer-dark}"
 
-    # Forzar siempre motor de widgets nativo Breeze (Qt6)
+    echo "================================================================="
+    echo "🎨 APLICANDO CONFIGURACION NATIVA EN KDE PLASMA 6"
+    echo "================================================================="
+
+    # 1. Forzar motor de widgets nativo Breeze (Qt6 / Kirigami)
     set_kde_config "kdeglobals" "KDE" "widgetStyle" "Breeze"
     set_kde_config "kdeglobals" "General" "widgetStyle" "Breeze"
 
-    echo "🎨 Aplicando Esquema de Color ($COLOR_SCHEME) y Look & Feel ($LOOK_AND_FEEL)..."
+    # 2. Aplicar Look and Feel Global
     if [ -n "$LOOK_AND_FEEL" ] && command -v plasma-apply-lookandfeel &>/dev/null; then
-        timeout 5s run_as_user plasma-apply-lookandfeel -a "$LOOK_AND_FEEL" 2>/dev/null || true
+        echo "• Aplicando Look & Feel: $LOOK_AND_FEEL"
+        run_as_user plasma-apply-lookandfeel -a "$LOOK_AND_FEEL" 2>/dev/null || true
     fi
 
+    # 3. Aplicar Esquema de Color Oficial
     if [ -n "$COLOR_SCHEME" ] && command -v plasma-apply-colorscheme &>/dev/null; then
-        timeout 5s run_as_user plasma-apply-colorscheme "$COLOR_SCHEME" 2>/dev/null || true
+        echo "• Aplicando Esquema de Color: $COLOR_SCHEME"
+        run_as_user plasma-apply-colorscheme "$COLOR_SCHEME" 2>/dev/null || true
     fi
 
-    set_kde_config "kdeglobals" "Icons" "Theme" "$ICON_THEME"
     set_kde_config "kdeglobals" "General" "ColorScheme" "$COLOR_SCHEME"
     set_kde_config "kdeglobals" "KDE" "colorScheme" "$COLOR_SCHEME"
 
+    # 4. Color de Acento Dinamico (Accent Color)
+    if [ -n "$ACCENT_COLOR" ]; then
+        echo "• Configurando Color de Acento: $ACCENT_COLOR"
+        set_kde_config "kdeglobals" "General" "AccentColor" "$ACCENT_COLOR"
+        set_kde_config "kdeglobals" "General" "LastUsedCustomAccentColor" "$ACCENT_COLOR"
+    fi
+
+    # 5. Estilo de Plasma (Panel, Menu de Inicio, Widgets)
+    if [ -n "$PLASMA_THEME" ]; then
+        echo "• Configurando Estilo de Plasma (Paneles y Widgets): $PLASMA_THEME"
+        set_kde_config "plasmarc" "Theme" "name" "$PLASMA_THEME"
+    fi
+
+    # 6. Tema de Iconos
+    echo "• Configurando Tema de Iconos: $ICON_THEME"
+    set_kde_config "kdeglobals" "Icons" "Theme" "$ICON_THEME"
+
+    # 7. Tema de Cursores
     if [ -n "$CURSOR_THEME" ] && command -v plasma-apply-cursortheme &>/dev/null; then
-        timeout 5s run_as_user plasma-apply-cursortheme "$CURSOR_THEME" 2>/dev/null || true
+        echo "• Aplicando Cursores: $CURSOR_THEME"
+        run_as_user plasma-apply-cursortheme "$CURSOR_THEME" 2>/dev/null || true
     fi
     [ -n "$CURSOR_THEME" ] && set_kde_config "kcminputrc" "Mouse" "cursorTheme" "$CURSOR_THEME"
 
-    echo "🔗 Sincronizando integracion GTK 2/3/4, Flatpaks y Portales..."
+    # 8. Sincronizacion GTK 2/3/4, GNOME Portals y Flatpaks
+    echo "• Sincronizando integracion GTK ($GTK_THEME)..."
     set_kde_config "gtkrc-2.0" "Settings" "gtk-theme-name" "$GTK_THEME"
     set_kde_config "gtkrc-2.0" "Settings" "gtk-icon-theme-name" "$ICON_THEME"
 
@@ -253,19 +293,26 @@ EOF
 
     set_kde_config "dolphinrc" "PreviewSettings" "Plugins" "audiothumbnail,directorythumbnail,djvuthumbnail,exrthumbnail,ffmpegthumbs,fontthumbnail,imagethumbnail,jpegthumbnail,kraimagethumbnail,svgthumbnail,textthumbnail,windowsexethumbnail"
 
-    # Aplicar Fondo de pantalla
+    # 9. Fondo de pantalla instantaneo
     if [ -n "$WALLPAPER_PATH" ]; then
         set_wallpaper "$WALLPAPER_PATH"
     fi
 
-    # Reconstruir cache de iconos y tipos MIME
+    # 10. Reconstruir cache del sistema de iconos
     if command -v kbuildsycoca6 &>/dev/null; then
         run_as_user kbuildsycoca6 --noincremental &>/dev/null || true
     fi
 
-    # Notificar a KWin para actualizar sombras y decoraciones
-    if command -v dbus-send &>/dev/null; then
-        run_as_user dbus-send --type=method_call --dest=org.kde.KWin /KWin org.kde.KWin.reconfigure 2>/dev/null || true
+    # 11. Notificar a KWin para actualizar sombras, bordes y decoraciones de ventana
+    if command -v qdbus6 &>/dev/null; then
+        run_as_user qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true
+    fi
+
+    # 12. Recarga en caliente del entorno Plasmashell
+    if systemctl --user is-active plasma-plasmashell.service &>/dev/null; then
+        run_as_user systemctl --user restart plasma-plasmashell.service 2>/dev/null || true
+    elif command -v qdbus6 &>/dev/null; then
+        run_as_user qdbus6 org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.refreshCurrentShell 2>/dev/null || true
     fi
 }
 
@@ -303,9 +350,11 @@ apply_theme_catppuccin() {
         "$GTK_THEME" \
         "$CURSOR_THEME" \
         "$WALLPAPER" \
+        "137,180,250" \
+        "breeze-dark" \
         "prefer-dark"
 
-    echo "✅ Suite Catppuccin Mocha (Nativa KDE 6) aplicada con exito."
+    echo "✅ Suite Catppuccin Mocha aplicada con exito."
 }
 
 # 2. Suite Nordic / CachyOS-Nord (Artico Azulado Nativo)
@@ -328,6 +377,9 @@ apply_theme_nord() {
     local WALLPAPER="/usr/share/wallpapers/cachyos-wallpapers/north.png"
     [ ! -f "$WALLPAPER" ] && WALLPAPER="/usr/share/wallpapers/cachyos-wallpapers/cachygalaxy99.jpg"
 
+    local PLASMA_STYLE="CachyOS-Nord-round"
+    [ ! -d "/usr/share/plasma/desktoptheme/$PLASMA_STYLE" ] && PLASMA_STYLE="breeze-dark"
+
     apply_core_appearance \
         "CachyOS-Nord" \
         "CachyOSNord" \
@@ -335,9 +387,11 @@ apply_theme_nord() {
         "$GTK_THEME" \
         "breeze_cursors" \
         "$WALLPAPER" \
+        "136,192,208" \
+        "$PLASMA_STYLE" \
         "prefer-dark"
 
-    echo "✅ Suite Nordic (Nativa KDE 6) aplicada con exito."
+    echo "✅ Suite Nordic aplicada con exito."
 }
 
 # 3. Suite Dracula (Contraste Neon Vampirico Nativo)
@@ -363,22 +417,30 @@ apply_theme_dracula() {
     local WALLPAPER="/usr/share/wallpapers/cachyos-wallpapers/Dracula.png"
     [ ! -f "$WALLPAPER" ] && WALLPAPER="/usr/share/wallpapers/cachyos-wallpapers/cachygalaxy99.jpg"
 
+    local PLASMA_STYLE="Dracula"
+    [ ! -d "/usr/share/plasma/desktoptheme/$PLASMA_STYLE" ] && PLASMA_STYLE="breeze-dark"
+
+    local COLOR_SCHEME="CatppuccinMochaMauve"
+    [ -f "$USER_HOME/.local/share/color-schemes/Dracula.colors" ] || [ -f "/usr/share/color-schemes/Dracula.colors" ] && COLOR_SCHEME="Dracula"
+
     apply_core_appearance \
         "org.kde.breezedark.desktop" \
-        "BreezeDark" \
+        "$COLOR_SCHEME" \
         "$ICON_THEME" \
         "$GTK_THEME" \
         "$CURSOR_THEME" \
         "$WALLPAPER" \
+        "189,147,249" \
+        "$PLASMA_STYLE" \
         "prefer-dark"
 
-    echo "✅ Suite Dracula (Nativa KDE 6) aplicada con exito."
+    echo "✅ Suite Dracula aplicada con exito."
 }
 
-# 4. Suite Orchis (Material Design Moderno con Acentos)
+# 4. Suite Orchis / Emerald (Moderno con Acento Esmeralda)
 apply_theme_orchis() {
     echo "================================================================="
-    echo "🌿 APLICANDO SUITE NATIVA: ORCHIS DARK (KDE PLASMA 6)"
+    echo "🌿 APLICANDO SUITE NATIVA: ORCHIS / EMERALD (KDE PLASMA 6)"
     echo "================================================================="
     [ "$NO_INSTALL" = false ] && {
         $SUDO pacman -S --needed --noconfirm orchis-theme tela-circle-icon-theme-all 2>/dev/null || true
@@ -395,22 +457,30 @@ apply_theme_orchis() {
     local WALLPAPER="/usr/share/wallpapers/cachyos-wallpapers/CachyOS_GreenSpace.png"
     [ ! -f "$WALLPAPER" ] && WALLPAPER="/usr/share/wallpapers/cachyos-wallpapers/Cachy_Topography1.jpg"
 
+    local PLASMA_STYLE="cachyos-emerald"
+    [ ! -d "/usr/share/plasma/desktoptheme/$PLASMA_STYLE" ] && PLASMA_STYLE="breeze-dark"
+
+    local COLOR_SCHEME="EmeraldDark"
+    [ ! -f "/usr/share/color-schemes/$COLOR_SCHEME.colors" ] && [ ! -f "$USER_HOME/.local/share/color-schemes/$COLOR_SCHEME.colors" ] && COLOR_SCHEME="CatppuccinMochaTeal"
+
     apply_core_appearance \
         "org.kde.breezedark.desktop" \
-        "BreezeDark" \
+        "$COLOR_SCHEME" \
         "$ICON_THEME" \
         "$GTK_THEME" \
         "breeze_cursors" \
         "$WALLPAPER" \
+        "46,196,182" \
+        "$PLASMA_STYLE" \
         "prefer-dark"
 
-    echo "✅ Suite Orchis Dark (Nativa KDE 6) aplicada con exito."
+    echo "✅ Suite Orchis / Emerald aplicada con exito."
 }
 
 # 5. Suite Nativa KDE Plasma 6 Breeze (Predeterminada)
 apply_theme_breeze() {
     echo "================================================================="
-    echo "⚡ APLICANDO ESTILO NATIVO KDE PLASMA 6 (BREEZE)"
+    echo "⚡ APLICANDO ESTILO NATIVO KDE PLASMA 6 (BREEZE DARK)"
     echo "================================================================="
     apply_core_appearance \
         "org.kde.breezedark.desktop" \
@@ -419,9 +489,11 @@ apply_theme_breeze() {
         "Breeze-Dark" \
         "breeze_cursors" \
         "/usr/share/wallpapers/cachyos-wallpapers/cachygalaxy99.jpg" \
+        "61,174,233" \
+        "breeze-dark" \
         "prefer-dark"
 
-    echo "✅ Estilo nativo Breeze Dark aplicado (Widgets nativos Qt6/Kirigami)."
+    echo "✅ Estilo nativo Breeze Dark aplicado."
 }
 
 # 6. Diagnostico visual
