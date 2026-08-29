@@ -54,8 +54,7 @@ Scripts de configuración del sistema operativo, personalización y endurecimien
 - **`antigravity.sh`**: Google Antigravity Desktop setup.
 - **`antigravity-cli.sh`**: Google Antigravity CLI setup.
 - **`antigravity-ide.sh`**: Google Antigravity IDE Engine setup.
-- **`git.sh`**: Git, Delta y Lazygit setup.
-- **`github-cli.sh`**: GitHub CLI installer.
+- **`git.sh`**: Git, Delta, Lazygit y GitHub CLI setup.
 - **`neovim.sh`**: Neovim & LazyVim setup.
 - **`opencode.sh`**: OpenCode AI CLI setup.
 - **`vscode.sh`**: Visual Studio Code installer.

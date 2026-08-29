@@ -88,7 +88,6 @@ cockpit:
 # Git, Delta, Lazygit, GH CLI
 git-setup:
     ./IDE/git.sh
-    ./IDE/github-cli.sh
 
 # =============================================================================
 # GESTORES DE RUNTIMES

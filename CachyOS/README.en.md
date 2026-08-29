@@ -52,8 +52,7 @@ OS configuration, hardening, and styling scripts:
 - **`antigravity.sh`**: Google Antigravity Desktop setup.
 - **`antigravity-cli.sh`**: Google Antigravity CLI setup.
 - **`antigravity-ide.sh`**: Google Antigravity IDE Engine setup.
-- **`git.sh`**: Git, Delta, and Lazygit setup.
-- **`github-cli.sh`**: GitHub CLI installer.
+- **`git.sh`**: Git, Delta, Lazygit and GitHub CLI setup.
 - **`neovim.sh`**: Neovim & LazyVim setup.
 - **`opencode.sh`**: OpenCode AI CLI setup.
 - **`vscode.sh`**: Visual Studio Code installer.
