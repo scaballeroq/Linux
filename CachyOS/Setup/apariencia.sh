@@ -161,6 +161,155 @@ install_catppuccin_assets() {
     fi
 }
 
+# Registrar e instalar metadatos de Temas Globales (Look and Feel) compatibles con Plasma 6
+install_global_themes_metadata() {
+    local LNF_BASE="$USER_HOME/.local/share/plasma/look-and-feel"
+    run_as_user mkdir -p "$LNF_BASE"
+
+    # 1. Nordic Global Theme
+    local NORDIC_DIR="$LNF_BASE/Nordic"
+    run_as_user mkdir -p "$NORDIC_DIR/contents/previews"
+    cat << 'EOF' | run_as_user tee "$NORDIC_DIR/metadata.json" > /dev/null
+{
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [ { "Name": "Eliver Lara" } ],
+        "Category": "Global Themes",
+        "Description": "Tema global oscuro Nordic para KDE Plasma 6",
+        "Id": "Nordic",
+        "License": "GPL-3.0+",
+        "Name": "Nordic",
+        "ServiceTypes": [ "Plasma/LookAndFeel" ],
+        "Version": "2.2.0"
+    }
+}
+EOF
+    cat << 'EOF' | run_as_user tee "$NORDIC_DIR/contents/defaults" > /dev/null
+[kdeglobals][General]
+ColorScheme=CachyOSNord
+
+[kdeglobals][Icons]
+Theme=Colloid-Nord-Dark
+
+[kdeglobals][KDE]
+widgetStyle=Breeze
+
+[plasmarc][Theme]
+name=CachyOS-Nord-round
+
+[kcminputrc][Mouse]
+cursorTheme=breeze_cursors
+EOF
+    if [ -f "/usr/share/plasma/look-and-feel/CachyOS-Nord/contents/previews/preview.png" ]; then
+        run_as_user cp /usr/share/plasma/look-and-feel/CachyOS-Nord/contents/previews/* "$NORDIC_DIR/contents/previews/" 2>/dev/null || true
+    fi
+
+    # 2. Catppuccin Mocha Global Theme
+    local CATPPUCCIN_DIR="$LNF_BASE/Catppuccin-Mocha"
+    run_as_user mkdir -p "$CATPPUCCIN_DIR/contents"
+    cat << 'EOF' | run_as_user tee "$CATPPUCCIN_DIR/metadata.json" > /dev/null
+{
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [ { "Name": "Catppuccin Org" } ],
+        "Category": "Global Themes",
+        "Description": "Tema global Catppuccin Mocha para KDE Plasma 6",
+        "Id": "Catppuccin-Mocha",
+        "License": "MIT",
+        "Name": "Catppuccin Mocha",
+        "ServiceTypes": [ "Plasma/LookAndFeel" ],
+        "Version": "1.0.0"
+    }
+}
+EOF
+    cat << 'EOF' | run_as_user tee "$CATPPUCCIN_DIR/contents/defaults" > /dev/null
+[kdeglobals][General]
+ColorScheme=CatppuccinMochaBlue
+
+[kdeglobals][Icons]
+Theme=Colloid-Catppuccin-Dark
+
+[kdeglobals][KDE]
+widgetStyle=Breeze
+
+[plasmarc][Theme]
+name=breeze-dark
+
+[kcminputrc][Mouse]
+cursorTheme=catppuccin-cursors-mocha
+EOF
+
+    # 3. Dracula Global Theme
+    local DRACULA_DIR="$LNF_BASE/Dracula"
+    run_as_user mkdir -p "$DRACULA_DIR/contents"
+    cat << 'EOF' | run_as_user tee "$DRACULA_DIR/metadata.json" > /dev/null
+{
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [ { "Name": "Dracula Theme" } ],
+        "Category": "Global Themes",
+        "Description": "Tema global oscuro Dracula para KDE Plasma 6",
+        "Id": "Dracula",
+        "License": "MIT",
+        "Name": "Dracula",
+        "ServiceTypes": [ "Plasma/LookAndFeel" ],
+        "Version": "2.0.0"
+    }
+}
+EOF
+    cat << 'EOF' | run_as_user tee "$DRACULA_DIR/contents/defaults" > /dev/null
+[kdeglobals][General]
+ColorScheme=CatppuccinMochaMauve
+
+[kdeglobals][Icons]
+Theme=Dracula
+
+[kdeglobals][KDE]
+widgetStyle=Breeze
+
+[plasmarc][Theme]
+name=Dracula
+
+[kcminputrc][Mouse]
+cursorTheme=Dracula-cursors
+EOF
+
+    # 4. Orchis Dark Global Theme
+    local ORCHIS_DIR="$LNF_BASE/Orchis-Dark"
+    run_as_user mkdir -p "$ORCHIS_DIR/contents"
+    cat << 'EOF' | run_as_user tee "$ORCHIS_DIR/metadata.json" > /dev/null
+{
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [ { "Name": "Vinceliuice" } ],
+        "Category": "Global Themes",
+        "Description": "Tema global Orchis Dark para KDE Plasma 6",
+        "Id": "Orchis-Dark",
+        "License": "GPL-3.0",
+        "Name": "Orchis Dark",
+        "ServiceTypes": [ "Plasma/LookAndFeel" ],
+        "Version": "1.0.0"
+    }
+}
+EOF
+    cat << 'EOF' | run_as_user tee "$ORCHIS_DIR/contents/defaults" > /dev/null
+[kdeglobals][General]
+ColorScheme=EmeraldDark
+
+[kdeglobals][Icons]
+Theme=Tela-circle-dark
+
+[kdeglobals][KDE]
+widgetStyle=Breeze
+
+[plasmarc][Theme]
+name=cachyos-emerald
+
+[kcminputrc][Mouse]
+cursorTheme=breeze_cursors
+EOF
+}
+
 # Instalador completo de todas las suites de temas nativos
 install_all_themes() {
     echo "================================================================="
@@ -200,6 +349,7 @@ install_all_themes() {
     fi
 
     install_catppuccin_assets
+    install_global_themes_metadata
     echo "✅ Todas las suites de temas nativos (Catppuccin, Nordic, Dracula, Orchis) estan instaladas."
 }
 
@@ -343,7 +493,7 @@ apply_theme_catppuccin() {
     [ ! -f "$WALLPAPER" ] && WALLPAPER="/usr/share/wallpapers/cachyos-wallpapers/cachygalaxy99.jpg"
 
     apply_core_appearance \
-        "org.kde.breezedark.desktop" \
+        "Catppuccin-Mocha" \
         "CatppuccinMochaBlue" \
         "$ICON_THEME" \
         "$GTK_THEME" \
@@ -361,6 +511,7 @@ apply_theme_nord() {
     echo "================================================================="
     echo "🌌 APLICANDO SUITE NATIVA: NORD / NORDIC (KDE PLASMA 6)"
     echo "================================================================="
+    install_global_themes_metadata
     [ "$NO_INSTALL" = false ] && {
         $SUDO pacman -S --needed --noconfirm cachyos-nord-kde-theme-git nordic-theme-git colloid-nord-icon-theme-git 2>/dev/null || true
     }
@@ -380,7 +531,7 @@ apply_theme_nord() {
     [ ! -d "/usr/share/plasma/desktoptheme/$PLASMA_STYLE" ] && PLASMA_STYLE="breeze-dark"
 
     apply_core_appearance \
-        "CachyOS-Nord" \
+        "Nordic" \
         "CachyOSNord" \
         "$ICON_THEME" \
         "$GTK_THEME" \
@@ -398,6 +549,7 @@ apply_theme_dracula() {
     echo "================================================================="
     echo "🧛 APLICANDO SUITE NATIVA: DRACULA (KDE PLASMA 6)"
     echo "================================================================="
+    install_global_themes_metadata
     [ "$NO_INSTALL" = false ] && {
         $SUDO pacman -S --needed --noconfirm ant-dracula-kde-theme-git ant-dracula-theme-git dracula-icons-git dracula-cursors-git 2>/dev/null || true
     }
@@ -423,7 +575,7 @@ apply_theme_dracula() {
     [ -f "$USER_HOME/.local/share/color-schemes/Dracula.colors" ] || [ -f "/usr/share/color-schemes/Dracula.colors" ] && COLOR_SCHEME="Dracula"
 
     apply_core_appearance \
-        "org.kde.breezedark.desktop" \
+        "Dracula" \
         "$COLOR_SCHEME" \
         "$ICON_THEME" \
         "$GTK_THEME" \
@@ -441,6 +593,7 @@ apply_theme_orchis() {
     echo "================================================================="
     echo "🌿 APLICANDO SUITE NATIVA: ORCHIS / EMERALD (KDE PLASMA 6)"
     echo "================================================================="
+    install_global_themes_metadata
     [ "$NO_INSTALL" = false ] && {
         $SUDO pacman -S --needed --noconfirm orchis-theme tela-circle-icon-theme-all 2>/dev/null || true
     }
@@ -463,7 +616,7 @@ apply_theme_orchis() {
     [ ! -f "/usr/share/color-schemes/$COLOR_SCHEME.colors" ] && [ ! -f "$USER_HOME/.local/share/color-schemes/$COLOR_SCHEME.colors" ] && COLOR_SCHEME="CatppuccinMochaTeal"
 
     apply_core_appearance \
-        "org.kde.breezedark.desktop" \
+        "Orchis-Dark" \
         "$COLOR_SCHEME" \
         "$ICON_THEME" \
         "$GTK_THEME" \
