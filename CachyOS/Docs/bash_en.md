@@ -2,7 +2,7 @@
 sidebar_position: 3
 ---
 
-# Bash Configuration on Debian 13
+# Bash Configuration on CachyOS
 
 This guide details the terminal environment (Bash) setup and built-in utilities provided in the modular scripts under the `Bash.Setup` folder.
 
@@ -27,7 +27,7 @@ fi
 You can enable them by creating symbolic links in `~/.bashrc.d/`:
 ```bash
 mkdir -p ~/.bashrc.d
-ln -s /home/caballero/Workspace/Repositorios/Debian/Bash.Setup/*.sh ~/.bashrc.d/
+ln -s ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
 ---
@@ -37,11 +37,15 @@ ln -s /home/caballero/Workspace/Repositorios/Debian/Bash.Setup/*.sh ~/.bashrc.d/
 Defines global settings and performance optimizations for system tools:
 
 - **Default Editor**: Sets `nvim` (Neovim) as the global editor.
-- **Executable Paths (`PATH`)**: Adds local user directories to the environment path:
+- **Wayland/Qt**: `QT_QPA_PLATFORM="wayland;xcb"`, `MOZ_ENABLE_WAYLAND=1`, `ELECTRON_OZONE_PLATFORM_HINT="auto"`
+- **Executable Paths (`PATH`)**: Adds local user directories:
   - `~/.local/bin`
   - `~/bin`
-  - Cargo/Rust bin directory (`~/.cargo/bin`)
-- **Aesthetic Pager (`less` and `man`)**: Configures custom colors and flags to make Linux manual pages (`man`) and text viewing with `less` more readable.
+  - `~/.cargo/bin` (Rust/Cargo)
+  - `~/go/bin` (Go)
+- **MISE**: Polyglot version manager activation
+- **Podman**: Automatic `DOCKER_HOST` if socket exists
+- **Aesthetic Pager (`less` and `man`)**: Custom colors and flags for readable manual pages.
 
 ---
 
@@ -50,14 +54,15 @@ Defines global settings and performance optimizations for system tools:
 Optimizes shell interaction through internal adjustments.
 
 ### Advanced Shell Behavior (`options.sh`)
-* **`autocd`**: Allows changing directories by typing the path directly (without prefixing `cd`).
-* **`globstar`**: Enables recursive globbing pattern expansions (e.g. `ls **/*.js`).
-* **Directory Typo Correction**: Enables `cdspell` and `dirspell` to automatically fix minor typos when entering folder names.
+* **`autocd`**: Change directories by typing the path directly (no `cd` needed).
+* **`globstar`**: Recursive globbing patterns (e.g. `ls **/*.js`).
+* **Directory Typo Correction**: `cdspell` and `dirspell` for automatic typo fixes.
+* **Case-insensitive completion**: `bind 'set completion-ignore-case on'`.
 
 ### Command History (`history.sh`)
-* Expanded capacity of up to **10,000 commands** in memory and **20,000 in history file**.
-* Ignores duplicates and common commands (`history -a`, `histignore`).
-* Writes commands to the history file immediately after execution.
+* Expanded capacity: **10,000 commands** in memory, **20,000 in file**.
+* Ignores duplicates (`erasedups`) and common commands (`HISTIGNORE`).
+* Immediate write after each execution.
 
 ---
 
@@ -66,63 +71,81 @@ Optimizes shell interaction through internal adjustments.
 Replaces standard commands with enriched and safe alternatives:
 
 - **Security**:
-  - `rm -i` (prompt before deletion)
-  - `cp -i` (prompt before overwrite when copying)
-  - `mv -i` (prompt before overwrite when moving)
-  - Defensive `--preserve-root` flag enabled by default.
-- **File Visualization** (if `eza` and `bat` are installed):
-  - `ls` mapped to `eza` with icons and a clean structure.
-  - `cat` mapped to `bat` with syntax highlighting.
-- **Quick Navigation**:
-  - `..`, `...`, `....` to step up directories quickly.
-  - `c` to clear the screen (`clear`).
-  - `path` to list PATH directories on individual lines.
+  - `rm -i`, `cp -i`, `mv -i` (interactive confirmation)
+  - `--preserve-root` on `chown`, `chmod`, `chgrp`
+- **File Visualization** (if `eza` and `bat` installed):
+  - `ls` → `eza --icons --git --group-directories-first`
+  - `cat` → `bat --paging=never`
+- **Package Management (Pacman/Paru)**:
+  - `update` → `sudo pacman -Syu`
+  - `install` → `sudo pacman -S`
+  - `aur` → `paru` or `yay` (whichever is available)
+  - `rate-mirrors` → `cachyos-rate-mirrors`
+- **KDE Plasma**:
+  - `open` / `o` → `xdg-open`
+  - `dolphin` → Opens Dolphin in current directory
+  - `clipcopy` / `clippaste` → Wayland/X11 clipboard
+- **Kernel Check**: `check-kernel` compares active kernel vs kernel.org
 
 ---
 
 ## 5. System Functions & Utilities (`functions.sh`)
 
-Includes helper shell functions to simplify recurring tasks:
+Helper shell functions to simplify recurring tasks:
 
-* **`extract`**: Automatically extracts almost any compressed file format (`.zip`, `.tar.gz`, `.bz2`, `.rar`, etc.) without needing to recall specific decompression flags.
-* **`mkcd`**: Creates a folder and immediately changes into it with a single command.
-* **`up <N>`**: Steps up `N` directory levels easily (e.g. `up 3`).
-* **`duh`**: Displays folder sizes in the current directory, sorted by weight on disk.
+* **`extract`**: Automatically extracts any compressed file format.
+* **`mkcd`**: Creates a folder and changes into it.
+* **`up <N>`**: Steps up `N` directory levels.
+* **`duh`**: Displays folder sizes sorted by disk weight.
 * **Multimedia Processing**:
-  - `webm2mp4`: Converts WebM screen recordings (common in GNOME) to standard MP4 files.
-  - `img2jpg` / `img2png`: Rapidly converts and optimizes image formats via console.
+  - `webm2mp4`: Converts WebM to MP4.
+  - `transcode-video-1080p` / `transcode-video-4k`: Transcodes video.
+  - `img2jpg` / `img2png`: Converts and optimizes images.
 
 ---
 
-## 6. Cloud Sync and Downloads (`rclone_aliases.sh` and `yt-dlp_aliases.sh`)
+## 6. KDE Plasma 6 Configuration (`kde_settings.sh`)
 
-Automates remote storage synchronization and media downloads.
+Applies automatic configurations for the KDE Plasma 6 desktop environment:
+
+- **Touchpad**: Tap-to-click, natural scrolling
+- **Window Buttons**: Minimize, Maximize, Close on the right
+- **Clock**: 24-hour format, ISO date
+- **KWin**: Reload configuration without restarting session
+- **KCM Shell**: Shortcuts to configuration modules (displays, wifi, audio, bluetooth, etc.)
+- **Themes**: `kde-theme-dark`, `kde-theme-light`, `kde-set-wallpaper`
+- **Spectacle**: `captura` (region capture), `grabacion` (screen recording)
+- **Plasmoids**: `plasmoids-list`, `kwin-scripts-list`
+
+---
+
+## 7. Cloud Sync and Downloads (`rclone_aliases.sh` and `yt-dlp_aliases.sh`)
 
 ### Rclone Synchronization
-Facilita cloud syncing (bidirectional or copy) with services like Google Drive using controlled transaction limits to avoid API throttling:
-- `rclone-documentos`: Synchronizes local -> cloud.
-- `rclone-videos-down`: Downloads media files from the cloud to the local machine.
+Facilitates cloud syncing with Google Drive and OneDrive:
+- `rclone-documentos`: Syncs local → cloud
+- `rclone-videos-down`: Downloads media from cloud
+- `rclone-onedrive-down`: Downloads from OneDrive
 
 ### yt-dlp Downloads
-Utilities to automate media extraction:
-- `ytvideo <URL>`: Downloads video in optimal quality (1080p).
-- `ytaudio <URL>`: Downloads and converts stream to high-fidelity MP3.
-- `ytlista-audio <URL>`: Downloads complete playlists converted to MP3.
-
----
-
-## 7. GNOME Environment (`gnome_settings.sh`)
-
-Applies automatic configurations for the GNOME desktop environment:
-- Enables Night Light (blue-light filter).
-- Configures 24-hour time format and full date on the top panel.
-- Optimizes animation speeds and quick extension management.
+- `ytvideo <URL>`: Downloads video in 1080p
+- `ytaudio <URL>`: Downloads and converts to MP3
+- `ytlista <URL>`: Downloads playlists
+- `ytdl-subs <URL>`: Downloads with Spanish subtitles
 
 ---
 
 ## 8. Container Functions (`podman-functions.sh`)
 
-Aliases and helper functions that simplify container and Podman Pod operations:
-- `psh <container>`: Opens an interactive shell inside the specified container.
-- `plogs <container>`: Follows container logs in real time.
-- `pclean`: Performs a complete system purge of unused containers and images.
+Aliases and helper functions for Podman and Quadlets:
+
+- `p` → `podman`
+- `pps` → `podman ps` with table format
+- `pexec <container>`: Execute commands in container
+- `plogs <container>`: View logs in real-time
+- `pinfo <container>`: Inspect container
+- `pclean-total`: Complete system cleanup
+- **Quadlets**:
+  - `quadlet-reload`: `systemctl --user daemon-reload`
+  - `quadlet-status`: Status of container-* services
+  - `quadlet-logs <service>`: Quadlet service logs

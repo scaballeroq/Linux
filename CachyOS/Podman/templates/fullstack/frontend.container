@@ -1,0 +1,21 @@
+[Unit]
+Description=Frontend for __PROJECT__
+Requires=network-online.target
+After=network-online.target __PROJECT__-backend.service
+
+[Container]
+ContainerName=__PROJECT__-frontend
+Image=docker.io/library/node:22-alpine
+EnvironmentFile=%h/Workspace/Repositorios/Linux/Podman/projects/__PROJECT__/.env
+WorkingDir=/app
+Volume=__PROJECT_DIR__/frontend:/app:ro
+Command=sh -c "npm install && npm run dev"
+PublishPort=${FRONTEND_PORT:-3000}:${FRONTEND_PORT:-3000}
+Network=__PROJECT__.network
+
+[Service]
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=__PROJECT__.target

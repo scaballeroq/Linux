@@ -1,6 +1,6 @@
-# 🔧 CachyOS Environment Configuration (GNOME Desktop)
+# 🔧 CachyOS Environment Configuration (KDE Plasma 6)
 
-This repository contains a modular collection of configuration scripts for **CachyOS** systems (Arch Linux based, optimized for x86-64-v3/v4 performance) running the **GNOME** desktop environment. The objective is to automate the setup of a professional, performant, and aesthetically pleasing development environment.
+This repository contains a modular collection of configuration scripts for **CachyOS** systems (Arch Linux based, optimized for x86-64-v3/v4 performance) running the **KDE Plasma 6** desktop environment. The objective is to automate the setup of a professional, performant, and aesthetically pleasing development environment.
 
 ---
 
@@ -9,22 +9,23 @@ This repository contains a modular collection of configuration scripts for **Cac
 ### 🐚 [Bash.Setup](./Bash.Setup/)
 Core Bash shell configuration.
 - **`aliases.sh`**: Frequently used command shortcuts and package manager aliases (`pacman` / `paru`).
-- **`environment.sh`**: Global environment variables (`EDITOR`, `PATH`, etc.).
+- **`environment.sh`**: Global environment variables (`EDITOR`, `PATH`, Wayland/Qt flags, etc.).
 - **`functions.sh`**: Advanced shell functions and multimedia processing utilities.
-- **`gnome_settings.sh`**: GNOME desktop environment tweaks and shortcuts.
+- **`kde_settings.sh`**: KDE Plasma 6 desktop environment tweaks, KWin, Spectacle, and shortcuts.
 - **`history.sh`**: Bash history settings.
 - **`options.sh`**: Shell options (`shopt`, `bind`).
-- **`podman-functions.sh`**: Container management shortcuts and functions.
+- **`podman-functions.sh`**: Container management shortcuts and Quadlets functions.
 - **`rclone_aliases.sh`**: Cloud storage synchronization shortcuts.
 - **`yt-dlp_aliases.sh`**: Optimized video/audio downloader shortcuts.
 
 ### 🐳 [Podman](./Podman/)
-Isolated container deployment scripts:
-- **Core**: `podman.sh` (CachyOS Podman rootless setup)
-- **Databases**: `podman-postgres.sh`, `podman-mysql.sh`, `podman-mongodb.sh`, `podman-redis.sh`
-- **Monitoring & Management**: `podman-portainer.sh`, `podman-adminer.sh`, `podman-dozzle.sh`, `podman-grafana.sh`, `podman-prometheus.sh`, `podman-jaeger.sh`
-- **Infrastructure**: `podman-nginx.sh`, `podman-keycloak.sh`, `podman-rabbitmq.sh`, `podman-minio.sh`, `podman-mailhog.sh`, `podman-browserless.sh`
-- **CMS/Frameworks**: `podman-wordpress.sh`, `podman-storybook.sh`
+Rootless container ecosystem with Quadlets (systemd native):
+- **`install/podman-install.sh`**: Rootless Podman setup, socket, linger, registries, environment.d.
+- **`install/quadlets-setup.sh`**: Systemd Quadlets directories and shared services setup.
+- **`lib/podman-utils.sh`**: Full CLI for project management (create, start, stop, logs, status, destroy).
+- **`projects/`**: Directory for active projects.
+- **`services-shared/`**: Global shared services (PostgreSQL, Redis, Traefik, Keycloak).
+- **`templates/`**: Project templates (python-postgres, python-postgres-redis, fullstack).
 
 ### 🖥️ [Virtualization](./Virtualizacion/)
 - **`virtualization.sh`**: KVM/QEMU and `libvirtd` setup optimized for CachyOS.
@@ -32,25 +33,31 @@ Isolated container deployment scripts:
 
 ### ⚙️ [Setup](./Setup/)
 OS configuration, hardening, and styling scripts:
-- **`post-install.sh`**: Master post-installation script for CachyOS.
-- **`apariencia.sh`**: Papirus icon theme installation.
+- **`post-install.sh`**: Smart dispatcher with auto CPU detection (AMD Ryzen vs Intel Core).
+- **`post-install-amd.sh`**: AMD Ryzen optimized post-install (ZRAM, RADV, Mesa, PipeWire).
+- **`post-install-intel.sh`**: Intel Core optimized post-install (VA-API Intel, PipeWire).
+- **`laptop-setup.sh`**: Laptop optimization (Touchpad, Bluetooth, HiDPI, VRR).
+- **`fingerprint-setup.sh`**: Fingerprint authentication setup (`fprintd`, PAM, `polkit`).
+- **`cachyos-tuning.sh`**: Kernel sysctl, Baloo, Systemd, Distrobox, and system limits tuning.
+- **`apariencia.sh`**: Theme manager with Kvantum, Papirus, Breeze, and GTK/Qt integration.
 - **`cockpit.sh`**: Cockpit web management console setup.
 - **`fastfetch.sh`**: System info fetch initialization.
-- **`firefox.sh`**: Optimized Firefox build (`firefox-cachyos`).
 - **`fonts.sh`**: Automated Nerd Fonts installer.
-- **`ptyxis.sh`**: Ptyxis terminal appearance configuration.
-- **`seguridad.sh`**: Firewall (UFW) configuration.
+- **`kitty.sh`**: GPU-accelerated Kitty terminal with opacity/blur and Catppuccin theme.
+- **`plymouth-setup.sh`**: Boot splash screen manager (Breeze, BGRT, Spinner).
+- **`seguridad.sh`**: Hardening with Firewalld, DNS-over-TLS, MAC Randomization, and sysctl.
 - **`shell.sh`**: Modern CLI utilities (`eza`, `bat`, `fd`, `zoxide`, `ripgrep`) & `Starship` prompt.
 - **`yt-dlp-setup.sh`**: Multimedia dependencies.
 
 ### 💻 [IDE](./IDE/)
-- **`antigravity.sh`**: Google Antigravity setup.
-- **`neovim.sh`**: Neovim & LazyVim setup.
-- **`vscode.sh`**: Visual Studio Code installer.
-
-### 🛠️ [Git](./Git/)
+- **`antigravity.sh`**: Google Antigravity Desktop setup.
+- **`antigravity-cli.sh`**: Google Antigravity CLI setup.
+- **`antigravity-ide.sh`**: Google Antigravity IDE Engine setup.
 - **`git.sh`**: Git, Delta, and Lazygit setup.
 - **`github-cli.sh`**: GitHub CLI installer.
+- **`neovim.sh`**: Neovim & LazyVim setup.
+- **`opencode.sh`**: OpenCode AI CLI setup.
+- **`vscode.sh`**: Visual Studio Code installer.
 
 ### ⚡ [ProgrammingLanguages](./ProgrammingLanguages/)
 Runtime management with **mise**.
@@ -58,7 +65,7 @@ Runtime management with **mise**.
 - **`angular.sh`**, **`dotnet.sh`**, **`gemini.sh`**, **`java.sh`**, **`nodejs.sh`**, **`python.sh`**, **`rust.sh`**
 
 ### 📦 [Apps](./Apps/) & 🎮 [Juegos](./Juegos/)
-- **`meld.sh`**: Diff tool.
+- **`meld.sh`**: Diff/merge tool.
 - **`steam.sh`**: Steam with Proton CachyOS.
 
 ---
@@ -68,7 +75,7 @@ Runtime management with **mise**.
 ```bash
 git clone https://github.com/scaballeroq/Environment-Configuration.git
 cd Repos-Linux/CachyOS
-chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/*.sh Git/*.sh Apps/*.sh Juegos/*.sh
+chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/install/*.sh Podman/lib/*.sh Apps/*.sh Juegos/*.sh
 just setup-all
 ```
 

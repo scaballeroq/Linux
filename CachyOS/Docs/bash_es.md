@@ -2,7 +2,7 @@
 sidebar_position: 3
 ---
 
-# Configuración de Bash en Debian 13
+# Configuración de Bash en CachyOS
 
 Esta guía detalla la configuración del entorno de terminal (Bash) y las utilidades integradas en los scripts modulares de la carpeta `Bash.Setup`.
 
@@ -27,7 +27,7 @@ fi
 Puedes habilitarlos creando enlaces simbólicos en `~/.bashrc.d/`:
 ```bash
 mkdir -p ~/.bashrc.d
-ln -s /home/caballero/Workspace/Repositorios/Debian/Bash.Setup/*.sh ~/.bashrc.d/
+ln -s ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
 ---
@@ -37,11 +37,15 @@ ln -s /home/caballero/Workspace/Repositorios/Debian/Bash.Setup/*.sh ~/.bashrc.d/
 Define configuraciones globales y optimizaciones para las herramientas del sistema:
 
 - **Editor Predeterminado**: Se establece `nvim` (Neovim) como editor global.
-- **Ruta de Ejecutables (`PATH`)**: Se añaden directorios locales del usuario a la variable de entorno:
+- **Wayland/Qt**: `QT_QPA_PLATFORM="wayland;xcb"`, `MOZ_ENABLE_WAYLAND=1`, `ELECTRON_OZONE_PLATFORM_HINT="auto"`
+- **Ruta de Ejecutables (`PATH`)**: Se añaden directorios locales del usuario:
   - `~/.local/bin`
   - `~/bin`
-  - Carpeta de binarios de Cargo/Rust (`~/.cargo/bin`)
-- **Paginación Estética (`less` y `man`)**: Se configuran colores y flags para hacer las páginas del manual de Linux (`man`) y la visualización de texto con `less` más legibles.
+  - `~/.cargo/bin` (Rust/Cargo)
+  - `~/go/bin` (Go)
+- **MISE**: Activación del gestor de versiones polyglot
+- **Podman**: `DOCKER_HOST` automático si el socket existe
+- **Paginación Estética (`less` y `man`)**: Colores y flags para hacer las páginas del manual más legibles.
 
 ---
 
@@ -50,14 +54,15 @@ Define configuraciones globales y optimizaciones para las herramientas del siste
 Optimiza la interacción de la shell mediante ajustes internos.
 
 ### Comportamiento Avanzado (`options.sh`)
-* **`autocd`**: Permite cambiar de directorio escribiendo solo la ruta (sin necesidad de anteponer `cd`).
-* **`globstar`**: Habilita la expansión recursiva de patrones de búsqueda (ej. `ls **/*.js`).
-* **Corrección de Directorios**: Habilita `cdspell` y `dirspell` para corregir automáticamente pequeños errores tipográficos al escribir nombres de carpetas.
+* **`autocd`**: Permite cambiar de directorio escribiendo solo la ruta (sin `cd`).
+* **`globstar`**: Habilita la expansión recursiva de patrones (ej. `ls **/*.js`).
+* **Corrección de Directorios**: `cdspell` y `dirspell` para corregir errores tipográficos.
+* **Completado insensible a mayúsculas**: `bind 'set completion-ignore-case on'`.
 
 ### Historial de Comandos (`history.sh`)
-* Capacidad expandida de hasta **10,000 comandos** en memoria y **20,000 en archivo**.
-* Omisión de duplicados y comandos comunes (`history -a`, `histignore`).
-* Escritura inmediata de comandos al archivo de historial tras cada ejecución.
+* Capacidad expandida: **10,000 comandos** en memoria, **20,000 en archivo**.
+* Omisión de duplicados (`erasedups`) y comandos comunes (`HISTIGNORE`).
+* Escritura inmediata tras cada ejecución.
 
 ---
 
@@ -66,17 +71,21 @@ Optimiza la interacción de la shell mediante ajustes internos.
 Sustituye comandos estándar por alternativas enriquecidas y seguras:
 
 - **Seguridad**:
-  - `rm -i` (confirmar borrado de archivos)
-  - `cp -i` (confirmar sobreescritura al copiar)
-  - `mv -i` (confirmar sobreescritura al mover)
-  - Medida preventiva `--preserve-root` habilitada por defecto.
-- **Visualización de Archivos** (si están instalados `eza` y `bat`):
-  - `ls` mapeado a `eza` con iconos y estructura limpia.
-  - `cat` mapeado a `bat` con resaltado de sintaxis.
-- **Accesos Rápidos**:
-  - `..`, `...`, `....` para subir directorios rápidamente.
-  - `c` para limpiar pantalla (`clear`).
-  - `path` para listar las rutas de la variable PATH formateadas en líneas individuales.
+  - `rm -i`, `cp -i`, `mv -i` (confirmación interactiva)
+  - `--preserve-root` en `chown`, `chmod`, `chgrp`
+- **Visualización** (si están instalados `eza` y `bat`):
+  - `ls` → `eza --icons --git --group-directories-first`
+  - `cat` → `bat --paging=never`
+- **Gestión de Paquetes (Pacman/Paru)**:
+  - `update` → `sudo pacman -Syu`
+  - `install` → `sudo pacman -S`
+  - `aur` → `paru` o `yay` (según disponible)
+  - `rate-mirrors` → `cachyos-rate-mirrors`
+- **KDE Plasma**:
+  - `open` / `o` → `xdg-open`
+  - `dolphin` → Abre Dolphin en directorio actual
+  - `clipcopy` / `clippaste` → Portapapeles Wayland/X11
+- **Kernel Check**: `check-kernel` compara kernel activo vs kernel.org
 
 ---
 
@@ -84,45 +93,59 @@ Sustituye comandos estándar por alternativas enriquecidas y seguras:
 
 Incluye funciones en bash para simplificar tareas recurrentes:
 
-* **`extract`**: Extrae automáticamente casi cualquier archivo comprimido (`.zip`, `.tar.gz`, `.bz2`, `.rar`, etc.) sin tener que recordar las flags específicas del descompresor.
-* **`mkcd`**: Crea una nueva carpeta y entra automáticamente en ella con un solo comando.
-* **`up <N>`**: Sube `N` niveles en el árbol de directorios de manera sencilla (ej. `up 3`).
-* **`duh`**: Muestra el tamaño de las carpetas en el directorio actual, ordenadas por su peso en disco.
+* **`extract`**: Extrae automáticamente casi cualquier archivo comprimido.
+* **`mkcd`**: Crea una carpeta y entra en ella.
+* **`up <N>`**: Sube `N` niveles en el árbol de directorios.
+* **`duh`**: Muestra tamaño de carpetas ordenadas por peso.
 * **Procesamiento Multimedia**:
-  - `webm2mp4`: Convierte grabaciones en formato WebM (comunes en el escritorio de GNOME) a MP4 estándar.
-  - `img2jpg` / `img2png`: Convierte y optimiza imágenes rápidamente vía consola.
+  - `webm2mp4`: Convierte WebM a MP4.
+  - `transcode-video-1080p` / `transcode-video-4k`: Transcodifica video.
+  - `img2jpg` / `img2png`: Convierte y optimiza imágenes.
 
 ---
 
-## 6. Sincronización en la Nube (`rclone_aliases.sh` e `yt-dlp_aliases.sh`)
+## 6. Configuración de KDE Plasma 6 (`kde_settings.sh`)
 
-Automatiza la gestión de almacenamiento y descargas externas.
+Aplica configuraciones automáticas para el entorno de escritorio KDE Plasma 6:
+
+- **Touchpad**: Tap-to-click, desplazamiento natural
+- **Botones de ventana**: Minimizar, Maximizar, Cerrar a la derecha
+- **Reloj**: Formato 24 horas, fecha ISO
+- **KWin**: Recargar configuración sin reiniciar sesión
+- **KCM Shell**: Accesos directos a módulos de configuración (pantallas, wifi, audio, bluetooth, etc.)
+- **Temas**: `kde-theme-dark`, `kde-theme-light`, `kde-set-wallpaper`
+- **Spectacle**: `captura` (captura de región), `grabacion` (grabación de pantalla)
+- **Plasmoids**: `plasmoids-list`, `kwin-scripts-list`
+
+---
+
+## 7. Sincronización en la Nube (`rclone_aliases.sh` e `yt-dlp_aliases.sh`)
 
 ### Sincronización Rclone
-Facilita la sincronización y copia bidireccional con servicios como Google Drive mediante límites controlados de transacciones para evitar bloqueos del servicio:
-- `rclone-documentos`: Sincroniza local -> nube.
-- `rclone-videos-down`: Descarga archivos multimedia de la nube al equipo local.
+Facilita la sincronización con Google Drive y OneDrive:
+- `rclone-documentos`: Sincroniza local → nube
+- `rclone-videos-down`: Descarga archivos multimedia de la nube
+- `rclone-onedrive-down`: Descarga desde OneDrive
 
 ### Descargas yt-dlp
-Utilidades para automatizar la extracción multimedia:
-- `ytvideo <URL>`: Descarga video en calidad óptima (1080p).
-- `ytaudio <URL>`: Descarga y convierte a formato MP3 de alta fidelidad.
-- `ytlista-audio <URL>`: Descarga listas de reproducción completas convertidas a MP3.
-
----
-
-## 7. Entorno GNOME (`gnome_settings.sh`)
-
-Aplica configuraciones automáticas para el entorno de escritorio GNOME:
-- Habilitación de la luz nocturna nocturna (filtro de luz azul).
-- Configuración del formato horario de 24 horas y fecha completa en la barra superior.
-- Optimización de velocidad de animaciones e instalación rápida de extensiones.
+- `ytvideo <URL>`: Descarga video en 1080p
+- `ytaudio <URL>`: Descarga y convierte a MP3
+- `ytlista <URL>`: Descarga listas de reproducción
+- `ytdl-subs <URL>`: Descarga con subtítulos en español
 
 ---
 
 ## 8. Funciones para Contenedores (`podman-functions.sh`)
 
-Aliases y funciones que simplifican el control de contenedores y Pods de Podman:
-- `psh <contenedor>`: Abre una shell interactiva dentro del contenedor indicado.
-- `plogs <contenedor>`: Muestra e interactúa con los logs en tiempo real.
-- `pclean`: Realiza una purga completa de imágenes y contenedores sin uso en el sistema.
+Aliases y funciones que simplifican el control de contenedores con Podman y Quadlets:
+
+- `p` → `podman`
+- `pps` → `podman ps` con formato de tabla
+- `pexec <contenedor>`: Ejecutar comandos en contenedor
+- `plogs <contenedor>`: Ver logs en tiempo real
+- `pinfo <contenedor>`: Inspeccionar contenedor
+- `pclean-total`: Limpieza completa del sistema
+- **Quadlets**:
+  - `quadlet-reload`: `systemctl --user daemon-reload`
+  - `quadlet-status`: Estado de servicios container-*
+  - `quadlet-logs <servicio>`: Logs de servicio Quadlet

@@ -2,9 +2,9 @@
 sidebar_position: 2
 ---
 
-# Configuración del Sistema en Debian 13
+# Configuración del Sistema en CachyOS
 
-Esta guía detalla el proceso de configuración base, optimización de la terminal, instalación de herramientas esenciales, soporte multimedia y personalización del entorno de usuario aplicados a un sistema Debian 13 (Trixie).
+Esta guía detalla el proceso de configuración base, optimización de la terminal, instalación de herramientas esenciales, soporte multimedia y personalización del entorno de usuario aplicados a un sistema **CachyOS** (Arch Linux, optimizado para x86-64-v3/v4) con **KDE Plasma 6**.
 
 Las configuraciones están automatizadas a través de los scripts ubicados en la carpeta `Setup`.
 
@@ -12,34 +12,37 @@ Las configuraciones están automatizadas a través de los scripts ubicados en la
 
 ## 1. Post-Instalación Base (`post-install.sh`)
 
-Prepara el sistema base configurando repositorios oficiales adicionales, instalando software esencial y configurando la aceleración por hardware.
+Prepara el sistema base optimizando espejos, instalando software esencial y configurando la aceleración por hardware. El script detecta automáticamente el procesador (AMD Ryzen vs Intel Core) y ejecuta la configuración correspondiente.
 
-1. **Actualización base del sistema**:
+1. **Auto-detección de CPU**:
    ```bash
-   sudo apt update && sudo apt upgrade -y
+   CPU_VENDOR=$(grep -m1 'vendor_id' /proc/cpuinfo | awk '{print $3}')
    ```
+   - `AuthenticAMD` → Ejecuta `post-install-amd.sh`
+   - `GenuineIntel` → Ejecuta `post-install-intel.sh`
 
-2. **Habilitación de repositorios Extra** (Contrib, Non-Free, Non-Free-Firmware y Backports):
-   ```bash
-   sudo apt-add-repository -y contrib non-free non-free-firmware
-   # Añadir repositorio de Backports
-   CODENAME=$(grep '^VERSION_CODENAME=' /etc/os-release | cut -d= -f2)
-   echo "deb http://deb.debian.org/debian ${CODENAME}-backports main contrib non-free non-free-firmware" | sudo tee /etc/apt/sources.list.d/backports.list
-   sudo apt update
-   ```
+2. **Optimización de Pacman**:
+   - ParallelDownloads = 10
+   - Color habilitado
+   - Espejos optimizados con `cachyos-rate-mirrors`
 
 3. **Software Esencial**:
    Instala utilidades de compilación, monitorización de sistema y compatibilidad:
-   - Compilación: `build-essential`, `cmake`
+   - Compilación: `base-devel`, `cmake`
    - Monitorización: `btop`, `htop`, `inxi`
-   - Utilidades: `curl`, `fuse3`, `libfuse2t64`, `exfatprogs`, `p7zip`, `unrar`, `zip`, `unzip`, `bzip2`, `xz-utils`
+   - Utilidades: `curl`, `fuse2`, `fuse3`, `exfatprogs`, `7zip`, `unrar`, `zip`, `unzip`, `bzip2`, `xz`
    - Gráficos y Multimedia: `vlc`, `gimp`, `gparted`
-   - Paquetes universales: `flatpak`, `gnome-software-plugin-flatpak`
+   - Paquetes universales: `flatpak`
 
 4. **Codecs Multimedia y Aceleración HW**:
    ```bash
-   sudo apt install -y libavcodec-extra ffmpeg mesa-va-drivers mesa-vdpau-drivers
+   # AMD
+   sudo pacman -S --needed --noconfirm mesa libva-mesa-driver vulkan-radeon
+   # Intel
+   sudo pacman -S --needed --noconfirm mesa libva-intel-driver intel-media-driver vulkan-intel
    ```
+
+5. **ZRAM**: Configurado con algoritmo ZSTD al 50% de RAM.
 
 ---
 
@@ -54,30 +57,18 @@ Se instalan alternativas modernas a comandos clásicos:
 - `fzf` (buscador difuso)
 - `zoxide` (reemplazo inteligente de `cd`)
 - `ripgrep` (`rg`, búsqueda rápida de texto)
-- `fd-find` (`fd`, reemplazo simple de `find`)
-- `tealdeer` (`tldr`, hojas de trucos simplificadas de man)
+- `fd` (reemplazo simple de `find`)
 - `duf` (reemplazo visual de `df`)
-- `du-dust` (`dust`, visualizador de espacio en disco)
+- `dust` (visualizador de espacio en disco)
 - `procs` (reemplazo moderno de `ps`)
-
-En Debian, para evitar conflictos de nombres, se configuran enlaces simbólicos:
-```bash
-mkdir -p ~/.local/bin
-ln -sf /usr/bin/batcat ~/.local/bin/bat
-ln -sf /usr/bin/fdfind ~/.local/bin/fd
-```
+- `btop` (monitor de recursos)
 
 ### Prompt Starship
 Se descarga y configura la versión más reciente del prompt de Starship:
 ```bash
-curl -sS https://starship.rs/install.sh | sh -s -- -y
+curl -sS https://starship.rs/install.sh | sudo sh -s -- -y -b /usr/local/bin
 ```
-La configuración es modular. Si el sistema soporta `.bashrc.d`, se crea el archivo `~/.bashrc.d/starship.sh`:
-```bash
-# Starship Prompt Configuration
-eval "$(starship init bash)"
-```
-Adicionalmente, se copia la configuración de diseño desde `Setup/starship.toml` a `~/.config/starship.toml`.
+La configuración es modular. Se copia `Setup/starship.toml` a `~/.config/starship.toml`.
 
 ### Fuentes de Desarrollo (Nerd Fonts)
 Descarga e instala fuentes optimizadas para programación y símbolos de terminal (`JetBrainsMono`, `FiraCode`, `CascadiaCode`, `Meslo` y `Hack`):
@@ -92,119 +83,106 @@ Muestra información del sistema de manera visual y estética al abrir la termin
 
 ---
 
-## 3. Terminal Moderno Ptyxis (`ptyxis.sh`)
+## 3. Terminal Kitty (`kitty.sh`)
 
-Instala y optimiza **Ptyxis**, un emulador de terminal moderno diseñado para GNOME, junto con integración en el gestor de archivos Nautilus.
+Instala y optimiza **Kitty**, un emulador de terminal moderno acelerado por GPU, con integración en KDE Plasma y Dolphin.
 
 1. **Instalación**:
    ```bash
-   sudo apt install -y ptyxis python3-nautilus gir1.2-gtk-4.0 gettext build-essential git make
+   sudo pacman -S --needed --noconfirm kitty
    ```
 
-2. **Extensión "Nautilus Open Any Terminal"**:
-   Permite abrir terminales en el directorio actual directamente desde Nautilus. Se clona y compila desde su repositorio oficial:
-   ```bash
-   git clone https://github.com/Stunkymonkey/nautilus-open-any-terminal.git
-   cd nautilus-open-any-terminal
-   make && sudo make install schema
-   sudo glib-compile-schemas /usr/share/glib-2.0/schemas
-   # Configurar ptyxis como la terminal por defecto de la extensión
-   gsettings set com.github.stunkymonkey.nautilus-open-any-terminal terminal ptyxis
-   gsettings set com.github.stunkymonkey.nautilus-open-any-terminal new-tab true
-   ```
+2. **Configuración Estética**:
+   - Opacidad al 75% con desenfoque (blur 32)
+   - Tema de colores Catppuccin Mocha
+   - Fuente JetBrainsMono Nerd Font
+   - Tab bar con estilo powerline
 
-3. **Atajo de Teclado Global (Ctrl + Alt + T)**:
-   Registra un atajo de teclado en GNOME para abrir Ptyxis automáticamente.
+3. **Integración con KDE Plasma**:
+   - Terminal predeterminado de KDE
+   - Atajo global Ctrl+Alt+T
+   - Menú contextual en Dolphin: "Abrir en Kitty"
 
-4. **Estilo Estético**:
-   Configura opacidad al 85% para un efecto de transparencia moderno, activa la interfaz oscura por defecto y oculta la barra de desplazamiento lateral:
-   ```bash
-   PROFILE_UUID=$(gsettings get org.gnome.Ptyxis default-profile-uuid | tr -d "'")
-   gsettings set "org.gnome.Ptyxis.Profile:/org/gnome/Ptyxis/Profiles/${PROFILE_UUID}/" opacity 0.85
-   gsettings set org.gnome.Ptyxis interface-style 'dark'
-   gsettings set org.gnome.Ptyxis scrollbar-policy 'never'
-   ```
+4. **Atajos de teclado**:
+   - `Ctrl+Alt+Arriba/Abajo`: Ajustar opacidad
+   - `Ctrl+Shift+F5`: Recargar configuración
+   - `Ctrl+Shift+T`: Nueva pestaña en mismo directorio
 
 ---
 
-## 4. Instalación de Firefox Oficial (`firefox.sh`)
+## 4. Splash Screen de Arranque (`plymouth-setup.sh`)
 
-Reemplaza la versión ESR (Extended Support Release) predeterminada de Debian por las versiones oficiales estables y de desarrollo directamente de Mozilla.
+Gestiona el splash screen visual durante el arranque del sistema.
 
-1. **Importación de Clave GPG y Repositorio de Mozilla**:
-   ```bash
-   sudo mkdir -p /etc/apt/keyrings
-   wget -q https://packages.mozilla.org/apt/repo-signing-key.gpg -O- | sudo tee /etc/apt/keyrings/packages.mozilla.org.asc > /dev/null
-   echo "deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main" | sudo tee /etc/apt/sources.list.d/mozilla.list > /dev/null
-   ```
+```bash
+# Activar tema Breeze (recomendado para KDE)
+./Setup/plymouth-setup.sh breeze
 
-2. **Configuración de Preferencia de Paquetes (APT Pinning)**:
-   Se crea `/etc/apt/preferences.d/mozilla` para priorizar los paquetes del repositorio de Mozilla sobre los de Debian:
-   ```ini
-   Package: *
-   Pin: origin packages.mozilla.org
-   Pin-Priority: 1000
-   ```
+# Listar temas disponibles
+./Setup/plymouth-setup.sh --list
 
-3. **Purga de Firefox ESR e Instalación de Firefox Oficial**:
-   ```bash
-   sudo apt purge -y firefox-esr firefox-esr-l10n-*
-   sudo apt update
-   sudo apt install -y firefox firefox-l10n-es-es firefox-nightly firefox-nightly-l10n-es-es
-   ```
+# Desactivar splash gráfico
+./Setup/plymouth-setup.sh --disable
+```
 
 ---
 
-## 5. Panel de Administración Cockpit (`cockpit.sh`)
+## 5. Apariencia y Temas (`apariencia.sh`)
 
-Instala Cockpit para administrar el servidor o máquina local mediante una cómoda interfaz web.
+Gestor completo de apariencia para KDE Plasma 6 con Kvantum, Papirus e integración GTK/Qt.
 
-1. **Instalación de Cockpit y extensiones**:
-   Instala soporte para la administración de paquetes, almacenamiento, redes, máquinas virtuales (`cockpit-machines`) y contenedores (`cockpit-podman`):
-   ```bash
-   sudo apt install -y cockpit cockpit-podman cockpit-machines cockpit-packagekit cockpit-storaged cockpit-networkmanager
-   ```
+```bash
+# Aplicar tema oscuro con Kvantum
+./Setup/apariencia.sh --dark
 
-2. **Habilitación de Socket**:
-   Para ahorrar recursos, Cockpit arranca únicamente cuando se accede a su puerto:
-   ```bash
-   sudo systemctl enable --now cockpit.socket
-   ```
+# Aplicar tema claro
+./Setup/apariencia.sh --light
 
-3. **Apertura en el Firewall**:
-   ```bash
-   sudo ufw allow 9090/tcp
-   ```
+# Ver estado visual actual
+./Setup/apariencia.sh --status
+
+# Listar temas disponibles
+./Setup/apariencia.sh --list
+```
 
 ---
 
-## 6. Soporte Multimedia y yt-dlp (`yt-dlp-setup.sh`)
+## 6. Seguridad (`seguridad.sh`)
+
+Endurecimiento del sistema con Firewalld, DNS-over-TLS y MAC Randomization.
+
+- **Firewalld**: Zona FedoraWorkstation con kdeconnect, mdns, ssh
+- **DNS-over-TLS**: Opportunistic con systemd-resolved
+- **MAC Randomization**: Wi-Fi scan y connection
+- **Kernel hardening**: dmesg_restrict, kptr_restrict, syncookies
+- **Podman rootless**: user namespaces habilitados
+
+---
+
+## 7. Panel de Administración Cockpit (`cockpit.sh`)
+
+Instala Cockpit para administrar el sistema mediante una interfaz web.
+
+```bash
+sudo pacman -S --needed --noconfirm cockpit cockpit-podman cockpit-machines
+sudo systemctl enable --now cockpit.socket
+```
+
+Acceso: [https://localhost:9090](https://localhost:9090)
+
+---
+
+## 8. Soporte Multimedia y yt-dlp (`yt-dlp-setup.sh`)
 
 Configura las herramientas para descargas de video y procesamiento de audio digital.
 
-1. **Instalación de yt-dlp (Backports) y FFMPEG**:
-   Se requiere la versión de Backports para que `yt-dlp` esté al día con los cambios constantes en plataformas de streaming:
+1. **Instalación de yt-dlp y FFMPEG**:
    ```bash
-   sudo apt install -y -t trixie-backports yt-dlp
-   sudo apt install -y ffmpeg
+   sudo pacman -S --needed --noconfirm yt-dlp ffmpeg
    ```
 
 2. **Motor de descifrado rápido JS**:
-   Instala Deno mediante `mise` (o NodeJS a nivel de sistema como alternativa de respaldo) para permitir que `yt-dlp` procese la lógica JavaScript de plataformas de manera ultra-rápida:
-   ```bash
-   mise use --global deno@latest
-   ```
-
----
-
-## 7. Temas e Iconos de Escritorio (`apariencia.sh`)
-
-Aplica paquetes de diseño para un entorno visual limpio y homogéneo.
-
-1. **Instalación de Temas de Iconos**:
-   ```bash
-   sudo apt install -y papirus-icon-theme adwaita-icon-theme adwaita-icon-theme-legacy gnome-themes-extra
-   ```
+   Instala Deno mediante `mise` para permitir que `yt-dlp` procese la lógica JavaScript de plataformas de streaming.
 
 ---
 
@@ -213,6 +191,6 @@ Aplica paquetes de diseño para un entorno visual limpio y homogéneo.
 Para comprobar que los componentes principales se instalaron y configuraron correctamente:
 
 - **Terminal y Utilidades**: Abre una nueva terminal. Deberías ver el prompt de **Starship** cargado y el resumen de **Fastfetch** en pantalla. Prueba utilidades ejecutando `eza` o `bat --version`.
-- **Nautilus y Terminal**: Haz clic derecho dentro de cualquier carpeta en Nautilus. Deberías ver la opción "Abrir terminal aquí" y se debe desplegar **Ptyxis** con transparencia.
-- **Firefox**: Ejecuta `firefox --version` (debe mostrar el release oficial de Mozilla, no ESR).
-- **Cockpit**: Abre tu navegador e ingresa a [https://localhost:9090](https://localhost:9090). Inicia sesión con tus credenciales de usuario del sistema Debian.
+- **Kitty**: Ejecuta `kitty --version`. Debería abrirse con opacidad y tema Catppuccin.
+- **Cockpit**: Abre tu navegador e ingresa a [https://localhost:9090](https://localhost:9090). Inicia sesión con tus credenciales de usuario del sistema.
+- **Firewalld**: Verifica con `sudo firewall-cmd --state`.

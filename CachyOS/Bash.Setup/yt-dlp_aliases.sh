@@ -13,7 +13,7 @@ else
     JS_RUNTIME=""
 fi
 
-# Navegador predeterminado para cookies (Ubuntu suele usar firefox o chrome)
+# Navegador predeterminado para cookies (firefox o chrome)
 YT_BROWSER="firefox"
 
 # 1. DESCARGA DE VÍDEO

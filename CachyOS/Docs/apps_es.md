@@ -44,4 +44,4 @@ Para garantizar que el sistema mantenga su estabilidad sin mezclar librerías de
 Para comprobar que las herramientas se han instalado correctamente:
 
 - **Meld**: Ejecuta `meld` en consola o ábrelo desde tu lanzador de aplicaciones del escritorio.
-- **Steam**: Lanza Steam desde el menú de aplicaciones de tu escritorio GNOME. Al iniciar sesión, puedes habilitar Proton-GE en los ajustes de compatibilidad de Steam (Steam > Parámetros > Compatibilidad > Habilitar Steam Play).
+- **Steam**: Lanza Steam desde el menú de aplicaciones de tu escritorio KDE Plasma (Kickoff). Al iniciar sesión, puedes habilitar Proton-GE en los ajustes de compatibilidad de Steam (Steam > Parámetros > Compatibilidad > Habilitar Steam Play).

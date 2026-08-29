@@ -203,7 +203,7 @@ format-drive() {
 # webm2mp4: Convertir WebM a MP4
 # Uso: webm2mp4 <archivo.webm>
 # -----------------------------------------------------------------------------
-# Útil para convertir grabaciones de pantalla de GNOME a un formato más compatible.
+# Útil para convertir grabaciones de pantalla (WebM) a un formato más compatible (MP4).
 webm2mp4() {
   if [ $# -ne 1 ]; then echo "Uso: webm2mp4 <archivo.webm>"; return 1; fi
   if ! command -v ffmpeg &> /dev/null; then echo "❌ Faltan dependencias: ffmpeg"; return 1; fi

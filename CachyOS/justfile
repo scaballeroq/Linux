@@ -1,113 +1,221 @@
 # CachyOS Environment Configuration Justfile
+# (CachyOS + KDE Plasma 6)
 
-# Instala todo el entorno (Post-install, Workspace, Laptop, Tuning, Extensions, Shell, Virtualización, Mise, Cockpit, etc.)
-setup-all: post-install workspace laptop tuning extensions shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome
-    echo "🚀 Entorno completo de CachyOS configurado. Por favor, reinicia el sistema."
+# Instala todo el entorno por defecto (Auto-deteccion de CPU / Portatil AMD)
+setup-all: post-install laptop tuning plymouth shell security fonts apariencia fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+    @echo "🚀 Entorno completo de CachyOS (KDE Plasma 6) configurado. Por favor, reinicia el sistema."
 
-# Administración Web
-cockpit:
-    ./Setup/cockpit.sh
+# Perfil completo para Portatil de desarrollo (AMD Ryzen + Virtualizacion + Contenedores)
+setup-laptop-amd: post-install-amd laptop tuning plymouth shell security fonts apariencia fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+    @echo "🚀 Entorno Portatil AMD Ryzen configurado con exito. Por favor, reinicia el sistema."
 
-# Configuración base del sistema (Pacman / CachyOS Repos)
+# Perfil para Sobremesa (Intel Core - Sin virtualizacion ni bateria)
+setup-media-desktop: post-install-intel tuning plymouth shell security fonts apariencia fastfetch kitty yt-dlp
+    @echo "🚀 Entorno Sobremesa Intel configurado con exito. Por favor, reinicia el sistema."
+
+# =============================================================================
+# CONFIGURACION BASE DEL SISTEMA
+# =============================================================================
+
+# Configuracion base post-instalacion (Auto-deteccion inteligente: AMD Ryzen vs Intel Core)
 post-install:
     ./Setup/post-install.sh
 
-# Automontaje permanente de la partición Workspace (/home/caballero/Workspace) en /etc/fstab
-workspace:
-    ./Setup/mount-workspace.sh
+# Configuracion post-instalacion para AMD Ryzen (Kernel, firmware-amd, RADV, Mesa, PipeWire, KDE Plasma)
+post-install-amd:
+    ./Setup/post-install-amd.sh
 
-# Compilador de Kernel Linux optimizado para x86_64-v3 y ajustado a tu portátil
-build-kernel:
-    ./Setup/build-custom-kernel.sh
+# Configuracion post-instalacion para Intel Core (Kernel, microcodigo Intel, VA-API Intel, PipeWire, KDE Plasma)
+post-install-intel:
+    ./Setup/post-install-intel.sh
 
-# Optimización específica para Portátiles de desarrollo (Touchpad, Batería, Bluetooth, HiDPI)
+# Optimizacion para portatiles de desarrollo (Touchpad, Bateria, Bluetooth, tuned-ppd, persistencia de brillo 95%)
 laptop:
     ./Setup/laptop-setup.sh
 
-# Autenticación y desbloqueo por huella dactilar (fprintd, PAM, sudo, polkit)
+# Autenticacion y desbloqueo por huella dactilar (fprintd, PAM, sudo, polkit)
 fingerprint:
     ./Setup/fingerprint-setup.sh
 
-# Optimizaciones avanzadas de CachyOS (Sysctl, Ananicy-cpp, Distrobox)
+# Optimizaciones avanzadas de rendimiento (Sysctl, limites, Systemd, Baloo, Distrobox para CachyOS + KDE Plasma)
 tuning:
     ./Setup/cachyos-tuning.sh
 
-# Instalación automatizada de conectores y las 17 extensiones de GNOME
-extensions:
-    ./Setup/gnome-extensions.sh
+# Configuracion y activacion de Splash Screen visual de arranque (Plymouth: Breeze / BGRT / Spinner)
+plymouth:
+    ./Setup/plymouth-setup.sh
 
-# Utilidades de terminal y prompt
+# Utilidades de terminal y prompt (eza, bat, fzf, zoxide, ripgrep, starship)
 shell:
     ./Setup/shell.sh
 
-# Configuración de KVM/QEMU
-virtualization:
-    ./Virtualizacion/virtualization.sh
-
-# Gestor de runtimes Mise
-mise:
-    ./ProgrammingLanguages/mise.sh
-
-# Seguridad y Endurecimiento (UFW)
+# Seguridad y cortafuegos (Firewalld, DNS-over-TLS, MAC Randomization, Sysctl)
 security:
     ./Setup/seguridad.sh
 
-# Fuentes de desarrollo
+# Fuentes de desarrollo (Nerd Fonts: JetBrainsMono, FiraCode, CascadiaCode...)
 fonts:
     ./Setup/fonts.sh
 
-# Personalización de GNOME
-gnome:
-    ./Setup/gnome-settings.sh
+# Apariencia (Temas Breeze Dark, iconos Papirus e integracion visual GTK/Qt en KDE Plasma 6)
+apariencia:
+    ./Setup/apariencia.sh
 
-# Información estética del sistema
+# Informacion estetica del sistema (Fastfetch)
 fastfetch:
     ./Setup/fastfetch.sh
 
-# Instalación de IDEs (Neovim, VS Code, Antigravity, OpenCode)
-ides: nvim vscode antigravity opencode
-    echo "✅ IDEs instalados."
+# Terminal Kitty acelerada por GPU con tema oscuro y opacidad/blur
+kitty:
+    ./Setup/kitty.sh
 
-# Control de versiones (Git, Delta, Lazygit, GH CLI)
-git-setup:
-    ./Git/git.sh
-    ./Git/github-cli.sh
-
-nvim:
-    ./IDE/neovim.sh
-
-vscode:
-    ./IDE/vscode.sh
-
-antigravity:
-    ./IDE/antigravity.sh
-
-antigravity-cli:
-    ./IDE/antigravity-cli.sh
-
-antigravity-ide:
-    ./IDE/antigravity-ide.sh
-
-opencode:
-    ./IDE/opencode.sh
-
-# Multimedia (yt-dlp, ffmpeg)
+# Multimedia (yt-dlp stack, FFmpeg, AtomicParsley, aria2, motor JS Deno)
 yt-dlp:
     ./Setup/yt-dlp-setup.sh
 
-# Instalación de Lenguajes (Node, Python)
-languages: node python
-    echo "✅ Lenguajes instalados."
+# Compilador de Kernel Linux optimizado para x86_64-v3 y ajustado a tu portatil
+build-kernel:
+    ./Setup/build-custom-kernel.sh
 
+# Automontaje permanente de la particion Workspace en /etc/fstab
+workspace:
+    ./Setup/mount-workspace.sh
+
+# Terminal Ptyxis (alternativa a Kitty)
+ptyxis:
+    ./Setup/ptyxis.sh
+
+# =============================================================================
+# CONFIGURACION DE RED Y VIRTUALIZACION
+# =============================================================================
+
+# Configuracion de KVM/QEMU y Libvirt
+virtualization:
+    ./Virtualizacion/virtualization.sh
+
+# Administracion Web (Cockpit)
+cockpit:
+    ./Setup/cockpit.sh
+
+# =============================================================================
+# CONTROL DE VERSIONES
+# =============================================================================
+
+# Git, Delta, Lazygit, GH CLI
+git-setup:
+    ./IDE/git.sh
+    ./IDE/github-cli.sh
+
+# =============================================================================
+# GESTORES DE RUNTIMES
+# =============================================================================
+
+# Gestor de versiones Mise
+mise:
+    ./ProgrammingLanguages/mise.sh
+
+# =============================================================================
+# LENGUAJES DE PROGRAMACION
+# =============================================================================
+
+# Todos los lenguajes
+languages: node python rust dotnet java angular gemini
+    @echo "✅ Lenguajes instalados."
+
+# Node.js LTS
 node:
     ./ProgrammingLanguages/nodejs.sh
 
+# Python
 python:
     ./ProgrammingLanguages/python.sh
 
+# Rust
+rust:
+    ./ProgrammingLanguages/rust.sh
+
+# .NET SDK
+dotnet:
+    ./ProgrammingLanguages/dotnet.sh
+
+# Java (OpenJDK)
+java:
+    ./ProgrammingLanguages/java.sh
+
+# Gemini CLI
 gemini:
     ./ProgrammingLanguages/gemini.sh
 
-# Desplegar servicios comunes (Podman)
+# Angular CLI
+angular:
+    ./ProgrammingLanguages/angular.sh
+
+# =============================================================================
+# ENTORNOS DE DESARROLLO (IDEs)
+# =============================================================================
+
+# Todos los IDEs
+ides: nvim vscode antigravity antigravity-cli antigravity-ide opencode
+    @echo "✅ IDEs instalados."
+
+# Neovim + LazyVim
+nvim:
+    ./IDE/neovim.sh
+
+# Visual Studio Code
+vscode:
+    ./IDE/vscode.sh
+
+# Google Antigravity Desktop 2.0 (Completo)
+antigravity:
+    ./IDE/antigravity.sh
+
+# Google Antigravity CLI
+antigravity-cli:
+    ./IDE/antigravity-cli.sh
+
+# Google Antigravity IDE Engine
+antigravity-ide:
+    ./IDE/antigravity-ide.sh
+
+# OpenCode AI CLI/Editor
+opencode:
+    ./IDE/opencode.sh
+
+# =============================================================================
+# PODMAN Y CONTENEDORES QUADLETS
+# =============================================================================
+
+# Configuracion completa de Podman Rootless y Quadlets
+podman-setup:
+    ./Podman/install/podman-install.sh
+    ./Podman/install/quadlets-setup.sh
+
+# Configuracion base de Podman Rootless
 podman-base:
-    ./Podman/podman.sh
+    ./Podman/install/podman-install.sh
+
+# Configuracion de servicios Quadlets de Podman
+podman-quadlets:
+    ./Podman/install/quadlets-setup.sh
+
+# Estado y diagnostico de Podman y Quadlets
+podman-status:
+    ./Podman/install/podman-install.sh --status
+    ./Podman/lib/podman-utils.sh doctor
+
+# =============================================================================
+# JUEGOS
+# =============================================================================
+
+# Steam + Proton Cachyos
+steam:
+    ./Juegos/steam.sh
+
+# =============================================================================
+# APPS ADICIONALES
+# =============================================================================
+
+# Meld (diff/merge tool)
+meld:
+    ./Apps/meld.sh

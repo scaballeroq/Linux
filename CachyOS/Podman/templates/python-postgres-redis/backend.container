@@ -1,0 +1,22 @@
+[Unit]
+Description=Backend for __PROJECT__
+Requires=network-online.target
+After=network-online.target __PROJECT__-postgres.service __PROJECT__-redis.service
+
+[Container]
+ContainerName=__PROJECT__-backend
+Image=docker.io/library/python:3.12-slim
+EnvironmentFile=%h/Workspace/Repositorios/Linux/Podman/projects/__PROJECT__/.env
+WorkingDir=/app
+Volume=__PROJECT_DIR__/src:/app/src:ro
+Volume=__PROJECT_DIR__/requirements.txt:/app/requirements.txt:ro
+Command=sh -c "pip install -r requirements.txt && uvicorn src.main:app --host 0.0.0.0 --port ${APP_PORT:-8000}"
+PublishPort=${APP_PORT:-8000}:${APP_PORT:-8000}
+Network=__PROJECT__.network
+
+[Service]
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=__PROJECT__.target

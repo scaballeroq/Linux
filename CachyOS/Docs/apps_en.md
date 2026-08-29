@@ -44,4 +44,4 @@ To ensure the host operating system remains stable and avoid adding 32-bit (i386
 To verify that the applications are correctly installed:
 
 - **Meld**: Run `meld` in the terminal or launch it from your desktop application menu.
-- **Steam**: Open Steam from your desktop environment launcher (e.g. GNOME Dash). Once logged in, you can activate Proton-GE in Steam's compatibility settings (Steam > Settings > Compatibility > Enable Steam Play).
+- **Steam**: Open Steam from your desktop environment launcher (e.g. KDE Plasma Kickoff / KRunner). Once logged in, you can activate Proton-GE in Steam's compatibility settings (Steam > Settings > Compatibility > Enable Steam Play).

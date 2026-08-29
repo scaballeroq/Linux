@@ -1,49 +1,85 @@
 #!/bin/bash
-# laptop-setup.sh - Optimización para portátiles de desarrollo en CachyOS + GNOME
+# laptop-setup.sh - Optimizacion para portatiles de desarrollo en CachyOS + KDE Plasma 6
 
 set -euo pipefail
 
-echo "🚀 Iniciando optimización para portátil de desarrollo en CachyOS + GNOME..."
+echo "================================================================="
+echo "🚀 INICIANDO OPTIMIZACION PARA PORTATIL - CACHYOS (KDE PLASMA 6)"
+echo "================================================================="
 
-# 1. Herramientas de Hardware y Conectividad
-echo "ℹ️ Instalando servicios de energía, bluetooth y gráficos híbridos..."
-sudo pacman -S --needed --noconfirm \
+if [ "$EUID" -ne 0 ]; then
+    if ! command -v sudo &> /dev/null; then
+        echo "❌ Error: 'sudo' no esta disponible."
+        exit 1
+    fi
+    SUDO="sudo"
+else
+    SUDO=""
+fi
+
+# Detectar usuario real en caso de ejecucion con sudo
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    REAL_USER="$SUDO_USER"
+    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+else
+    REAL_USER="${USER:-$(id -un)}"
+    USER_HOME="${HOME:-/home/$REAL_USER}"
+fi
+
+run_as_user() {
+    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+        sudo -u "$REAL_USER" env HOME="$USER_HOME" "$@"
+    else
+        "$@"
+    fi
+}
+
+# 1. Herramientas de Hardware, Conectividad y Gestion de Energia
+echo "ℹ️ [1/3] Instalando servicios de energia, bluetooth y graficos hibridos..."
+$SUDO pacman -S --needed --noconfirm \
     power-profiles-daemon \
     switcheroo-control \
     bluez \
     bluez-utils \
     brightnessctl \
-    cachyos-rate-mirrors
+    acpid \
+    cachyos-rate-mirrors 2>/dev/null || true
 
-# Habilitar servicios clave de portátil
-echo "ℹ️ Habilitando servicios systemd para portátil..."
-sudo systemctl enable --now bluetooth.service || true
-sudo systemctl enable --now power-profiles-daemon.service || true
-sudo systemctl enable --now switcheroo-control.service || true
+# Habilitar servicios systemd para portatil
+echo "ℹ️ [2/3] Habilitando servicios de sistema para portatil..."
+$SUDO systemctl enable --now bluetooth.service || true
+$SUDO systemctl enable --now power-profiles-daemon.service || true
+$SUDO systemctl enable --now switcheroo-control.service || true
+$SUDO systemctl enable --now acpid.service 2>/dev/null || true
 
-# 2. Extensiones de GNOME útiles para portátil y desarrollo
-echo "ℹ️ Instalando extensiones recomendadas de GNOME para portátil..."
-sudo pacman -S --needed --noconfirm \
-    gnome-shell-extension-appindicator \
-    gnome-shell-extension-caffeine 2>/dev/null || true
+# 2. Configuraciones de KDE Plasma 6 para Portatil (Touchpad, Pantalla y Energia)
+echo "ℹ️ [3/3] Aplicando configuraciones de Touchpad, KWin y PowerDevil para KDE Plasma 6..."
 
-# 3. Configuraciones de GSettings para Portátil (Touchpad, Pantalla y Energía)
-if [[ "${XDG_CURRENT_DESKTOP:-}" == *"GNOME"* ]]; then
-    echo "ℹ️ Aplicando configuraciones de Touchpad y pantalla para GNOME..."
+KWRITE=$(command -v kwriteconfig6 2>/dev/null || command -v kwriteconfig5 2>/dev/null || true)
 
-    # Gestos y Touchpad
-    gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true 2>/dev/null || true
-    gsettings set org.gnome.desktop.peripherals.touchpad natural-scroll true 2>/dev/null || true
-    gsettings set org.gnome.desktop.peripherals.touchpad two-finger-scrolling-enabled true 2>/dev/null || true
+if [ -n "$KWRITE" ]; then
+    # Gestos y Touchpad: Tap-to-click y desplazamiento natural
+    run_as_user "$KWRITE" --file kcminputrc --group Touchpad --key tapToClick true 2>/dev/null || true
+    run_as_user "$KWRITE" --file kcminputrc --group Touchpad --key naturalScroll true 2>/dev/null || true
+    run_as_user "$KWRITE" --file kcminputrc --group Touchpad --key twoFingerTap "2" 2>/dev/null || true
+    run_as_user "$KWRITE" --file touchpadrsrc --group General --key tapToClick true 2>/dev/null || true
+    run_as_user "$KWRITE" --file touchpadrsrc --group General --key naturalScroll true 2>/dev/null || true
 
-    # Escalado Fraccional y Tasa de Refresco Variable (VRR)
-    gsettings set org.gnome.mutter experimental-features "['scale-monitor-framebuffer', 'variable-refresh-rate']" 2>/dev/null || true
+    # KWin: Frecuencia de actualizacion adaptativa / VRR en Wayland
+    run_as_user "$KWRITE" --file kwinrc --group Compositing --key AdaptiveSync "true" 2>/dev/null || true
 
-    # Comportamiento de energía en batería
-    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'suspend' 2>/dev/null || true
-    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 1200 2>/dev/null || true
-    gsettings set org.gnome.desktop.privacy idle-delay 600 2>/dev/null || true
+    # PowerDevil: Gestion inteligente de suspension y bateria
+    run_as_user "$KWRITE" --file powerdevilrc --group BatteryManagement --key BatteryCriticalAction "1" 2>/dev/null || true
+    run_as_user "$KWRITE" --file powerdevilrc --group BatteryManagement --key BatteryLowLevel "15" 2>/dev/null || true
+    run_as_user "$KWRITE" --file powerdevilrc --group BatteryManagement --key BatteryCriticalLevel "5" 2>/dev/null || true
+
+    echo "✅ Parametros de Touchpad, KWin y bateria configurados en KDE Plasma 6."
 fi
 
-echo "✅ Configuración de portátil aplicada correctamente."
-echo "💡 Recuerda reiniciar la sesión para que todos los cambios de GNOME entren en vigor."
+# Permisos de brillo para usuarios sin requerir root en cada cambio
+$SUDO usermod -aG video "$REAL_USER" 2>/dev/null || true
+
+echo "================================================================="
+echo "✅ Optimizacion para portatil (CachyOS + KDE Plasma 6) completada."
+echo "💡 Recuerda reiniciar la sesion para que los cambios de KDE entren en vigor."
+echo "================================================================="

@@ -1,5 +1,5 @@
 #!/bin/bash
-# ptyxis.sh - Configuración estética de Ptyxis para CachyOS (GNOME)
+# ptyxis.sh - Configuración estética de Ptyxis para CachyOS
 
 set -euo pipefail
 

@@ -1,75 +1,58 @@
+#!/bin/bash
 # =============================================================================
-# FUNCIONES DE PODMAN (podman-functions.sh)
+# FUNCIONES PARA PODMAN (podman-functions.sh)
 # =============================================================================
-# Colección de funciones para facilitar el trabajo con contenedores Podman.
-# Podman es un motor de contenedores compatible con OCI (como Docker).
 
 # -----------------------------------------------------------------------------
-# psh: Shell interactiva en contenedor
-# Uso: psh <contenedor> [shell]
+# pexec: Ejecutar comandos en un contenedor
+# Uso: pexec <contenedor> [comando]
 # -----------------------------------------------------------------------------
-# Entra dentro de un contenedor en ejecución. Por defecto usa /bin/bash.
-psh() {
+pexec() {
     if [ -z "$1" ]; then
-        echo "Uso: psh <nombre_o_id_contenedor> [shell]"
+        echo "Uso: pexec <nombre_o_id_contenedor> [comando]"
         return 1
     fi
-    local shell="${2:-/bin/bash}"
-    podman exec -it "$1" "$shell"
+    local cmd="${2:-bash}"
+    podman exec -it "$1" "$cmd"
 }
 
 # -----------------------------------------------------------------------------
-# plogs: Ver logs
-# Uso: plogs <contenedor>
+# plogs: Ver logs de un contenedor
+# Uso: plogs <contenedor> [lineas]
 # -----------------------------------------------------------------------------
-# Muestra los logs de un contenedor y se queda esperando nuevos (follow -f).
 plogs() {
     if [ -z "$1" ]; then
-        echo "Uso: plogs <nombre_o_id_contenedor>"
+        echo "Uso: plogs <nombre_o_id_contenedor> [lineas]"
         return 1
     fi
-    podman logs -f "$1"
+    local lines="${2:-100}"
+    podman logs -f --tail "$lines" "$1"
 }
 
 # -----------------------------------------------------------------------------
-# prmf: Borrado forzoso
-# Uso: prmf <contenedor>
+# pinfo: Inspeccionar contenedor
 # -----------------------------------------------------------------------------
-# Detiene (stop) y elimina (rm) un contenedor en un solo paso.
-prmf() {
+pinfo() {
     if [ -z "$1" ]; then
-        echo "Uso: prmf <nombre_o_id_contenedor>"
+        echo "Uso: pinfo <nombre_o_id_contenedor>"
         return 1
     fi
-    podman stop "$1" && podman rm "$1"
+    podman inspect "$1" | less
 }
 
 # -----------------------------------------------------------------------------
-# ppsf / ppsaf: Listados con formato limpio
+# pcp: Copiar archivos
 # -----------------------------------------------------------------------------
-# Muestran la lista de contenedores formateada en una tabla limpia,
-# evitando que se rompan las líneas en terminales pequeñas.
-
-# Solo corriendo
-ppsf() {
-    podman ps --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"
-}
-
-# Todos (incluyendo parados)
-ppsaf() {
-    podman ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"
+pcp() {
+    if [ $# -lt 2 ]; then
+        echo "Uso: pcp <contenedor:ruta_origen> <ruta_destino>"
+        return 1
+    fi
+    podman cp "$1" "$2"
 }
 
 # -----------------------------------------------------------------------------
-# pstats: Estadísticas
-# -----------------------------------------------------------------------------
-# Muestra uso de CPU, Memoria y Red de los contenedores en vivo.
-pstats() {
-    podman stats --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}\t{{.BlockIO}}"
-}
-
-# -----------------------------------------------------------------------------
-# Limpieza Profunda
+# LIMPIEZA
 # -----------------------------------------------------------------------------
 
 # Limpieza total del sistema (imágenes, contenedores parados, redes y caché)
@@ -78,36 +61,72 @@ pclean-total() {
     podman system prune -af --volumes
 }
 
+# Eliminar contenedores parados
+prm-stopped() {
+    local stopped_containers=$(podman ps -aq -f status=exited)
+    if [ -n "$stopped_containers" ]; then
+        podman rm $stopped_containers
+    else
+        echo "No hay contenedores parados para eliminar."
+    fi
+}
+
+# Eliminar imágenes huérfanas
+prmi-dangling() {
+    local dangling_images=$(podman images -f "dangling=true" -q)
+    if [ -n "$dangling_images" ]; then
+        podman rmi $dangling_images
+    else
+        echo "No hay imágenes huérfanas para eliminar."
+    fi
+}
+
 # -----------------------------------------------------------------------------
-# ALIASES DE PODMAN
+# ALIASES RÁPIDOS Y QUADLETS
 # -----------------------------------------------------------------------------
 alias p='podman'
-alias pc='podman-compose'
-alias pps='podman ps'                    # Contenedores en ejecución
-alias ppsa='podman ps -a'                # Todos los contenedores
-alias pimg='podman images'               # Imágenes locales
-alias pstop-all='podman stop $(podman ps -q)' # Parar todo lo que corre
-alias prm-all='podman rm $(podman ps -aq)'    # Borrar todo contenedor parado
-alias prmi-all='podman rmi $(podman images -q)' # Borrar todas las imágenes
-alias pexec='podman exec -it'            # Ejecutar comando en contenedor
-alias pinspect='podman inspect'          # Inspeccionar contenedor
-alias ppull='podman pull'                # Descargar imagen
-alias pbuild='podman build'              # Construir imagen
-alias prun='podman run'                  # Correr contenedor
+alias pps='podman ps --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"'
+alias psa='podman ps -a'
+alias pi='podman images'
+alias pv='podman volume ls'
 
-# Gestión de Pods (grupos de contenedores)
-alias pods='podman pod ps'
-alias podsa='podman pod ps -a'
-alias podstop='podman pod stop'
-alias podstart='podman pod start'
-alias podrm='podman pod rm'
+# Parada y eliminación segura
+pstop-all() {
+    local running
+    running=$(podman ps -q)
+    if [ -n "$running" ]; then
+        podman stop $running
+    else
+        echo "ℹ️ No hay contenedores en ejecución para detener."
+    fi
+}
 
-# Limpieza de sistema Podman
-alias pclean='podman system prune -af'
-alias pclean-volumes='podman volume prune -f'
-alias pclean-all='podman system prune -af --volumes'
-# =============================================================================
-# MENSAJE DE CARGA
-# =============================================================================
-#echo "✅ Funciones Podman cargadas (p, plogs, pstats, gestión contenedores...)"
-echo "✅ Funciones Podman cargadas"
+prm-all() {
+    local all_containers
+    all_containers=$(podman ps -aq)
+    if [ -n "$all_containers" ]; then
+        podman rm -f $all_containers
+    else
+        echo "ℹ️ No hay contenedores para eliminar."
+    fi
+}
+
+prmi-all() {
+    local all_images
+    all_images=$(podman images -q)
+    if [ -n "$all_images" ]; then
+        podman rmi -f $all_images
+    else
+        echo "ℹ️ No hay imágenes para eliminar."
+    fi
+}
+
+# Quadlets de Podman (Systemd User Units)
+alias quadlet-reload='systemctl --user daemon-reload'
+alias quadlet-status='systemctl --user status "container-*"'
+quadlet-logs() {
+    local service="${1:-container}"
+    journalctl --user -u "$service" -f -n 50
+}
+
+echo "✅ Funciones y atajos de Podman cargados (pps, pexec, Quadlets)"

@@ -2,92 +2,164 @@
 sidebar_position: 8
 ---
 
-# Gestión de Contenedores con Podman en Debian 13
+# Gestión de Contenedores con Podman en CachyOS
 
-Esta guía detalla la instalación de la plataforma de contenedores **Podman** y el listado de servicios preconfigurados en la carpeta `Podman`.
+Esta guía detalla la instalación de la plataforma de contenedores **Podman** con **Quadlets** (systemd native) y el listado de servicios preconfigurados en la carpeta `Podman`.
 
 A diferencia de Docker, Podman funciona por defecto de manera segura **sin demonio (daemonless)** y **sin privilegios de root (rootless)**, aislando los contenedores del usuario de manera nativa.
 
 ---
 
-## 1. Configuración de Podman Core (`podman.sh`)
+## 1. Configuración de Podman Core (`install/podman-install.sh`)
 
-Instala Podman, su herramienta de orquestación `compose` y las dependencias de red avanzadas nativas de Debian 13:
+Instala Podman, su herramienta de orquestación `compose` y las dependencias de red avanzadas:
 
-1. **Instalación de Componentes**:
-   ```bash
-   sudo apt update
-   sudo apt install -y podman podman-compose podman-docker uidmap slirp4netns passt
-   ```
-   * **`podman-docker`**: Instala un script de enlace para responder de manera automática al comando `docker` traduciéndolo a `podman`.
-   * **`uidmap`**: Esencial para mapear sub-UIDs y sub-GIDs en el sistema, permitiendo contenedores rootless seguros.
-   * **`passt` / `pasta`**: Pila de red de alto rendimiento para contenedores rootless, integrada por defecto a partir de Podman 5 (estándar en Debian 13).
-
-2. **Persistencia del Usuario (Linger)**:
-   Se configura el sistema para que los contenedores del usuario sigan ejecutándose en segundo plano incluso cuando el usuario cierre su sesión de terminal:
-   ```bash
-   loginctl enable-linger "$USER"
-   ```
-
-3. **Socket de Usuario y Compatibilidad**:
-   Habilita el socket del usuario de Podman que emula la API del socket de Docker, permitiendo la integración automática con herramientas de desarrollo (como IDEs o Testcontainers):
-   ```bash
-   systemctl --user enable --now podman.socket
-   ```
-
-4. **Variable DOCKER_HOST**:
-   Se expone en `~/.bashrc.d/podman.sh` la ruta del socket de usuario para que herramientas externas localicen a Podman de forma automática:
-   ```bash
-   export DOCKER_HOST="unix://$XDG_RUNTIME_DIR/podman/podman.sock"
-   ```
-
----
-
-## 2. Red de Desarrollo Integrada
-
-Todos los contenedores auxiliares e infraestructura se despliegan sobre una red puente común de Podman llamada `devfed-net`. Los scripts crean automáticamente esta red si no está presente:
 ```bash
-if ! podman network exists devfed-net; then
-    podman network create devfed-net
-fi
+./Podman/install/podman-install.sh
+```
+
+Esto configura:
+- **Podman rootless** con `passt` (red de alto rendimiento)
+- **Persistencia Linger**: Los contenedores siguen corriendo al cerrar sesión
+- **Socket de usuario**: API compatible con Docker en `/run/user/$UID/podman/podman.sock`
+- **DOCKER_HOST**: Exportado en `environment.d` y `.bashrc.d` para integración con IDEs
+- **Storage**: Driver overlay nativo en `~/.config/containers/storage.conf`
+- **Registries**: docker.io, quay.io, ghcr.io, registry.archlinux.org
+
+### Verificar estado
+```bash
+./Podman/install/podman-install.sh --status
 ```
 
 ---
 
-## 3. Catálogo de Servicios Auxiliares
+## 2. Quadlets (`install/quadlets-setup.sh`)
 
-Los scripts usan la flag `--replace` de Podman para detener y reemplazar limpiamente cualquier versión previa del contenedor. El catálogo está organizado de la siguiente manera:
+Configura la estructura de directorios para servicios systemd nativos de Podman:
+
+```bash
+./Podman/install/quadlets-setup.sh
+```
+
+Directorios gestionados:
+- `~/.config/containers/systemd/` → Proyectos activos
+- `~/.config/containers/systemd/global/` → Servicios compartidos globales
+
+---
+
+## 3. CLI podman-utils (`lib/podman-utils.sh`)
+
+Herramienta completa para gestión de proyectos con Quadlets:
+
+```bash
+# Crear proyecto desde plantilla
+podman-utils create python-postgres mi-api
+
+# Iniciar/detener/reiniciar
+podman-utils start mi-api
+podman-utils stop mi-api
+podman-utils restart mi-api
+
+# Ver logs y estado
+podman-utils logs mi-api
+podman-utils status mi-api
+
+# Eliminar proyecto completamente
+podman-utils destroy mi-api
+
+# Listar proyectos y templates
+podman-utils list
+podman-utils list-templates
+
+# Diagnóstico
+podman-utils doctor
+```
+
+---
+
+## 4. Plantillas de Proyectos (`templates/`)
+
+### python-postgres
+Python (FastAPI/Flask) + PostgreSQL
+```bash
+podman-utils create python-postgres mi-api
+```
+
+### python-postgres-redis
+Python + PostgreSQL + Redis (Celery/Cache)
+```bash
+podman-utils create python-postgres-redis mi-api
+```
+
+### fullstack
+Frontend + Backend + PostgreSQL + Traefik + Keycloak
+```bash
+podman-utils create fullstack mi-app
+```
+
+---
+
+## 5. Servicios Globales Compartidos (`services-shared/`)
+
+Servicios que pueden compartirse entre múltiples proyectos:
+
+| Servicio | Puerto | Descripción |
+|----------|--------|-------------|
+| `postgres-global` | 5432 | PostgreSQL compartido |
+| `redis-global` | 6379 | Redis compartido |
+| `traefik` | 80, 443, 8080 | Reverse proxy |
+| `keycloak` | 8080 | Identity management |
+
+### Instalar servicio global
+```bash
+podman-utils install-global postgres
+podman-utils install-global redis
+podman-utils install-global traefik
+podman-utils install-global keycloak
+```
+
+### Desinstalar servicio global
+```bash
+podman-utils uninstall-global postgres
+```
+
+---
+
+## 6. Catálogo de Servicios Auxiliares (Legacy)
+
+Los scripts individuales en `Podman/` siguen disponibles para despliegue rápido:
 
 ### Bases de Datos
-* **PostgreSQL** (`podman-postgres.sh`): Levanta PostgreSQL en el puerto `5432` (credenciales por defecto: `postgres/postgres`).
-* **MySQL** (`podman-mysql.sh`): Levanta MySQL en el puerto `3306` (credenciales: `root/root`).
-* **MongoDB** (`podman-mongodb.sh`): Levanta MongoDB en el puerto `27017` (rootless sin contraseña inicial).
-* **Redis** (`podman-redis.sh`): Levanta un almacén clave-valor en memoria Redis en el puerto `6379`.
+- **PostgreSQL** (`podman-postgres.sh`): Puerto `5432`
+- **MySQL** (`podman-mysql.sh`): Puerto `3306`
+- **MongoDB** (`podman-mongodb.sh`): Puerto `27017`
+- **Redis** (`podman-redis.sh`): Puerto `6379`
 
-### Administración, Monitoreo y Trazabilidad
-* **Portainer CE** (`podman-portainer.sh`): Interfaz web gráfica de administración de contenedores expuesta de forma segura en `https://localhost:9443`.
-* **Adminer** (`podman-adminer.sh`): Administrador web ligero para bases de datos SQL y NoSQL expuesto en `http://localhost:8080`.
-* **Dozzle** (`podman-dozzle.sh`): Visualizador ligero de logs de contenedores en tiempo real disponible en `http://localhost:8888`.
-* **Grafana** (`podman-grafana.sh`): Suite de analítica y monitorización expuesta en `http://localhost:3000`.
-* **Prometheus** (`podman-prometheus.sh`): Base de datos de métricas disponible en `http://localhost:9090`.
-* **Jaeger** (`podman-jaeger.sh`): Sistema de trazabilidad distribuido expuesto en `http://localhost:16686` (UI).
+### Administración y Monitoreo
+- **Portainer CE** (`podman-portainer.sh`): `https://localhost:9443`
+- **Adminer** (`podman-adminer.sh`): `http://localhost:8080`
+- **Dozzle** (`podman-dozzle.sh`): `http://localhost:8888`
+- **Grafana** (`podman-grafana.sh`): `http://localhost:3000`
+- **Prometheus** (`podman-prometheus.sh`): `http://localhost:9090`
+- **Jaeger** (`podman-jaeger.sh`): `http://localhost:16686`
 
-### Infraestructura y Desarrollo
-* **Nginx** (`podman-nginx.sh`): Servidor web expuesto en los puertos estándar `80` (HTTP) y `443` (HTTPS).
-* **Keycloak** (`podman-keycloak.sh`): Proveedor de gestión de identidad y accesos (IAM) expuesto en `http://localhost:8081` (credenciales: `admin/admin`).
-* **RabbitMQ** (`podman-rabbitmq.sh`): Gestor de colas de mensajería expuesto en `5672` (gestión web en `http://localhost:15672` con `guest/guest`).
-* **MinIO** (`podman-minio.sh`): Almacenamiento de objetos compatible con AWS S3 (API en `9000`, Consola de control en `http://localhost:9001` con `minioadmin/minioadmin`).
-* **MailHog** (`podman-mailhog.sh`): Servidor SMTP de desarrollo para interceptar envíos de correo en pruebas (SMTP en `1025`, Interfaz web en `http://localhost:8025`).
-* **Browserless** (`podman-browserless.sh`): Navegador Chrome headless gestionable mediante APIs expuesto en el puerto `3001`.
+### Infraestructura
+- **Nginx** (`podman-nginx.sh`): Puertos `80` y `443`
+- **Keycloak** (`podman-keycloak.sh`): `http://localhost:8081`
+- **RabbitMQ** (`podman-rabbitmq.sh`): `5672` / `15672`
+- **MinIO** (`podman-minio.sh`): `9000` / `9001`
+- **MailHog** (`podman-mailhog.sh`): `1025` / `8025`
+- **Browserless** (`podman-browserless.sh`): Puerto `3001`
 
-### Frameworks y CMS
-* **WordPress** (`podman-wordpress.sh`): Despliega un CMS WordPress en el puerto `8082`, autoconfigurado para conectar a un contenedor de MySQL.
-* **Storybook** (`podman-storybook.sh`): Levanta el catálogo Storybook de componentes UI en el puerto `6006`.
+### CMS/Frameworks
+- **WordPress** (`podman-wordpress.sh`): Puerto `8082`
+- **Storybook** (`podman-storybook.sh`): Puerto `6006`
 
 ---
 
 ## Verificación
 
-- **Estado de Podman**: Ejecuta `podman info` (debe indicar que corre en modo rootless).
-- **Socket**: Ejecuta `curl --unix-socket $XDG_RUNTIME_DIR/podman/podman.sock http://d/info` para verificar el socket local.
-- **Servicios**: Ejecuta cualquier script auxiliar (ej. `./podman-postgres.sh`) y comprueba su ejecución mediante `podman ps`.
+- **Estado de Podman**: `podman info` (debe indicar modo rootless)
+- **Socket**: `curl --unix-socket $XDG_RUNTIME_DIR/podman/podman.sock http://d/info`
+- **Diagnóstico completo**: `podman-utils doctor`
+- **Servicios activos**: `podman ps`

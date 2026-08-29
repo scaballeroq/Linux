@@ -1,4 +1,4 @@
-# 🚀 Starship Config: CachyOS (Optimized for Arch/CachyOS + GNOME + Nerd Fonts)
+# 🚀 Starship Config: CachyOS (Optimized for Arch/CachyOS + KDE Plasma 6 + Nerd Fonts)
 
 # Formato general del prompt (Una sola línea, limpia y con alto contraste)
 format = """

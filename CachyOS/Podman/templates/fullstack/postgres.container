@@ -1,0 +1,21 @@
+[Unit]
+Description=PostgreSQL for __PROJECT__
+Requires=network-online.target
+After=network-online.target
+
+[Container]
+ContainerName=__PROJECT__-postgres
+Image=docker.io/library/postgres:16-alpine
+EnvironmentFile=%h/Workspace/Repositorios/Linux/Podman/projects/__PROJECT__/.env
+Environment=POSTGRES_USER=${POSTGRES_USER}
+Environment=POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+Environment=POSTGRES_DB=${POSTGRES_DB}
+Volume=__PROJECT__-postgres-data:/var/lib/postgresql/data
+Network=__PROJECT__.network
+
+[Service]
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=__PROJECT__.target
