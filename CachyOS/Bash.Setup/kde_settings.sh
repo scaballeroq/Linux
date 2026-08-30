@@ -1,9 +1,7 @@
-#!/bin/bash
 # =============================================================================
 # CONFIGURACIÓN Y ALIASES PARA KDE PLASMA 6 (kde_settings.sh) - CachyOS
 # =============================================================================
-# Este archivo contiene configuraciones de entorno para KDE Plasma 6, optimizaciones
-# para portátil/escritorio (Touchpad, VRR, Wayland) y utilidades CLI para KDE.
+# Configuración de entorno para KDE Plasma 6 y Wayland para Zsh y Bash.
 
 # -----------------------------------------------------------------------------
 # 1. AJUSTES BASE DE KDE PLASMA 6 (Solo si estamos en sesión KDE)

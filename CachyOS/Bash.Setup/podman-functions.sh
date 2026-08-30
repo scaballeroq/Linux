@@ -1,6 +1,5 @@
-#!/bin/bash
 # =============================================================================
-# FUNCIONES PARA PODMAN (podman-functions.sh)
+# FUNCIONES PARA PODMAN (podman-functions.sh) - Adaptado para Zsh y Bash
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -63,21 +62,23 @@ pclean-total() {
 
 # Eliminar contenedores parados
 prm-stopped() {
-    local stopped_containers=$(podman ps -aq -f status=exited)
-    if [ -n "$stopped_containers" ]; then
-        podman rm $stopped_containers
+    local -a stopped_containers
+    stopped_containers=($(podman ps -aq -f status=exited 2>/dev/null))
+    if [ ${#stopped_containers[@]} -gt 0 ]; then
+        podman rm "${stopped_containers[@]}"
     else
-        echo "No hay contenedores parados para eliminar."
+        echo "ℹ️ No hay contenedores parados para eliminar."
     fi
 }
 
 # Eliminar imágenes huérfanas
 prmi-dangling() {
-    local dangling_images=$(podman images -f "dangling=true" -q)
-    if [ -n "$dangling_images" ]; then
-        podman rmi $dangling_images
+    local -a dangling_images
+    dangling_images=($(podman images -f "dangling=true" -q 2>/dev/null))
+    if [ ${#dangling_images[@]} -gt 0 ]; then
+        podman rmi "${dangling_images[@]}"
     else
-        echo "No hay imágenes huérfanas para eliminar."
+        echo "ℹ️ No hay imágenes huérfanas para eliminar."
     fi
 }
 
@@ -92,30 +93,30 @@ alias pv='podman volume ls'
 
 # Parada y eliminación segura
 pstop-all() {
-    local running
-    running=$(podman ps -q)
-    if [ -n "$running" ]; then
-        podman stop $running
+    local -a running
+    running=($(podman ps -q 2>/dev/null))
+    if [ ${#running[@]} -gt 0 ]; then
+        podman stop "${running[@]}"
     else
         echo "ℹ️ No hay contenedores en ejecución para detener."
     fi
 }
 
 prm-all() {
-    local all_containers
-    all_containers=$(podman ps -aq)
-    if [ -n "$all_containers" ]; then
-        podman rm -f $all_containers
+    local -a all_containers
+    all_containers=($(podman ps -aq 2>/dev/null))
+    if [ ${#all_containers[@]} -gt 0 ]; then
+        podman rm -f "${all_containers[@]}"
     else
         echo "ℹ️ No hay contenedores para eliminar."
     fi
 }
 
 prmi-all() {
-    local all_images
-    all_images=$(podman images -q)
-    if [ -n "$all_images" ]; then
-        podman rmi -f $all_images
+    local -a all_images
+    all_images=($(podman images -q 2>/dev/null))
+    if [ ${#all_images[@]} -gt 0 ]; then
+        podman rmi -f "${all_images[@]}"
     else
         echo "ℹ️ No hay imágenes para eliminar."
     fi
@@ -130,3 +131,4 @@ quadlet-logs() {
 }
 
 echo "✅ Funciones y atajos de Podman cargados (pps, pexec, Quadlets)"
+

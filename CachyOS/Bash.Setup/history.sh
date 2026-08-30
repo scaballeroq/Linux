@@ -1,40 +1,50 @@
 # =============================================================================
-# CONFIGURACIÓN DEL HISTORIAL (history.sh)
+# CONFIGURACIÓN DEL HISTORIAL (history.sh) - Adaptado para Zsh y Bash
 # =============================================================================
-# Controla cómo bash recuerda los comandos que escribes.
+# Controla cómo la shell recuerda los comandos ejecutados.
 
-# Cantidad de comandos a recordar en la sesión actual (memoria)
-export HISTSIZE=10000
+if [ -n "${ZSH_VERSION:-}" ]; then
+    # -------------------------------------------------------------------------
+    # CONFIGURACIÓN PARA ZSH
+    # -------------------------------------------------------------------------
+    export HISTFILE="${HISTFILE:-$HOME/.zsh_history}"
+    export HISTSIZE=10000
+    export SAVEHIST=20000
 
-# Cantidad de comandos a guardar en el archivo ~/.bash_history
-export HISTFILESIZE=20000
+    # Comportamiento del historial en Zsh
+    setopt APPEND_HISTORY          # Añadir al historial en vez de sobrescribir
+    setopt INC_APPEND_HISTORY      # Guardar cada comando inmediatamente al ejecutarse
+    setopt SHARE_HISTORY           # Compartir historial entre múltiples terminales activas
+    setopt HIST_IGNORE_DUPS        # No registrar comandos consecutivos repetidos
+    setopt HIST_IGNORE_ALL_DUPS    # Si se repite un comando, eliminar la ocurrencia anterior
+    setopt HIST_IGNORE_SPACE       # Ignorar comandos que comiencen con espacio
+    setopt HIST_SAVE_NO_DUPS       # No guardar duplicados en el archivo en disco
+    setopt HIST_EXPIRE_DUPS_FIRST  # Eliminar duplicados primero si el historial se llena
+    setopt HIST_FIND_NO_DUPS       # No mostrar duplicados al buscar en el historial
+    setopt HIST_REDUCE_BLANKS      # Eliminar espacios en blanco sobrantes antes de guardar
+    setopt HIST_VERIFY             # Permitir revisar el comando antes de ejecutarlo con '!'
 
-# Opciones de control:
-# ignoreboth: Combina 'ignorespace' y 'ignoredups'.
-#   - ignorespace: No guardar líneas que empiezan con un espacio.
-#   - ignoredups: No guardar el comando si es igual al anterior.
-# erasedups: Elimina duplicados anteriores en todo el historial para ahorrar espacio.
-export HISTCONTROL=ignoreboth:erasedups
+    # Comandos a ignorar en el historial
+    export HISTORY_IGNORE="(ls|ll|la|lt|tree|cd|cd ..|pwd|exit|clear|c|h|history|bg|fg|..|...|....|~)"
 
-# Formato de fecha para el comando 'history'.
-# Muestra: Año-Mes-Día Hora:Minuto:Segundo
-export HISTTIMEFORMAT="%F %T "
+elif [ -n "${BASH_VERSION:-}" ]; then
+    # -------------------------------------------------------------------------
+    # CONFIGURACIÓN PARA BASH
+    # -------------------------------------------------------------------------
+    export HISTFILE="${HISTFILE:-$HOME/.bash_history}"
+    export HISTSIZE=10000
+    export HISTFILESIZE=20000
+    export HISTCONTROL=ignoreboth:erasedups
+    export HISTTIMEFORMAT="%F %T "
 
-# Añadir al archivo de historial en lugar de sobrescribirlo al salir de la sesión.
-# Esto es vital para no perder historial al usar múltiples terminales.
-shopt -s histappend
+    shopt -s histappend 2>/dev/null || true
+    shopt -s cmdhist 2>/dev/null || true
 
-# Guardar comandos multilínea como una sola entrada en el historial.
-# Facilita la lectura y edición posterior.
-shopt -s cmdhist
-
-# Lista de comandos a IGNORAR.
-# Estos comandos no se guardarán en el historial para mantenerlo limpio.
-# Se ignoran: ls, cd, pwd, exit, clear, history, comandos de job (bg/fg), etc.
-export HISTIGNORE="ls:ll:la:cd:pwd:exit:clear:history:bg:fg:..:..."
+    export HISTIGNORE="ls:ll:la:lt:tree:cd:pwd:exit:clear:c:h:history:bg:fg:..:...:....:~"
+fi
 
 # =============================================================================
 # MENSAJE DE CARGA
 # =============================================================================
-#echo "✅ Historial configurado (10k/20k líneas, ignorar duplicados)"
 echo "✅ Historial configurado"
+

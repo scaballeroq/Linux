@@ -66,9 +66,13 @@ if [ -d "$HOME/go/bin" ] && [[ ":$PATH:" != *":$HOME/go/bin:"* ]]; then
     export PATH="$HOME/go/bin:$PATH"
 fi
 
-# Activación de MISE (Gestor de lenguajes)
+# Activación de MISE (Gestor de versiones de lenguajes)
 if command -v mise &> /dev/null; then
-    eval "$(mise activate bash)"
+    if [ -n "${ZSH_VERSION:-}" ]; then
+        eval "$(mise activate zsh)"
+    elif [ -n "${BASH_VERSION:-}" ]; then
+        eval "$(mise activate bash)"
+    fi
 fi
 
 # Soporte para GPG en la terminal (seguro para subshells y no-TTY)
@@ -90,3 +94,4 @@ export UPDATE_ANTIGRAVITY_IDE_PATH="/usr/local/bin/update-antigravity-ide"
 # MENSAJE DE CARGA
 # =============================================================================
 echo "✅ Variables de entorno aplicadas (PATH, EDITOR, LESS, Wayland/Qt...)"
+

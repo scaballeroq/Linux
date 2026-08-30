@@ -7,14 +7,14 @@ This repository contains a modular collection of configuration scripts for **Cac
 ## 📂 Repository Structure
 
 ### 🐚 [Bash.Setup](./Bash.Setup/)
-Core Bash shell configuration.
-- **`aliases.sh`**: Frequently used command shortcuts and package manager aliases (`pacman` / `paru`).
-- **`environment.sh`**: Global environment variables (`EDITOR`, `PATH`, Wayland/Qt flags, etc.).
-- **`functions.sh`**: Advanced shell functions and multimedia processing utilities.
+Core terminal configuration, optimized for **Zsh** (default shell in CachyOS) and **Bash**.
+- **`aliases.sh`**: Frequently used command shortcuts, dynamic reload, and package manager aliases (`pacman` / `paru`).
+- **`environment.sh`**: Global environment variables (`EDITOR`, `PATH`, Wayland/Qt flags) and smart Mise activation in Zsh/Bash.
+- **`functions.sh`**: Advanced shell functions (`mkcd`, `up`, `hg`) and multimedia processing utilities.
 - **`kde_settings.sh`**: KDE Plasma 6 desktop environment tweaks, KWin, Spectacle, and shortcuts.
-- **`history.sh`**: Bash history settings.
-- **`options.sh`**: Shell options (`shopt`, `bind`).
-- **`podman-functions.sh`**: Container management shortcuts and Quadlets functions.
+- **`history.sh`**: Optimized command history (10k/20k entries, deduplication, `~/.zsh_history` and `~/.bash_history`).
+- **`options.sh`**: Advanced shell options (`autocd`, typo correction, case-insensitive completions with `zstyle`/`shopt`).
+- **`podman-functions.sh`**: Container management shortcuts and Quadlets functions compatible with both shells.
 - **`rclone_aliases.sh`**: Cloud storage synchronization shortcuts.
 - **`yt-dlp_aliases.sh`**: Optimized video/audio downloader shortcuts.
 

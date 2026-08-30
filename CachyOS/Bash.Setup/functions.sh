@@ -1,6 +1,5 @@
-#!/bin/bash
 # =============================================================================
-# FUNCIONES BASH (functions.sh)
+# FUNCIONES DE SHELL (functions.sh) - Adaptado para Zsh y Bash en CachyOS
 # =============================================================================
 # Colección de funciones y utilidades para potenciar la terminal.
 #
@@ -34,18 +33,18 @@ mkcd() {
 # -----------------------------------------------------------------------------
 # Sube 'n' niveles en el árbol de directorios.
 # Ejemplo: 'up 3' equivale a 'cd ../../..'
-# Si no se da argumento, sube 1 nivel.
+# Si no se da argumento, sube 1 nivel por defecto.
 up() {
     local d=""
-    local limit=$1
+    local limit="${1:-1}"
     for ((i=1 ; i <= limit ; i++)); do
-        d=$d/..
+        d="$d/.."
     done
-    d=$(echo $d | sed 's/^\///')
+    d=$(echo "$d" | sed 's/^\///')
     if [ -z "$d" ]; then
         d=..
     fi
-    cd $d
+    cd "$d"
 }
 
 # -----------------------------------------------------------------------------
@@ -55,7 +54,7 @@ up() {
 # Crea una copia del archivo con extensión .bak y la fecha actual.
 # Ejemplo: archivo.txt -> archivo.txt.bak-20231220-120000
 backup() {
-    cp "$1"{,.bak-$(date +%Y%m%d-%H%M%S)}
+    cp "$1" "${1}.bak-$(date +%Y%m%d-%H%M%S)"
 }
 
 # -----------------------------------------------------------------------------
@@ -131,7 +130,11 @@ duh() {
 # -----------------------------------------------------------------------------
 # Busca rápidamente un comando que usaste en el pasado dentro de tu historial.
 hg() {
-    history | grep "$1"
+    if [ -n "${ZSH_VERSION:-}" ]; then
+        fc -l 1 | grep -i "$1"
+    else
+        history | grep -i "$1"
+    fi
 }
 
 # =============================================================================
@@ -154,7 +157,7 @@ iso2sd() {
   else
     # Escribir ISO a dispositivo usando dd con buffer de 4M y sync
     sudo dd bs=4M status=progress oflag=sync if="$1" of="$2"
-    sudo eject $2
+    sudo eject "$2"
   fi
 }
 
@@ -173,7 +176,8 @@ format-drive() {
   fi
 
   echo "⚠️  ADVERTENCIA: Se borrarán TODOS los datos en $1 y se formateará como exFAT ('$2')"
-  read -rp "¿Continuar? (s/N): " confirm
+  printf "¿Continuar? (s/N): "
+  read -r confirm
 
   if [[ "$confirm" =~ ^[Ss]$ ]]; then
     echo "🗑️  Limpiando y creando partición GPT..."
@@ -194,6 +198,7 @@ format-drive() {
     echo "❌ Cancelado"
   fi
 }
+
 
 # =============================================================================
 # 4. MULTIMEDIA (AUDIO, VIDEO, IMÁGENES)

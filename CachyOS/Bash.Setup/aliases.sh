@@ -102,9 +102,13 @@ alias grep='grep --color=auto'
 alias ports='sudo ss -tulanp'
 alias myip='curl -s --connect-timeout 2 ifconfig.me'
 alias localip='ip -4 addr show | grep -oP "(?<=inet\s)\d+(\.\d+){3}"'
-alias reload='source ~/.bashrc'
+
+# Recarga dinámica según la shell activa
+alias reload='[ -n "$ZSH_VERSION" ] && source ~/.zshrc || source ~/.bashrc'
+alias edit-zshrc='${EDITOR:-nano} ~/.zshrc'
 alias edit-bashrc='${EDITOR:-nano} ~/.bashrc'
-alias edit-aliases='${EDITOR:-nano} ~/.bashrc.d/aliases.sh'
+alias edit-shell='[ -n "$ZSH_VERSION" ] && ${EDITOR:-nano} ~/.zshrc || ${EDITOR:-nano} ~/.bashrc'
+alias edit-aliases='[ -n "$ZSH_VERSION" ] && (${EDITOR:-nano} ~/.zshrc.d/aliases.sh 2>/dev/null || ${EDITOR:-nano} ~/.zshrc.d/aliases.zsh) || ${EDITOR:-nano} ~/.bashrc.d/aliases.sh'
 alias ff='fastfetch'
 alias sysinfo='ff'
 
@@ -149,3 +153,4 @@ alias update-antigravity='sudo "$UPDATE_ANTIGRAVITY_PATH"'
 alias update-antigravity-ide='sudo "$UPDATE_ANTIGRAVITY_IDE_PATH"'
 
 echo "✅ Aliases modernizados cargados (Pacman/Paru, KDE Plasma, Kernel-Check, Rust tools)"
+

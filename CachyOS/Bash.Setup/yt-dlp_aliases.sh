@@ -1,8 +1,7 @@
-#!/bin/bash
 # =============================================================================
-# ALIASES PARA YT-DLP (yt-dlp_aliases.sh)
+# ALIASES PARA YT-DLP (yt-dlp_aliases.sh) - Adaptado para Zsh y Bash
 # =============================================================================
-# Este archivo contiene atajos para descargar vídeos y audio usando yt-dlp.
+# Atajos para descargar vídeos y audio usando yt-dlp.
 
 # Motor de JS para yt-dlp (Deno es recomendado; detectamos si viene de mise o sistema)
 if command -v deno &> /dev/null; then

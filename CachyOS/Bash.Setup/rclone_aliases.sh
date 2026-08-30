@@ -61,7 +61,7 @@ alias gdrive-musica-down-dry="rclone sync \"GoogleDrive:Música\" \"\$HOME/Músi
 # -----------------------------------------------------------------------------
 # 5. ONEDRIVE (DOWNLOAD) - BAJAR DE LA NUBE
 # -----------------------------------------------------------------------------
-alias lola-onedrive-documentos-down="rclone sync \"OneDrive:Documentos\" \"/home/caballero/Workspace/loladelacamara/Documentos\" \$RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_lola_onedrive_documentos_down.log\""
+alias lola-onedrive-documentos-down="rclone sync \"OneDrive:Documentos\" \"/home/caballero/Workspace/loladelacamara/Documentos\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_lola_onedrive_documentos_down.log\""
 
 # 6. Limpieza de variables temporales para evitar contaminar la shell
 unset RCLONE_LOG_DIR
@@ -70,4 +70,5 @@ unset RCLONE_OPTS
 # =============================================================================
 # MENSAJE DE CARGA
 # =============================================================================
-#echo "✅ Aliases de rclone cargados"
+echo "✅ Aliases de rclone cargados"
+

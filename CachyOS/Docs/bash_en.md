@@ -2,20 +2,34 @@
 sidebar_position: 3
 ---
 
-# Bash Configuration on CachyOS
+# Terminal & Shells Configuration on CachyOS (Zsh & Bash)
 
-This guide details the terminal environment (Bash) setup and built-in utilities provided in the modular scripts under the `Bash.Setup` folder.
+This guide details the terminal environment (optimized for **Zsh**, the default shell in CachyOS, and **Bash**) along with the modular scripts provided under the `Bash.Setup` folder.
 
-The modular configuration is structured through the `~/.bashrc.d/` directory to ensure the `~/.bashrc` file remains clean and maintainable.
+The modular configuration is structured through `~/.zshrc.d/` and `~/.bashrc.d/` directories to ensure fast, clean, and maintainable configurations.
 
 ---
 
 ## 1. Modular Environment Loading
 
-The scripts are loaded dynamically by adding the following block to your `~/.bashrc` file:
+### For Zsh (`~/.zshrc`)
+Add the following block to your `~/.zshrc`:
+
+```zsh
+# Modular configuration loader (~/.zshrc.d)
+if [ -d "$HOME/.zshrc.d" ]; then
+    for script in "$HOME/.zshrc.d"/*.{sh,zsh}(N); do
+        [ -r "$script" ] && source "$script"
+    done
+    unset script
+fi
+```
+
+### For Bash (`~/.bashrc`)
+Add the following block to your `~/.bashrc`:
 
 ```bash
-# Modular loading of Bash.Setup scripts
+# Modular configuration loader (~/.bashrc.d)
 if [ -d "$HOME/.bashrc.d" ]; then
     for script in "$HOME/.bashrc.d"/*.sh; do
         [ -r "$script" ] && source "$script"
@@ -24,10 +38,12 @@ if [ -d "$HOME/.bashrc.d" ]; then
 fi
 ```
 
-You can enable them by creating symbolic links in `~/.bashrc.d/`:
+### Symbolic Links
+You can link all modules automatically by running `./Setup/shell.sh` or manually:
 ```bash
-mkdir -p ~/.bashrc.d
-ln -s ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.bashrc.d/
+mkdir -p ~/.zshrc.d ~/.bashrc.d
+ln -sf ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.zshrc.d/
+ln -sf ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
 ---
@@ -36,33 +52,34 @@ ln -s ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.bashrc.d/
 
 Defines global settings and performance optimizations for system tools:
 
-- **Default Editor**: Sets `nvim` (Neovim) as the global editor.
-- **Wayland/Qt**: `QT_QPA_PLATFORM="wayland;xcb"`, `MOZ_ENABLE_WAYLAND=1`, `ELECTRON_OZONE_PLATFORM_HINT="auto"`
+- **Default Editor**: Sets `nvim` (Neovim) or `nano` as the global editor (`EDITOR`, `VISUAL`).
+- **Wayland/Qt**: `QT_QPA_PLATFORM="wayland;xcb"`, `MOZ_ENABLE_WAYLAND=1`, `ELECTRON_OZONE_PLATFORM_HINT="auto"`.
 - **Executable Paths (`PATH`)**: Adds local user directories:
   - `~/.local/bin`
   - `~/bin`
   - `~/.cargo/bin` (Rust/Cargo)
   - `~/go/bin` (Go)
-- **MISE**: Polyglot version manager activation
-- **Podman**: Automatic `DOCKER_HOST` if socket exists
-- **Aesthetic Pager (`less` and `man`)**: Custom colors and flags for readable manual pages.
+- **MISE**: Smart activation (`mise activate zsh` in Zsh / `mise activate bash` in Bash).
+- **Podman**: Automatic `DOCKER_HOST` if socket exists.
+- **Aesthetic Pager (`less` and `man`)**: Custom colors and modern flags for manual pages.
 
 ---
 
-## 3. Bash Behavior (`options.sh` and `history.sh`)
+## 3. Shell Behavior (`options.sh` and `history.sh`)
 
-Optimizes shell interaction through internal adjustments.
+Optimizes shell interaction through internal adjustments tailored for Zsh and Bash.
 
 ### Advanced Shell Behavior (`options.sh`)
-* **`autocd`**: Change directories by typing the path directly (no `cd` needed).
-* **`globstar`**: Recursive globbing patterns (e.g. `ls **/*.js`).
-* **Directory Typo Correction**: `cdspell` and `dirspell` for automatic typo fixes.
-* **Case-insensitive completion**: `bind 'set completion-ignore-case on'`.
+* **`autocd` / `AUTO_CD`**: Change directories by typing the path directly (no `cd` needed).
+* **`globstar` / `EXTENDED_GLOB`**: Recursive globbing patterns (e.g. `ls **/*.js`).
+* **Directory Typo Correction**: `setopt CORRECT` in Zsh and `cdspell` in Bash.
+* **Smart Completion in Zsh**: `zstyle` with case-insensitive matching, arrow navigation (`menu select`), and `LS_COLORS` support.
 
 ### Command History (`history.sh`)
-* Expanded capacity: **10,000 commands** in memory, **20,000 in file**.
-* Ignores duplicates (`erasedups`) and common commands (`HISTIGNORE`).
-* Immediate write after each execution.
+* Expanded capacity: **10,000 commands** in memory (`HISTSIZE`), **20,000 in file** (`SAVEHIST` / `HISTFILESIZE`).
+* Ignores duplicates (`HIST_IGNORE_ALL_DUPS`, `HIST_SAVE_NO_DUPS`, `erasedups`) and common commands (`HISTORY_IGNORE` / `HISTIGNORE`).
+* Immediate write after execution (`INC_APPEND_HISTORY` / `histappend`) and session sharing (`SHARE_HISTORY`).
+
 
 ---
 
