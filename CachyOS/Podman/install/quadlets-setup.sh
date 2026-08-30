@@ -8,7 +8,8 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REAL_SCRIPT="$(readlink -f "${BASH_SOURCE[0]:-$0}")"
+SCRIPT_DIR="$(cd "$(dirname "$REAL_SCRIPT")" && pwd)"
 PODMAN_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 RED='\033[0;31m'
@@ -37,7 +38,8 @@ Uso:
   $0 [OPCION]
 
 Opciones:
-  (sin argumentos)       Crea directorios de systemd para Quadlets, instala servicios compartidos y recarga el daemon.
+  (sin argumentos)       Crea directorios de systemd para Quadlets y verifica el generador.
+  --install-shared       Instala todos los servicios globales compartidos (.container) en systemd user.
   --status, -s           Muestra el estado de los Quadlets y servicios de usuario de systemd.
   --help, -h             Muestra este mensaje de ayuda.
 
@@ -128,6 +130,7 @@ verify_quadlets() {
     echo "  podman-utils create python-postgres mi-api"
     echo "  podman-utils start mi-api"
     echo "  podman-utils status mi-api"
+    echo "  podman-utils install-global <servicio>   (para servicios compartidos)"
     echo ""
 }
 
@@ -140,6 +143,13 @@ case "${1:-}" in
         show_status
         exit 0
         ;;
+    --install-shared)
+        require_podman
+        setup_systemd_dirs
+        setup_podman_dirs
+        install_global_services
+        verify_quadlets
+        ;;
     "")
         echo "============================================"
         echo "  Configurador de Quadlets - CachyOS"
@@ -148,7 +158,7 @@ case "${1:-}" in
         require_podman
         setup_systemd_dirs
         setup_podman_dirs
-        install_global_services
+        systemctl --user daemon-reload 2>/dev/null || true
         verify_quadlets
         ;;
     *)

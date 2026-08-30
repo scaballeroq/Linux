@@ -6,7 +6,7 @@ After=network-online.target
 [Container]
 ContainerName=__PROJECT__-postgres
 Image=docker.io/library/postgres:16-alpine
-EnvironmentFile=%h/Workspace/Repositorios/Linux/Podman/projects/__PROJECT__/.env
+EnvironmentFile=__PROJECT_DIR__/.env
 Environment=POSTGRES_USER=${POSTGRES_USER}
 Environment=POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 Environment=POSTGRES_DB=${POSTGRES_DB}

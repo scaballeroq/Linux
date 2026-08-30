@@ -6,7 +6,7 @@ After=network-online.target __PROJECT__-postgres.service
 [Container]
 ContainerName=__PROJECT__-keycloak
 Image=quay.io/keycloak/keycloak:latest
-EnvironmentFile=%h/Workspace/Repositorios/Linux/Podman/projects/__PROJECT__/.env
+EnvironmentFile=__PROJECT_DIR__/.env
 Environment=KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN:-admin}
 Environment=KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD:-admin}
 Environment=KC_DB=postgres

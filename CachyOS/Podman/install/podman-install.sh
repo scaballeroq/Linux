@@ -88,6 +88,7 @@ install_packages() {
         sudo pacman -S --needed --noconfirm \
             podman \
             podman-compose \
+            podman-docker \
             passt \
             fuse-overlayfs \
             shadow 2>/dev/null || true
@@ -168,9 +169,9 @@ enable_podman_socket() {
     log_ok "Socket de Podman activo en /run/user/$(id -u)/podman/podman.sock."
 }
 
-# 8. Exportar DOCKER_HOST en sesión KDE Plasma y Shell
+# 8. Exportar DOCKER_HOST en sesión KDE Plasma y Shells (Bash & Zsh)
 configure_docker_host() {
-    log_info "Configurando DOCKER_HOST para KDE Plasma / Wayland y Shell..."
+    log_info "Configurando DOCKER_HOST para KDE Plasma / Wayland y Shells (Zsh / Bash)..."
     local socket_path="/run/user/$(id -u)/podman/podman.sock"
     local export_line="export DOCKER_HOST=\"unix://$socket_path\""
 
@@ -180,14 +181,43 @@ configure_docker_host() {
 DOCKER_HOST=unix://$socket_path
 EOF
 
-    # 8.2. Shell modular ~/.bashrc.d/podman.sh
+    # 8.2. Integración modular Zsh (~/.zshrc.d/podman.zsh)
+    mkdir -p "$HOME/.zshrc.d"
+    cat <<EOF > "$HOME/.zshrc.d/podman.zsh"
+# Podman Docker API Integration
+$export_line
+
+# PATH para utilidades de usuario
+if [ -d "\$HOME/.local/bin" ] && [[ ":\$PATH:" != *":\$HOME/.local/bin:"* ]]; then
+    export PATH="\$HOME/.local/bin:\$PATH"
+fi
+EOF
+
+    # 8.3. Integración modular Bash (~/.bashrc.d/podman.sh)
     mkdir -p "$HOME/.bashrc.d"
     cat <<EOF > "$HOME/.bashrc.d/podman.sh"
 # Podman Docker API Integration
 $export_line
+
+# PATH para utilidades de usuario
+if [ -d "\$HOME/.local/bin" ] && [[ ":\$PATH:" != *":\$HOME/.local/bin:"* ]]; then
+    export PATH="\$HOME/.local/bin:\$PATH"
+fi
 EOF
 
-    # 8.3. Fallback directo en ~/.bashrc
+    # 8.4. Fallback directo en ~/.zshrc
+    if [ -f "$HOME/.zshrc" ] || [[ "${SHELL:-}" == *"zsh"* ]]; then
+        touch "$HOME/.zshrc"
+        if ! grep -q "DOCKER_HOST=" "$HOME/.zshrc" 2>/dev/null; then
+            cat <<EOF >> "$HOME/.zshrc"
+
+# Podman Docker API Integration
+$export_line
+EOF
+        fi
+    fi
+
+    # 8.5. Fallback directo en ~/.bashrc
     if ! grep -q "DOCKER_HOST=" "$HOME/.bashrc" 2>/dev/null; then
         cat <<EOF >> "$HOME/.bashrc"
 
@@ -196,7 +226,7 @@ $export_line
 EOF
     fi
 
-    log_ok "DOCKER_HOST integrado en sesión de KDE Plasma y shell."
+    log_ok "DOCKER_HOST integrado en KDE Plasma, Zsh (~/.zshrc.d/podman.zsh) y Bash."
 }
 
 # 9. Enlazar podman-utils al PATH del usuario
@@ -210,7 +240,47 @@ setup_podman_utils_cli() {
     fi
 }
 
-# 10. Desplegar estructura de Quadlets
+# 10. Configurar autocompletado en Zsh y Bash
+setup_completions() {
+    log_info "Configurando autocompletado para Zsh y Bash..."
+    local zsh_site_dir="$HOME/.local/share/zsh/site-functions"
+    local zfunc_dir="$HOME/.zfunc"
+    local bash_comp_dir="$HOME/.local/share/bash-completion/completions"
+
+    mkdir -p "$zsh_site_dir" "$zfunc_dir" "$bash_comp_dir"
+
+    # Autocompletado oficial de Podman CLI
+    if command -v podman &>/dev/null; then
+        podman completion zsh > "$zsh_site_dir/_podman" 2>/dev/null || true
+        podman completion zsh > "$zfunc_dir/_podman" 2>/dev/null || true
+        podman completion bash > "$bash_comp_dir/podman" 2>/dev/null || true
+    fi
+
+    # Autocompletado de podman-utils CLI
+    if [ -f "$PODMAN_ROOT/lib/podman-utils-completion.zsh" ]; then
+        cp "$PODMAN_ROOT/lib/podman-utils-completion.zsh" "$zsh_site_dir/_podman-utils"
+        cp "$PODMAN_ROOT/lib/podman-utils-completion.zsh" "$zfunc_dir/_podman-utils"
+    fi
+
+    if [ -f "$PODMAN_ROOT/lib/podman-utils-completion.bash" ]; then
+        cp "$PODMAN_ROOT/lib/podman-utils-completion.bash" "$bash_comp_dir/podman-utils"
+    fi
+
+    # Asegurar fpath en ~/.zshrc si no está presente
+    if [ -f "$HOME/.zshrc" ]; then
+        if ! grep -q "site-functions" "$HOME/.zshrc" 2>/dev/null; then
+            cat <<'EOF' >> "$HOME/.zshrc"
+
+# Completions fpath
+fpath=($HOME/.local/share/zsh/site-functions $HOME/.zfunc $fpath)
+EOF
+        fi
+    fi
+
+    log_ok "Autocompletado configurado para Zsh y Bash."
+}
+
+# 11. Desplegar estructura de Quadlets
 setup_quadlets() {
     log_info "Configurando estructura de directorios para Quadlets..."
     if [ -f "$SCRIPT_DIR/quadlets-setup.sh" ]; then
@@ -242,11 +312,12 @@ case "${1:-}" in
         enable_podman_socket
         configure_docker_host
         setup_podman_utils_cli
+        setup_completions
         setup_quadlets
         echo ""
         show_status
         echo "================================================================="
-        echo "✅ Podman Rootless y Quadlets configurados con éxito."
+        echo "✅ Podman Rootless y Quadlets configurados con éxito para Zsh y KDE Plasma."
         echo "💡 Comandos útiles: podman-utils create <template> <nombre> | podman ps"
         echo "================================================================="
         ;;

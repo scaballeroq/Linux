@@ -6,7 +6,7 @@ After=network-online.target __PROJECT__-postgres.service __PROJECT__-redis.servi
 [Container]
 ContainerName=__PROJECT__-backend
 Image=docker.io/library/python:3.12-slim
-EnvironmentFile=%h/Workspace/Repositorios/Linux/Podman/projects/__PROJECT__/.env
+EnvironmentFile=__PROJECT_DIR__/.env
 WorkingDir=/app
 Volume=__PROJECT_DIR__/src:/app/src:ro
 Volume=__PROJECT_DIR__/requirements.txt:/app/requirements.txt:ro

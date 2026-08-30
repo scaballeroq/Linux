@@ -5,7 +5,8 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REAL_SCRIPT="$(readlink -f "${BASH_SOURCE[0]:-$0}")"
+SCRIPT_DIR="$(cd "$(dirname "$REAL_SCRIPT")" && pwd)"
 PODMAN_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 TEMPLATES_DIR="$PODMAN_DIR/templates"
 PROJECTS_DIR="$PODMAN_DIR/projects"
@@ -74,6 +75,16 @@ cmd_create() {
     # Renombrar archivos con placeholder
     find "$project_dir" -name "*__PROJECT__*" | while read -r file; do
         mv "$file" "$(echo "$file" | sed "s/__PROJECT__/$project/g")"
+    done
+
+    # Asegurar que los archivos .container lleven el prefijo del proyecto
+    for file in "$project_dir"/*.container; do
+        [ -f "$file" ] || continue
+        local fname
+        fname="$(basename "$file")"
+        if [[ "$fname" != "${project}-"* ]]; then
+            mv "$file" "$project_dir/${project}-${fname}"
+        fi
     done
 
     # Crear symlinks en systemd
@@ -158,7 +169,11 @@ cmd_logs() {
     [ -z "$project" ] && { log_error "Uso: podman-utils logs <proyecto> [servicio]"; exit 1; }
 
     if [ -n "$service" ]; then
-        journalctl --user -u "${project}-${service}.service" -f --no-pager
+        if [[ "$service" == "${project}-"* ]]; then
+            journalctl --user -u "${service}.service" -f --no-pager
+        else
+            journalctl --user -u "${project}-${service}.service" -f --no-pager
+        fi
     else
         journalctl --user -u "${project}*.service" -f --no-pager
     fi
@@ -244,7 +259,11 @@ link_project_to_systemd() {
         [ -f "$file" ] || continue
         local basename
         basename="$(basename "$file")"
-        ln -sf "$file" "$SYSTEMD_DIR/$basename"
+        if [[ "$basename" == *.container ]] && [[ "$basename" != "${project}-"* ]]; then
+            ln -sf "$file" "$SYSTEMD_DIR/${project}-${basename}"
+        else
+            ln -sf "$file" "$SYSTEMD_DIR/$basename"
+        fi
     done
 }
 
@@ -399,7 +418,11 @@ cmd_doctor() {
     if [ -n "${DOCKER_HOST:-}" ]; then
         log_ok "DOCKER_HOST: $DOCKER_HOST"
     else
-        log_info "DOCKER_HOST: No exportado en el shell actual (Carga con: source ~/.bashrc)"
+        local reload_hint="source ~/.zshrc"
+        if [ -n "${BASH_VERSION:-}" ] && [ -z "${ZSH_VERSION:-}" ]; then
+            reload_hint="source ~/.bashrc"
+        fi
+        log_info "DOCKER_HOST: No exportado en el shell actual (Carga con: $reload_hint)"
     fi
 
     # 5. Generador Quadlet
