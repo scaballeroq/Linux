@@ -49,13 +49,15 @@ Una vez instalado Mise, se despliegan de forma global los siguientes lenguajes o
   ```
 * **Optimizaciones**: Desactiva las preguntas interactivas de telemetría (`ng config -g cli.analytics false`) y genera autocompletados para Zsh y Bash.
 
-### Python (`python.sh`)
-* **Dependencias**: Comprueba e instala librerías del sistema para compilar extensiones nativas (`openssl`, `zlib`, `bzip2`, `readline`, `sqlite`, `libffi`, etc.).
-* **Instalación**: Instala la última versión estable/LTS vía Mise y actualiza el gestor de paquetes pip:
+### Python & uv (`python.sh`)
+* **Dependencias**: Comprueba e instala librerías del sistema para compilar extensiones nativas (`openssl`, `zlib`, `bzip2`, `readline`, `sqlite`, `libffi`, etc.) con optimizaciones PGO + LTO.
+* **Instalación**: Instala la última versión estable de Python y el gestor ultrarrápido **uv** vía Mise:
   ```bash
   mise use --global python@latest
-  mise exec python@latest -- python -m pip install --upgrade pip
+  mise use --global uv@latest
+  mise exec python@latest -- python -m pip install --upgrade pip setuptools wheel
   ```
+* **KDE Plasma 6 & Shells**: Genera `~/.config/environment.d/10-python.conf`, `~/.zshrc.d/python.zsh` y autocompletados nativos para Zsh y Bash (`_uv`, `_uvx`, `_pip`).
 
 ### .NET SDK (`dotnet.sh`)
 * **Dependencias**: Librerías nativas del sistema (`icu`, `krb5`, `openssl`, `zlib`, `libunwind`).

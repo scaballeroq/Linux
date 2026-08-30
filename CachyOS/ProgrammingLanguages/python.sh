@@ -1,13 +1,13 @@
 #!/bin/bash
 # ==============================================================================
-# python.sh - Instalación de Python (Última versión Estable/LTS) vía Mise
-# Optimizado para CachyOS, KDE Plasma 6 y Zsh / Bash (pip, uv, dependencias)
+# python.sh - Instalación y Optimización de Python y uv vía Mise
+# Optimizado para CachyOS (PGO/LTO), KDE Plasma 6 (environment.d) y Zsh / Bash
 # ==============================================================================
 
 set -euo pipefail
 
 echo "================================================================="
-echo "🐍 Instalando Python (Última versión Estable/LTS) para CachyOS"
+echo "🐍 Instalando y Optimizando Python & uv para CachyOS"
 echo "================================================================="
 
 if [ "$EUID" -ne 0 ]; then
@@ -29,11 +29,17 @@ else
     USER_HOME="${HOME:-/home/$REAL_USER}"
 fi
 
+# Flags de optimización para compilación de Python en CachyOS (PGO + LTO + multinúcleo)
+NPROC=$(nproc 2>/dev/null || echo 4)
+export MAKEFLAGS="-j$NPROC"
+export PYTHON_CONFIGURE_OPTS="--enable-optimizations --with-lto"
+export UV_LINK_MODE="copy"
+
 run_as_user() {
     if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-        sudo -u "$REAL_USER" env HOME="$USER_HOME" PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" "$@"
+        sudo -u "$REAL_USER" env HOME="$USER_HOME" MAKEFLAGS="-j$NPROC" PYTHON_CONFIGURE_OPTS="--enable-optimizations --with-lto" UV_LINK_MODE="copy" PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" "$@"
     else
-        PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" "$@"
+        MAKEFLAGS="-j$NPROC" PYTHON_CONFIGURE_OPTS="--enable-optimizations --with-lto" UV_LINK_MODE="copy" PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" "$@"
     fi
 }
 
@@ -52,34 +58,88 @@ if ! command -v mise &> /dev/null && [ ! -x "$USER_HOME/.local/bin/mise" ]; then
     fi
 fi
 
-# 2. Dependencias de compilación para Python y extensiones nativas C/C++
-echo "ℹ️ [1/3] Verificando dependencias de compilación para Python..."
+# 2. Dependencias de compilación y librerías del sistema para Python en CachyOS
+echo "ℹ️ [1/5] Verificando dependencias nativas del sistema..."
 MISSING_PKGS=$(pacman -T base-devel openssl zlib bzip2 readline sqlite curl git ncurses xz tk libffi 2>/dev/null || true)
 if [ -n "$MISSING_PKGS" ]; then
     echo "  ⬇️ Instalando librerías requeridas: $MISSING_PKGS..."
     $SUDO pacman -S --needed --noconfirm $MISSING_PKGS
 else
-    echo "  ✅ Dependencias de compilación ya instaladas."
+    echo "  ✅ Dependencias nativas ya instaladas."
 fi
 
-# 3. Instalar la última versión estable / LTS de Python con Mise
-echo "ℹ️ [2/3] Descargando e instalando Python (LTS/Stable) vía Mise..."
+# 3. Instalar la última versión estable de Python y uv con Mise
+echo "ℹ️ [2/5] Descargando e instalando Python (Latest) y uv vía Mise..."
 run_as_user mise use --global python@latest
+run_as_user mise use --global uv@latest
+
+# 4. Actualizar pip, setuptools y wheel
+echo "ℹ️ [3/5] Actualizando herramientas base de empaquetado (pip, setuptools, wheel)..."
+run_as_user mise exec python@latest -- python -m pip install --upgrade pip setuptools wheel --quiet 2>/dev/null || true
 run_as_user mise reshim 2>/dev/null || true
 
-# 4. Actualizar pip
-echo "ℹ️ [3/3] Actualizando gestor de paquetes pip..."
-run_as_user mise exec python@latest -- python -m pip install --upgrade pip --quiet 2>/dev/null || true
-run_as_user mise reshim 2>/dev/null || true
+# 5. Integración con KDE Plasma 6 (environment.d) y Shells (Zsh / Bash)
+echo "ℹ️ [4/5] Configurando variables de entorno para KDE Plasma 6 y Shells..."
+ENV_DIR="$USER_HOME/.config/environment.d"
+BASHRC_D="$USER_HOME/.bashrc.d"
+ZSHRC_D="$USER_HOME/.zshrc.d"
+run_as_user mkdir -p "$ENV_DIR" "$BASHRC_D" "$ZSHRC_D"
 
-# Obtener versión instalada
-PYTHON_VER=$(run_as_user mise exec python@latest -- python --version 2>/dev/null || echo "instalado")
-PIP_VER=$(run_as_user mise exec python@latest -- pip --version 2>/dev/null | awk '{print $2}' || echo "instalado")
+# 5.1. KDE Plasma 6 (sesión gráfica, VS Code, PyCharm, Antigravity)
+cat << 'EOF' | run_as_user tee "$ENV_DIR/10-python.conf" > /dev/null
+# Integración de Python & uv para KDE Plasma 6 / Wayland
+PYTHONUNBUFFERED=1
+UV_LINK_MODE=copy
+EOF
+
+# 5.2. Shell Zsh
+cat << 'EOF' | run_as_user tee "$ZSHRC_D/python.zsh" > /dev/null
+# Python & uv Environment Settings
+export PYTHONUNBUFFERED=1
+export UV_LINK_MODE=copy
+EOF
+
+# 5.3. Shell Bash
+cat << 'EOF' | run_as_user tee "$BASHRC_D/python.sh" > /dev/null
+# Python & uv Environment Settings
+export PYTHONUNBUFFERED=1
+export UV_LINK_MODE=copy
+EOF
+
+# 6. Configurar autocompletado en Zsh y Bash
+echo "ℹ️ [5/5] Generando autocompletados para Zsh y Bash (uv, uvx, pip)..."
+COMPLETIONS_DIR="$USER_HOME/.local/share/bash-completion/completions"
+ZSH_COMPLETIONS_DIR="$USER_HOME/.local/share/zsh/site-functions"
+ZFUNC_DIR="$USER_HOME/.zfunc"
+run_as_user mkdir -p "$COMPLETIONS_DIR" "$ZSH_COMPLETIONS_DIR" "$ZFUNC_DIR"
+
+if command -v mise &>/dev/null; then
+    # uv autocompletion
+    run_as_user mise exec uv@latest -- uv generate-shell-completion bash > "$COMPLETIONS_DIR/uv" 2>/dev/null || true
+    run_as_user mise exec uv@latest -- uv generate-shell-completion zsh > "$ZSH_COMPLETIONS_DIR/_uv" 2>/dev/null || true
+    run_as_user mise exec uv@latest -- uv generate-shell-completion zsh > "$ZFUNC_DIR/_uv" 2>/dev/null || true
+
+    # uvx autocompletion
+    run_as_user mise exec uv@latest -- uvx --generate-shell-completion bash > "$COMPLETIONS_DIR/uvx" 2>/dev/null || true
+    run_as_user mise exec uv@latest -- uvx --generate-shell-completion zsh > "$ZSH_COMPLETIONS_DIR/_uvx" 2>/dev/null || true
+    run_as_user mise exec uv@latest -- uvx --generate-shell-completion zsh > "$ZFUNC_DIR/_uvx" 2>/dev/null || true
+
+    # pip autocompletion
+    run_as_user mise exec python@latest -- pip completion --bash > "$COMPLETIONS_DIR/pip" 2>/dev/null || true
+    run_as_user mise exec python@latest -- pip completion --zsh > "$ZSH_COMPLETIONS_DIR/_pip" 2>/dev/null || true
+    run_as_user mise exec python@latest -- pip completion --zsh > "$ZFUNC_DIR/_pip" 2>/dev/null || true
+fi
+
+# Obtener versiones instaladas
+PYTHON_VER=$(run_as_user mise exec python@latest -- python --version 2>/dev/null || echo "Python instalado")
+UV_VER=$(run_as_user mise exec uv@latest -- uv --version 2>/dev/null || echo "uv instalado")
+PIP_VER=$(run_as_user mise exec python@latest -- pip --version 2>/dev/null | awk '{print $2}' || echo "pip instalado")
 
 echo "================================================================="
-echo "✅ Python configurado con éxito para CachyOS y KDE Plasma 6:"
-echo "  • Runtime:     $PYTHON_VER"
-echo "  • Pip:         v$PIP_VER"
-echo "  • Shims:       ~/.local/share/mise/shims"
-echo "  • Shells:      Bash & Zsh"
+echo "✅ Python & uv configurados con éxito para CachyOS y KDE Plasma 6:"
+echo "  • Python:      $PYTHON_VER"
+echo "  • uv:          $UV_VER (Gestor ultrarrápido en Rust)"
+echo "  • pip:         v$PIP_VER (setuptools + wheel actualizados)"
+echo "  • KDE Plasma:  ~/.config/environment.d/10-python.conf"
+echo "  • Shells:      Bash & Zsh con autocompletado nativo (_uv, _uvx, _pip)"
 echo "================================================================="

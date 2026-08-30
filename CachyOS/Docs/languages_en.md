@@ -49,13 +49,15 @@ Once Mise is installed, the following development environments are deployed glob
   ```
 * **Optimizations**: Automatically disables interactive analytics prompts (`ng config -g cli.analytics false`) and sets up Zsh/Bash autocompletions.
 
-### Python (`python.sh`)
-* **Dependencies**: Checks and installs system libraries required to build C extensions for Python (`openssl`, `zlib`, `bzip2`, `readline`, `sqlite`, `libffi`, etc.).
-* **Installation**: Installs the latest stable/LTS Python runtime via Mise and updates pip:
+### Python & uv (`python.sh`)
+* **Dependencies**: Checks and installs system libraries required to build C extensions for Python (`openssl`, `zlib`, `bzip2`, `readline`, `sqlite`, `libffi`, etc.) with PGO + LTO compiler optimizations.
+* **Installation**: Installs the latest stable Python runtime and the ultra-fast **uv** package manager via Mise:
   ```bash
   mise use --global python@latest
-  mise exec python@latest -- python -m pip install --upgrade pip
+  mise use --global uv@latest
+  mise exec python@latest -- python -m pip install --upgrade pip setuptools wheel
   ```
+* **KDE Plasma 6 & Shells**: Generates `~/.config/environment.d/10-python.conf`, `~/.zshrc.d/python.zsh` and native Zsh/Bash autocompletions (`_uv`, `_uvx`, `_pip`).
 
 ### .NET SDK (`dotnet.sh`)
 * **Dependencies**: Native runtime libraries (`icu`, `krb5`, `openssl`, `zlib`, `libunwind`).
