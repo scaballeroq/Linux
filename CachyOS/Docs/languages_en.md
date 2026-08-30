@@ -2,11 +2,11 @@
 sidebar_position: 6
 ---
 
-# Programming Languages Management on Debian 13
+# Programming Languages Management on CachyOS
 
 This guide details the installation, control, and maintenance of programming languages and their development environments managed in the `ProgrammingLanguages` folder.
 
-Environment management is centralized through **Mise** (runtimes and SDKs) and **Rustup** (Rust toolchain), supplemented by automated tasks configured via a `justfile`.
+Environment management is centralized through **Mise** (runtimes and SDKs) and **Rustup** (Rust toolchain), supplemented by automated tasks configured via a `justfile` and natively integrated with **KDE Plasma 6 (Wayland / systemd user session)** as well as **Zsh** and **Bash** shells.
 
 ---
 
@@ -21,84 +21,89 @@ Mise is a modern CLI version manager that replaces older tools like `asdf`, `nvm
 
 2. **Session and Shell Activation**:
    - For KDE Plasma 6 & desktop environments: `~/.config/environment.d/10-mise.conf`
-   - For Zsh: `~/.zshrc` (`eval "$(mise activate zsh)"`)
+   - For Zsh: `~/.zshrc` (`eval "$(mise activate zsh)"`) and `_mise` completions
    - For Bash: `~/.bashrc.d/mise.sh`
 
 ---
 
-## 2. Language Runtimes and SDKs
+## 2. Language Runtimes and SDKs (Latest LTS Versions)
 
 Once Mise is installed, the following development environments are deployed globally:
 
-### Node.js (`nodejs.sh` and `angular.sh`)
-* **Dependencies**: Installs `base-devel`, `curl`, `python`, `gcc`, and `make` via Pacman, required to build native npm dependencies (`node-gyp`).
+### Node.js (`nodejs.sh`)
+* **Dependencies**: Checks and installs `base-devel`, `curl`, `python`, `gcc`, and `make` via Pacman, required to build native npm dependencies (`node-gyp`).
 * **Installation**: Installs and sets the **latest active Node.js LTS** release globally:
   ```bash
   mise use --global node@lts
   ```
-* **Corepack (pnpm / yarn)**: Enables Corepack out of the box for fast and native `pnpm` and `yarn` package management:
+* **Corepack (pnpm / yarn)**: Enables Corepack non-interactively (`COREPACK_ENABLE_DOWNLOAD_PROMPT=0`) for instant `pnpm` and `yarn` package management:
   ```bash
   mise exec node@lts -- corepack enable
   mise reshim
   ```
-* **Angular CLI**: Installs the official Angular CLI globally:
+
+### Angular CLI (`angular.sh`)
+* **Installation**: Installs the official Angular CLI globally:
   ```bash
   mise use --global npm:@angular/cli@latest
   ```
+* **Optimizations**: Automatically disables interactive analytics prompts (`ng config -g cli.analytics false`) and sets up Zsh/Bash autocompletions.
 
 ### Python (`python.sh`)
-* **Dependencies**: Installs system libraries required to build C extensions for Python (`libssl-dev`, `zlib1g-dev`, `libffi-dev`, etc.).
-* **Installation**: Installs the optimized 3.12 branch and updates the pip package manager:
+* **Dependencies**: Checks and installs system libraries required to build C extensions for Python (`openssl`, `zlib`, `bzip2`, `readline`, `sqlite`, `libffi`, etc.).
+* **Installation**: Installs the latest stable/LTS Python runtime via Mise and updates pip:
   ```bash
-  mise use --global python@3.12
-  mise exec python@3.12 -- python -m pip install --upgrade pip
+  mise use --global python@latest
+  mise exec python@latest -- python -m pip install --upgrade pip
   ```
 
 ### .NET SDK (`dotnet.sh`)
-* **Installation**: Installs the LTS version of the .NET SDK:
+* **Dependencies**: Native runtime libraries (`icu`, `krb5`, `openssl`, `zlib`, `libunwind`).
+* **Installation**: Installs the latest Long Term Support **LTS** version of the .NET SDK:
   ```bash
-  mise use --global dotnet@8
+  mise use --global dotnet@lts
   ```
+* **KDE Plasma 6 & IDEs**: Configures `DOTNET_ROOT` in `~/.config/environment.d/10-dotnet.conf` for JetBrains Rider, VS Code, and Antigravity, while opting out of build telemetry.
 
 ---
 
 ## 3. Rust Environment (`rust.sh`)
 
-Rust is managed through its official standard toolchain installer **Rustup**.
+Rust is managed through its official standard toolchain installer **Rustup** using the **Stable** production channel (Rust's release model).
 
 1. **System Build Dependencies**:
    ```bash
-   sudo pacman -S --needed --noconfirm base-devel cmake openssl pkgconf curl
+   sudo pacman -S --needed --noconfirm base-devel cmake openssl pkgconf curl git
    ```
 
-2. **Rustup Installation**:
-   Downloads the installation script without directly modifying the global environment path to preserve modular loading:
+2. **Rustup Installation & Stable Channel**:
+   Downloads the installer fixing the `stable` toolchain:
    ```bash
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile default --no-modify-path
    ```
 
-3. **Modular Environment Loading**:
-   Adds the Cargo bin path variables inside `~/.bashrc.d/rust.sh`:
+3. **IDE Development Components**:
+   Installs `rust-analyzer`, `clippy`, `rustfmt`, and `rust-src` for seamless out-of-the-box support in VS Code, RustRover, and Antigravity:
    ```bash
-   if [ -f "$HOME/.cargo/env" ]; then
-       . "$HOME/.cargo/env"
-   fi
+   rustup component add rust-src rust-analyzer clippy rustfmt
    ```
 
-4. **Fast Binary Installer (`cargo-binstall`)**:
-   Downloads and integrates `cargo-binstall`, which installs Rust-written CLI tools directly from GitHub pre-compiled binaries instead of compiling them from source locally (saving massive compilation times):
-   ```bash
-   curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-   ```
+4. **KDE Plasma 6 and Shell Integration**:
+   - KDE Plasma 6: `~/.config/environment.d/10-rust.conf`
+   - Bash & Zsh: `~/.bashrc.d/rust.sh` and `~/.zshrc.d/rust.zsh`
+   - Autocompletions: `_cargo` and `_rustup` for Zsh and Bash.
+
+5. **Fast Binary Installer (`cargo-binstall`)**:
+   Downloads and integrates `cargo-binstall`, which installs Rust-written CLI tools directly from GitHub pre-compiled binaries instead of compiling them from source locally.
 
 ---
 
 ## 4. OpenJDK Java (`java.sh`)
 
 Installs OpenJDK LTS for CachyOS via Pacman:
-```bash
-sudo pacman -S --needed --noconfirm jdk-openjdk
-```
+* **Packages**: `jdk25-openjdk` / `jdk21-openjdk` (LTS) along with `nss` and `pcsclite` (AutoFirma and DNIe / Smartcard reader support).
+* **JVM Management**: Configures the active runtime using `archlinux-java`.
+* **KDE Plasma 6 Integration**: Exports `JAVA_HOME=/usr/lib/jvm/default` in `~/.config/environment.d/10-java.conf` for Android Studio, IntelliJ IDEA, Gradle, and Maven.
 
 ---
 
@@ -111,7 +116,7 @@ A `justfile` is included to trigger individual runtime installations using simpl
 mise:
     ./mise.sh
 
-# Installs Node
+# Installs Node.js LTS
 node:
     ./nodejs.sh
 
@@ -119,15 +124,15 @@ node:
 python:
     ./python.sh
 
-# Installs Rust
+# Installs Rust Stable
 rust:
     ./rust.sh
 
-# Installs .NET
+# Installs .NET SDK LTS
 dotnet:
     ./dotnet.sh
 
-# Installs Java
+# Installs Java OpenJDK LTS
 java:
     ./java.sh
 
