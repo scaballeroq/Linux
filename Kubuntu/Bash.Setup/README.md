@@ -1,6 +1,6 @@
 # 🚀 Kubuntu Bash Setup (.bashrc.d)
 
-Colección modular de scripts de configuración para Bash, diseñados específicamente para optimizar la productividad y experiencia en **Kubuntu (KDE Plasma)** y sistemas derivados.
+Colección modular de scripts de configuración para Bash, diseñados específicamente para optimizar la productividad y experiencia en **Kubuntu (KDE Plasma 6 / Wayland)** y entornos de desarrollo.
 
 ---
 
@@ -9,14 +9,14 @@ Colección modular de scripts de configuración para Bash, diseñados específic
 | Archivo | Descripción |
 | :--- | :--- |
 | `aliases.sh` | Atajos para comandos frecuentes, navegación, Git, APT, utilidades modernas de Rust y virtualización. |
-| `functions.sh` | Funciones utilitarias para navegación, backups, compresión, búsqueda de procesos y conversión multimedia. |
-| `podman-functions.sh` | Funciones avanzadas para gestionar contenedores Podman de forma ágil y segura sin colisiones. |
+| `functions.sh` | Funciones utilitarias para navegación (`mkcd`, `up`), backups, compresión multiformato (`zstd`, `zip`, `tar`), búsqueda de procesos y conversión multimedia (`ffmpeg`, `ImageMagick`). |
+| `podman-functions.sh` | Funciones avanzadas para gestionar contenedores Podman, pods y servicios Quadlet (`systemd --user`). |
 | `rclone_aliases.sh` | Atajos y funciones de sincronización, copia y dry-run con Google Drive y OneDrive. |
 | `yt-dlp_aliases.sh` | Atajos para descarga de video/audio en alta calidad con cookies de navegador y motor JS. |
-| `history.sh` | Configuración optimizada del historial de Bash (10k/20k líneas, sin duplicados y con timestamps). |
-| `environment.sh` | Definición de variables globales (`EDITOR`, `PATH`) y personalización visual de `less` y `man`. |
-| `options.sh` | Configuración del comportamiento de Bash (`autocd`, `globstar`, corrección de typos). |
-| `desktop_settings.sh` | Optimizaciones de escritorio para KDE Plasma 6/5 (Luz nocturna, energía, temas Breeze, aliases). |
+| `history.sh` | Configuración optimizada del historial de Bash (sincronización en tiempo real entre pestañas, sin duplicados y con timestamps). |
+| `environment.sh` | Definición de variables globales (`EDITOR`, `PATH`, `DOCKER_HOST`, `QT_QPA_PLATFORM`) y personalización visual de `less` y `man`. |
+| `options.sh` | Configuración del comportamiento de Bash (`autocd`, `globstar`, `cdspell`, `dirspell`). |
+| `desktop_settings.sh` | Atajos rápidos de control para KDE Plasma 6 (Luz nocturna, conmutador de tema Kubuntu Dark, recarga de KWin y Plasmashell). |
 
 ---
 
@@ -26,10 +26,8 @@ Para activar estos módulos de forma automática, crea el directorio `~/.bashrc.
 
 ```bash
 mkdir -p ~/.bashrc.d
-ln -s ~/Workspace/Repositorios/Kubuntu/Bash.Setup/*.sh ~/.bashrc.d/
+ln -sf ~/Workspace/Repositorios/Linux/Kubuntu/Bash.Setup/*.sh ~/.bashrc.d/
 ```
-
-*Nota: Asegúrate de ajustar la ruta al directorio donde hayas clonado el repositorio.*
 
 Luego, agrega el cargador modular a tu `~/.bashrc` si aún no lo tienes:
 
@@ -46,26 +44,26 @@ fi
 
 ## 🛠️ Comandos Destacados
 
-### 📦 Contenedores (Podman)
+### 📦 Contenedores (Podman & Quadlets)
 - `psh <contenedor>`: Abre una shell interactiva dentro del contenedor.
 - `plogs <contenedor>`: Muestra logs en tiempo real con `--tail 100`.
 - `ppsf` / `ppsaf`: Listado de contenedores formateado en tabla limpia.
 - `pstats`: Monitor en vivo de consumo de CPU, RAM y red.
-- `pclean` / `pclean-all`: Limpieza profunda del sistema de contenedores.
+- `pstop-all` / `prm-all` / `pclean-all`: Limpiezas seguras usando `xargs -r`.
+- `qstatus` / `qlogs <servicio>` / `qrestart <servicio>` / `qreload`: Gestión de Quadlets de usuario en Systemd.
 
 ### 🎬 Multimedia (FFMPEG & ImageMagick)
 - `webm2mp4`: Convierte grabaciones de pantalla a MP4 compatible.
-- `img2jpg` / `img2png`: Optimiza imágenes para web o almacenamiento.
-- `transcode-video-1080p`: Optimización rápida de video.
+- `img2jpg` / `img2png`: Optimiza y convierte imágenes rápidamente.
+- `transcode-video-1080p` / `transcode-video-720p`: Recodificación de vídeo optimizada.
 
 ### 🖥️ KDE Plasma
 - `kde-night-light-on` / `kde-night-light-off`: Control rápido de Luz Nocturna.
-- `kde-theme-dark` / `kde-theme-light`: Alterna entre tema Breeze Oscuro y Claro.
-- `kde-conf`: Acceso directo a Preferencias del Sistema.
+- `kde-theme-dark` / `kde-theme-light`: Alterna entre tema Kubuntu Dark y Claro.
+- `kde-restart-kwin` / `kde-restart-plasma`: Recarga en caliente del compositor KWin o la interfaz Plasmashell.
 
 ### ☁️ Sincronización (Rclone)
 - `gdrive-documentos` / `gdrive-documentos-copy`: Sincroniza o copia tu carpeta de documentos con Google Drive.
-- `gdrive-videos-down` / `gdrive-videos-down-copy`: Descarga tus vídeos de la nube al equipo local.
 - `gdrive-repos-kubuntu`: Respaldo específico del repositorio de Kubuntu.
 - Optimizado para Google Drive con límites de TPS (`--tpslimit 10`), carga rápida (`--fast-list`) y simulaciones `--dry-run`.
 

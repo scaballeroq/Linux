@@ -137,8 +137,3 @@ unset RCLONE_LOG_DIR
 unset RCLONE_OPTS
 unset RCLONE_REPOS_BASE
 unset RCLONE_EXT_BASE
-
-# =============================================================================
-# MENSAJE DE CARGA
-# =============================================================================
-echo "✅ Aliases de rclone cargados"

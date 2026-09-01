@@ -1,42 +1,26 @@
-#!/bin/bash
 # =============================================================================
 # CONFIGURACIÓN DEL HISTORIAL (history.sh) - Kubuntu
 # =============================================================================
-# Este archivo optimiza cómo Bash almacena y maneja el historial de comandos,
-# aumentando su capacidad, evitando duplicados y guardando marcas de tiempo.
+# Optimiza el almacenamiento del historial de comandos, sincronización
+# en tiempo real entre terminales y marcas de tiempo.
+# =============================================================================
 
-# -----------------------------------------------------------------------------
-# 1. TAMAÑO Y CAPACIDAD
-# -----------------------------------------------------------------------------
-# Número de comandos recordados en memoria durante la sesión
+# Tamaño de historial
 export HISTSIZE=10000
+export HISTFILESIZE=50000
 
-# Número de líneas guardadas permanentemente en el archivo ~/.bash_history
-export HISTFILESIZE=20000
+# Control de duplicados y espacios
+export HISTCONTROL="ignoreboth:erasedups"
 
-# -----------------------------------------------------------------------------
-# 2. COMPORTAMIENTO Y FILTRADO
-# -----------------------------------------------------------------------------
-# ignoredups: No guardar comandos si son iguales al anterior.
-# ignorespace: No guardar comandos que comiencen con un espacio (útil para contraseñas).
-export HISTCONTROL="ignoredups:ignorespace"
-
-# Formato de fecha y hora para cada comando en 'history' (AAAA-MM-DD HH:MM:SS)
+# Formato de fecha y hora (AAAA-MM-DD HH:MM:SS)
 export HISTTIMEFORMAT="%F %T  "
 
-# Comandos comunes que no vale la pena registrar en el historial
+# Comandos que no se registran
 export HISTIGNORE="ls:ll:la:cd:pwd:exit:clear:c:h:history"
 
-# -----------------------------------------------------------------------------
-# 3. OPCIONES DE SHELL PARA HISTORIAL
-# -----------------------------------------------------------------------------
-# Añadir al historial en lugar de sobrescribirlo al cerrar la sesión
-shopt -s histappend
+# Opciones de Bash para el historial
+shopt -s histappend 2>/dev/null
+shopt -s cmdhist 2>/dev/null
 
-# Guardar comandos multilínea en una sola entrada del historial
-shopt -s cmdhist
-
-# =============================================================================
-# MENSAJE DE CARGA
-# =============================================================================
-echo "✅ Historial configurado"
+# Sincronización inmediata al ejecutar comandos (para múltiples pestañas/ventanas)
+PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND; }history -a"
