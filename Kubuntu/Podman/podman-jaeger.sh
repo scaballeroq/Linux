@@ -1,15 +1,17 @@
 #!/bin/bash
-# podman-jaeger.sh
+# podman-jaeger.sh - Distributed Tracing
 
-set -e
+set -euo pipefail
 
-if ! podman network exists devfed-net; then podman network create devfed-net; fi
+if ! podman network exists dev-net 2>/dev/null; then podman network create dev-net 2>/dev/null || true; fi
 
-echo "ℹ️ Iniciando Jaeger (Tracing)..."
+echo "ℹ️ Iniciando Jaeger (All-in-One)..."
 podman run -d --replace \
     --name jaeger-dev \
-    --network devfed-net \
-    -p 16686:16686 -p 6831:6831/udp -p 6832:6832/udp \
-    -p 5778:5778 -p 14268:14268 -p 14250:14250 -p 9411:9411 \
+    --network dev-net \
+    -p 16686:16686 \
+    -p 4317:4317 \
+    -p 4318:4318 \
     docker.io/jaegertracing/all-in-one:latest
-echo "✅ Jaeger iniciado (UI: http://localhost:16686)"
+
+echo "✅ Jaeger iniciado en http://localhost:16686 (OTLP gRPC: 4317, HTTP: 4318)"

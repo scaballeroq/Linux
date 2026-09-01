@@ -1,15 +1,18 @@
 #!/bin/bash
-# podman-dozzle.sh
+# podman-dozzle.sh - Real-time Log Viewer
 
-set -e
+set -euo pipefail
 
-if ! podman network exists devfed-net; then podman network create devfed-net; fi
+if ! podman network exists dev-net 2>/dev/null; then podman network create dev-net 2>/dev/null || true; fi
 
-echo "ℹ️ Iniciando Dozzle (Logs Viewer)..."
+USER_UID="$(id -u)"
+
+echo "ℹ️ Iniciando Dozzle (Visor de logs)..."
 podman run -d --replace \
     --name dozzle-dev \
-    --network devfed-net \
-    -v /run/user/$(id -u)/podman/podman.sock:/var/run/docker.sock:ro \
+    --network dev-net \
     -p 8888:8080 \
+    -v "/run/user/$USER_UID/podman/podman.sock:/var/run/docker.sock:ro" \
     docker.io/amir20/dozzle:latest
+
 echo "✅ Dozzle iniciado en http://localhost:8888"

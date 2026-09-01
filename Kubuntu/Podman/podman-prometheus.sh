@@ -1,14 +1,15 @@
 #!/bin/bash
-# podman-prometheus.sh
+# podman-prometheus.sh - Prometheus Monitoring
 
-set -e
+set -euo pipefail
 
-if ! podman network exists devfed-net; then podman network create devfed-net; fi
+if ! podman network exists dev-net 2>/dev/null; then podman network create dev-net 2>/dev/null || true; fi
 
 echo "ℹ️ Iniciando Prometheus..."
 podman run -d --replace \
     --name prometheus-dev \
-    --network devfed-net \
+    --network dev-net \
     -p 9090:9090 \
     docker.io/prom/prometheus:latest
+
 echo "✅ Prometheus iniciado en http://localhost:9090"

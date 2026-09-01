@@ -1,14 +1,15 @@
 #!/bin/bash
-# podman-nginx.sh
+# podman-nginx.sh - Nginx Web Server
 
-set -e
+set -euo pipefail
 
-if ! podman network exists devfed-net; then podman network create devfed-net; fi
+if ! podman network exists dev-net 2>/dev/null; then podman network create dev-net 2>/dev/null || true; fi
 
 echo "ℹ️ Iniciando Nginx..."
 podman run -d --replace \
     --name nginx-dev \
-    --network devfed-net \
-    -p 8082:80 \
+    --network dev-net \
+    -p 8080:80 \
     docker.io/library/nginx:latest
-echo "✅ Nginx iniciado en http://localhost:8082"
+
+echo "✅ Nginx iniciado en http://localhost:8080"

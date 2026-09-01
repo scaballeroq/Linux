@@ -11,6 +11,7 @@ Environment=KEYCLOAK_ADMIN=admin
 Environment=KEYCLOAK_ADMIN_PASSWORD=admin
 Environment=KC_HEALTH_ENABLED=true
 Environment=KC_HTTP_ENABLED=true
+Exec=start-dev
 
 [Service]
 Restart=always

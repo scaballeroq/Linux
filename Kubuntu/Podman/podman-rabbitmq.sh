@@ -1,14 +1,16 @@
 #!/bin/bash
-# podman-rabbitmq.sh
+# podman-rabbitmq.sh - RabbitMQ Message Broker
 
-set -e
+set -euo pipefail
 
-if ! podman network exists devfed-net; then podman network create devfed-net; fi
+if ! podman network exists dev-net 2>/dev/null; then podman network create dev-net 2>/dev/null || true; fi
 
-echo "ℹ️ Iniciando RabbitMQ (Management)..."
+echo "ℹ️ Iniciando RabbitMQ con panel de gestión..."
 podman run -d --replace \
     --name rabbitmq-dev \
-    --network devfed-net \
-    -p 5672:5672 -p 15672:15672 \
+    --network dev-net \
+    -p 5672:5672 \
+    -p 15672:15672 \
     docker.io/library/rabbitmq:3-management
-echo "✅ RabbitMQ iniciado (AMQP: 5672, UI: http://localhost:15672)"
+
+echo "✅ RabbitMQ iniciado (AMQP: 5672, Management UI: http://localhost:15672, user: guest, pass: guest)"

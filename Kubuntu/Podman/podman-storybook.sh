@@ -1,14 +1,16 @@
 #!/bin/bash
-# podman-storybook.sh
+# podman-storybook.sh - Storybook UI Component Explorer
 
-set -e
+set -euo pipefail
 
-if ! podman network exists devfed-net; then podman network create devfed-net; fi
+if ! podman network exists dev-net 2>/dev/null; then podman network create dev-net 2>/dev/null || true; fi
 
-echo "ℹ️ Iniciando Storybook (Standalone Demo)..."
+echo "ℹ️ Iniciando Storybook..."
 podman run -d --replace \
     --name storybook-dev \
-    --network devfed-net \
+    --network dev-net \
     -p 6006:6006 \
-    docker.io/storybooks/storybook:latest
-echo "✅ Storybook (Demo) iniciado en http://localhost:6006"
+    docker.io/library/node:lts \
+    npx storybook dev -p 6006 --ci
+
+echo "✅ Storybook iniciado en http://localhost:6006"
