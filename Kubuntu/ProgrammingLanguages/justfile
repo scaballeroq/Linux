@@ -1,21 +1,50 @@
-# Gestor de runtimes Mise
+# =============================================================================
+# ProgrammingLanguages Justfile - Kubuntu (KDE Plasma 6)
+# =============================================================================
+
+# Instalar todos los lenguajes y runtimes
+all: mise node python rust dotnet java angular gemini
+    echo "Todos los lenguajes y runtimes instalados con éxito."
+
+# Gestor de versiones Mise
 mise:
     ./mise.sh
 
-# Node
+# Node.js LTS, npm y pnpm
 node:
     ./nodejs.sh
 
-# Python
+# Python estable, uv y pip
 python:
     ./python.sh
 
-# Rust
+# Rust, Cargo, Rust-Analyzer y Cargo-Binstall
 rust:
     ./rust.sh
 
-# AI
+# .NET SDK
+dotnet:
+    ./dotnet.sh
 
+# Java OpenJDK LTS y dependencias AutoFirma
+java:
+    ./java.sh
+
+# Angular CLI
+angular:
+    ./angular.sh
+
+# Google Gemini CLI
 gemini:
     ./gemini.sh
 
+# Estado general de todos los lenguajes
+status:
+    ./mise.sh --status
+    ./nodejs.sh --status
+    ./python.sh --status
+    ./rust.sh --status
+    ./dotnet.sh --status
+    ./java.sh --status
+    ./angular.sh --status
+    ./gemini.sh --status
