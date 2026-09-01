@@ -23,12 +23,15 @@ export QT_QPA_PLATFORM="wayland;xcb"
 export MOZ_ENABLE_WAYLAND=1
 export ELECTRON_OZONE_PLATFORM_HINT="auto"
 
-# 4. PODMAN DOCKER HOST INTEGRATION
+# 4. NODEJS COREPACK (Evitar prompts interactivos de descarga en terminal)
+export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+
+# 5. PODMAN DOCKER HOST INTEGRATION
 if [ -S "/run/user/$(id -u)/podman/podman.sock" ]; then
     export DOCKER_HOST="unix:///run/user/$(id -u)/podman/podman.sock"
 fi
 
-# 5. COLORES Y FORMATO PARA 'LESS' Y 'MAN'
+# 6. COLORES Y FORMATO PARA 'LESS' Y 'MAN'
 export LESS_TERMCAP_mb=$'\e[1;31m'
 export LESS_TERMCAP_md=$'\e[1;36m'
 export LESS_TERMCAP_me=$'\e[0m'
@@ -39,6 +42,6 @@ export LESS_TERMCAP_ue=$'\e[0m'
 export LESS="-R -F -X"
 export PAGER="less"
 
-# 6. IDIOMA Y LOCALIZACION
+# 7. IDIOMA Y LOCALIZACION
 export LANG="${LANG:-es_ES.UTF-8}"
 export LC_ALL="${LC_ALL:-es_ES.UTF-8}"

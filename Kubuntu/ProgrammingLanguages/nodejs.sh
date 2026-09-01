@@ -5,10 +5,15 @@
 # - Instala dependencias de compilación para paquetes nativos (node-gyp / C++)
 # - Instala y configura automáticamente la última versión Node.js LTS (node@lts)
 # - Actualiza npm a la última versión
-# - Activa Corepack y configura pnpm (pnpm@latest)
+# - Activa Corepack de forma no interactiva (COREPACK_ENABLE_DOWNLOAD_PROMPT=0)
+# - Configura pnpm (pnpm@latest)
 # =============================================================================
 
 set -euo pipefail
+
+# Desactivar prompts interactivos de Corepack para descargas desatendidas
+export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+export COREPACK_ENABLE_AUTO_PIN=0
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -33,9 +38,9 @@ fi
 
 run_as_user() {
     if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-        sudo -u "$REAL_USER" env HOME="$USER_HOME" "$@"
+        sudo -u "$REAL_USER" env HOME="$USER_HOME" COREPACK_ENABLE_DOWNLOAD_PROMPT=0 "$@"
     else
-        "$@"
+        env COREPACK_ENABLE_DOWNLOAD_PROMPT=0 "$@"
     fi
 }
 
@@ -58,9 +63,9 @@ show_status() {
     echo "ESTADO DE NODE.JS Y GESTORES DE PAQUETES - KUBUNTU"
     echo "================================================================="
     echo "Node.js (Mise):                $(run_as_user mise which node 2>/dev/null || echo 'No instalado')"
-    echo "Versión Node.js:               $(run_as_user node --version 2>/dev/null || echo 'n/a')"
-    echo "Versión npm:                   $(run_as_user npm --version 2>/dev/null || echo 'n/a')"
-    echo "Versión pnpm:                  $(run_as_user pnpm --version 2>/dev/null || echo 'n/a')"
+    echo "Versión Node.js:               $(run_as_user mise exec node@lts -- node --version 2>/dev/null || echo 'n/a')"
+    echo "Versión npm:                   $(run_as_user mise exec node@lts -- npm --version 2>/dev/null || echo 'n/a')"
+    echo "Versión pnpm:                  $(run_as_user mise exec -- pnpm --version 2>/dev/null || echo 'n/a')"
     echo "================================================================="
     if command -v mise &>/dev/null; then
         echo ""
@@ -106,18 +111,18 @@ install_nodejs() {
     echo "ℹ️ [3/4] Actualizando npm a la última versión..."
     run_as_user mise exec node@lts -- npm install -g npm@latest 2>/dev/null || true
 
-    # 5. Activar Corepack e instalar pnpm (gestor recomendado de paquetes)
+    # 5. Activar Corepack y configurar pnpm de forma desatendida
     echo "ℹ️ [4/4] Configurando Corepack y pnpm..."
     run_as_user mise exec node@lts -- corepack enable 2>/dev/null || true
-    run_as_user mise use --global pnpm@latest 2>/dev/null || \
     run_as_user mise exec node@lts -- corepack prepare pnpm@latest --activate 2>/dev/null || true
+    run_as_user mise use --global pnpm@latest 2>/dev/null || true
 
     echo ""
     echo "================================================================="
     echo "✅ Node.js LTS, npm y pnpm configurados con éxito."
-    echo "   - Node.js : $(run_as_user node --version 2>/dev/null || echo 'LTS')"
-    echo "   - npm     : $(run_as_user npm --version 2>/dev/null || echo 'latest')"
-    echo "   - pnpm    : $(run_as_user pnpm --version 2>/dev/null || echo 'latest')"
+    echo "   - Node.js : $(run_as_user mise exec node@lts -- node --version 2>/dev/null || echo 'LTS')"
+    echo "   - npm     : $(run_as_user mise exec node@lts -- npm --version 2>/dev/null || echo 'latest')"
+    echo "   - pnpm    : $(run_as_user mise exec -- pnpm --version 2>/dev/null || echo 'latest')"
     echo "================================================================="
 }
 
