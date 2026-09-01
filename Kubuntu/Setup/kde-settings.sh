@@ -1,60 +1,113 @@
 #!/bin/bash
-# kde-settings.sh - Personalización avanzada de KDE Plasma 6 / 5 vía CLI
-# Compatible con Kubuntu 24.04 LTS, 24.10 y 26.04 LTS
+# =============================================================================
+# kde-settings.sh - Configuración Base y Ajustes de KDE Plasma 6 (Kubuntu)
+# =============================================================================
+# Ajustes incluidos:
+#   - Tema Global Oscuro: Kubuntu Dark (org.kubuntudark.desktop)
+#   - Luz Nocturna (Night Color) desactivada
+#   - Botones de Ventana (Minimizar, Maximizar, Cerrar a la derecha)
+#   - Desactivación de pitidos molestos del sistema (System Bell)
+#   - Atajos globales estándar (Ctrl+Alt+T para Konsole, Meta+E para Dolphin)
+# =============================================================================
 
 set -euo pipefail
 
-echo "🚀 Iniciando configuración y personalización de KDE Plasma..."
-
-# Detectar versión de herramientas de KDE (Plasma 6 vs Plasma 5)
-if command -v kwriteconfig6 &> /dev/null; then
-    KCONFIG="kwriteconfig6"
-    QDBUS_CMD="qdbus6"
-    echo "ℹ️ Detectado KDE Plasma 6."
-elif command -v kwriteconfig5 &> /dev/null; then
-    KCONFIG="kwriteconfig5"
-    QDBUS_CMD="qdbus"
-    echo "ℹ️ Detectado KDE Plasma 5."
+if [ "$EUID" -ne 0 ]; then
+    if command -v sudo &> /dev/null; then
+        SUDO="sudo"
+    else
+        echo "Error: Este script requiere privilegios de superusuario."
+        exit 1
+    fi
 else
-    echo "⚠️ No se encontraron herramientas kwriteconfig. Es posible que no estés en un entorno KDE Plasma activo."
-    exit 0
+    SUDO=""
 fi
 
-# 1. Configuración de Tema Global Oscuro (Breeze Dark)
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    REAL_USER="$SUDO_USER"
+    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+else
+    REAL_USER="${USER:-$(id -un)}"
+    USER_HOME="${HOME:-/home/$REAL_USER}"
+fi
+
+run_as_user() {
+    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+        sudo -u "$REAL_USER" env HOME="$USER_HOME" "$@"
+    else
+        "$@"
+    fi
+}
+
+set_kconfig() {
+    local file="$1"
+    local group="$2"
+    local key="$3"
+    local value="$4"
+
+    if command -v kwriteconfig6 &>/dev/null; then
+        run_as_user kwriteconfig6 --file "$file" --group "$group" --key "$key" "$value" 2>/dev/null || true
+    elif command -v kwriteconfig5 &>/dev/null; then
+        run_as_user kwriteconfig5 --file "$file" --group "$group" --key "$key" "$value" 2>/dev/null || true
+    else
+        local target="$USER_HOME/.config/$file"
+        run_as_user mkdir -p "$(dirname "$target")"
+        touch "$target" 2>/dev/null || true
+        if grep -q "^\[$group\]" "$target" 2>/dev/null; then
+            if grep -A 100 "^\[$group\]" "$target" | grep -q "^$key="; then
+                sed -i "/^\[$group\]/,/^\[/ s|^$key=.*|$key=$value|" "$target"
+            else
+                sed -i "/^\[$group\]/a $key=$value" "$target"
+            fi
+        else
+            printf "\n[%s]\n%s=%s\n" "$group" "$key" "$value" >> "$target"
+        fi
+    fi
+}
+
+echo "================================================================="
+echo "CONFIGURANDO AJUSTES BASE DE KDE PLASMA 6 - KUBUNTU"
+echo "================================================================="
+
+# 1. Configuración de Tema Global Oscuro (Kubuntu Dark)
 if command -v lookandfeeltool &> /dev/null; then
-    echo "ℹ️ [1/6] Configurando tema Breeze Dark..."
-    lookandfeeltool -a org.kde.breezedark.desktop 2>/dev/null || true
+    echo "ℹ️ [1/5] Aplicando tema global Kubuntu Dark..."
+    run_as_user lookandfeeltool -a org.kubuntudark.desktop 2>/dev/null || \
+    run_as_user lookandfeeltool -a org.kde.breezedark.desktop 2>/dev/null || true
 fi
 
-# 2. Configurar Luz Nocturna (Night Color) a 3500K
-echo "ℹ️ [2/6] Configurando Luz Nocturna (Night Color)..."
-$KCONFIG --file kwinrc --group NightColor --key Active true
-$KCONFIG --file kwinrc --group NightColor --key Mode Constant
-$KCONFIG --file kwinrc --group NightColor --key NightTemperature 3500
+# 2. Luz Nocturna (Night Color) Desactivada
+echo "ℹ️ [2/5] Desactivando Luz Nocturna (Night Color)..."
+set_kconfig "kwinrc" "NightColor" "Active" "false"
 
-# 3. Comportamiento de Energía (No suspender en corriente alterna)
-echo "ℹ️ [3/6] Configurando perfiles de energía (Powerdevil)..."
-$KCONFIG --file powerdevilrc --group AC --group SuspendSession --key suspendType 0
-$KCONFIG --file powerdevilrc --group AC --group Display --key dimOnIdleEnabled false
+# 3. Comportamiento de Ventanas y Botones de KWin
+echo "ℹ️ [3/5] Configurando botones de ventana y comportamiento de KWin..."
+# Botones a la derecha: Minimizar (I), Maximizar (A), Cerrar (X)
+set_kconfig "kwinrc" "org.kde.kdecoration2" "ButtonsOnRight" "IAX"
+set_kconfig "kwinrc" "org.kde.kdecoration2" "ButtonsOnLeft" ""
 
-# 4. Atajos de teclado globales (Meta+T para Konsole / Terminal)
-echo "ℹ️ [4/6] Configurando atajos de teclado personalizados..."
-if command -v konsole &> /dev/null; then
-    $KCONFIG --file kglobalshortcutsrc --group org.kde.konsole.desktop --key "_launch" "Meta+T,none,Konsole"
+# 4. Sonidos y Comportamiento General
+echo "ℹ️ [4/5] Desactivando campana del sistema (System Bell)..."
+set_kconfig "kdeglobals" "General" "UseSystemBell" "false"
+set_kconfig "kdeglobals" "KDE" "SingleClick" "false"
+
+# 5. Atajos estándar
+echo "ℹ️ [5/5] Configurando atajos estándar de KDE..."
+if command -v konsole &>/dev/null; then
+    set_kconfig "kglobalshortcutsrc" "org.kde.konsole.desktop" "_launch" "Ctrl+Alt+T,Ctrl+Alt+T,Konsole"
+fi
+if command -v dolphin &>/dev/null; then
+    set_kconfig "kglobalshortcutsrc" "org.kde.dolphin.desktop" "_launch" "Meta+E,none,Dolphin"
 fi
 
-# 5. Comportamiento de Ventanas y KWin
-echo "ℹ️ [5/6] Optimizando comportamiento de KWin..."
-# Botones de ventana: Minimizar, Maximizar, Cerrar a la derecha
-$KCONFIG --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnRight "IAX"
-$KCONFIG --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnLeft ""
-
-# 6. Recargar configuraciones de KWin y Powerdevil
-echo "ℹ️ [6/6] Aplicando cambios en tiempo real..."
-if command -v "$QDBUS_CMD" &> /dev/null; then
-    $QDBUS_CMD org.kde.KWin /KWin reconfigure 2>/dev/null || true
-    $QDBUS_CMD org.kde.Solid.PowerManagement /org/kde/Solid/PowerManagement org.kde.Solid.PowerManagement.refreshStatus 2>/dev/null || true
+# 6. Recargar configuraciones de KWin
+if command -v qdbus6 &>/dev/null; then
+    run_as_user qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true
+elif command -v qdbus &>/dev/null; then
+    run_as_user qdbus org.kde.KWin /KWin reconfigure 2>/dev/null || true
 fi
 
-echo "✅ Personalización de KDE Plasma completada con éxito."
-echo "💡 Se recomienda reiniciar la sesión para que todos los efectos y atajos surtan efecto completo."
+echo "================================================================="
+echo "✅ Ajustes base de KDE Plasma 6 configurados con éxito."
+echo "Tema: Kubuntu Dark | Luz Nocturna: Desactivada"
+echo "================================================================="

@@ -1,7 +1,12 @@
 #!/bin/bash
 # =============================================================================
-# kde-plasma-customization.sh - Personalizacion KDE Plasma 6 (Ultra-Lite)
-# Kubuntu - Sin compilaciones, solo paquetes APT y configuracion nativa
+# kde-plasma-customization.sh - Personalización Visual Avanzada KDE Plasma 6
+# =============================================================================
+# Ajustes incluidos:
+#   - Color de Acento Dinámico nativo desde el Fondo de Pantalla (Material You)
+#   - Efectos visuales de KWin en Wayland (Blur y Translucidez activos)
+#   - Instalación de plasmoids oficiales y monitor de sistema
+#   - Recarga en caliente sin reiniciar la sesión
 # =============================================================================
 
 set -euo pipefail
@@ -17,12 +22,21 @@ else
     SUDO=""
 fi
 
-KWRITECFG=""
-if command -v kwriteconfig6 &>/dev/null; then
-    KWRITECFG="kwriteconfig6"
-elif command -v kwriteconfig5 &>/dev/null; then
-    KWRITECFG="kwriteconfig5"
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    REAL_USER="$SUDO_USER"
+    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+else
+    REAL_USER="${USER:-$(id -un)}"
+    USER_HOME="${HOME:-/home/$REAL_USER}"
 fi
+
+run_as_user() {
+    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+        sudo -u "$REAL_USER" env HOME="$USER_HOME" "$@"
+    else
+        "$@"
+    fi
+}
 
 set_kconfig() {
     local file="$1"
@@ -30,68 +44,56 @@ set_kconfig() {
     local key="$3"
     local value="$4"
 
-    if [ -n "$KWRITECFG" ]; then
-        $KWRITECFG --file "$file" --group "$group" --key "$key" "$value" 2>/dev/null || true
+    if command -v kwriteconfig6 &>/dev/null; then
+        run_as_user kwriteconfig6 --file "$file" --group "$group" --key "$key" "$value" 2>/dev/null || true
+    elif command -v kwriteconfig5 &>/dev/null; then
+        run_as_user kwriteconfig5 --file "$file" --group "$group" --key "$key" "$value" 2>/dev/null || true
     else
-        python3 - <<PYEOF
-import configparser, os
-cfg_path = os.path.expanduser("~/.config/${file}")
-os.makedirs(os.path.dirname(cfg_path), exist_ok=True)
-config = configparser.ConfigParser(interpolation=None, strict=False)
-if os.path.exists(cfg_path):
-    config.read(cfg_path, encoding='utf-8')
-group = "${group}"
-if not config.has_section(group):
-    config.add_section(group)
-config.set(group, "${key}", "${value}")
-with open(cfg_path, 'w', encoding='utf-8') as f:
-    config.write(f, space_around_delimiters=False)
-PYEOF
+        local target="$USER_HOME/.config/$file"
+        run_as_user mkdir -p "$(dirname "$target")"
+        touch "$target" 2>/dev/null || true
+        if grep -q "^\[$group\]" "$target" 2>/dev/null; then
+            if grep -A 100 "^\[$group\]" "$target" | grep -q "^$key="; then
+                sed -i "/^\[$group\]/,/^\[/ s|^$key=.*|$key=$value|" "$target"
+            else
+                sed -i "/^\[$group\]/a $key=$value" "$target"
+            fi
+        else
+            printf "\n[%s]\n%s=%s\n" "$group" "$key" "$value" >> "$target"
+        fi
     fi
 }
 
-# 1. Material You Colors (pipx)
-echo "Instalando KDE Material You Colors..."
-if ! command -v pipx &>/dev/null; then
-    $SUDO apt install -y pipx 2>/dev/null || true
-    pipx ensurepath || true
-fi
-pipx install --system-site-packages kde-material-you-colors --force 2>/dev/null || pipx install kde-material-you-colors --force 2>/dev/null || true
+echo "================================================================="
+echo "CONFIGURANDO PERSONALIZACIÓN VISUAL - KDE PLASMA 6"
+echo "================================================================="
 
-mkdir -p "$HOME/.config/autostart"
-cat <<'EOF' > "$HOME/.config/autostart/kde-material-you-colors.desktop"
-[Desktop Entry]
-Type=Application
-Exec=kde-material-you-colors --daemon
-Hidden=false
-NoDisplay=false
-X-GNOME-Autostart-enabled=true
-Name=KDE Material You Colors Daemon
-Comment=Dynamic system accent colors based on wallpaper
-EOF
-echo "Material You Colors configurado con autostart."
+# 1. Color de Acento Dinámico Nativo de Plasma 6 (Material You)
+echo "ℹ️ [1/3] Habilitando color de acento dinámico según fondo de pantalla..."
+set_kconfig "kdeglobals" "General" "accentColorFromWallpaper" "true"
 
-# 2. Plasmoids oficiales
-echo "Instalando plasmoids oficiales..."
+# 2. Efectos visuales de KWin (Blur y Translucidez)
+echo "ℹ️ [2/3] Activando efectos de desenfoque (Blur) y translucidez en KWin..."
+set_kconfig "kwinrc" "Plugins" "blurEnabled" "true"
+set_kconfig "kwinrc" "Plugins" "translucencyEnabled" "true"
+set_kconfig "kwinrc" "Plugins" "contrastEnabled" "true"
+
+# 3. Plasmoids y Addons Oficiales
+echo "ℹ️ [3/3] Verificando complementos oficiales..."
+$SUDO apt update
 $SUDO apt install -y kdeplasma-addons plasma-systemmonitor 2>/dev/null || true
 
-# 3. Configuracion de KWin
-echo "Aplicando configuraciones de KWin..."
-if [ -n "$KWRITECFG" ]; then
-    $KWRITECFG --file kwinrc --group Plugins --key blurEnabled true 2>/dev/null || true
-    $KWRITECFG --file kwinrc --group Plugins --key translucencyEnabled true 2>/dev/null || true
-fi
-
 # 4. Recargar KWin
+echo "Aplicando cambios en KWin..."
 if command -v qdbus6 &>/dev/null; then
-    qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true
+    run_as_user qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true
 elif command -v qdbus &>/dev/null; then
-    qdbus org.kde.KWin /KWin reconfigure 2>/dev/null || true
+    run_as_user qdbus org.kde.KWin /KWin reconfigure 2>/dev/null || true
 fi
 
 echo "================================================================="
-echo "Personalizacion KDE Plasma 6 (Ultra-Lite) completada."
-echo "- Material You Colors (colores dinamicos del wallpaper)"
-echo "- kdeplasma-addons y plasma-systemmonitor"
-echo "- Blur y translucidez nativos de KWin"
+echo "✅ Personalización visual de KDE Plasma 6 completada."
+echo "  - Color de acento automático desde el wallpaper (Nativo Plasma 6)"
+echo "  - Efectos Blur, Contraste y Translucidez activos en KWin"
+echo "  - Addons oficiales y monitor de sistema instalados"
 echo "================================================================="
