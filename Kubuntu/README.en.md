@@ -1,117 +1,136 @@
-# 🔧 Kubuntu Environment Configuration (KDE Plasma)
+# Kubuntu Environment Configuration (KDE Plasma 6)
 
-This repository contains an organized, modular, and automated collection of configuration scripts for **Kubuntu** systems (focused on KDE Plasma 6 and 5 across Kubuntu 24.04 LTS, 24.10, and 26.04 LTS).
+Modular and automated collection of configuration scripts for **Kubuntu** systems (KDE Plasma 6 and 5 across Kubuntu 24.04 LTS, 24.10, and 26.04 LTS).
 
-The goal is to fully automate the setup of a professional, ultra-fast, secure, and aesthetically refined development environment.
+Automates the complete setup of a professional, fast, secure, and aesthetically refined development environment.
 
 ---
 
-## 📂 Repository Organization
+## Repository Structure
 
-The project is structured modularly for maintainability and extensibility:
-
-### 🐚 [Bash.Setup](./Bash.Setup/)
+### Bash.Setup
 Modular Bash terminal core loaded via `~/.bashrc.d/`:
-- **`aliases.sh`**: Shortcuts for common commands, Git, APT, Rust tools, and virtualization.
-- **`desktop_settings.sh`**: KDE Plasma optimizations and shortcuts (Night Color, Breeze themes, power).
-- **`environment.sh`**: Global environment variables (`EDITOR`, `PATH`, styled `less`/`man`).
-- **`functions.sh`**: Utility functions (backups, universal extract, ISO burning, multimedia).
-- **`history.sh`**: Optimized persistent history (10k/20k lines, no duplicates, timestamps).
-- **`options.sh`**: Advanced shell behaviors (`autocd`, `globstar`, typo autocorrection).
-- **`podman-functions.sh`**: Non-colliding functions for streamlined Podman container management.
-- **`rclone_aliases.sh`**: Sync, copy, and `--dry-run` shortcuts for Google Drive and OneDrive.
-- **`yt-dlp_aliases.sh`**: High quality multimedia downloads with Deno JS engine support.
+- **`aliases.sh`**: Shortcuts for common commands, Git, APT, kernel-check, VM, Podman.
+- **`desktop_settings.sh`**: KDE Plasma optimizations and shortcuts.
+- **`environment.sh`**: Global environment variables (`EDITOR`, `PATH`, Wayland/Qt flags).
+- **`functions.sh`**: Utility functions (backups, extract, multimedia).
+- **`history.sh`**: Optimized persistent history (10k/20k lines, no duplicates).
+- **`options.sh`**: Advanced shell behaviors (`autocd`, `globstar`).
+- **`podman-functions.sh`**: Podman container + Quadlets management functions.
+- **`rclone_aliases.sh`**: Google Drive and OneDrive sync shortcuts.
+- **`yt-dlp_aliases.sh`**: Multimedia downloads with Deno JS engine.
 
-### ⚙️ [Setup](./Setup/)
-Operating system, hardware, customization, and hardening scripts:
-- **`post-install.sh`**: Base system setup, universe/multiverse repositories, Flatpak with Discover, and codecs.
-- **`kde-settings.sh`**: Complete KDE Plasma CLI customization (Breeze Dark, Night Color, Meta+T shortcut).
-- **`apariencia.sh`**: Papirus and Breeze icon and theme installations.
-- **`firefox.sh`**: Official native `.deb` Firefox from Mozilla APT with Pin-Priority 900 (no Snap).
-- **`laptop-setup.sh`**: Laptop optimizations for Kubuntu (power profiles, tap-to-click, bluetooth).
-- **`fingerprint-setup.sh`**: Fingerprint authentication (fprintd, PAM, sudo, polkit, SDDM).
-- **`hp-printer-setup.sh`**: HP LaserJet Pro M15w printer configuration (USB/CUPS/HPLIP).
-- **`mount-workspace.sh`**: Permanent and safe automounting for Workspace partition in `/etc/fstab`.
-- **`cockpit.sh`**: High-performance web administration suite (Storage, KVM, Podman, Network).
-- **`fastfetch.sh`** / **`config.jsonc`**: Aesthetic system summary on terminal launch.
-- **`fonts.sh`**: Developer Nerd Fonts (JetBrainsMono, FiraCode, CascadiaCode, Meslo, Hack).
-- **`seguridad.sh`**: System hardening with strict and container-friendly UFW firewall rules.
-- **`shell.sh`** / **`starship.toml`**: Modern Rust CLI utilities (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`) and Starship prompt.
-- **`yt-dlp-setup.sh`**: Multimedia processing and download dependencies.
+### Setup
+System, hardware, customization, and hardening scripts:
+- **`post-install.sh`**: Dispatcher with auto-detection of CPU (AMD/Intel).
+- **`post-install-amd.sh`**: Post-install optimized for AMD Ryzen.
+- **`post-install-intel.sh`**: Post-install optimized for Intel Core.
+- **`zram-setup.sh`**: ZRAM with ZSTD compression at 50% RAM.
+- **`kubuntu-tuning.sh`**: Performance tuning (sysctl, limits, Baloo, systemd).
+- **`kde-settings.sh`**: KDE Plasma customization (Breeze Dark, Night Color).
+- **`kde-widgets.sh`**: Widgets, Klipper, KWin tiling, global shortcuts.
+- **`kde-plasma-customization.sh`**: Material You Colors, official plasmoids.
+- **`konsole.sh`**: Translucent Konsole (85% opacity + blur).
+- **`kitty.sh`**: Kitty terminal with GPU, Catppuccin theme, configurable opacity.
+- **`laptop-setup.sh`**: Laptop optimizations (VRR, HiDPI, touchpad, power).
+- **`seguridad.sh`**: UFW + Fail2ban + sysctl hardening.
+- **`seguridad-dot.sh`**: DNS-over-TLS (Quad9 + Cloudflare).
+- **`screensaver-setup.sh`**: KScreenLocker (auto-lock).
+- **`shell.sh`** / **`starship.toml`**: Modern CLI tools + Starship prompt.
+- **`apariencia.sh`**: Papirus and Breeze themes/icons.
+- **`fonts.sh`**: Nerd Fonts (JetBrainsMono, FiraCode, CascadiaCode, Meslo, Hack).
+- **`fastfetch.sh`** / **`config.jsonc`**: Aesthetic system summary.
+- **`firefox.sh`**: Native .deb Firefox from Mozilla APT (no Snap).
+- **`cockpit.sh`**: Web administration panel.
+- **`yt-dlp-setup.sh`**: yt-dlp, ffmpeg, Deno.
+- **`fingerprint-setup.sh`**: Fingerprint authentication.
+- **`hp-printer-setup.sh`**: HP LaserJet Pro M15w printer.
+- **`mount-workspace.sh`**: Workspace partition automount.
 
-### 🖥️ [Virtualizacion](./Virtualizacion/)
-- **`virtualization.sh`**: Full KVM/QEMU environment with Libvirt, Virt-Manager, `br0` bridge, VirtIO drivers, and tuned.
-- **`notas_virtualizacion_kubuntu.md`**: Step-by-step virtualization guide and best practices for Kubuntu.
+### Virtualizacion
+- **`virtualization.sh`**: KVM/QEMU with Libvirt, Virt-Manager, `br0` bridge, VirtIO.
+- **`notas_virtualizacion_kubuntu.md`**: Virtualization guide.
 
-### 💻 [IDE](./IDE/)
-- **`antigravity.sh`**: Google Antigravity Desktop.
-- **`antigravity-cli.sh`**: Google Antigravity CLI (`agy`).
-- **`antigravity-ide.sh`**: Google Antigravity IDE Engine.
-- **`opencode.sh`**: OpenCode AI CLI and Editor.
-- **`neovim.sh`**: Modular Neovim powered by LazyVim and LSPs.
-- **`vscode.sh`**: Visual Studio Code from the official Microsoft repository.
-
-### 🛠️ [Git](./Git/)
-- **`git.sh`**: Git, Delta (syntax-highlighted diffs), and Lazygit (TUI).
+### IDE
+- **`git.sh`**: Git, Delta, Lazygit.
 - **`github-cli.sh`**: GitHub CLI (`gh`).
+- **`neovim.sh`**: Neovim + LazyVim.
+- **`vscode.sh`**: Visual Studio Code.
+- **`antigravity.sh`**: Google Antigravity Desktop.
+- **`antigravity-cli.sh`**: Google Antigravity CLI.
+- **`antigravity-ide.sh`**: Google Antigravity IDE Engine.
+- **`opencode.sh`**: OpenCode AI CLI/Editor.
 
-### ⚡ [ProgrammingLanguages](./ProgrammingLanguages/)
-Modern runtime management via **Mise**:
-- **`mise.sh`**: Mise version manager installer.
-- **`nodejs.sh`**: Node.js LTS and `pnpm` activation via Corepack.
-- **`python.sh`**: Python 3.12 and pip tooling.
-- **`rust.sh`**: Rust via rustup and cargo-binstall.
+### ProgrammingLanguages
+Runtime management via **Mise**:
+- **`mise.sh`**: Mise version manager.
+- **`nodejs.sh`**: Node.js LTS + pnpm.
+- **`python.sh`**: Python 3.12 + pip.
+- **`rust.sh`**: Rust + cargo-binstall.
 - **`dotnet.sh`**: .NET SDK.
 - **`java.sh`**: OpenJDK.
 - **`angular.sh`**: Angular CLI.
 - **`gemini.sh`**: Gemini CLI.
 
-### 🐳 [Podman](./Podman/)
-19 modular scripts for isolated development service deployments:
-- **Core**: `podman.sh`
-- **Databases**: `podman-postgres.sh`, `podman-mysql.sh`, `podman-mongodb.sh`, `podman-redis.sh`
-- **Storage**: `podman-minio.sh`
-- **Monitoring**: `podman-grafana.sh`, `podman-prometheus.sh`, `podman-jaeger.sh`, `podman-dozzle.sh`
-- **Management**: `podman-portainer.sh`, `podman-adminer.sh`, `podman-keycloak.sh`
-- **Web & Testing**: `podman-nginx.sh`, `podman-wordpress.sh`, `podman-rabbitmq.sh`, `podman-mailhog.sh`, `podman-browserless.sh`, `podman-storybook.sh`
+### Podman
+Rootless container ecosystem with Quadlets:
+- **`install/`**: `podman-install.sh`, `quadlets-setup.sh`
+- **`lib/`**: `podman-utils.sh` (project management CLI)
+- **`services-shared/`**: Global services (PostgreSQL, Redis, Traefik, Keycloak)
+- **`templates/`**: Project templates (python-postgres, python-postgres-redis, fullstack)
+- **`projects/`**: Active projects (gitignored)
 
-### 📦 [Apps](./Apps/) & 🎮 [Juegos](./Juegos/)
-- **`meld.sh`**: Visual diff and merge tool.
-- **`steam.sh`**: Steam and Proton-GE compatibility via Flatpak.
+### Apps & Juegos
+- **`Apps/meld.sh`**: Visual diff and merge tool.
+- **`Juegos/steam.sh`**: Steam + Proton-GE via Flatpak.
 
 ---
 
-## 🚀 Usage with Justfile
+## Usage with Justfile
 
-Use [`justfile`](./justfile) to execute tasks quickly:
-
+### Full profiles
 ```bash
-# Complete system configuration
-just setup-all
+just setup-all            # Auto-detect CPU
+just setup-laptop-amd     # AMD Ryzen laptop
+just setup-laptop-intel   # Intel Core laptop
+just setup-desktop-amd    # AMD desktop
+just setup-desktop-intel  # Intel desktop
+```
 
-# Individual tasks
-just post-install    # Base system & repositories
-just kde             # KDE Plasma 6 / 5 customization
-just shell           # Modern terminal (eza, bat, starship)
-just virtualization  # KVM / QEMU / Virt-Manager
-just firefox         # Official .deb Firefox (no snap)
-just ides            # Neovim, VS Code, Antigravity, OpenCode
-just languages       # Node, Python, Rust, .NET, Java
-just podman-base     # Podman rootless
+### Individual tasks
+```bash
+just post-install         # Base system (auto-detect CPU)
+just post-install-amd     # AMD post-install
+just post-install-intel   # Intel post-install
+just zram                 # ZRAM with ZSTD
+just kde                  # KDE Plasma settings
+just widgets              # Widgets, Klipper, shortcuts
+just kde-custom           # Material You, plasmoids
+just konsole              # Translucent Konsole
+just kitty                # Kitty GPU terminal
+just shell                # Modern terminal + Starship
+just security             # UFW + Fail2ban
+just security-dot         # DNS-over-TLS
+just tuning               # Performance tuning
+just tuning-status        # Tuning status
+just virtualization       # KVM/QEMU
+just firefox              # Firefox .deb
+just ides                 # All IDEs
+just languages            # Node, Python, Rust, .NET, Java
+just podman-setup         # Podman rootless + Quadlets
+just podman-status        # Podman status
 ```
 
 ---
 
-## 🐚 Manual Shell Setup
-
-To source shell modules dynamically:
+## Manual Shell Setup
 
 ```bash
 mkdir -p ~/.bashrc.d
 ln -s $(pwd)/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
-Add this to `~/.bashrc`:
+Add to `~/.bashrc`:
 ```bash
 if [ -d "$HOME/.bashrc.d" ]; then
     for script in "$HOME/.bashrc.d"/*.sh; do

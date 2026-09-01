@@ -1,0 +1,19 @@
+[Unit]
+Description=Keycloak OAuth2/OIDC
+Requires=network-online.target
+After=network-online.target
+
+[Container]
+ContainerName=keycloak
+Image=quay.io/keycloak/keycloak:latest
+PublishPort=8083:8080
+Environment=KEYCLOAK_ADMIN=admin
+Environment=KEYCLOAK_ADMIN_PASSWORD=admin
+Environment=KC_HEALTH_ENABLED=true
+Environment=KC_HTTP_ENABLED=true
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

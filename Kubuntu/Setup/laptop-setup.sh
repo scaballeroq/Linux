@@ -1,12 +1,13 @@
 #!/bin/bash
-# laptop-setup.sh - Optimización para portátiles de desarrollo en Kubuntu (KDE Plasma)
+# laptop-setup.sh - Optimizacion para portatiles de desarrollo en Kubuntu (KDE Plasma)
+# Incluye VRR, HiDPI, touchpad, energia, Bluetooth
 
 set -euo pipefail
 
-echo "🚀 Iniciando optimización para portátil de desarrollo en Kubuntu (KDE Plasma)..."
+echo "Iniciando optimizacion para portatil de desarrollo en Kubuntu..."
 
-# 1. Herramientas de Hardware, Conectividad y Energía
-echo "ℹ️ Instalando servicios de energía, bluetooth y gráficos híbridos..."
+# 1. Herramientas de Hardware y Conectividad
+echo "Instalando servicios de energia, bluetooth y graficos hibridos..."
 sudo apt update
 sudo apt install -y \
     power-profiles-daemon \
@@ -16,42 +17,81 @@ sudo apt install -y \
     brightnessctl \
     tlp-rdw || true
 
-# Habilitar servicios clave de portátil
-echo "ℹ️ Habilitando servicios systemd para portátil..."
 sudo systemctl enable --now bluetooth.service || true
 sudo systemctl enable --now power-profiles-daemon.service || true
 sudo systemctl enable --now switcheroo-control.service || true
 
-# 2. Configuraciones de KDE Plasma para Portátil (Touchpad, Pantalla y Energía)
-if [[ "${XDG_CURRENT_DESKTOP:-}" == *"KDE"* ]]; then
-    echo "ℹ️ Aplicando configuraciones de Touchpad y energía para KDE Plasma..."
+# 2. Configuracion de Touchpad
+echo "Configurando touchpad..."
+python3 - <<'PYEOF'
+import configparser, os
 
-    if command -v kwriteconfig6 &> /dev/null; then
-        KCONFIG="kwriteconfig6"
-        QDBUS_CMD="qdbus6"
-    elif command -v kwriteconfig5 &> /dev/null; then
-        KCONFIG="kwriteconfig5"
-        QDBUS_CMD="qdbus"
-    else
-        KCONFIG=""
-        QDBUS_CMD=""
-    fi
+cfg_path = os.path.expanduser("~/.config/kcminputrc")
+config = configparser.ConfigParser(interpolation=None, strict=False)
+if os.path.exists(cfg_path):
+    config.read(cfg_path, encoding='utf-8')
 
-    if [ -n "$KCONFIG" ]; then
-        # Touchpad: Tap to click (Tocar para hacer clic) y Natural Scrolling
-        $KCONFIG --file touchpadrcl --group "parameters" --key "TapToClick" "true" || true
-        $KCONFIG --file touchpadrcl --group "parameters" --key "NaturalScrolling" "true" || true
+if not config.has_section("Touchpad"):
+    config.add_section("Touchpad")
 
-        # Energía en Batería (Suspender a los 20 minutos / 1200 segundos)
-        $KCONFIG --file powerdevilrc --group Battery --group SuspendSession --key suspendType 1 || true
-        $KCONFIG --file powerdevilrc --group Battery --group SuspendSession --key idleTime 1200000 || true
-        $KCONFIG --file powerdevilrc --group Battery --group Display --key dimOnIdleEnabled true || true
+config.set("Touchpad", "tapToClick", "true")
+config.set("Touchpad", "naturalScroll", "true")
+config.set("Touchpad", "twoFingerTap", "2")
+config.set("Touchpad", "scrollTwoFinger", "true")
 
-        if command -v "$QDBUS_CMD" &> /dev/null; then
-            $QDBUS_CMD org.kde.Solid.PowerManagement /org/kde/Solid/PowerManagement org.kde.Solid.PowerManagement.refreshStatus 2>/dev/null || true
-        fi
-    fi
-fi
+with open(cfg_path, 'w', encoding='utf-8') as f:
+    config.write(f, space_around_delimiters=False)
+PYEOF
 
-echo "✅ Configuración de portátil para Kubuntu aplicada correctamente."
-echo "💡 Recuerda reiniciar la sesión para que todos los cambios de KDE Plasma entren en vigor."
+# 3. Politicas de energia
+echo "Configurando politicas de energia..."
+python3 - <<'PYEOF'
+import configparser, os
+
+cfg_path = os.path.expanduser("~/.config/powermanagementprofilesrc")
+config = configparser.ConfigParser(interpolation=None, strict=False)
+if os.path.exists(cfg_path):
+    config.read(cfg_path, encoding='utf-8')
+
+# Bateria
+for section in ["Battery", "Battery][SuspendSession"]:
+    if not config.has_section(section):
+        config.add_section(section)
+config.set("Battery][SuspendSession", "idleTime", "1200000")
+config.set("Battery][SuspendSession", "suspendType", "1")
+
+# AC
+for section in ["AC", "AC][SuspendSession"]:
+    if not config.has_section(section):
+        config.add_section(section)
+config.set("AC][SuspendSession", "idleTime", "3600000")
+
+with open(cfg_path, 'w', encoding='utf-8') as f:
+    config.write(f, space_around_delimiters=False)
+PYEOF
+
+# 4. VRR (Variable Refresh Rate) en Wayland
+echo "Configurando VRR en Wayland..."
+python3 - <<'PYEOF'
+import configparser, os
+
+cfg_path = os.path.expanduser("~/.config/kwinrc")
+config = configparser.ConfigParser(interpolation=None, strict=False)
+if os.path.exists(cfg_path):
+    config.read(cfg_path, encoding='utf-8')
+
+if not config.has_section("Wayland"):
+    config.add_section("Wayland")
+config.set("Wayland", "variableRefreshRate", "Automatic")
+
+with open(cfg_path, 'w', encoding='utf-8') as f:
+    config.write(f, space_around_delimiters=False)
+PYEOF
+
+# 5. HiDPI (si aplica)
+echo "Configuracion HiDPI lista (ajustar desde Preferencias del Sistema si es necesario)."
+
+echo "================================================================="
+echo "Configuracion de portatil para Kubuntu aplicada."
+echo "VRR: Automatico | Touchpad: tap-to-click + natural scroll"
+echo "================================================================="

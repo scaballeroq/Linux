@@ -1,0 +1,16 @@
+[Unit]
+Description=Redis Global
+Requires=network-online.target
+After=network-online.target
+
+[Container]
+ContainerName=redis-global
+Image=docker.io/library/redis:7-alpine
+PublishPort=6379:6379
+Volume=redis-global-data:/data
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

@@ -95,12 +95,17 @@ aarch64 | arm64) platform="linux-arm64" ;;
 	;;
 esac
 
-html=$(curl -fsSL --proto '=https' --proto-redir '=https' --retry 3 "$download_page")
+html_file=$(mktemp)
+trap 'rm -f -- "$html_file"' EXIT
+curl -fsSL --compressed --proto '=https' --proto-redir '=https' --retry 3 "$download_page" > "$html_file"
 download_url=$(
-	python3 - "$html" "$platform" <<'PY'
+	python3 - "$platform" "$html_file" <<'PY'
 import html, re, sys, urllib.parse
 
-content, platform = sys.argv[1:]
+platform = sys.argv[1]
+html_file = sys.argv[2]
+with open(html_file) as f:
+    content = f.read()
 matches = re.findall(r'href="([^"]+)"', content)
 candidates = []
 for href in matches:
@@ -108,9 +113,12 @@ for href in matches:
     parsed = urllib.parse.urlsplit(url)
     if parsed.scheme != "https" or parsed.netloc != "edgedl.me.gvt1.com":
         continue
-    if not parsed.path.startswith("/antigravity/ide/"):
+    if "antigravity/stable/" not in parsed.path:
         continue
-    if f"-{platform}.tar.gz" not in parsed.path:
+    decoded_path = urllib.parse.unquote(parsed.path)
+    if f"/{platform}/" not in decoded_path:
+        continue
+    if "Antigravity IDE" not in decoded_path and "Antigravity%20IDE" not in parsed.path:
         continue
     candidates.append(url)
 
@@ -120,14 +128,15 @@ if not candidates:
 print(candidates[0])
 PY
 )
+rm -f -- "$html_file"
 
 version=$(
 	python3 - "$download_url" "$platform" <<'PY'
 import re, sys, urllib.parse
 
 url, platform = sys.argv[1:]
-path = urllib.parse.urlsplit(url).path
-match = re.search(rf'/antigravity-ide-([0-9]+\.[0-9]+\.[0-9]+(?:-[0-9]+)?)-{re.escape(platform)}\.tar\.gz$', path)
+path = urllib.parse.unquote(urllib.parse.urlsplit(url).path)
+match = re.search(r'/antigravity/stable/([0-9]+\.[0-9]+\.[0-9]+(?:-[0-9]+)?)/', path)
 if not match:
     raise SystemExit(f"Could not parse Antigravity IDE version from URL: {url}")
 
@@ -135,7 +144,7 @@ print(match.group(1))
 PY
 )
 
-archive_top_dir="Antigravity-IDE"
+archive_top_dir="Antigravity IDE"
 install_dir="Antigravity-IDE"
 expected_target="$install_root/$install_dir/antigravity-ide"
 legacy_expected_target="$install_root/antigravity-ide"

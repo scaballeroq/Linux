@@ -1,76 +1,136 @@
 # =============================================================================
-# Kubuntu Environment Configuration Justfile (KDE Plasma)
+# Kubuntu Environment Configuration Justfile (KDE Plasma 6)
 # =============================================================================
 
-# Instala todo el entorno (Post-install, Workspace, Laptop, Fingerprint, KDE, Shell, Seguridad, Fuentes, Virtualización, Mise, Cockpit, etc.)
-setup-all: post-install workspace laptop fingerprint printer kde shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch apariencia firefox
-    echo "🚀 Entorno completo de Kubuntu configurado. Por favor, reinicia el sistema."
+# Perfiles de instalacion completa
+setup-all: post-install zram workspace laptop fingerprint printer kde widgets kde-custom konsole kitty shell security security-dot fonts tuning fastfetch apariencia firefox yt-dlp screensaver virtualization cockpit git-setup mise languages ides podman-setup
+    echo "Entorno completo de Kubuntu configurado. Reinicia el sistema."
+
+# Perfil portatil AMD Ryzen
+setup-laptop-amd: post-install-amd zram workspace laptop fingerprint printer kde widgets kde-custom konsole kitty shell security security-dot fonts tuning fastfetch apariencia firefox yt-dlp screensaver virtualization cockpit git-setup mise languages ides podman-setup
+    echo "Entorno Portatil AMD Ryzen configurado. Reinicia el sistema."
+
+# Perfil portatil Intel Core
+setup-laptop-intel: post-install-intel zram workspace laptop fingerprint printer kde widgets kde-custom konsole kitty shell security security-dot fonts tuning fastfetch apariencia firefox yt-dlp screensaver virtualization cockpit git-setup mise languages ides podman-setup
+    echo "Entorno Portatil Intel Core configurado. Reinicia el sistema."
+
+# Perfil sobremesa AMD (sin laptop/bateria)
+setup-desktop-amd: post-install-amd zram kde widgets kde-custom konsole kitty shell security security-dot fonts tuning fastfetch apariencia firefox yt-dlp virtualization cockpit git-setup mise languages ides podman-setup
+    echo "Entorno Sobremesa AMD configurado. Reinicia el sistema."
+
+# Perfil sobremesa Intel (sin laptop/bateria)
+setup-desktop-intel: post-install-intel zram kde widgets kde-custom konsole kitty shell security security-dot fonts tuning fastfetch apariencia firefox yt-dlp virtualization cockpit git-setup mise languages ides podman-setup
+    echo "Entorno Sobremesa Intel configurado. Reinicia el sistema."
 
 # =============================================================================
-# CONFIGURACIÓN BASE DEL SISTEMA
+# CONFIGURACION BASE DEL SISTEMA
 # =============================================================================
 
-# Configuración base post-instalación (Repositorios universe/multiverse, flatpak, codecs)
+# Configuracion base post-instalacion (auto-deteccion CPU)
 post-install:
     ./Setup/post-install.sh
 
-# Automontaje permanente de la partición Workspace (/home/caballero/Workspace) en /etc/fstab
+# Post-instalacion AMD Ryzen
+post-install-amd:
+    ./Setup/post-install-amd.sh
+
+# Post-instalacion Intel Core
+post-install-intel:
+    ./Setup/post-install-intel.sh
+
+# ZRAM con compresion ZSTD
+zram:
+    ./Setup/zram-setup.sh
+
+# Automontaje permanente de la particion Workspace
 workspace:
     ./Setup/mount-workspace.sh
 
-# Optimización para portátiles de desarrollo en Kubuntu (Touchpad, Batería, Bluetooth)
+# Optimizacion para portatiles
 laptop:
     ./Setup/laptop-setup.sh
 
-# Autenticación y desbloqueo por huella dactilar (fprintd, PAM, sudo, polkit, SDDM)
+# Autenticacion por huella dactilar
 fingerprint:
     ./Setup/fingerprint-setup.sh
 
-# Configuración e instalación de impresora HP LaserJet Pro M15w (USB)
+# Impresora HP LaserJet Pro M15w
 printer:
     ./Setup/hp-printer-setup.sh
 
-# Personalización y optimización de KDE Plasma 6 / 5 (Night Color, atajos, KWin, energía)
+# Personalizacion de KDE Plasma 6/5
 kde:
     ./Setup/kde-settings.sh
 
-# Utilidades de terminal y prompt (eza, bat, fzf, zoxide, starship)
+# Widgets, Klipper y Atajos
+widgets:
+    ./Setup/kde-widgets.sh
+
+# Personalizacion avanzada KDE (Material You, plasmoids)
+kde-custom:
+    ./Setup/kde-plasma-customization.sh
+
+# Terminal Konsole translucido
+konsole:
+    ./Setup/konsole.sh
+
+# Terminal Kitty GPU
+kitty:
+    ./Setup/kitty.sh
+
+# Utilidades de terminal y prompt
 shell:
     ./Setup/shell.sh
 
-# Seguridad básica (UFW firewall con reglas de desarrollo)
+# Seguridad avanzada (UFW + Fail2ban + sysctl)
 security:
     ./Setup/seguridad.sh
 
-# Fuentes de desarrollo (Nerd Fonts)
+# DNS-over-TLS
+security-dot:
+    ./Setup/seguridad-dot.sh
+
+# Fuentes de desarrollo
 fonts:
     ./Setup/fonts.sh
 
-# Información estética del sistema
+# Optimizaciones de rendimiento
+tuning:
+    ./Setup/kubuntu-tuning.sh
+
+# Estado de optimizaciones
+tuning-status:
+    ./Setup/kubuntu-tuning.sh --status
+
+# Informacion estetica del sistema
 fastfetch:
     ./Setup/fastfetch.sh
 
-# Apariencia (Temas e iconos Papirus y Breeze)
+# Apariencia (Temas e iconos)
 apariencia:
     ./Setup/apariencia.sh
 
-# Navegador Firefox nativo (.deb oficial de Mozilla con APT Pinning)
+# Firefox nativo (.deb)
 firefox:
     ./Setup/firefox.sh
 
-# Multimedia (yt-dlp, ffmpeg, motor Deno)
+# Multimedia (yt-dlp, ffmpeg, Deno)
 yt-dlp:
     ./Setup/yt-dlp-setup.sh
 
+# Pantalla de bloqueo
+screensaver:
+    ./Setup/screensaver-setup.sh
+
 # =============================================================================
-# CONFIGURACIÓN DE RED Y VIRTUALIZACIÓN
+# CONFIGURACION DE RED Y VIRTUALIZACION
 # =============================================================================
 
-# Configuración de KVM/QEMU, Libvirt, bridge br0 y virt-manager
+# KVM/QEMU, Libvirt, bridge br0, virt-manager
 virtualization:
     ./Virtualizacion/virtualization.sh
 
-# Administración Web (Cockpit)
+# Administracion Web (Cockpit)
 cockpit:
     ./Setup/cockpit.sh
 
@@ -80,8 +140,8 @@ cockpit:
 
 # Git, Delta, Lazygit, GH CLI
 git-setup:
-    ./Git/git.sh
-    ./Git/github-cli.sh
+    ./IDE/git.sh
+    ./IDE/github-cli.sh
 
 # =============================================================================
 # GESTORES DE RUNTIMES
@@ -92,30 +152,24 @@ mise:
     ./ProgrammingLanguages/mise.sh
 
 # =============================================================================
-# LENGUAJES DE PROGRAMACIÓN
+# LENGUAJES DE PROGRAMACION
 # =============================================================================
 
-# Todos los lenguajes principales
 languages: node python rust dotnet java
-    echo "✅ Lenguajes instalados."
+    echo "Lenguajes instalados."
 
-# Node.js LTS + pnpm vía Corepack
 node:
     ./ProgrammingLanguages/nodejs.sh
 
-# Python 3.12 vía Mise
 python:
     ./ProgrammingLanguages/python.sh
 
-# Rust vía rustup + cargo-binstall
 rust:
     ./ProgrammingLanguages/rust.sh
 
-# .NET SDK
 dotnet:
     ./ProgrammingLanguages/dotnet.sh
 
-# Java (OpenJDK)
 java:
     ./ProgrammingLanguages/java.sh
 
@@ -123,11 +177,9 @@ java:
 # HERRAMIENTAS DE IA Y FRAMEWORKS
 # =============================================================================
 
-# Gemini CLI
 gemini:
     ./ProgrammingLanguages/gemini.sh
 
-# Angular CLI
 angular:
     ./ProgrammingLanguages/angular.sh
 
@@ -135,31 +187,24 @@ angular:
 # ENTORNOS DE DESARROLLO (IDEs)
 # =============================================================================
 
-# Todos los IDEs
-ides: nvim vscode antigravity opencode
-    echo "✅ IDEs instalados."
+ides: nvim vscode antigravity antigravity-cli antigravity-ide opencode
+    echo "IDEs instalados."
 
-# Neovim + LazyVim
 nvim:
     ./IDE/neovim.sh
 
-# Visual Studio Code
 vscode:
     ./IDE/vscode.sh
 
-# Google Antigravity Desktop
 antigravity:
     ./IDE/antigravity.sh
 
-# Google Antigravity CLI
 antigravity-cli:
     ./IDE/antigravity-cli.sh
 
-# Google Antigravity IDE Engine
 antigravity-ide:
     ./IDE/antigravity-ide.sh
 
-# OpenCode AI CLI/Editor
 opencode:
     ./IDE/opencode.sh
 
@@ -167,91 +212,30 @@ opencode:
 # APLICACIONES Y JUEGOS
 # =============================================================================
 
-# Meld (visor de diffs y merges)
 meld:
     ./Apps/meld.sh
 
-# Steam y Proton-GE via Flatpak
 steam:
     ./Juegos/steam.sh
 
 # =============================================================================
-# PODMAN - BASE Y SERVICIOS
+# PODMAN Y CONTENEDORES QUADLETS
 # =============================================================================
 
-# Podman base (instalación y configuración rootless)
+# Configuracion completa de Podman Rootless y Quadlets
+podman-setup:
+    ./Podman/install/podman-install.sh
+    ./Podman/install/quadlets-setup.sh
+
+# Podman base
 podman-base:
-    ./Podman/podman.sh
+    ./Podman/install/podman-install.sh
 
-# Bases de datos
-podman-postgres:
-    ./Podman/podman-postgres.sh
+# Quadlets
+podman-quadlets:
+    ./Podman/install/quadlets-setup.sh
 
-podman-mysql:
-    ./Podman/podman-mysql.sh
-
-podman-mongodb:
-    ./Podman/podman-mongodb.sh
-
-podman-redis:
-    ./Podman/podman-redis.sh
-
-# Almacenamiento
-podman-minio:
-    ./Podman/podman-minio.sh
-
-# Monitoreo y Observabilidad
-podman-grafana:
-    ./Podman/podman-grafana.sh
-
-podman-prometheus:
-    ./Podman/podman-prometheus.sh
-
-podman-jaeger:
-    ./Podman/podman-jaeger.sh
-
-podman-dozzle:
-    ./Podman/podman-dozzle.sh
-
-# Administración
-podman-portainer:
-    ./Podman/podman-portainer.sh
-
-podman-adminer:
-    ./Podman/podman-adminer.sh
-
-# Autenticación
-podman-keycloak:
-    ./Podman/podman-keycloak.sh
-
-# Web y Proxy
-podman-nginx:
-    ./Podman/podman-nginx.sh
-
-# CMS
-podman-wordpress:
-    ./Podman/podman-wordpress.sh
-
-# Mensajería
-podman-rabbitmq:
-    ./Podman/podman-rabbitmq.sh
-
-podman-mailhog:
-    ./Podman/podman-mailhog.sh
-
-# Testing
-podman-browserless:
-    ./Podman/podman-browserless.sh
-
-podman-storybook:
-    ./Podman/podman-storybook.sh
-
-# Stacks completos agrupados
-podman-databases: podman-postgres podman-mysql podman-mongodb podman-redis
-    echo "✅ Bases de datos iniciadas."
-
-podman-monitoring: podman-prometheus podman-grafana podman-jaeger podman-dozzle
-    echo "✅ Stack de monitoreo iniciado."
-
-podman-admin: podman-portainer podman-adminer podman-keycloak
-    echo "✅ Stack de administración iniciado."
+# Estado de Podman
+podman-status:
+    ./Podman/install/podman-install.sh --status
+    ./Podman/lib/podman-utils.sh doctor

@@ -1,5 +1,5 @@
 #!/bin/bash
-# opencode.sh - Instalación de OpenCode AI CLI/Editor para Kubuntu
+# opencode.sh - Instalación de OpenCode AI CLI/Editor para CachyOS
 
 set -euo pipefail
 
@@ -10,7 +10,11 @@ echo "🤖 Instalando OpenCode (Versión: $OPENCODE_VERSION)..."
 # 1. Asegurar dependencias (curl)
 if ! command -v curl &> /dev/null; then
     echo "ℹ️ Instalando curl..."
-    sudo apt update && sudo apt install -y curl
+    if command -v pacman &> /dev/null; then
+        sudo pacman -S --needed --noconfirm curl
+    elif command -v apt &> /dev/null; then
+        sudo apt update && sudo apt install -y curl
+    fi
 fi
 
 # 2. Descargar e instalar OpenCode en la versión indicada
