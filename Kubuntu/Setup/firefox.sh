@@ -1,65 +1,119 @@
 #!/bin/bash
-# firefox.sh - Instalar Firefox nativo (.deb) desde el repositorio oficial de Mozilla
-# Compatible con Kubuntu 24.04 LTS y superiores (incluyendo 24.10 y 26.04 LTS)
+# =============================================================================
+# firefox.sh - Instalar Firefox Nativo (.deb) Oficial de Mozilla en Kubuntu
+# =============================================================================
+# - Elimina la versión Snap por defecto de Ubuntu/Kubuntu
+# - Configura el repositorio oficial APT de Mozilla con clave GPG y APT Pinning (1000)
+# - Instala Firefox nativo (.deb) + paquete de idioma en español (es-ES)
+# - Integra con KDE Plasma (plasma-browser-integration)
+# =============================================================================
 
 set -euo pipefail
 
-echo "🚀 Instalando Firefox nativo (.deb) desde Mozilla..."
-
-# Verificar si se está ejecutando como root o con sudo
-if [[ $EUID -ne 0 ]]; then
+if [ "$EUID" -ne 0 ]; then
     if command -v sudo &> /dev/null; then
         SUDO="sudo"
     else
-        echo "⚠️ Este script requiere privilegios de root (sudo)."
+        echo "Error: Este script requiere privilegios de superusuario (sudo)."
         exit 1
     fi
 else
     SUDO=""
 fi
 
-# 1. Crear directorio para keyrings si no existe
-$SUDO mkdir -p /etc/apt/keyrings
-$SUDO chmod 755 /etc/apt/keyrings
+show_help() {
+    cat <<EOF
+Instalador de Firefox Nativo (.deb) - Kubuntu (KDE Plasma)
 
-# 2. Descargar e instalar la clave GPG de Mozilla
-echo "ℹ️ Descargando clave GPG de Mozilla..."
-wget -q https://packages.mozilla.org/apt/repo-signing-key.gpg -O- | $SUDO tee /etc/apt/keyrings/packages.mozilla.org.asc > /dev/null
+Uso:
+  $0 [OPCION]
 
-# 3. Añadir el repositorio oficial de Mozilla
-echo "ℹ️ Añadiendo repositorio de Mozilla..."
-echo "deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main" | $SUDO tee /etc/apt/sources.list.d/mozilla.list > /dev/null
+Opciones:
+  (sin argumentos)       Elimina Firefox Snap e instala Firefox oficial (.deb) de Mozilla.
+  --status, -s           Muestra la versión de Firefox instalada y la política APT activa.
+  --help, -h             Muestra esta ayuda.
+EOF
+}
 
-# 4. Configurar prioridad (Pinning) - 900 para no sobrescribir repos de seguridad de Ubuntu/Kubuntu
-echo "ℹ️ Configurando prioridad del repositorio (Pin-Priority: 900)..."
-cat <<'EOF' | $SUDO tee /etc/apt/preferences.d/mozilla > /dev/null
+show_status() {
+    echo "================================================================="
+    echo "ESTADO DE FIREFOX - KUBUNTU"
+    echo "================================================================="
+    echo "Firefox Binario:               $(command -v firefox 2>/dev/null || echo 'No instalado')"
+    echo "Versión Firefox:               $(firefox --version 2>/dev/null || echo 'n/a')"
+    echo "Snap Firefox:                  $(if command -v snap &>/dev/null && snap list firefox &>/dev/null; then echo 'Instalado (Snap)'; else echo 'No instalado (Limpio)'; fi)"
+    echo "-----------------------------------------------------------------"
+    echo "Política APT para Firefox (apt-cache policy firefox):"
+    apt-cache policy firefox 2>/dev/null || true
+    echo "================================================================="
+}
+
+install_native_firefox() {
+    echo "================================================================="
+    echo "INSTALANDO FIREFOX NATIVO (.DEB) DESDE EL REPOSITORIO DE MOZILLA"
+    echo "================================================================="
+
+    # 1. Eliminar Firefox Snap si está presente
+    echo "ℹ️ [1/6] Comprobando y eliminando versión Snap de Firefox..."
+    if command -v snap &>/dev/null && snap list firefox &>/dev/null; then
+        echo "   - Desinstalando snap de Firefox..."
+        $SUDO snap remove --purge firefox 2>/dev/null || $SUDO snap remove firefox 2>/dev/null || true
+    fi
+
+    # Eliminar el metapaquete transicional de Ubuntu
+    $SUDO apt purge -y firefox 2>/dev/null || true
+
+    # 2. Crear directorio de keyrings si no existe
+    echo "ℹ️ [2/6] Configurando directorio de firmas APT..."
+    $SUDO mkdir -p /etc/apt/keyrings
+    $SUDO chmod 755 /etc/apt/keyrings
+
+    # 3. Descargar e instalar la clave GPG oficial de Mozilla
+    echo "ℹ️ [3/6] Descargando e instalando clave GPG de Mozilla..."
+    wget -q https://packages.mozilla.org/apt/repo-signing-key.gpg -O- | $SUDO tee /etc/apt/keyrings/packages.mozilla.org.asc > /dev/null
+
+    # 4. Añadir repositorio oficial APT de Mozilla
+    echo "ℹ️ [4/6] Añadiendo repositorio APT oficial de Mozilla..."
+    echo "deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main" | $SUDO tee /etc/apt/sources.list.d/mozilla.list > /dev/null
+
+    # 5. Configurar APT Pinning (Prioridad 1000 para preferir siempre Mozilla oficial sobre el wrapper de Ubuntu)
+    echo "ℹ️ [5/6] Configurando prioridad APT Pinning (1000)..."
+    cat <<'EOF' | $SUDO tee /etc/apt/preferences.d/mozilla > /dev/null
 Package: *
 Pin: origin packages.mozilla.org
-Pin-Priority: 900
+Pin-Priority: 1000
 EOF
 
-# 5. Actualizar lista de paquetes
-echo "ℹ️ Actualizando lista de paquetes..."
-$SUDO apt update
+    # 6. Actualizar e instalar Firefox nativo
+    echo "ℹ️ [6/6] Actualizando APT e instalando Firefox nativo (.deb)..."
+    $SUDO apt update
+    $SUDO apt install -y \
+        firefox \
+        firefox-l10n-es-es \
+        plasma-browser-integration
 
-# 6. Eliminar versiones previas (Snap, ESR, paquete Ubuntu/Kubuntu)
-echo "ℹ️ Eliminando versiones previas de Firefox..."
+    echo ""
+    echo "================================================================="
+    echo "✅ Firefox nativo (.deb) instalado con éxito desde Mozilla."
+    echo "Versión instalada: $(firefox --version 2>/dev/null || echo 'Instalado')"
+    echo "================================================================="
+}
 
-# Eliminar Firefox Snap si está instalado y snap existe
-if command -v snap &>/dev/null && snap list firefox &>/dev/null; then
-    echo "   - Eliminando Firefox Snap..."
-    $SUDO snap remove firefox || true
-fi
-
-# Eliminar Firefox ESR y paquetes de localización si existen
-$SUDO apt purge -y firefox-esr firefox-esr-l10n-es-ar firefox-esr-l10n-es-cl firefox-esr-l10n-es-es firefox-esr-l10n-es-mx 2>/dev/null || true
-
-# Eliminar paquete firefox de Ubuntu/Kubuntu si es metapaquete snap o deb antiguo
-$SUDO apt purge -y firefox 2>/dev/null || true
-
-# 7. Instalar Firefox nativo (.deb) desde Mozilla
-echo "ℹ️ Instalando Firefox nativo (.deb)..."
-$SUDO apt install -y firefox firefox-l10n-es-es
-
-echo "✅ Firefox nativo (.deb) instalado correctamente."
-echo "💡 Verifica la instalación ejecutando: firefox --version"
+case "${1:-}" in
+    --help|-h|help)
+        show_help
+        exit 0
+        ;;
+    --status|-s|status)
+        show_status
+        exit 0
+        ;;
+    "")
+        install_native_firefox
+        ;;
+    *)
+        echo "Opción no reconocida: $1"
+        show_help
+        exit 1
+        ;;
+esac
