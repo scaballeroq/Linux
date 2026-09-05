@@ -12,8 +12,9 @@ The process covers firewall configuration (Firewalld), DNS privacy, MAC Randomiz
 
 Firewalld is used to define strict network policies with dynamic zones.
 
-1. Install and enable Firewalld:
+1. Disable UFW if it came pre-installed with CachyOS, then install/enable Firewalld:
    ```bash
+   sudo systemctl disable --now ufw 2>/dev/null || true
    sudo pacman -S --needed --noconfirm firewalld
    sudo systemctl enable --now firewalld
    ```

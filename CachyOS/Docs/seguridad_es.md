@@ -12,8 +12,9 @@ El proceso cubre la configuración del firewall (Firewalld), privacidad DNS, MAC
 
 Se utiliza Firewalld para definir políticas estrictas de red con zonas dinámicas.
 
-1. Instala y habilita Firewalld:
+1. Desactiva UFW si vino preinstalado en CachyOS, e instala/habilita Firewalld:
    ```bash
+   sudo systemctl disable --now ufw 2>/dev/null || true
    sudo pacman -S --needed --noconfirm firewalld
    sudo systemctl enable --now firewalld
    ```

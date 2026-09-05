@@ -12,6 +12,12 @@ echo "================================================================="
 
 # 1. Configuracion de Firewall (Firewalld)
 echo "ℹ️ [1/4] Instalando y configurando Firewalld..."
+# CachyOS suele incluir UFW por defecto en su instalador Calamares; lo desactivamos para evitar colisiones
+if systemctl is-active --quiet ufw || systemctl is-enabled --quiet ufw 2>/dev/null; then
+    echo "ℹ️ Desactivando UFW previo para usar Firewalld como cortafuegos principal..."
+    sudo systemctl disable --now ufw 2>/dev/null || true
+fi
+
 sudo pacman -S --needed --noconfirm firewalld 2>/dev/null || true
 sudo systemctl enable --now firewalld
 
