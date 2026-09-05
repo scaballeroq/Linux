@@ -247,11 +247,47 @@ if [ -f /etc/libvirt/qemu.conf ]; then
 fi
 
 # ---------------------------------------------------------------------------
-# 5. Backend de Firewall Nftables en Libvirt (/etc/libvirt/network.conf)
+# 5. Backend de Firewall y Red Libvirt (/etc/libvirt/network.conf y Firewalld)
 # ---------------------------------------------------------------------------
-echo "ℹ️ Configurando backend de firewall nftables en libvirt..."
+echo "ℹ️ Configurando backend de firewall e integración de red en libvirt..."
+
+# Resolver conflicto de múltiples firewalls (UFW vs Firewalld)
+if systemctl is-active --quiet firewalld && systemctl is-active --quiet ufw; then
+    echo "⚠️ Detectados firewalld y ufw activos simultáneamente. UFW bloquea virbr0/vnet por defecto."
+    echo "ℹ️ Desactivando UFW para evitar colisiones con Firewalld..."
+    sudo systemctl disable --now ufw 2>/dev/null || true
+fi
+
+# Con Firewalld activo, el backend recomendado en Arch/CachyOS es "iptables" (mediante iptables-nft)
+# para evitar que virtnetworkd cree cadenas nftables independientes que colisionen con las zonas de firewalld.
 if [ -f /etc/libvirt/network.conf ]; then
-    sudo sed -i 's/^#*firewall_backend = .*/firewall_backend = "nftables"/' /etc/libvirt/network.conf 2>/dev/null || true
+    if systemctl is-active --quiet firewalld || systemctl is-enabled --quiet firewalld; then
+        echo "ℹ️ Firewalld detectado: configurando firewall_backend = \"iptables\" (iptables-nft)..."
+        sudo sed -i 's/^#*firewall_backend = .*/firewall_backend = "iptables"/' /etc/libvirt/network.conf 2>/dev/null || true
+    else
+        echo "ℹ️ Firewalld no detectado: manteniendo firewall_backend = \"nftables\"..."
+        sudo sed -i 's/^#*firewall_backend = .*/firewall_backend = "nftables"/' /etc/libvirt/network.conf 2>/dev/null || true
+    fi
+fi
+
+# Configuración de reglas en Firewalld para NAT y puente virtual (virbr0)
+if command -v firewall-cmd >/dev/null 2>&1 && systemctl is-active --quiet firewalld; then
+    echo "ℹ️ Configurando zonas y reenvío NAT en Firewalld para libvirt..."
+    sudo firewall-cmd --permanent --zone=libvirt --add-forward 2>/dev/null || true
+    sudo firewall-cmd --permanent --zone=public --add-masquerade 2>/dev/null || true
+    sudo firewall-cmd --reload 2>/dev/null || true
+    echo "  ✅ Reglas de reenvío y masquerade aplicadas en Firewalld."
+fi
+
+# Si solo se usa UFW (sin firewalld), permitir reenvío y tráfico en virbr0
+if command -v ufw >/dev/null 2>&1 && systemctl is-active --quiet ufw && ! systemctl is-active --quiet firewalld; then
+    echo "ℹ️ UFW detectado: configurando política de reenvío y permisos para virbr0..."
+    if [ -f /etc/default/ufw ]; then
+        sudo sed -i 's/DEFAULT_FORWARD_POLICY="DROP"/DEFAULT_FORWARD_POLICY="ACCEPT"/' /etc/default/ufw 2>/dev/null || true
+    fi
+    sudo ufw route allow in on virbr0 2>/dev/null || true
+    sudo ufw allow in on virbr0 2>/dev/null || true
+    sudo ufw reload 2>/dev/null || true
 fi
 
 # ---------------------------------------------------------------------------
@@ -282,6 +318,11 @@ sudo systemctl enable --now \
 # 8. Configuración de Red Virtual NAT y Storage Pool por Defecto
 # ---------------------------------------------------------------------------
 echo "ℹ️ Asegurando red virtual NAT por defecto (virbr0)..."
+sudo systemctl restart virtnetworkd.service 2>/dev/null || true
+# Si la red default ya estaba activa, la recargamos para aplicar cambios de backend/firewall
+if sudo virsh net-info default 2>/dev/null | grep -q "Activo:.*sí"; then
+    sudo virsh net-destroy default 2>/dev/null || true
+fi
 sudo virsh net-start default 2>/dev/null || true
 sudo virsh net-autostart default 2>/dev/null || true
 
