@@ -77,9 +77,13 @@ yt-dlp:
 # CONFIGURACION DE RED Y VIRTUALIZACION
 # =============================================================================
 
-# Configuracion de KVM/QEMU y Libvirt
+# Configuracion de KVM/QEMU y Libvirt (Optimizado para distribuciones Linux)
 virtualization:
     ./Virtualizacion/virtualization.sh
+
+# Diagnostico y estado de la virtualizacion KVM/QEMU
+virtualization-status:
+    ./Virtualizacion/virtualization.sh --status
 
 # Administracion Web (Cockpit)
 cockpit:
