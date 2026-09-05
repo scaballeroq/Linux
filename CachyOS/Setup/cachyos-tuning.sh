@@ -254,13 +254,17 @@ apply_cachyos_services() {
     $SUDO pacman -S --needed --noconfirm \
         ananicy-cpp \
         cachyos-ananicy-rules \
-        uksmd \
         irqbalance 2>/dev/null || \
-    $SUDO pacman -S --needed --noconfirm ananicy-cpp uksmd irqbalance 2>/dev/null || true
+    $SUDO pacman -S --needed --noconfirm ananicy-cpp irqbalance 2>/dev/null || true
+
+    # uksmd es opcional (no disponible en todos los repositorios oficiales)
+    $SUDO pacman -S --needed --noconfirm uksmd 2>/dev/null || true
 
     # Habilitar servicios de rendimiento y optimizacion en systemd
     $SUDO systemctl enable --now ananicy-cpp.service 2>/dev/null || true
-    $SUDO systemctl enable --now uksmd.service 2>/dev/null || true
+    if systemctl list-unit-files uksmd.service &>/dev/null; then
+        $SUDO systemctl enable --now uksmd.service 2>/dev/null || true
+    fi
     $SUDO systemctl enable --now irqbalance.service 2>/dev/null || true
 
     # Habilitar mantenimiento automatico de TRIM para SSD/NVMe

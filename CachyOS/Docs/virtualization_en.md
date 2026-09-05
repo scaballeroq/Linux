@@ -4,7 +4,7 @@ This manual is optimized for **CachyOS** (Arch Linux based). It uses the standar
 
 ## 1. Package Installation
 ```bash
-sudo pacman -S --needed --noconfirm qemu-desktop libvirt virt-manager virt-viewer virt-top dnsmasq vde2 bridge-utils openbsd-netcat ebtables iptables-nft ovmf swtpm tuned
+sudo pacman -S --needed --noconfirm qemu-desktop libvirt virt-manager virt-viewer dnsmasq vde2 bridge-utils openbsd-netcat iptables-nft edk2-ovmf swtpm tuned virglrenderer virtiofsd
 ```
 
 ## 2. Windows VirtIO Drivers
@@ -12,8 +12,9 @@ Download `virtio-win.iso` from the Fedora project repository:
 - [Download virtio-win.iso](https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso)
 
 ## 3. Service Configuration
+In modern Libvirt (12+), modular socket activation is recommended:
 ```bash
-sudo systemctl enable --now libvirtd.service
+sudo systemctl enable --now virtqemud.socket virtnetworkd.socket virtstoraged.socket virtnodedevd.socket virtproxyd.socket
 ```
 
 ## 4. Group Permissions

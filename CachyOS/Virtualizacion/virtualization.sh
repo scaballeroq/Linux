@@ -28,7 +28,7 @@ CARACTERÍSTICAS PARA LINUX GUESTS:
   - Compartición ultrarrápida de carpetas mediante VirtioFS (virtiofsd en Rust).
   - Aceleración por hardware AMD AVIC / Intel EPT y virtualización anidada (Nested KVM).
   - Aceleración de red del kernel (vhost_net, vhost_vsock) y sockets modulares Libvirt 12+.
-  - Deduplicación de memoria RAM entre VMs con UKSMD y perfil Tuned 'virtual-host'.
+  - Deduplicación de memoria RAM entre VMs con KSM del kernel y perfil Tuned 'virtual-host'.
   - Protección de interfaces Wi-Fi para evitar pérdida de conexión.
 EOF
 }
@@ -78,10 +78,10 @@ check_status() {
     echo -n "• Estado de la red virtual 'default': "
     if ip link show virbr0 >/dev/null 2>&1; then
         echo "✅ Activa (interfaz virbr0 levantada)"
+    elif command -v virsh >/dev/null 2>&1 && virsh -c qemu:///system net-info default >/dev/null 2>&1; then
+        echo "✅ Activa (iniciada en libvirt)"
     elif [ -f /etc/libvirt/qemu/networks/autostart/default.xml ] || [ -f /etc/libvirt/qemu/networks/default.xml ]; then
         echo "ℹ️ Definida pero inactiva (se activará al iniciar los sockets de libvirt)"
-    elif command -v virsh >/dev/null 2>&1 && virsh net-info default >/dev/null 2>&1; then
-        echo "✅ Activa"
     else
         echo "⚠️ No iniciada o pendiente de configuración inicial"
     fi
@@ -100,8 +100,15 @@ check_status() {
         echo "⚠️ Incompleto (Grupos actuales: $user_groups). Se requiere libvirt y kvm."
     fi
 
+    echo -n "• Interfaz gráfica (virt-manager): "
+    if pacman -Q virt-manager >/dev/null 2>&1; then
+        echo "✅ Instalado"
+    else
+        echo "❌ No instalado"
+    fi
+
     echo -n "• Herramientas de optimización Linux Guest: "
-    local tools=("virglrenderer" "virtiofsd" "osinfo-db")
+    local tools=("virglrenderer" "virtiofsd" "osinfo-db" "tuned" "swtpm")
     local found_tools=()
     for t in "${tools[@]}"; do
         if pacman -Q "$t" >/dev/null 2>&1; then
@@ -153,7 +160,6 @@ sudo pacman -S --needed --noconfirm \
     libvirt \
     virt-manager \
     virt-viewer \
-    virt-top \
     dnsmasq \
     dmidecode \
     bridge-utils \
@@ -162,7 +168,6 @@ sudo pacman -S --needed --noconfirm \
     nftables \
     edk2-ovmf \
     swtpm \
-    swtpm-tools \
     tuned \
     acl \
     libosinfo \
@@ -171,7 +176,7 @@ sudo pacman -S --needed --noconfirm \
     virglrenderer \
     virtiofsd \
     spice-vdagent \
-    qemu-guest-agent 2>/dev/null || true
+    qemu-guest-agent
 
 # Herramientas opcionales de inspección de discos VM
 sudo pacman -S --needed --noconfirm guestfs-tools 2>/dev/null || true
@@ -334,11 +339,12 @@ EOF
 fi
 
 # ---------------------------------------------------------------------------
-# 10. Perfil de Rendimiento Tuned (virtual-host) y Deduplicación de Memoria (UKSMD)
+# 10. Perfil de Rendimiento Tuned (virtual-host) y Deduplicación de Memoria (KSM)
 # ---------------------------------------------------------------------------
-echo "ℹ️ Aplicando optimizaciones de rendimiento con tuned (virtual-host) y UKSMD (ahorro de RAM)..."
-sudo pacman -S --needed --noconfirm uksmd 2>/dev/null || true
-sudo systemctl enable --now uksmd.service 2>/dev/null || true
+echo "ℹ️ Aplicando optimizaciones de rendimiento con tuned (virtual-host) y KSM..."
+if [ -d /sys/kernel/mm/ksm ]; then
+    echo 1 | sudo tee /sys/kernel/mm/ksm/run > /dev/null 2>&1 || true
+fi
 sudo systemctl enable --now tuned.service 2>/dev/null || true
 sudo tuned-adm profile virtual-host 2>/dev/null || true
 
