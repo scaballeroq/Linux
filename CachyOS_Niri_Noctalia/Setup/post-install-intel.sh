@@ -146,8 +146,8 @@ $SUDO pacman -S --needed --noconfirm \
 
 run_as_user systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
 
-# 8. Software Esencial de Sistema e Integracion KDE Plasma 6
-echo "Instalando utilidades esenciales y plugins de KDE Plasma 6 (Dolphin Thumbnails, KIO, Portales)..."
+# 8. Software Esencial de Sistema e Integracion Niri + Noctalia Shell (Wayland)
+echo "Instalando utilidades esenciales y stack Wayland (Niri, Portales, Herramientas)..."
 $SUDO pacman -S --needed --noconfirm \
     base-devel \
     cmake \
@@ -170,37 +170,33 @@ $SUDO pacman -S --needed --noconfirm \
     fastfetch \
     ca-certificates \
     gnupg \
-    ffmpegthumbs \
-    kdegraphics-thumbnailers \
-    kimageformats \
-    qt6-imageformats \
+    niri \
+    xwayland-satellite \
+    xdg-desktop-portal-gnome \
+    xdg-desktop-portal-gtk \
+    wl-clipboard \
+    grim \
+    slurp \
+    satty \
+    brightnessctl \
+    playerctl \
+    pavucontrol \
+    blueman \
+    network-manager-applet \
+    polkit-gnome \
     taglib \
     poppler \
-    breeze-icons \
+    papirus-icon-theme \
     adwaita-icon-theme \
-    kde-gtk-config \
-    breeze-gtk \
     qt5-wayland \
     qt6-wayland \
-    qqc2-desktop-style \
-    qqc2-breeze-style \
-    xdg-desktop-portal-kde \
-    xdg-desktop-portal-gtk 2>/dev/null || true
+    qt6ct \
+    kvantum 2>/dev/null || true
 
-# Configurar miniaturas avanzadas en Dolphin
-echo "Configurando vistas previas y miniaturas en Dolphin..."
-if command -v kwriteconfig6 &>/dev/null; then
-    run_as_user kwriteconfig6 --file dolphinrc --group PreviewSettings --key Plugins "audiothumbnail,directorythumbnail,djvuthumbnail,exrthumbnail,ffmpegthumbs,fontthumbnail,imagethumbnail,jpegthumbnail,kraimagethumbnail,svgthumbnail,textthumbnail,windowsexethumbnail" 2>/dev/null || true
-else
-    DOLPHIN_CONF="$USER_HOME/.config/dolphinrc"
-    run_as_user mkdir -p "$(dirname "$DOLPHIN_CONF")"
-    if [ -f "$DOLPHIN_CONF" ]; then
-        if grep -q "^\[PreviewSettings\]" "$DOLPHIN_CONF" 2>/dev/null; then
-            sed -i '/^\[PreviewSettings\]/,/^\[/ s|^Plugins=.*|Plugins=audiothumbnail,directorythumbnail,djvuthumbnail,exrthumbnail,ffmpegthumbs,fontthumbnail,imagethumbnail,jpegthumbnail,kraimagethumbnail,svgthumbnail,textthumbnail,windowsexethumbnail|' "$DOLPHIN_CONF"
-        else
-            printf "\n[PreviewSettings]\nPlugins=audiothumbnail,directorythumbnail,djvuthumbnail,exrthumbnail,ffmpegthumbs,fontthumbnail,imagethumbnail,jpegthumbnail,kraimagethumbnail,svgthumbnail,textthumbnail,windowsexethumbnail\n" >> "$DOLPHIN_CONF"
-        fi
-    fi
+# Instalar Noctalia Shell si está disponible en repositorios
+if ! command -v noctalia &>/dev/null; then
+    $SUDO pacman -S --needed --noconfirm noctalia-shell 2>/dev/null || \
+    $SUDO pacman -S --needed --noconfirm noctalia 2>/dev/null || true
 fi
 
 # 9. Integracion de Flatpak & Flathub

@@ -1,5 +1,5 @@
 #!/bin/bash
-# podman-install.sh - Optimización y configuración de Podman Rootless + Socket + Quadlets para CachyOS + KDE Plasma
+# podman-install.sh - Optimización y configuración de Podman Rootless + Socket + Quadlets para CachyOS + Niri / Wayland
 #
 # Uso:
 #   ./podman-install.sh              -> Configura el entorno Podman rootless, socket, linger, registries y symlink de podman-utils
@@ -32,7 +32,7 @@ require_non_root() {
 
 show_help() {
     cat <<EOF
-🐳 Optimizador y Configurador de Podman Rootless - CachyOS (KDE Plasma 6)
+🐳 Optimizador y Configurador de Podman Rootless - CachyOS (Niri + Noctalia)
 
 Uso:
   $0 [OPCION]
@@ -46,7 +46,7 @@ Características configuradas:
   • Base CachyOS:        Verifica e instala complementos opcionales (podman-compose, podman-docker, cockpit-podman, passt).
   • Persistencia Linger: Habilita loginctl linger para que contenedores y Quadlets sigan corriendo sin sesión de terminal abierta.
   • Docker Socket API:   Activa podman.socket en systemd user (/run/user/\$UID/podman/podman.sock).
-  • Sesión KDE Plasma:   Inyecta DOCKER_HOST en ~/.config/environment.d/10-podman.conf para VS Code, DevContainers y KRunner.
+  • Sesión Niri/Wayland: Inyecta DOCKER_HOST en ~/.config/environment.d/10-podman.conf para VS Code, DevContainers e IDEs.
   • Almacenamiento:      Configura driver overlay nativo en ~/.config/containers/storage.conf.
   • Registries:          Configura docker.io, quay.io, ghcr.io y registry.archlinux.org.
   • CLI podman-utils:    Crea symlink en ~/.local/bin/podman-utils y autocompletado en Bash.
@@ -56,7 +56,7 @@ EOF
 # 1. Mostrar estado de Podman
 show_status() {
     echo "================================================================="
-    echo "🔍 ESTADO DE PODMAN ROOTLESS - CACHYOS (KDE PLASMA)"
+    echo "🔍 ESTADO DE PODMAN ROOTLESS - CACHYOS (NIRI WAYLAND)"
     echo "================================================================="
     if command -v podman &>/dev/null; then
         echo "• Podman instalado:    $(podman --version 2>/dev/null)"
@@ -169,13 +169,13 @@ enable_podman_socket() {
     log_ok "Socket de Podman activo en /run/user/$(id -u)/podman/podman.sock."
 }
 
-# 8. Exportar DOCKER_HOST en sesión KDE Plasma y Shells (Bash & Zsh)
+# 8. Exportar DOCKER_HOST en sesión Niri / Wayland y Shells (Bash & Zsh)
 configure_docker_host() {
-    log_info "Configurando DOCKER_HOST para KDE Plasma / Wayland y Shells (Zsh / Bash)..."
+    log_info "Configurando DOCKER_HOST para Niri / Wayland y Shells (Zsh / Bash)..."
     local socket_path="/run/user/$(id -u)/podman/podman.sock"
     local export_line="export DOCKER_HOST=\"unix://$socket_path\""
 
-    # 8.1. Sesión gráfica KDE Plasma / Wayland (environment.d)
+    # 8.1. Sesión gráfica Niri / Wayland (environment.d)
     mkdir -p "$HOME/.config/environment.d"
     cat <<EOF > "$HOME/.config/environment.d/10-podman.conf"
 DOCKER_HOST=unix://$socket_path
@@ -226,7 +226,7 @@ $export_line
 EOF
     fi
 
-    log_ok "DOCKER_HOST integrado en KDE Plasma, Zsh (~/.zshrc.d/podman.zsh) y Bash."
+    log_ok "DOCKER_HOST integrado en Niri / Wayland, Zsh (~/.zshrc.d/podman.zsh) y Bash."
 }
 
 # 9. Enlazar podman-utils al PATH del usuario
@@ -301,7 +301,7 @@ case "${1:-}" in
         ;;
     "")
         echo "================================================================="
-        echo "🐳 OPTIMIZADOR DE PODMAN ROOTLESS - CACHYOS (KDE PLASMA 6)"
+        echo "🐳 OPTIMIZADOR DE PODMAN ROOTLESS - CACHYOS (NIRI + NOCTALIA)"
         echo "================================================================="
         require_non_root
         install_packages
@@ -317,7 +317,7 @@ case "${1:-}" in
         echo ""
         show_status
         echo "================================================================="
-        echo "✅ Podman Rootless y Quadlets configurados con éxito para Zsh y KDE Plasma."
+        echo "✅ Podman Rootless y Quadlets configurados con éxito para Zsh y Niri / Wayland."
         echo "💡 Comandos útiles: podman-utils create <template> <nombre> | podman ps"
         echo "================================================================="
         ;;

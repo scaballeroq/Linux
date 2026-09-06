@@ -98,10 +98,10 @@ Replaces standard commands with enriched and safe alternatives:
   - `install` → `sudo pacman -S`
   - `aur` → `paru` or `yay` (whichever is available)
   - `rate-mirrors` → `cachyos-rate-mirrors`
-- **KDE Plasma**:
+- **Wayland Desktop (Niri / Noctalia)**:
   - `open` / `o` → `xdg-open`
-  - `dolphin` → Opens Dolphin in current directory
-  - `clipcopy` / `clippaste` → Wayland/X11 clipboard
+  - `files` → Opens file manager in current directory
+  - `clipcopy` / `clippaste` → Wayland clipboard (`wl-copy` / `wl-paste`)
 - **Kernel Check**: `check-kernel` compares active kernel vs kernel.org
 
 ---
@@ -121,18 +121,31 @@ Helper shell functions to simplify recurring tasks:
 
 ---
 
-## 6. KDE Plasma 6 Configuration (`kde_settings.sh`)
+## 6. Niri and Noctalia Shell Configuration (`niri_noctalia.sh`)
 
-Applies automatic configurations for the KDE Plasma 6 desktop environment:
+Provides integration, shortcuts, and direct IPC with the **Niri** scrollable-tiling compositor and **Noctalia** shell:
 
-- **Touchpad**: Tap-to-click, natural scrolling
-- **Window Buttons**: Minimize, Maximize, Close on the right
-- **Clock**: 24-hour format, ISO date
-- **KWin**: Reload configuration without restarting session
-- **KCM Shell**: Shortcuts to configuration modules (displays, wifi, audio, bluetooth, etc.)
-- **Themes**: `kde-theme-dark`, `kde-theme-light`, `kde-set-wallpaper`
-- **Spectacle**: `captura` (region capture), `grabacion` (screen recording)
-- **Plasmoids**: `plasmoids-list`, `kwin-scripts-list`
+- **Niri IPC**:
+  - `niri-reload`: Hot reloads Niri configuration (`~/.config/niri/config.kdl`)
+  - `niri-validate`: Validates KDL configuration file syntax
+  - `niri-windows` / `niri-focused` / `niri-outputs`: Inspects window and display states
+  - `niri-quit`: Cleanly exits Niri session
+- **Noctalia Shell IPC**:
+  - `noctalia-reload`: Reloads or restarts Noctalia shell
+  - `noctalia-launcher`: Opens the application launcher
+  - `noctalia-control`: Opens the Control Center (Wi-Fi, Bluetooth, Audio, profiles)
+  - `noctalia-settings`: Opens Noctalia Shell settings
+  - `noctalia-lock`: Locks the user session
+  - `noctalia-set-wallpaper <path>`: Applies wallpaper via IPC
+- **Wayland Screenshots and Recording**:
+  - `captura`: Interactive region screenshot to clipboard with `grim` + `slurp`
+  - `captura-pantalla`: Fullscreen screenshot to clipboard
+  - `captura-archivo`: Saves screenshot with timestamp to `~/Imágenes/Capturas/`
+  - `grabacion`: Interactive region screen recording to MP4 via `wl-screenrec`
+- **Quick Settings**:
+  - `audio-settings`: Opens `pavucontrol` audio mixer
+  - `bluetooth-settings`: Opens `blueman-manager`
+  - `wifi-settings`: Opens `nm-connection-editor`
 
 ---
 

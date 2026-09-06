@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==============================================================================
 # python.sh - Instalación y Optimización de Python y uv vía Mise
-# Optimizado para CachyOS (PGO/LTO), KDE Plasma 6 (environment.d) y Zsh / Bash
+# Optimizado para CachyOS (PGO/LTO), Niri / Wayland (environment.d) y Zsh / Bash
 # ==============================================================================
 
 set -euo pipefail
@@ -78,16 +78,16 @@ echo "ℹ️ [3/5] Actualizando herramientas base de empaquetado (pip, setuptool
 run_as_user mise exec python@latest -- python -m pip install --upgrade pip setuptools wheel --quiet 2>/dev/null || true
 run_as_user mise reshim 2>/dev/null || true
 
-# 5. Integración con KDE Plasma 6 (environment.d) y Shells (Zsh / Bash)
-echo "ℹ️ [4/5] Configurando variables de entorno para KDE Plasma 6 y Shells..."
+# 5. Integración con Niri / Wayland (environment.d) y Shells (Zsh / Bash)
+echo "ℹ️ [4/5] Configurando variables de entorno para Niri / Wayland y Shells..."
 ENV_DIR="$USER_HOME/.config/environment.d"
 BASHRC_D="$USER_HOME/.bashrc.d"
 ZSHRC_D="$USER_HOME/.zshrc.d"
 run_as_user mkdir -p "$ENV_DIR" "$BASHRC_D" "$ZSHRC_D"
 
-# 5.1. KDE Plasma 6 (sesión gráfica, VS Code, PyCharm, Antigravity)
+# 5.1. Niri / Wayland (sesión gráfica, VS Code, PyCharm, Antigravity)
 cat << 'EOF' | run_as_user tee "$ENV_DIR/10-python.conf" > /dev/null
-# Integración de Python & uv para KDE Plasma 6 / Wayland
+# Integración de Python & uv para Niri / Wayland
 PYTHONUNBUFFERED=1
 UV_LINK_MODE=copy
 EOF
@@ -136,10 +136,10 @@ UV_VER=$(run_as_user mise exec uv@latest -- uv --version 2>/dev/null || echo "uv
 PIP_VER=$(run_as_user mise exec python@latest -- pip --version 2>/dev/null | awk '{print $2}' || echo "pip instalado")
 
 echo "================================================================="
-echo "✅ Python & uv configurados con éxito para CachyOS y KDE Plasma 6:"
-echo "  • Python:      $PYTHON_VER"
-echo "  • uv:          $UV_VER (Gestor ultrarrápido en Rust)"
-echo "  • pip:         v$PIP_VER (setuptools + wheel actualizados)"
-echo "  • KDE Plasma:  ~/.config/environment.d/10-python.conf"
+echo "✅ Python & uv configurados con éxito para CachyOS y Niri / Wayland:"
+echo "  • Python:       $PYTHON_VER"
+echo "  • uv:           $UV_VER (Gestor ultrarrápido en Rust)"
+echo "  • pip:          v$PIP_VER (setuptools + wheel actualizados)"
+echo "  • Niri Wayland: ~/.config/environment.d/10-python.conf"
 echo "  • Shells:      Bash & Zsh con autocompletado nativo (_uv, _uvx, _pip)"
 echo "================================================================="

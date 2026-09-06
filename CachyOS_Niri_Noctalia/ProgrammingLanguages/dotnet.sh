@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==============================================================================
 # dotnet.sh - Instalación de .NET SDK (Última LTS) vía Mise para CachyOS
-# Optimizado para KDE Plasma 6 (Wayland) y Zsh / Bash (IDEs y CLI)
+# Optimizado para Niri / Wayland y Zsh / Bash (IDEs y CLI)
 # ==============================================================================
 
 set -euo pipefail
@@ -70,13 +70,13 @@ echo "ℹ️ [2/3] Descargando e instalando .NET SDK (LTS) vía Mise..."
 run_as_user mise use --global dotnet@lts
 run_as_user mise reshim 2>/dev/null || true
 
-# 4. Integración con KDE Plasma 6 y Shells (environment.d, bash, zsh)
+# 4. Integración con Niri / Wayland y Shells (environment.d, bash, zsh)
 echo "ℹ️ [3/3] Configurando variables de entorno e integración de IDEs..."
 ENV_DIR="$USER_HOME/.config/environment.d"
 run_as_user mkdir -p "$ENV_DIR"
 
 cat << 'EOF' | run_as_user tee "$ENV_DIR/10-dotnet.conf" > /dev/null
-# Integración de .NET SDK para KDE Plasma 6, JetBrains Rider, VS Code y Antigravity
+# Integración de .NET SDK para Niri / Wayland, JetBrains Rider, VS Code y Antigravity
 DOTNET_ROOT=${HOME}/.local/share/mise/installs/dotnet/lts
 DOTNET_CLI_TELEMETRY_OPTOUT=1
 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
@@ -115,9 +115,9 @@ fi
 DOTNET_VER=$(run_as_user mise exec dotnet@lts -- dotnet --version 2>/dev/null || echo "LTS instalado")
 
 echo "================================================================="
-echo "✅ .NET SDK LTS configurado con éxito para CachyOS y KDE Plasma 6:"
-echo "  • .NET SDK:    $DOTNET_VER (LTS)"
-echo "  • IDEs/KDE:    ~/.config/environment.d/10-dotnet.conf (Rider, VS Code)"
+echo "✅ .NET SDK LTS configurado con éxito para CachyOS y Niri / Wayland:"
+echo "  • .NET SDK:     $DOTNET_VER (LTS)"
+echo "  • IDEs/Wayland: ~/.config/environment.d/10-dotnet.conf (Rider, VS Code)"
 echo "  • Telemetría:  Desactivada (DOTNET_CLI_TELEMETRY_OPTOUT=1)"
 echo "  • Shells:      Bash & Zsh (~/.local/share/mise/shims)"
 echo "================================================================="

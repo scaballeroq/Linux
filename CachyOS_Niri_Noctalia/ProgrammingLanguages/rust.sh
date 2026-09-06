@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==============================================================================
 # rust.sh - Instalación de Rust (Canal Stable / Producción) y Cargo-Binstall
-# Optimizado para CachyOS, KDE Plasma 6 (Wayland) y Zsh / Bash (IDEs y CLI)
+# Optimizado para CachyOS, Niri (Wayland) y Zsh / Bash (IDEs y CLI)
 # ==============================================================================
 
 set -euo pipefail
@@ -73,13 +73,13 @@ else
     echo "  ✅ cargo-binstall ya está instalado."
 fi
 
-# 5. Integración con KDE Plasma 6 (environment.d) y Shells (Zsh / Bash)
-echo "ℹ️ [4/4] Configurando integración con KDE Plasma 6 y Shells..."
+# 5. Integración con Niri / Wayland (environment.d) y Shells (Zsh / Bash)
+echo "ℹ️ [4/4] Configurando integración con Niri / Wayland y Shells..."
 ENV_DIR="$USER_HOME/.config/environment.d"
 run_as_user mkdir -p "$ENV_DIR"
 
 cat << 'EOF' | run_as_user tee "$ENV_DIR/10-rust.conf" > /dev/null
-# Integración de Rust / Cargo para KDE Plasma 6 y entornos gráficos (IDEs, KRunner)
+# Integración de Rust / Cargo para Niri / Wayland y entornos gráficos (IDEs)
 PATH=${HOME}/.cargo/bin:${PATH}
 EOF
 
@@ -130,11 +130,11 @@ CARGO_VER=$(run_as_user cargo --version 2>/dev/null || echo "instalado")
 BINSTALL_VER=$(run_as_user cargo-binstall --version 2>/dev/null || echo "disponible")
 
 echo "================================================================="
-echo "✅ Rust (Stable) configurado con éxito para CachyOS y KDE Plasma 6:"
-echo "  • Rustc:       $RUSTC_VER"
-echo "  • Cargo:       $CARGO_VER"
-echo "  • Binstall:    $BINSTALL_VER"
-echo "  • IDE Tools:   rust-analyzer, clippy, rustfmt, rust-src"
-echo "  • KDE Plasma:  ~/.config/environment.d/10-rust.conf"
-echo "  • Shells:      Autocompletado Bash & Zsh (_cargo, _rustup)"
+echo "✅ Rust (Stable) configurado con éxito para CachyOS y Niri / Wayland:"
+echo "  • Rustc:        $RUSTC_VER"
+echo "  • Cargo:        $CARGO_VER"
+echo "  • Binstall:     $BINSTALL_VER"
+echo "  • IDE Tools:    rust-analyzer, clippy, rustfmt, rust-src"
+echo "  • Niri Wayland: ~/.config/environment.d/10-rust.conf"
+echo "  • Shells:       Autocompletado Bash & Zsh (_cargo, _rustup)"
 echo "================================================================="

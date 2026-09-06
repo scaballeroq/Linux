@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==============================================================================
 # nodejs.sh - Instalación de Node.js (Última LTS) vía Mise para CachyOS
-# Optimizado para KDE Plasma 6 y Zsh (npm, pnpm, yarn vía Corepack)
+# Optimizado para Niri / Wayland y Zsh (npm, pnpm, yarn vía Corepack)
 # ==============================================================================
 
 set -euo pipefail
@@ -85,5 +85,5 @@ echo "  • Node.js:  $NODE_VER (LTS)"
 echo "  • npm:      $NPM_VER"
 echo "  • pnpm:     $PNPM_VER"
 echo "  • yarn:     $YARN_VER"
-echo "  • Entorno:  KDE Plasma 6 + Zsh (~/.local/share/mise/shims)"
+echo "  • Entorno:  Niri + Zsh (~/.local/share/mise/shims)"
 echo "================================================================="

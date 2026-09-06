@@ -1,16 +1,16 @@
 # CachyOS Environment Configuration Justfile
-# (CachyOS + KDE Plasma 6)
+# (CachyOS + Niri & Noctalia Shell)
 
 # Instala todo el entorno por defecto (Auto-deteccion de CPU / Portatil AMD)
-setup-all: post-install laptop tuning shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
-    @echo "🚀 Entorno completo de CachyOS (KDE Plasma 6) configurado. Por favor, reinicia el sistema."
+setup-all: post-install niri-setup laptop tuning shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+    @echo "🚀 Entorno completo de CachyOS (Niri + Noctalia Shell) configurado. Por favor, reinicia el sistema."
 
 # Perfil completo para Portatil de desarrollo (AMD Ryzen + Virtualizacion + Contenedores)
-setup-laptop-amd: post-install-amd laptop tuning shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+setup-laptop-amd: post-install-amd niri-setup laptop tuning shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
     @echo "🚀 Entorno Portatil AMD Ryzen configurado con exito. Por favor, reinicia el sistema."
 
 # Perfil para Sobremesa (Intel Core - Sin virtualizacion ni bateria)
-setup-media-desktop: post-install-intel tuning shell security fonts fastfetch kitty yt-dlp
+setup-media-desktop: post-install-intel niri-setup tuning shell security fonts fastfetch kitty yt-dlp
     @echo "🚀 Entorno Sobremesa Intel configurado con exito. Por favor, reinicia el sistema."
 
 # =============================================================================
@@ -21,19 +21,27 @@ setup-media-desktop: post-install-intel tuning shell security fonts fastfetch ki
 post-install:
     ./Setup/post-install.sh
 
-# Configuracion post-instalacion para AMD Ryzen (Kernel, firmware-amd, RADV, Mesa, PipeWire, KDE Plasma)
+# Configuracion post-instalacion para AMD Ryzen (Kernel, firmware-amd, RADV, Mesa, PipeWire, Niri)
 post-install-amd:
     ./Setup/post-install-amd.sh
 
-# Configuracion post-instalacion para Intel Core (Kernel, microcodigo Intel, VA-API Intel, PipeWire, KDE Plasma)
+# Configuracion post-instalacion para Intel Core (Kernel, microcodigo Intel, VA-API Intel, PipeWire, Niri)
 post-install-intel:
     ./Setup/post-install-intel.sh
 
-# Optimizacion para portatiles de desarrollo (Touchpad, Bateria, Bluetooth, tuned-ppd, persistencia de brillo 95%)
+# Configuracion e integracion de Niri y Noctalia Shell (Wayland)
+niri-setup:
+    ./Setup/niri-setup.sh
+
+# Estado y diagnostico de Niri y Noctalia Shell
+niri-status:
+    ./Setup/niri-setup.sh --status
+
+# Optimizacion para portatiles de desarrollo (Touchpad, Bateria, Bluetooth, tuned-ppd, persistencia de brillo)
 laptop:
     ./Setup/laptop-setup.sh
 
-# Optimizaciones avanzadas de rendimiento (Sysctl, limites, Systemd, Baloo, Distrobox para CachyOS + KDE Plasma)
+# Optimizaciones avanzadas de rendimiento (Sysctl, limites, Systemd, Wayland para CachyOS + Niri)
 tuning:
     ./Setup/cachyos-tuning.sh
 

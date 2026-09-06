@@ -1,6 +1,6 @@
 #compdef podman-utils
 # =============================================================================
-# Zsh Completion for podman-utils (CachyOS + KDE Plasma 6)
+# Zsh Completion for podman-utils (CachyOS + Niri / Wayland)
 # =============================================================================
 
 _podman_utils_get_repo_dir() {

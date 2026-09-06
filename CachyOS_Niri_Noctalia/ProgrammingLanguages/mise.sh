@@ -1,13 +1,13 @@
 #!/bin/bash
 # ==============================================================================
 # mise.sh - Instalador y Optimizador de Mise (Language Runtime Manager)
-# Adaptado para CachyOS + KDE Plasma 6 (Wayland / Systemd User Environment)
+# Adaptado para CachyOS + Niri (Wayland / Systemd User Environment)
 # ==============================================================================
 
 set -euo pipefail
 
 echo "================================================================="
-echo "⚡ Configurando Mise (Gestor de Runtimes) para CachyOS + KDE Plasma 6"
+echo "⚡ Configurando Mise (Gestor de Runtimes) para CachyOS + Niri"
 echo "================================================================="
 
 if [ "$EUID" -ne 0 ]; then
@@ -52,14 +52,14 @@ fi
 # Exportar PATH para la ejecución de este script
 export PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:/usr/bin:$PATH"
 
-# 2. Integración con el entorno gráfico de KDE Plasma 6 (Systemd Environment Generators)
-# Permite que IDEs (Antigravity, VS Code, JetBrains), KRunner y Dolphin hereden los runtimes de Mise
-echo "ℹ️ [2/4] Configurando variables de entorno para KDE Plasma 6 (environment.d)..."
+# 2. Integración con el entorno gráfico de Niri / Wayland (Systemd Environment Generators)
+# Permite que IDEs (Antigravity, VS Code, JetBrains) y lanzadores hereden los runtimes de Mise
+echo "ℹ️ [2/4] Configurando variables de entorno para Niri / Wayland (environment.d)..."
 ENV_DIR="$USER_HOME/.config/environment.d"
 run_as_user mkdir -p "$ENV_DIR"
 
 cat << 'EOF' | run_as_user tee "$ENV_DIR/10-mise.conf" > /dev/null
-# Integración de Mise con la sesión gráfica de KDE Plasma 6 / Wayland
+# Integración de Mise con la sesión gráfica de Niri / Wayland
 PATH=${HOME}/.local/share/mise/shims:${HOME}/.local/bin:${PATH}
 MISE_SHELL=bash
 COREPACK_ENABLE_DOWNLOAD_PROMPT=0
@@ -128,9 +128,9 @@ if command -v mise &>/dev/null; then
 fi
 
 echo "================================================================="
-echo "✅ Mise configurado con éxito para CachyOS y KDE Plasma 6:"
+echo "✅ Mise configurado con éxito para CachyOS y Niri / Wayland:"
 echo "  • CLI & Shims:  ~/.local/share/mise/shims y /usr/bin/mise"
-echo "  • KDE Plasma 6: ~/.config/environment.d/10-mise.conf (sesión gráfica e IDEs)"
+echo "  • Niri Wayland: ~/.config/environment.d/10-mise.conf (sesión gráfica e IDEs)"
 echo "  • Shell Bash:   ~/.bashrc.d/mise.sh + autocompletado"
 echo "  • Shell Zsh:    ~/.zshrc + autocompletado (_mise)"
 echo "================================================================="

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==============================================================================
-# cockpit.sh - Administración Web Ligera (Cockpit) para CachyOS + KDE Plasma
+# cockpit.sh - Administración Web Ligera (Cockpit) para CachyOS (Niri / Wayland)
 # Optimizado para Podman, KVM, Almacenamiento y Sensores Térmicos
 # ==============================================================================
 

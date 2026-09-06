@@ -1,13 +1,13 @@
 #!/bin/bash
 # ==============================================================================
-# ENDURECIMIENTO DE SEGURIDAD (seguridad.sh) - CachyOS + KDE Plasma
-# Optimizado para desarrollo, KDE Plasma y compatibilidad total con Podman Rootless
+# ENDURECIMIENTO DE SEGURIDAD (seguridad.sh) - CachyOS + Niri / Wayland
+# Optimizado para desarrollo, red local y compatibilidad total con Podman Rootless
 # ==============================================================================
 
 set -euo pipefail
 
 echo "================================================================="
-echo "🛡️ Iniciando endurecimiento de seguridad y Firewall (KDE Plasma)..."
+echo "🛡️ Iniciando endurecimiento de seguridad y Firewall (CachyOS)..."
 echo "================================================================="
 
 # 1. Configuracion de Firewall (Firewalld)
@@ -24,8 +24,7 @@ sudo systemctl enable --now firewalld
 # Eliminar servicios innecesarios
 sudo firewall-cmd --permanent --remove-service=samba-client 2>/dev/null || true
 
-# Servicios esenciales para desarrollo y KDE Plasma
-sudo firewall-cmd --permanent --add-service=kdeconnect 2>/dev/null || true
+# Servicios esenciales para desarrollo y red local
 sudo firewall-cmd --permanent --add-service=mdns 2>/dev/null || true
 sudo firewall-cmd --permanent --add-service=ssh 2>/dev/null || true
 
@@ -80,5 +79,5 @@ echo "  Puertos sin privilegios Podman:$(sysctl -n net.ipv4.ip_unprivileged_port
 echo "  Reenvio IP (Podman Networks):  $(sysctl -n net.ipv4.ip_forward 2>/dev/null || echo 'no disponible')"
 echo "  User namespaces (Podman):      $(sysctl -n user.max_user_namespaces 2>/dev/null || echo 'no disponible')"
 echo "================================================================="
-echo "✅ Configuracion de seguridad para CachyOS (KDE Plasma + Podman) completada."
+echo "✅ Configuracion de seguridad para CachyOS (Niri + Podman) completada."
 echo "================================================================="

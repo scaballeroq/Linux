@@ -1,13 +1,13 @@
 #!/bin/bash
 # ==============================================================================
-# laptop-setup.sh - Optimizacion para portatiles de desarrollo en CachyOS + KDE Plasma 6
-# Hardware: AMD Ryzen (HP EliteBook) + Monitores/Escritorio fijo
+# laptop-setup.sh - Optimizacion para portatiles de desarrollo en CachyOS + Niri
+# Hardware: AMD Ryzen (HP EliteBook) / Intel + Monitores / Escritorio fijo
 # ==============================================================================
 
 set -euo pipefail
 
 echo "================================================================="
-echo "🚀 INICIANDO OPTIMIZACION PARA PORTATIL - CACHYOS (KDE PLASMA 6)"
+echo "🚀 INICIANDO OPTIMIZACION PARA PORTATIL - CACHYOS (NIRI + NOCTALIA)"
 echo "================================================================="
 
 if [ "$EUID" -ne 0 ]; then
@@ -43,7 +43,7 @@ $SUDO pacman -S --needed --noconfirm \
     power-profiles-daemon \
     bluez \
     bluez-utils \
-    bluedevil \
+    blueman \
     brightnessctl \
     cachyos-rate-mirrors 2>/dev/null || true
 
@@ -53,7 +53,7 @@ $SUDO systemctl enable --now bluetooth.service || true
 $SUDO systemctl enable --now power-profiles-daemon.service || true
 
 # 2. Optimizacion Bluetooth (Nivel de bateria de perifericos y reconexion rapida)
-echo "ℹ️ [3/4] Configurando Bluetooth para mostrar bateria de dispositivos en KDE..."
+echo "ℹ️ [3/4] Configurando Bluetooth para reportar nivel de bateria (Noctalia Shell / Blueman)..."
 $SUDO mkdir -p /etc/bluetooth
 if [ -f /etc/bluetooth/main.conf ]; then
     $SUDO sed -i 's/^#*Experimental *=.*/Experimental = true/' /etc/bluetooth/main.conf
@@ -75,38 +75,33 @@ HandleLidSwitchDocked=ignore
 HandleLidSwitchExternalPower=ignore
 EOF
 
-# 4. Configuraciones de KDE Plasma 6 (Touchpad, Pantalla y KWin)
-echo "ℹ️ [4/4] Aplicando configuraciones de Touchpad, gestos Wayland 1:1 y KWin..."
-KWRITE=$(command -v kwriteconfig6 2>/dev/null || command -v kwriteconfig5 2>/dev/null || true)
-
-if [ -n "$KWRITE" ]; then
-    # Touchpad: Tap-to-click, desplazamiento natural, doble toque para arrastrar y desactivar al teclear
-    run_as_user "$KWRITE" --file kcminputrc --group Touchpad --key tapToClick true 2>/dev/null || true
-    run_as_user "$KWRITE" --file kcminputrc --group Touchpad --key naturalScroll true 2>/dev/null || true
-    run_as_user "$KWRITE" --file kcminputrc --group Touchpad --key twoFingerTap "2" 2>/dev/null || true
-    run_as_user "$KWRITE" --file kcminputrc --group Touchpad --key disableWhileTyping true 2>/dev/null || true
-    run_as_user "$KWRITE" --file kcminputrc --group Touchpad --key tapAndDrag true 2>/dev/null || true
-    run_as_user "$KWRITE" --file touchpadrsrc --group General --key tapToClick true 2>/dev/null || true
-    run_as_user "$KWRITE" --file touchpadrsrc --group General --key naturalScroll true 2>/dev/null || true
-
-    # KWin: Frecuencia adaptativa y gestos de escritorio en Wayland
-    run_as_user "$KWRITE" --file kwinrc --group Compositing --key AdaptiveSync "true" 2>/dev/null || true
-    run_as_user "$KWRITE" --file kwinrc --group Wayland --key VirtualDesktopGestures "true" 2>/dev/null || true
-    run_as_user "$KWRITE" --file kglobalshortcutsrc --group kwin --key "Overview" "Meta+W,none,Toggle Overview" 2>/dev/null || true
-    run_as_user "$KWRITE" --file kglobalshortcutsrc --group kwin --key "Grid" "Meta+G,none,Toggle Desktop Grid" 2>/dev/null || true
-
-    # PowerDevil: Niveles de alerta de bateria
-    run_as_user "$KWRITE" --file powerdevilrc --group BatteryManagement --key BatteryCriticalAction "1" 2>/dev/null || true
-    run_as_user "$KWRITE" --file powerdevilrc --group BatteryManagement --key BatteryLowLevel "15" 2>/dev/null || true
-    run_as_user "$KWRITE" --file powerdevilrc --group BatteryManagement --key BatteryCriticalLevel "5" 2>/dev/null || true
-
-    echo "✅ Parametros de Touchpad, gestos Wayland 1:1, KWin y bateria configurados en KDE Plasma 6."
-fi
-
-# Permisos de brillo para usuarios
+# 4. Ajuste de permisos de brillo y Touchpad en Niri
+echo "ℹ️ [4/4] Verificando permisos de brillo de pantalla y configuracion de Touchpad..."
 $SUDO usermod -aG video "$REAL_USER" 2>/dev/null || true
 
+# Verificar que Niri tenga configurado el bloque de Touchpad con tap y desplazamiento natural
+NIRI_CONF="$USER_HOME/.config/niri/config.kdl"
+if [ -f "$NIRI_CONF" ]; then
+    if ! grep -q "touchpad" "$NIRI_CONF" 2>/dev/null; then
+        echo "  ℹ️ Añadiendo bloque de Touchpad optimizado a ~/.config/niri/config.kdl..."
+        cat << 'EOF' | run_as_user tee -a "$NIRI_CONF" > /dev/null
+
+input {
+    touchpad {
+        tap
+        natural-scroll
+        dwt
+        accel-speed 0.2
+    }
+}
+EOF
+        echo "  ✅ Touchpad (tap-to-click, natural-scroll) añadido a config.kdl"
+    else
+        echo "  ✅ Touchpad ya configurado en ~/.config/niri/config.kdl"
+    fi
+fi
+
 echo "================================================================="
-echo "✅ Optimizacion para portatil (CachyOS + KDE Plasma 6) completada."
-echo "💡 Recuerda reiniciar la sesion para que los cambios de KDE entren en vigor."
+echo "✅ Optimizacion para portatil (CachyOS + Niri + Noctalia) completada."
+echo "💡 Disfruta de una gestion de bateria, brillo y conectividad optimizada."
 echo "================================================================="

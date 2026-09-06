@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # Configuración del Sistema en CachyOS
 
-Esta guía detalla el proceso de configuración base, optimización de la terminal, instalación de herramientas esenciales, soporte multimedia y personalización del entorno de usuario aplicados a un sistema **CachyOS** (Arch Linux, optimizado para x86-64-v3/v4) con **KDE Plasma 6**.
+Esta guía detalla el proceso de configuración base, optimización de la terminal, instalación de herramientas esenciales, soporte multimedia y personalización del entorno de usuario aplicados a un sistema **CachyOS** (Arch Linux, optimizado para x86-64-v3/v4) con **Niri y Noctalia Shell**.
 
 Las configuraciones están automatizadas a través de los scripts ubicados en la carpeta `Setup`.
 
@@ -92,7 +92,7 @@ Muestra información del sistema de manera visual y estética al abrir la termin
 
 ## 3. Terminal Kitty (`kitty.sh`)
 
-Instala y optimiza **Kitty**, un emulador de terminal moderno acelerado por GPU, con integración en KDE Plasma y Dolphin.
+Instala y optimiza **Kitty**, un emulador de terminal moderno acelerado por GPU, con integración en Niri y Wayland.
 
 1. **Instalación**:
    ```bash
@@ -105,10 +105,9 @@ Instala y optimiza **Kitty**, un emulador de terminal moderno acelerado por GPU,
    - Fuente JetBrainsMono Nerd Font
    - Tab bar con estilo powerline
 
-3. **Integración con KDE Plasma**:
-   - Terminal predeterminado de KDE
-   - Atajo global Ctrl+Alt+T
-   - Menú contextual en Dolphin: "Abrir en Kitty"
+3. **Integración con Niri Wayland**:
+   - Terminal predeterminado del sistema (`TERMINAL=kitty` en `environment.d`)
+   - Atajo global en Niri: `Mod+Return` (o `Super+Enter`)
 
 4. **Atajos de teclado**:
    - `Ctrl+Alt+Arriba/Abajo`: Ajustar opacidad
@@ -121,7 +120,7 @@ Instala y optimiza **Kitty**, un emulador de terminal moderno acelerado por GPU,
 
 Endurecimiento del sistema con Firewalld, DNS-over-TLS y MAC Randomization.
 
-- **Firewalld**: Zona FedoraWorkstation con kdeconnect, mdns, ssh
+- **Firewalld**: Servicios mdns, ssh y soporte para contenedores Podman
 - **DNS-over-TLS**: Opportunistic con systemd-resolved
 - **MAC Randomization**: Wi-Fi scan y connection
 - **Kernel hardening**: dmesg_restrict, kptr_restrict, syncookies

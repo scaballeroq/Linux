@@ -1,5 +1,4 @@
-# Manual de Virtualización de Alto Rendimiento (KVM/QEMU) en CachyOS
-## Optimizado para Distribuciones Linux (Kernel 7.x, KDE Plasma 6 Wayland, AMD Ryzen / Intel)
+## Optimizado para Distribuciones Linux (Kernel 7.x, Niri / Wayland, AMD Ryzen / Intel)
 
 Este manual detalla la arquitectura, configuración y optimización de **KVM / QEMU / virt-manager** en **CachyOS**, aprovechando al máximo el kernel optimizado de CachyOS, los sockets modulares de `libvirt 12+`, aceleración 3D por hardware (VirGL) y compartición de archivos ultrarrápida (VirtioFS).
 
@@ -69,7 +68,7 @@ Al crear una máquina virtual para cualquier distribución Linux (Arch, Fedora, 
    - *Beneficio*: La máquina invitada tendrá acceso a todas las instrucciones nativas de tu procesador (AVX2, AES, Zen/SSE4a), acelerando compilaciones, criptografía y ejecución general.
 3. Topología: Configura 1 socket, N núcleos y 2 hilos (si tu CPU tiene SMT).
 
-### B. Gráficos y Pantalla (KDE Plasma 6 / GNOME / Wayland Fluido)
+### B. Gráficos y Pantalla (Wayland / Niri / GNOME Fluido)
 1. **Pantalla SPICE**:
    - Tipo de escucha: **Ninguno** (Listen: None). Utiliza un socket Unix local seguro y de máxima velocidad.
    - Marca la casilla: **Aceleración OpenGL**.
@@ -127,7 +126,7 @@ workspace_host /mnt/workspace virtiofs defaults,_netdev 0 0
 
 ## 6. Paquetes Recomendados Dentro del Linux Invitado
 
-Para disfrutar de resolución de pantalla dinámica que se adapte al tamaño de ventana de KDE Plasma, sincronización bidireccional del portapapeles y apagado limpio:
+Para disfrutar de resolución de pantalla dinámica que se adapte al tamaño de ventana en tu entorno Wayland, sincronización bidireccional del portapapeles y apagado limpio:
 
 ### Arch Linux / CachyOS / Manjaro:
 ```bash

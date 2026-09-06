@@ -1,6 +1,6 @@
-# 🔧 CachyOS Environment Configuration (KDE Plasma 6)
+# 🔧 CachyOS Environment Configuration (Niri + Noctalia Shell)
 
-This repository contains a modular collection of configuration scripts for **CachyOS** systems (Arch Linux based, optimized for x86-64-v3/v4 performance) running the **KDE Plasma 6** desktop environment. The objective is to automate the setup of a professional, performant, and aesthetically pleasing development environment.
+This repository contains a modular collection of configuration scripts for **CachyOS** systems (Arch Linux based, optimized for x86-64-v3/v4 performance) running the **Niri** scrollable-tiling Wayland compositor and the **Noctalia Shell** modern desktop environment. The objective is to automate the setup of a professional, performant, and aesthetically pleasing development environment.
 
 ---
 
@@ -9,14 +9,31 @@ This repository contains a modular collection of configuration scripts for **Cac
 ### 🐚 [Bash.Setup](./Bash.Setup/)
 Core terminal configuration, optimized for **Zsh** (default shell in CachyOS) and **Bash**.
 - **`aliases.sh`**: Frequently used command shortcuts, dynamic reload, and package manager aliases (`pacman` / `paru`).
-- **`environment.sh`**: Global environment variables (`EDITOR`, `PATH`, Wayland/Qt flags) and smart Mise activation in Zsh/Bash.
+- **`environment.sh`**: Global environment variables (`EDITOR`, `PATH`, native Wayland/Qt flags) and smart Mise activation in Zsh/Bash.
 - **`functions.sh`**: Advanced shell functions (`mkcd`, `up`, `hg`) and multimedia processing utilities.
-- **`kde_settings.sh`**: KDE Plasma 6 desktop environment tweaks, KWin, Spectacle, and shortcuts.
+- **`niri_noctalia.sh`**: Niri (`niri msg`) and Noctalia Shell (`noctalia msg`) IPC shortcuts, native Wayland interactive screenshots (`grim` + `slurp`), and screen recording (`wl-screenrec`).
 - **`history.sh`**: Optimized command history (10k/20k entries, deduplication, `~/.zsh_history` and `~/.bash_history`).
 - **`options.sh`**: Advanced shell options (`autocd`, typo correction, case-insensitive completions with `zstyle`/`shopt`).
 - **`podman-functions.sh`**: Container management shortcuts and Quadlets functions compatible with both shells.
 - **`rclone_aliases.sh`**: Cloud storage synchronization shortcuts.
 - **`yt-dlp_aliases.sh`**: Optimized video/audio downloader shortcuts.
+
+### ⚙️ [Setup](./Setup/)
+OS configuration, hardening, and styling scripts:
+- **`niri-setup.sh`**: Installer and integrator for Niri, Noctalia Shell, `xwayland-satellite`, GNOME/GTK desktop portals, and optimal `config.kdl` template.
+- **`post-install.sh`**: Smart dispatcher with auto CPU detection (AMD Ryzen vs Intel Core).
+- **`post-install-amd.sh`**: AMD Ryzen optimized post-install (ZRAM, RADV, Mesa, PipeWire, Niri stack).
+- **`post-install-intel.sh`**: Intel Core optimized post-install (VA-API Intel, PipeWire, Niri stack).
+- **`laptop-setup.sh`**: Laptop optimization (Niri touchpad gestures, Bluetooth battery reporting, brightnessctl, power-profiles-daemon).
+- **`cachyos-tuning.sh`**: Kernel sysctl, Systemd user limits, Distrobox, and low-latency Wayland tuning (free of Baloo/KDE bloat).
+- **`cockpit.sh`**: Cockpit web management console setup.
+- **`fastfetch.sh`**: System info fetch initialization.
+- **`fonts.sh`**: Automated Nerd Fonts installer.
+- **`kitty.sh`**: GPU-accelerated Kitty terminal with opacity/blur and Catppuccin theme.
+- **`seguridad.sh`**: Security hardening with Firewalld, DNS-over-TLS, MAC Randomization and sysctl.
+- **`shell.sh`**: Modern terminal utilities (`eza`, `bat`, `fd`, `zoxide`, `ripgrep`, `btop`, `jq`).
+- **`starship.sh`**: Optional Starship prompt with enable/disable commands.
+- **`yt-dlp-setup.sh`**: Multimedia setup dependencies (yt-dlp, ffmpeg, deno).
 
 ### 🐳 [Podman](./Podman/)
 Rootless container ecosystem with Quadlets (systemd native):
@@ -28,24 +45,8 @@ Rootless container ecosystem with Quadlets (systemd native):
 - **`templates/`**: Project templates (python-postgres, python-postgres-redis, fullstack).
 
 ### 🖥️ [Virtualization](./Virtualizacion/)
-- **`virtualization.sh`**: KVM/QEMU and `libvirtd` setup optimized for CachyOS.
+- **`virtualization.sh`**: KVM/QEMU and `libvirtd` setup optimized for CachyOS and Wayland.
 - **`notas_virtualizacion_cachyos.md`**: Guide for KVM/QEMU virtualization on CachyOS.
-
-### ⚙️ [Setup](./Setup/)
-OS configuration, hardening, and styling scripts:
-- **`post-install.sh`**: Smart dispatcher with auto CPU detection (AMD Ryzen vs Intel Core).
-- **`post-install-amd.sh`**: AMD Ryzen optimized post-install (ZRAM, RADV, Mesa, PipeWire).
-- **`post-install-intel.sh`**: Intel Core optimized post-install (VA-API Intel, PipeWire).
-- **`laptop-setup.sh`**: Laptop optimization (Touchpad, Bluetooth, HiDPI, VRR).
-- **`cachyos-tuning.sh`**: Kernel sysctl, Baloo, Systemd, Distrobox, and system limits tuning.
-- **`cockpit.sh`**: Cockpit web management console setup.
-- **`fastfetch.sh`**: System info fetch initialization.
-- **`fonts.sh`**: Automated Nerd Fonts installer.
-- **`kitty.sh`**: GPU-accelerated Kitty terminal with opacity/blur and Catppuccin theme.
-- **`seguridad.sh`**: Security hardening with Firewalld, DNS-over-TLS, MAC Randomization and sysctl.
-- **`shell.sh`**: Modern terminal utilities (`eza`, `bat`, `fd`, `zoxide`, `ripgrep`, `btop`, `jq`).
-- **`starship.sh`**: Optional Starship prompt with enable/disable commands.
-- **`yt-dlp-setup.sh`**: Multimedia setup dependencies (yt-dlp, ffmpeg, deno).
 
 ### 💻 [IDE](./IDE/)
 - **`antigravity.sh`**: Google Antigravity Desktop setup.
@@ -59,18 +60,20 @@ Runtime management with **mise**.
 - **`mise.sh`**: Mise version manager installer.
 - **`angular.sh`**, **`dotnet.sh`**, **`java.sh`**, **`nodejs.sh`**, **`python.sh`**, **`rust.sh`**
 
-### 🎮 [Juegos](./Juegos/)
-- **`steam.sh`**: Steam with Proton CachyOS.
-
 ---
 
 ## 🚀 Quick Start
 
 ```bash
-git clone https://github.com/scaballeroq/Environment-Configuration.git
-cd Repos-Linux/CachyOS
-chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/install/*.sh Podman/lib/*.sh Juegos/*.sh
+git clone https://github.com/scaballeroq/CachyOS_Niri_Noctalia.git
+cd CachyOS_Niri_Noctalia
+chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/install/*.sh Podman/lib/*.sh
 just setup-all
+```
+
+Or configure only Niri and Noctalia Shell:
+```bash
+just niri-setup
 ```
 
 ---

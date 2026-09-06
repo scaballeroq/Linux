@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==============================================================================
 # opencode.sh - Instalación de OpenCode AI CLI para CachyOS
-# Optimizado para Zsh y KDE Plasma 6
+# Optimizado para Zsh y Niri (Wayland)
 # ==============================================================================
 
 set -euo pipefail

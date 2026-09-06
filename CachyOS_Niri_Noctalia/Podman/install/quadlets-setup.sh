@@ -1,5 +1,5 @@
 #!/bin/bash
-# quadlets-setup.sh - Configuración de directorios y servicios systemd Quadlets para Podman en CachyOS + KDE Plasma
+# quadlets-setup.sh - Configuración de directorios y servicios systemd Quadlets para Podman en CachyOS (Niri + Noctalia)
 #
 # Uso:
 #   ./quadlets-setup.sh              -> Prepara los directorios de Quadlets e instala los servicios compartidos
@@ -32,7 +32,7 @@ require_podman() {
 
 show_help() {
     cat <<EOF
-⚙️ Gestor de Quadlets para Podman - CachyOS (KDE Plasma 6)
+⚙️ Gestor de Quadlets para Podman - CachyOS (Niri + Noctalia)
 
 Uso:
   $0 [OPCION]

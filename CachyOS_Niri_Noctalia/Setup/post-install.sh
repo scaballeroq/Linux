@@ -1,5 +1,5 @@
 #!/bin/bash
-# post-install.sh - Despachador y selector inteligente de post-instalacion para CachyOS (Arch Linux + KDE Plasma)
+# post-install.sh - Despachador y selector inteligente de post-instalacion para CachyOS (Arch Linux + Niri / Noctalia)
 # Detecta automaticamente la arquitectura de CPU (AMD Ryzen vs Intel Core) o permite seleccion manual
 
 set -euo pipefail
@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 show_help() {
     cat <<EOF
-Despachador de Post-Instalacion para CachyOS (Arch Linux + KDE Plasma 6)
+Despachador de Post-Instalacion para CachyOS (Arch Linux + Niri & Noctalia Shell)
 
 Uso:
   $0 [OPCION]
@@ -20,8 +20,8 @@ Opciones:
   --help, -h         Muestra este mensaje de ayuda.
 
 Scripts independientes disponibles:
-  - Setup/post-install-amd.sh   -> Optimizado para AMD Ryzen (firmware AMD, RADV, Mesa, Chaotic-AUR, Dolphin, Pacman)
-  - Setup/post-install-intel.sh -> Optimizado para Intel Core (microcodigo Intel, VA-API Intel, Chaotic-AUR, Dolphin, Pacman)
+  - Setup/post-install-amd.sh   -> Optimizado para AMD Ryzen (firmware AMD, RADV, Mesa, Chaotic-AUR, Niri, Pacman)
+  - Setup/post-install-intel.sh -> Optimizado para Intel Core (microcodigo Intel, VA-API Intel, Chaotic-AUR, Niri, Pacman)
 EOF
 }
 

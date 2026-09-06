@@ -1,4 +1,4 @@
-# 🚀 Bash.Setup (CachyOS / Arch Linux + KDE Plasma 6)
+# 🚀 Bash.Setup (CachyOS / Arch Linux + Niri & Noctalia Shell)
 
 Colección de scripts modulares de configuración, aliases y funciones avanzadas para potenciar tu terminal en **Zsh** (la shell predeterminada en CachyOS) y **Bash**.
 
@@ -18,7 +18,7 @@ Este repositorio organiza de forma limpia tus alias, variables de entorno, utili
 | `history.sh` | Configuración optimizada del historial (10k/20k líneas, deduplicación, escritura inmediata en `~/.zsh_history` o `~/.bash_history`). |
 | `environment.sh` | Variables globales (`EDITOR`, `PATH`, Wayland/Qt, Docker host) y activación inteligente de **Mise** en Zsh y Bash. |
 | `options.sh` | Comportamiento interno de la shell (`autocd`, corrección de typos, `globstar`/`extended_glob`, menús y colores de autocompletado en Zsh y Readline). |
-| `kde_settings.sh` | Optimizaciones para KDE Plasma 6 Wayland (touchpad, KWin, KCM Shell, Spectacle y temas). |
+| `niri_noctalia.sh` | Integración, IPC y atajos para el compositor Niri, Noctalia Shell, capturas y grabación Wayland nativo. |
 
 ---
 

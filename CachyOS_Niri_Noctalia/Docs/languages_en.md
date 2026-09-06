@@ -6,7 +6,7 @@ sidebar_position: 6
 
 This guide details the installation, control, and maintenance of programming languages and their development environments managed in the `ProgrammingLanguages` folder.
 
-Environment management is centralized through **Mise** (runtimes and SDKs) and **Rustup** (Rust toolchain), supplemented by automated tasks configured via a `justfile` and natively integrated with **KDE Plasma 6 (Wayland / systemd user session)** as well as **Zsh** and **Bash** shells.
+Environment management is centralized through **Mise** (runtimes and SDKs) and **Rustup** (Rust toolchain), supplemented by automated tasks configured via a `justfile` and natively integrated with the **Niri / Wayland (systemd user session)** as well as **Zsh** and **Bash** shells.
 
 ---
 
@@ -20,7 +20,7 @@ Mise is a modern CLI version manager that replaces older tools like `asdf`, `nvm
    ```
 
 2. **Session and Shell Activation**:
-   - For KDE Plasma 6 & desktop environments: `~/.config/environment.d/10-mise.conf`
+   - For Niri, Wayland & IDEs: `~/.config/environment.d/10-mise.conf`
    - For Zsh: `~/.zshrc` (`eval "$(mise activate zsh)"`) and `_mise` completions
    - For Bash: `~/.bashrc.d/mise.sh`
 
@@ -57,7 +57,7 @@ Once Mise is installed, the following development environments are deployed glob
   mise use --global uv@latest
   mise exec python@latest -- python -m pip install --upgrade pip setuptools wheel
   ```
-* **KDE Plasma 6 & Shells**: Generates `~/.config/environment.d/10-python.conf`, `~/.zshrc.d/python.zsh` and native Zsh/Bash autocompletions (`_uv`, `_uvx`, `_pip`).
+* **Niri / Wayland & Shells**: Generates `~/.config/environment.d/10-python.conf`, `~/.zshrc.d/python.zsh` and native Zsh/Bash autocompletions (`_uv`, `_uvx`, `_pip`).
 
 ### .NET SDK (`dotnet.sh`)
 * **Dependencies**: Native runtime libraries (`icu`, `krb5`, `openssl`, `zlib`, `libunwind`).
@@ -65,7 +65,7 @@ Once Mise is installed, the following development environments are deployed glob
   ```bash
   mise use --global dotnet@lts
   ```
-* **KDE Plasma 6 & IDEs**: Configures `DOTNET_ROOT` in `~/.config/environment.d/10-dotnet.conf` for JetBrains Rider, VS Code, and Antigravity, while opting out of build telemetry.
+* **Niri / Wayland & IDEs**: Configures `DOTNET_ROOT` in `~/.config/environment.d/10-dotnet.conf` for JetBrains Rider, VS Code, and Antigravity, while opting out of build telemetry.
 
 ---
 
@@ -90,8 +90,8 @@ Rust is managed through its official standard toolchain installer **Rustup** usi
    rustup component add rust-src rust-analyzer clippy rustfmt
    ```
 
-4. **KDE Plasma 6 and Shell Integration**:
-   - KDE Plasma 6: `~/.config/environment.d/10-rust.conf`
+4. **Niri / Wayland and Shell Integration**:
+   - Niri Wayland & IDEs: `~/.config/environment.d/10-rust.conf`
    - Bash & Zsh: `~/.bashrc.d/rust.sh` and `~/.zshrc.d/rust.zsh`
    - Autocompletions: `_cargo` and `_rustup` for Zsh and Bash.
 
@@ -105,7 +105,7 @@ Rust is managed through its official standard toolchain installer **Rustup** usi
 Installs OpenJDK LTS for CachyOS via Pacman:
 * **Packages**: `jdk25-openjdk` / `jdk21-openjdk` (LTS) along with `nss` and `pcsclite` (AutoFirma and DNIe / Smartcard reader support).
 * **JVM Management**: Configures the active runtime using `archlinux-java`.
-* **KDE Plasma 6 Integration**: Exports `JAVA_HOME=/usr/lib/jvm/default` in `~/.config/environment.d/10-java.conf` for Android Studio, IntelliJ IDEA, Gradle, and Maven.
+* **Niri / Wayland Integration**: Exports `JAVA_HOME=/usr/lib/jvm/default` in `~/.config/environment.d/10-java.conf` for Android Studio, IntelliJ IDEA, Gradle, and Maven.
 
 ---
 

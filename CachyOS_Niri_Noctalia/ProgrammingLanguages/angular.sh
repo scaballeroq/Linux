@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==============================================================================
 # angular.sh - Instalación de Angular CLI vía Mise para CachyOS
-# Optimizado para KDE Plasma 6 y Zsh (Node.js LTS)
+# Optimizado para Niri / Wayland y Zsh (Node.js LTS)
 # ==============================================================================
 
 set -euo pipefail
@@ -94,7 +94,7 @@ fi
 NG_VER=$(run_as_user mise exec node@lts -- ng version 2>/dev/null | grep -E "Angular CLI:" | awk '{print $3}' || echo "instalado")
 
 echo "================================================================="
-echo "✅ Angular CLI configurado con éxito para CachyOS y KDE Plasma 6:"
+echo "✅ Angular CLI configurado con éxito para CachyOS y Niri / Wayland:"
 echo "  • Angular CLI: v$NG_VER"
 echo "  • Node Runtime: Node.js LTS (~/.local/share/mise/shims)"
 echo "  • Telemetría:  Desactivada (sin bloqueos interactivos)"

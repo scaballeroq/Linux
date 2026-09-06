@@ -1,5 +1,5 @@
 # =============================================================================
-# VARIABLES DE ENTORNO (environment.sh) - Adaptado para CachyOS (KDE Plasma 6)
+# VARIABLES DE ENTORNO (environment.sh) - Adaptado para CachyOS (Niri + Noctalia Shell)
 # =============================================================================
 # Este archivo define variables de entorno globales para la sesión de usuario.
 
@@ -29,17 +29,30 @@ export LESS_TERMCAP_us=$'\E[1;32m'
 export LESS_TERMCAP_ue=$'\E[0m'
 
 # -----------------------------------------------------------------------------
-# 2. INTEGRACIÓN WAYLAND, QT Y APLICACIONES ELECTRON
+# 2. INTEGRACIÓN WAYLAND, NIRI, QT Y APLICACIONES ELECTRON
 # -----------------------------------------------------------------------------
-# Compatibilidad Qt/Wayland con fallback automático a Xwayland
+# Escritorio y sesión Wayland
+export XDG_CURRENT_DESKTOP="niri"
+export XDG_SESSION_TYPE="wayland"
+
+# Compatibilidad Qt/Wayland y theming sin dependencias de KDE
 export QT_QPA_PLATFORM="wayland;xcb"
+export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+export QT_QPA_PLATFORMTHEME="qt6ct"
 export QT_AUTO_SCREEN_SCALE_FACTOR=1
 
-# Firefox en modo Wayland nativo
+# Firefox y navegadores en modo Wayland nativo
 export MOZ_ENABLE_WAYLAND=1
 
 # Forzar Wayland nativo en aplicaciones Electron (VS Code, Antigravity, Discord, Obsidian)
 export ELECTRON_OZONE_PLATFORM_HINT="auto"
+
+# Backends Wayland para juegos y multimedia
+export SDL_VIDEODRIVER="wayland"
+export GDK_BACKEND="wayland,x11,*"
+
+# Solución para aplicaciones Java / JetBrains GUI en compositores Wayland Tiling
+export _JAVA_AWT_WM_NONREPARENTING=1
 
 # -----------------------------------------------------------------------------
 # 3. PATH PERSONALIZADO

@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Configuración de Seguridad en CachyOS
 
-Esta guía detalla el proceso de endurecimiento de seguridad (hardening) aplicado a un sistema **CachyOS** con **KDE Plasma 6**, tal y como se automatiza en el script de seguridad.
+Esta guía detalla el proceso de endurecimiento de seguridad (hardening) aplicado a un sistema **CachyOS** con **Niri y Noctalia Shell**, tal y como se automatiza en el script de seguridad.
 
 El proceso cubre la configuración del firewall (Firewalld), privacidad DNS, MAC Randomization y endurecimiento del kernel.
 
@@ -19,9 +19,8 @@ Se utiliza Firewalld para definir políticas estrictas de red con zonas dinámic
    sudo systemctl enable --now firewalld
    ```
 
-2. Configura servicios útiles para desarrollo y KDE Plasma:
+2. Configura servicios esenciales para desarrollo y red local:
    ```bash
-   sudo firewall-cmd --permanent --add-service=kdeconnect
    sudo firewall-cmd --permanent --add-service=mdns
    sudo firewall-cmd --permanent --add-service=ssh
    sudo firewall-cmd --reload

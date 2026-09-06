@@ -1,6 +1,6 @@
 #!/bin/bash
 # virtualization.sh - Instalación y Optimización Avanzada de Virtualización (KVM/QEMU) para CachyOS
-# Optimizado para virtualizar distribuciones Linux (Kernel 7.x, AMD Ryzen/Intel, KDE Plasma 6 Wayland, 3D VirGL, VirtioFS, Modular Daemons)
+# Optimizado para virtualizar distribuciones Linux (Kernel 7.x, AMD Ryzen/Intel, Niri / Wayland, 3D VirGL, VirtioFS, Modular Daemons)
 
 set -euo pipefail
 
@@ -429,7 +429,7 @@ echo "================================================================="
 echo "💡 GUÍA RÁPIDA DE CONFIGURACIÓN PARA LINUX GUESTS EN VIRT-MANAGER:"
 echo "  1. Procesador (CPU):"
 echo "     - Modelo: 'host-passthrough' (rendimiento nativo de CPU e instrucciones AVX2/Zen)."
-echo "  2. Gráficos y Pantalla (KDE Plasma / GNOME / Wayland fluído):"
+echo "  2. Gráficos y Pantalla (Wayland / Niri / GNOME fluido):"
 echo "     - Pantalla: 'SPICE', Tipo de escucha: 'Ninguno' (socket local Unix)."
 echo "     - Activar: 'Aceleración OpenGL'."
 echo "     - Video: 'VirtIO' con casilla 'Aceleración 3D' marcada (VirGL)."

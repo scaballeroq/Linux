@@ -388,7 +388,7 @@ cmd_list_templates() {
 # =============================================================================
 cmd_doctor() {
     echo "================================================================="
-    echo "🩺 DIAGNÓSTICO DE PODMAN ROOTLESS - CACHYOS (KDE PLASMA)"
+    echo "🩺 DIAGNÓSTICO DE PODMAN ROOTLESS - CACHYOS (NIRI WAYLAND)"
     echo "================================================================="
 
     # 1. Podman CLI

@@ -98,10 +98,10 @@ Sustituye comandos estándar por alternativas enriquecidas y seguras:
   - `install` → `sudo pacman -S`
   - `aur` → `paru` o `yay` (según disponible)
   - `rate-mirrors` → `cachyos-rate-mirrors`
-- **KDE Plasma**:
+- **Escritorio Wayland (Niri / Noctalia)**:
   - `open` / `o` → `xdg-open`
-  - `dolphin` → Abre Dolphin en directorio actual
-  - `clipcopy` / `clippaste` → Portapapeles Wayland/X11
+  - `files` → Abre explorador de archivos en directorio actual
+  - `clipcopy` / `clippaste` → Portapapeles Wayland (`wl-copy` / `wl-paste`)
 - **Kernel Check**: `check-kernel` compara kernel activo vs kernel.org
 
 ---
@@ -121,18 +121,31 @@ Incluye funciones en bash para simplificar tareas recurrentes:
 
 ---
 
-## 6. Configuración de KDE Plasma 6 (`kde_settings.sh`)
+## 6. Configuración de Niri y Noctalia Shell (`niri_noctalia.sh`)
 
-Aplica configuraciones automáticas para el entorno de escritorio KDE Plasma 6:
+Proporciona integración, atajos e IPC directo con el compositor scrollable-tiling **Niri** y la shell **Noctalia**:
 
-- **Touchpad**: Tap-to-click, desplazamiento natural
-- **Botones de ventana**: Minimizar, Maximizar, Cerrar a la derecha
-- **Reloj**: Formato 24 horas, fecha ISO
-- **KWin**: Recargar configuración sin reiniciar sesión
-- **KCM Shell**: Accesos directos a módulos de configuración (pantallas, wifi, audio, bluetooth, etc.)
-- **Temas**: `kde-theme-dark`, `kde-theme-light`, `kde-set-wallpaper`
-- **Spectacle**: `captura` (captura de región), `grabacion` (grabación de pantalla)
-- **Plasmoids**: `plasmoids-list`, `kwin-scripts-list`
+- **Niri IPC**:
+  - `niri-reload`: Recarga la configuración de Niri en caliente (`~/.config/niri/config.kdl`)
+  - `niri-validate`: Valida la sintaxis del archivo de configuración KDL
+  - `niri-windows` / `niri-focused` / `niri-outputs`: Consulta el estado de ventanas y monitores
+  - `niri-quit`: Cierra la sesión de Niri limpiamente
+- **Noctalia Shell IPC**:
+  - `noctalia-reload`: Recarga o reinicia la shell Noctalia
+  - `noctalia-launcher`: Despliega el lanzador de aplicaciones
+  - `noctalia-control`: Abre el Centro de Control (Wi-Fi, Bluetooth, Audio, perfiles)
+  - `noctalia-settings`: Abre los ajustes de Noctalia Shell
+  - `noctalia-lock`: Bloquea la sesión de usuario
+  - `noctalia-set-wallpaper <ruta>`: Aplica fondo de pantalla mediante IPC
+- **Capturas y Grabación Wayland**:
+  - `captura`: Selección interactiva de región directa al portapapeles con `grim` + `slurp`
+  - `captura-pantalla`: Captura pantalla completa al portapapeles
+  - `captura-archivo`: Guarda la captura con fecha y hora en `~/Imágenes/Capturas/`
+  - `grabacion`: Grabación interactiva de región a video MP4 con `wl-screenrec`
+- **Ajustes Rápidos**:
+  - `audio-settings`: Abre interfaz de audio `pavucontrol`
+  - `bluetooth-settings`: Abre gestor de dispositivos `blueman-manager`
+  - `wifi-settings`: Abre editor de conexiones de red `nm-connection-editor`
 
 ---
 
