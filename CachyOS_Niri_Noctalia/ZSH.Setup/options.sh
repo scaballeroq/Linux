@@ -1,7 +1,7 @@
 # =============================================================================
-# OPCIONES DE LA SHELL (options.sh) - Adaptado para Zsh y Bash en CachyOS
+# OPCIONES DE LA SHELL (options.sh) - Adaptado para Zsh en CachyOS
 # =============================================================================
-# Configura el comportamiento interno de la shell (navegación, globbing y completado).
+# Configura el comportamiento interno de Zsh (navegación, globbing y completado).
 
 if [ -n "${ZSH_VERSION:-}" ]; then
     # -------------------------------------------------------------------------
@@ -15,6 +15,8 @@ if [ -n "${ZSH_VERSION:-}" ]; then
     setopt NO_CASE_GLOB         # Globbing insensible a mayúsculas/minúsculas
     setopt EXTENDED_GLOB        # Habilitar globbing avanzado (recursividad con **)
     setopt INTERACTIVE_COMMENTS # Permitir comentarios '#' en la terminal interactiva
+    setopt NO_BEEP              # Desactivar pitidos de terminal
+    setopt COMPLETE_IN_WORD     # Completar desde el centro de la palabra
 
     # Autocompletado inteligente en Zsh (solo si la sesión es interactiva)
     if [[ -o interactive ]]; then

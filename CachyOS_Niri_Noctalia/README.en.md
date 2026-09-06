@@ -6,15 +6,15 @@ This repository contains a modular collection of configuration scripts for **Cac
 
 ## 📂 Repository Structure
 
-### 🐚 [Bash.Setup](./Bash.Setup/)
-Core terminal configuration, optimized for **Zsh** (default shell in CachyOS) and **Bash**.
-- **`aliases.sh`**: Frequently used command shortcuts, dynamic reload, and package manager aliases (`pacman` / `paru`).
-- **`environment.sh`**: Global environment variables (`EDITOR`, `PATH`, native Wayland/Qt flags) and smart Mise activation in Zsh/Bash.
+### 🐚 [ZSH.Setup](./ZSH.Setup/)
+Core terminal configuration, optimized primarily for **Zsh** (default shell in CachyOS) with fallback compatibility for **Bash**.
+- **`aliases.sh`**: Navigation shortcuts (`project`, `cachyos`, `repo`), global pipes (`G`, `L`, `H`, `J`), reload shortcuts, and package manager aliases (`pacman` / `paru`).
+- **`environment.sh`**: Global environment variables (`EDITOR`, `PATH`, path deduplication with `typeset -U path`, native Wayland/Qt flags) and Mise activation.
 - **`functions.sh`**: Advanced shell functions (`mkcd`, `up`, `hg`) and multimedia processing utilities.
 - **`niri_noctalia.sh`**: Niri (`niri msg`) and Noctalia Shell (`noctalia msg`) IPC shortcuts, native Wayland interactive screenshots (`grim` + `slurp`), and screen recording (`wl-screenrec`).
-- **`history.sh`**: Optimized command history (10k/20k entries, deduplication, `~/.zsh_history` and `~/.bash_history`).
-- **`options.sh`**: Advanced shell options (`autocd`, typo correction, case-insensitive completions with `zstyle`/`shopt`).
-- **`podman-functions.sh`**: Container management shortcuts and Quadlets functions compatible with both shells.
+- **`history.sh`**: Optimized command history (50k entries, `EXTENDED_HISTORY`, deduplication, instant saving to `~/.zsh_history`).
+- **`options.sh`**: Advanced Zsh options (`autocd`, typo correction, `extended_glob`, colored menus).
+- **`podman-functions.sh`**: Container management shortcuts and Quadlets functions compatible with Zsh and Bash arrays.
 - **`rclone_aliases.sh`**: Cloud storage synchronization shortcuts.
 - **`yt-dlp_aliases.sh`**: Optimized video/audio downloader shortcuts.
 

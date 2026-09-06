@@ -2,9 +2,9 @@
 sidebar_position: 3
 ---
 
-# Terminal & Shells Configuration on CachyOS (Zsh & Bash)
+# Terminal & Zsh Configuration on CachyOS (ZSH.Setup)
 
-This guide details the terminal environment (optimized for **Zsh**, the default shell in CachyOS, and **Bash**) along with the modular scripts provided under the `Bash.Setup` folder.
+This guide details the terminal environment (optimized primarily for **Zsh**, the default shell in CachyOS, with fallback compatibility for **Bash**) along with the modular scripts provided under the `ZSH.Setup` folder.
 
 The modular configuration is structured through `~/.zshrc.d/` and `~/.bashrc.d/` directories to ensure fast, clean, and maintainable configurations.
 
@@ -12,7 +12,7 @@ The modular configuration is structured through `~/.zshrc.d/` and `~/.bashrc.d/`
 
 ## 1. Modular Environment Loading
 
-### For Zsh (`~/.zshrc`)
+### For Zsh (`~/.zshrc`) - Recommended and Default
 Add the following block to your `~/.zshrc`:
 
 ```zsh
@@ -25,7 +25,7 @@ if [ -d "$HOME/.zshrc.d" ]; then
 fi
 ```
 
-### For Bash (`~/.bashrc`)
+### For Bash (`~/.bashrc`) - Fallback
 Add the following block to your `~/.bashrc`:
 
 ```bash
@@ -42,8 +42,8 @@ fi
 You can link all modules automatically by running `./Setup/shell.sh` or manually:
 ```bash
 mkdir -p ~/.zshrc.d ~/.bashrc.d
-ln -sf ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.zshrc.d/
-ln -sf ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.bashrc.d/
+ln -sf /home/caballero/Warehouse/Repositorios/Linux/CachyOS_Niri_Noctalia/ZSH.Setup/*.sh ~/.zshrc.d/
+ln -sf /home/caballero/Warehouse/Repositorios/Linux/CachyOS_Niri_Noctalia/ZSH.Setup/*.sh ~/.bashrc.d/
 ```
 
 ---
@@ -52,34 +52,36 @@ ln -sf ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.bashrc.d/
 
 Defines global settings and performance optimizations for system tools:
 
+- **PATH Deduplication (Zsh)**: Enables `typeset -U path` to automatically eliminate duplicate PATH entries.
 - **Default Editor**: Sets `nvim` (Neovim) or `nano` as the global editor (`EDITOR`, `VISUAL`).
-- **Wayland/Qt**: `QT_QPA_PLATFORM="wayland;xcb"`, `MOZ_ENABLE_WAYLAND=1`, `ELECTRON_OZONE_PLATFORM_HINT="auto"`.
+- **Wayland/Qt (Niri & Noctalia)**: `XDG_CURRENT_DESKTOP="niri"`, `XDG_SESSION_TYPE="wayland"`, `QT_QPA_PLATFORM="wayland;xcb"`, `QT_WAYLAND_DISABLE_WINDOWDECORATION=1`, `MOZ_ENABLE_WAYLAND=1`, `ELECTRON_OZONE_PLATFORM_HINT="auto"`.
 - **Executable Paths (`PATH`)**: Adds local user directories:
   - `~/.local/bin`
   - `~/bin`
   - `~/.cargo/bin` (Rust/Cargo)
   - `~/go/bin` (Go)
 - **MISE**: Smart activation (`mise activate zsh` in Zsh / `mise activate bash` in Bash).
-- **Podman**: Automatic `DOCKER_HOST` if socket exists.
+- **Podman Rootless**: Automatic `DOCKER_HOST` if socket exists at `$XDG_RUNTIME_DIR/podman/podman.sock`.
 - **Aesthetic Pager (`less` and `man`)**: Custom colors and modern flags for manual pages.
 
 ---
 
 ## 3. Shell Behavior (`options.sh` and `history.sh`)
 
-Optimizes shell interaction through internal adjustments tailored for Zsh and Bash.
+Optimizes shell interaction through internal adjustments tailored for Zsh.
 
 ### Advanced Shell Behavior (`options.sh`)
-* **`autocd` / `AUTO_CD`**: Change directories by typing the path directly (no `cd` needed).
-* **`globstar` / `EXTENDED_GLOB`**: Recursive globbing patterns (e.g. `ls **/*.js`).
-* **Directory Typo Correction**: `setopt CORRECT` in Zsh and `cdspell` in Bash.
+* **`AUTO_CD`**: Change directories by typing the path directly (no `cd` needed).
+* **`EXTENDED_GLOB`**: Recursive globbing patterns (e.g. `ls **/*.js`).
+* **Directory Typo Correction**: `setopt CORRECT` in Zsh.
+* **No Beep**: `setopt NO_BEEP` disables bell notifications.
 * **Smart Completion in Zsh**: `zstyle` with case-insensitive matching, arrow navigation (`menu select`), and `LS_COLORS` support.
 
 ### Command History (`history.sh`)
-* Expanded capacity: **10,000 commands** in memory (`HISTSIZE`), **20,000 in file** (`SAVEHIST` / `HISTFILESIZE`).
-* Ignores duplicates (`HIST_IGNORE_ALL_DUPS`, `HIST_SAVE_NO_DUPS`, `erasedups`) and common commands (`HISTORY_IGNORE` / `HISTIGNORE`).
-* Immediate write after execution (`INC_APPEND_HISTORY` / `histappend`) and session sharing (`SHARE_HISTORY`).
-
+* Expanded capacity: **50,000 commands** in memory (`HISTSIZE`) and in file (`SAVEHIST`).
+* **`EXTENDED_HISTORY`**: Records timestamp and elapsed runtime for every command.
+* Ignores duplicates (`HIST_IGNORE_ALL_DUPS`, `HIST_SAVE_NO_DUPS`) and common commands (`HISTORY_IGNORE`).
+* Immediate write after execution (`INC_APPEND_HISTORY`) and real-time session sharing (`SHARE_HISTORY`).
 
 ---
 
@@ -87,6 +89,16 @@ Optimizes shell interaction through internal adjustments tailored for Zsh and Ba
 
 Replaces standard commands with enriched and safe alternatives:
 
+- **Quick Navigation**:
+  - `cachyos` / `project`: Go to `/home/caballero/Warehouse/Repositorios/Linux/CachyOS_Niri_Noctalia`
+  - `repo` / `repos`: Go to `/home/caballero/Warehouse/Repositorios`
+  - `..`, `...`, `....`: Go up 1, 2, or 3 directories
+- **Zsh Global Pipes** (smart suffix aliases):
+  - `G` → `| grep -i` (e.g. `cat file G error`)
+  - `L` → `| less`
+  - `H` → `| head -n 20`
+  - `T` → `| tail -n 20`
+  - `J` → `| jq`
 - **Security**:
   - `rm -i`, `cp -i`, `mv -i` (interactive confirmation)
   - `--preserve-root` on `chown`, `chmod`, `chgrp`
@@ -100,9 +112,10 @@ Replaces standard commands with enriched and safe alternatives:
   - `rate-mirrors` → `cachyos-rate-mirrors`
 - **Wayland Desktop (Niri / Noctalia)**:
   - `open` / `o` → `xdg-open`
-  - `files` → Opens file manager in current directory
+  - `files` → Open file manager in current directory
   - `clipcopy` / `clippaste` → Wayland clipboard (`wl-copy` / `wl-paste`)
-- **Kernel Check**: `check-kernel` compares active kernel vs kernel.org
+- **Kernel Check**: `check-kernel` compares running kernel with kernel.org
+- **Quick Reload**: `reload` (`source ~/.zshrc`), `edit-zshrc`, `edit-aliases`
 
 ---
 

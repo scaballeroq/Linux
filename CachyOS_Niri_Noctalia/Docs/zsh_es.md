@@ -2,11 +2,11 @@
 sidebar_position: 3
 ---
 
-# Configuración de Terminal y Shells en CachyOS (Zsh & Bash)
+# Configuración de Terminal y Zsh en CachyOS (ZSH.Setup)
 
-Esta guía detalla la configuración del entorno de terminal (optimizado para **Zsh**, la shell predeterminada en CachyOS, y **Bash**) junto a las utilidades integradas en los scripts modulares de la carpeta `Bash.Setup`.
+Esta guía detalla la configuración del entorno de terminal (optimizado primordialmente para **Zsh**, la shell predeterminada en CachyOS, con compatibilidad para **Bash**) junto a las utilidades modulares organizadas en el directorio `ZSH.Setup`.
 
-La carga modular está estructurada a través de los directorios `~/.zshrc.d/` y `~/.bashrc.d/` para garantizar la limpieza, velocidad y mantenibilidad de tus configuraciones.
+La carga modular está estructurada a través de los directorios `~/.zshrc.d/` y `~/.bashrc.d/` para garantizar modularidad, velocidad y mantenibilidad de tus configuraciones.
 
 ---
 
@@ -25,11 +25,11 @@ if [ -d "$HOME/.zshrc.d" ]; then
 fi
 ```
 
-### Para Bash (`~/.bashrc`)
+### Para Bash (`~/.bashrc`) - Respaldo
 Añade el siguiente bloque a tu archivo `~/.bashrc`:
 
 ```bash
-# Carga modular de scripts de Bash.Setup
+# Carga modular de scripts de ZSH.Setup
 if [ -d "$HOME/.bashrc.d" ]; then
     for script in "$HOME/.bashrc.d"/*.sh; do
         [ -r "$script" ] && source "$script"
@@ -42,8 +42,8 @@ fi
 Puedes habilitar todos los módulos ejecutando `./Setup/shell.sh` o manualmente:
 ```bash
 mkdir -p ~/.zshrc.d ~/.bashrc.d
-ln -sf ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.zshrc.d/
-ln -sf ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.bashrc.d/
+ln -sf /home/caballero/Warehouse/Repositorios/Linux/CachyOS_Niri_Noctalia/ZSH.Setup/*.sh ~/.zshrc.d/
+ln -sf /home/caballero/Warehouse/Repositorios/Linux/CachyOS_Niri_Noctalia/ZSH.Setup/*.sh ~/.bashrc.d/
 ```
 
 ---
@@ -52,34 +52,36 @@ ln -sf ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.bashrc.d/
 
 Define configuraciones globales y optimizaciones para las herramientas del sistema:
 
+- **Deduplicación de PATH (Zsh)**: Se activa `typeset -U path` para prevenir rutas repetidas.
 - **Editor Predeterminado**: Se establece `nvim` (Neovim) o `nano` como editor global (`EDITOR`, `VISUAL`).
-- **Wayland/Qt**: `QT_QPA_PLATFORM="wayland;xcb"`, `MOZ_ENABLE_WAYLAND=1`, `ELECTRON_OZONE_PLATFORM_HINT="auto"`.
+- **Wayland/Qt (Niri & Noctalia)**: `XDG_CURRENT_DESKTOP="niri"`, `XDG_SESSION_TYPE="wayland"`, `QT_QPA_PLATFORM="wayland;xcb"`, `QT_WAYLAND_DISABLE_WINDOWDECORATION=1`, `MOZ_ENABLE_WAYLAND=1`, `ELECTRON_OZONE_PLATFORM_HINT="auto"`.
 - **Ruta de Ejecutables (`PATH`)**: Se añaden directorios locales del usuario:
   - `~/.local/bin`
   - `~/bin`
   - `~/.cargo/bin` (Rust/Cargo)
   - `~/go/bin` (Go)
-- **MISE**: Activación dinámica e inteligente (`mise activate zsh` en Zsh / `mise activate bash` en Bash).
-- **Podman**: `DOCKER_HOST` automático si el socket existe.
+- **MISE**: Activación dinámica (`mise activate zsh` en Zsh / `mise activate bash` en Bash).
+- **Podman Rootless**: `DOCKER_HOST` automático si el socket existe en `$XDG_RUNTIME_DIR/podman/podman.sock`.
 - **Paginación Estética (`less` y `man`)**: Colores y flags modernos para páginas man.
 
 ---
 
 ## 3. Comportamiento de Shell (`options.sh` e `history.sh`)
 
-Optimiza la interacción de la shell mediante ajustes internos adaptados a Zsh y Bash.
+Optimiza la interacción de la shell mediante ajustes internos adaptados a Zsh.
 
 ### Comportamiento Avanzado (`options.sh`)
-* **`autocd` / `AUTO_CD`**: Permite cambiar de directorio escribiendo solo la ruta (sin `cd`).
-* **`globstar` / `EXTENDED_GLOB`**: Habilita la expansión recursiva de patrones (ej. `ls **/*.js`).
-* **Corrección de Directorios**: `setopt CORRECT` en Zsh y `cdspell` en Bash para corregir errores tipográficos.
+* **`AUTO_CD`**: Permite cambiar de directorio escribiendo solo la ruta (sin `cd`).
+* **`EXTENDED_GLOB`**: Habilita la expansión recursiva de patrones avanzados (ej. `ls **/*.js`).
+* **Corrección de Directorios**: `setopt CORRECT` en Zsh para sugerir correcciones tipográficas.
+* **Sin pitidos**: `setopt NO_BEEP` desactiva sonidos molestos de campana.
 * **Autocompletado Inteligente en Zsh**: `zstyle` con distinción insensible a mayúsculas, navegación con flechas (`menu select`) y colores con `LS_COLORS`.
 
 ### Historial de Comandos (`history.sh`)
-* Capacidad expandida: **10,000 comandos** en memoria (`HISTSIZE`), **20,000 en archivo** (`SAVEHIST` / `HISTFILESIZE`).
-* Omisión de duplicados (`HIST_IGNORE_ALL_DUPS`, `HIST_SAVE_NO_DUPS`, `erasedups`) y comandos comunes (`HISTORY_IGNORE` / `HISTIGNORE`).
-* Escritura inmediata tras cada ejecución (`INC_APPEND_HISTORY` / `histappend`) y sincronización entre terminales (`SHARE_HISTORY`).
-
+* Capacidad expandida: **50,000 comandos** en memoria (`HISTSIZE`) y en archivo (`SAVEHIST`).
+* **`EXTENDED_HISTORY`**: Registra fecha, hora y duración exacta de cada comando ejecutado.
+* Omisión de duplicados (`HIST_IGNORE_ALL_DUPS`, `HIST_SAVE_NO_DUPS`) y comandos comunes (`HISTORY_IGNORE`).
+* Escritura inmediata tras cada ejecución (`INC_APPEND_HISTORY`) y sincronización en tiempo real entre terminales (`SHARE_HISTORY`).
 
 ---
 
@@ -87,6 +89,16 @@ Optimiza la interacción de la shell mediante ajustes internos adaptados a Zsh y
 
 Sustituye comandos estándar por alternativas enriquecidas y seguras:
 
+- **Navegación Rápida**:
+  - `cachyos` / `project`: Navega directamente a `/home/caballero/Warehouse/Repositorios/Linux/CachyOS_Niri_Noctalia`
+  - `repo` / `repos`: Navega a `/home/caballero/Warehouse/Repositorios`
+  - `..`, `...`, `....`: Subir 1, 2 o 3 niveles
+- **Pipes Globales de Zsh** (atajos de sufijo):
+  - `G` → `| grep -i` (ej. `cat file G error`)
+  - `L` → `| less`
+  - `H` → `| head -n 20`
+  - `T` → `| tail -n 20`
+  - `J` → `| jq`
 - **Seguridad**:
   - `rm -i`, `cp -i`, `mv -i` (confirmación interactiva)
   - `--preserve-root` en `chown`, `chmod`, `chgrp`
@@ -103,6 +115,7 @@ Sustituye comandos estándar por alternativas enriquecidas y seguras:
   - `files` → Abre explorador de archivos en directorio actual
   - `clipcopy` / `clippaste` → Portapapeles Wayland (`wl-copy` / `wl-paste`)
 - **Kernel Check**: `check-kernel` compara kernel activo vs kernel.org
+- **Recarga rápida**: `reload` (`source ~/.zshrc`), `edit-zshrc`, `edit-aliases`
 
 ---
 

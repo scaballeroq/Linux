@@ -2,9 +2,9 @@
 sidebar_position: 2
 ---
 
-# Configuración del Sistema en CachyOS
+# Configuración del Sistema en CachyOS (Niri + Noctalia Shell)
 
-Esta guía detalla el proceso de configuración base, optimización de la terminal, instalación de herramientas esenciales, soporte multimedia y personalización del entorno de usuario aplicados a un sistema **CachyOS** (Arch Linux, optimizado para x86-64-v3/v4) con **Niri y Noctalia Shell**.
+Esta guía detalla el proceso de configuración base, despliegue del compositor **Niri**, la barra y entorno **Noctalia Shell**, optimización de la terminal **Zsh**, instalación de herramientas esenciales, soporte multimedia y personalización del entorno de usuario aplicados a un sistema **CachyOS** (Arch Linux, optimizado para x86-64-v3/v4).
 
 Las configuraciones están automatizadas a través de los scripts ubicados en la carpeta `Setup`.
 
@@ -12,59 +12,95 @@ Las configuraciones están automatizadas a través de los scripts ubicados en la
 
 ## 1. Post-Instalación Base (`post-install.sh`)
 
-Prepara el sistema base optimizando espejos, instalando software esencial y configurando la aceleración por hardware. El script detecta automáticamente el procesador (AMD Ryzen vs Intel Core) y ejecuta la configuración correspondiente.
+Prepara el sistema base optimizando espejos, instalando software esencial y configurando la aceleración por hardware. El script detecta automáticamente el procesador (AMD Ryzen vs Intel Core) y ejecuta la configuración correspondiente:
 
 1. **Auto-detección de CPU**:
-   ```bash
-   CPU_VENDOR=$(grep -m1 'vendor_id' /proc/cpuinfo | awk '{print $3}')
-   ```
-   - `AuthenticAMD` → Ejecuta `post-install-amd.sh`
-   - `GenuineIntel` → Ejecuta `post-install-intel.sh`
+   - `AuthenticAMD` → Ejecuta `post-install-amd.sh` (microcódigo AMD, RADV, Mesa, PipeWire)
+   - `GenuineIntel` → Ejecuta `post-install-intel.sh` (microcódigo Intel, VA-API Intel, PipeWire)
 
 2. **Optimización de Pacman**:
-   - ParallelDownloads = 10
-   - Color habilitado
-   - Espejos optimizados con `cachyos-rate-mirrors`
+   - `ParallelDownloads = 10`
+   - Salida en color e `ILoveCandy` habilitados
+   - Espejos ordenados por velocidad con `cachyos-rate-mirrors`
 
 3. **Software Esencial**:
-   Instala utilidades de compilación, monitorización de sistema y compatibilidad:
    - Compilación: `base-devel`, `cmake`
    - Monitorización: `btop`, `htop`, `inxi`
-   - Utilidades: `curl`, `fuse2`, `fuse3`, `exfatprogs`, `7zip`, `unrar`, `zip`, `unzip`, `bzip2`, `xz`
-   - Gráficos y Multimedia: `vlc`, `gimp`, `gparted`
-   - Paquetes universales: `flatpak`
+   - Utilidades y compresión: `curl`, `fuse2`, `fuse3`, `exfatprogs`, `7zip`, `unrar`, `zip`, `unzip`, `bzip2`, `xz`
+   - Gráficos y Multimedia: `vlc`, `gimp`, `gparted`, `flatpak`
 
-4. **Codecs Multimedia y Aceleración HW**:
-   ```bash
-   # AMD
-   sudo pacman -S --needed --noconfirm mesa libva-mesa-driver vulkan-radeon
-   # Intel
-   sudo pacman -S --needed --noconfirm mesa libva-intel-driver intel-media-driver vulkan-intel
-   ```
-
-5. **ZRAM**: Configurado con algoritmo ZSTD al 50% de RAM.
+4. **ZRAM**:
+   Configurado con algoritmo ZSTD al 50% de la memoria RAM.
 
 ---
 
-## 2. Entorno de Terminal y Shell (`shell.sh`, `starship.sh`, `fastfetch.sh` y `fonts.sh`)
+## 2. Entorno de Escritorio: Niri Compositor & Noctalia Shell (`niri-setup.sh`)
 
-Instala utilidades modernas de consola, tipografías para desarrollo y permite gestionar de forma opcional el prompt interactivo Starship.
+Despliega y optimiza el entorno gráfico moderno Wayland basado en **Niri** (compositor scrollable-tiling en Rust) y **Noctalia Shell**:
+
+1. **Stack Wayland y Paquetes**:
+   ```bash
+   ./Setup/niri-setup.sh
+   ```
+   Instala y configura:
+   - **Niri**: Compositor dinámico con cinta infinita horizontal de ventanas.
+   - **Noctalia Shell**: Barra superior integrada, lanzador de aplicaciones, centro de control de hardware y bloqueo de sesión.
+   - **Xwayland Satellite**: Gestión desacoplada y ligera para aplicaciones X11 heredadas.
+   - **Portales Wayland**: `xdg-desktop-portal-gnome` y `xdg-desktop-portal-gtk` para cuadros de diálogo y compartición de pantalla.
+   - **Herramientas de Escritorio**: `wl-clipboard`, `grim` y `slurp` (capturas de pantalla), `satty` (anotación), `brightnessctl`, `playerctl`.
+   - **Interfaces de Hardware**: `pavucontrol` (audio PipeWire), `blueman` (Bluetooth), `network-manager-applet` (Wi-Fi/Red).
+   - **Tematización**: `qt5-wayland`, `qt6-wayland`, `qt6ct`, `kvantum` y `papirus-icon-theme`.
+
+2. **Diagnóstico y Estado**:
+   Puedes verificar el estado del stack gráfico en cualquier momento:
+   ```bash
+   ./Setup/niri-setup.sh --status
+   # o vía justfile:
+   just niri-status
+   ```
+
+---
+
+## 3. Optimizaciones de Rendimiento y Portátil (`cachyos-tuning.sh` y `laptop-setup.sh`)
+
+1. **Ajustes de Rendimiento del Sistema (`cachyos-tuning.sh`)**:
+   - Sysctl para optimizar memoria virtual, latencia de red e I/O de disco.
+   - Optimización de colas de disco NVMe y planificador del kernel BORE/EEVDF de CachyOS.
+   - Diagnóstico: `./Setup/cachyos-tuning.sh --status`.
+
+2. **Optimización de Portátiles (`laptop-setup.sh`)**:
+   - Configuración de gestos en el Touchpad para Wayland.
+   - Ahorro de energía con `tuned-ppd` / `power-profiles-daemon`.
+   - Persistencia de niveles de brillo de pantalla y teclado con `systemd-backlight`.
+
+---
+
+## 4. Entorno de Terminal y Zsh (`shell.sh`, `starship.sh`, `fastfetch.sh` y `fonts.sh`)
+
+Instala utilidades modernas de consola, tipografías para desarrollo y enlaza de forma modular la configuración de **Zsh** desde `ZSH.Setup`.
 
 ### Utilidades Modernas de Terminal (`shell.sh`)
-Se instalan alternativas modernas a comandos clásicos y se activa la integración de `zoxide` respetando la configuración nativa de Zsh y Powerlevel10k en CachyOS:
-- `eza` (reemplazo de `ls`)
+Se instalan alternativas modernas a herramientas clásicas y se configura la carga modular en `~/.zshrc.d/`:
+- `eza` (reemplazo moderno de `ls` con soporte Git)
 - `bat` (reemplazo de `cat` con sintaxis coloreada)
-- `fzf` (buscador difuso)
-- `zoxide` (reemplazo inteligente de `cd`)
-- `ripgrep` (`rg`, búsqueda rápida de texto)
-- `fd` (reemplazo simple de `find`)
-- `duf` (reemplazo visual de `df`)
-- `dust` (visualizador de espacio en disco)
-- `procs` (reemplazo moderno de `ps`)
-- `btop` (monitor de recursos)
+- `fzf` (buscador difuso interactivo)
+- `zoxide` (navegación inteligente con `z`)
+- `ripgrep` (`rg`, búsqueda de texto ultrarrápida)
+- `fd` (búsqueda ágil de archivos)
+- `duf` (visualizador de espacio de disco)
+- `dust` (análisis interactivo de peso de directorios)
+- `procs` (reemplazo de `ps`)
+- `btop` (monitor de recursos por consola)
+
+Además, enlaza automáticamente todos los scripts de `ZSH.Setup/` a `~/.zshrc.d/`:
+```bash
+./Setup/shell.sh
+# o vía justfile:
+just shell
+```
 
 ### Prompt Starship Opcional (`starship.sh`)
-CachyOS incluye de serie el prompt **Powerlevel10k (p10k)** en Zsh. Si prefieres usar **Starship**, puedes activarlo o desactivarlo fácilmente:
+CachyOS incluye de serie el prompt **Powerlevel10k (p10k)** en Zsh. Si prefieres usar **Starship**, puedes alternar fácilmente:
 ```bash
 # Instalar y activar Starship
 ./Setup/starship.sh
@@ -75,91 +111,77 @@ CachyOS incluye de serie el prompt **Powerlevel10k (p10k)** en Zsh. Si prefieres
 # Ver estado actual
 ./Setup/starship.sh --status
 ```
-La configuración de Starship se gestiona mediante `Setup/starship.toml` en `~/.config/starship.toml`.
 
 ### Fuentes de Desarrollo (Nerd Fonts)
 Descarga e instala fuentes optimizadas para programación y símbolos de terminal (`JetBrainsMono`, `FiraCode`, `CascadiaCode`, `Meslo` y `Hack`):
 ```bash
-# Descarga y extracción automatizada en ~/.local/share/fonts
-# Actualización de la caché de fuentes:
-fc-cache -f
+./Setup/fonts.sh
 ```
 
 ### Fastfetch
-Muestra información del sistema de manera visual y estética al abrir la terminal. Instala `fastfetch` y copia la plantilla de configuración `config.jsonc` a `~/.config/fastfetch/config.jsonc`.
+Muestra un resumen estético del sistema al abrir nuevas instancias de terminal:
+```bash
+./Setup/fastfetch.sh
+```
 
 ---
 
-## 3. Terminal Kitty (`kitty.sh`)
+## 5. Terminal Kitty (`kitty.sh`)
 
-Instala y optimiza **Kitty**, un emulador de terminal moderno acelerado por GPU, con integración en Niri y Wayland.
+Instala y optimiza **Kitty**, un emulador de terminal moderno acelerado por GPU, con integración en Niri y Wayland:
 
-1. **Instalación**:
-   ```bash
-   sudo pacman -S --needed --noconfirm kitty
-   ```
-
-2. **Configuración Estética**:
-   - Opacidad al 75% con desenfoque (blur 32)
+1. **Configuración Estética**:
+   - Opacidad al 75% con desenfoque (`blur 32`)
    - Tema de colores Catppuccin Mocha
    - Fuente JetBrainsMono Nerd Font
-   - Tab bar con estilo powerline
+   - Barra de pestañas estilo powerline
 
-3. **Integración con Niri Wayland**:
+2. **Integración con Niri Wayland**:
    - Terminal predeterminado del sistema (`TERMINAL=kitty` en `environment.d`)
    - Atajo global en Niri: `Mod+Return` (o `Super+Enter`)
 
-4. **Atajos de teclado**:
-   - `Ctrl+Alt+Arriba/Abajo`: Ajustar opacidad
-   - `Ctrl+Shift+F5`: Recargar configuración
-   - `Ctrl+Shift+T`: Nueva pestaña en mismo directorio
+3. **Atajos de teclado en Kitty**:
+   - `Ctrl+Alt+Arriba/Abajo`: Ajustar nivel de opacidad
+   - `Ctrl+Shift+F5`: Recargar configuración en caliente
+   - `Ctrl+Shift+T`: Abrir nueva pestaña en el mismo directorio
 
 ---
 
-## 4. Seguridad (`seguridad.sh`)
+## 6. Seguridad y Red (`seguridad.sh`)
 
-Endurecimiento del sistema con Firewalld, DNS-over-TLS y MAC Randomization.
-
-- **Firewalld**: Servicios mdns, ssh y soporte para contenedores Podman
-- **DNS-over-TLS**: Opportunistic con systemd-resolved
-- **MAC Randomization**: Wi-Fi scan y connection
-- **Kernel hardening**: dmesg_restrict, kptr_restrict, syncookies
-- **Podman rootless**: user namespaces habilitados
+Endurecimiento del sistema con Firewalld, DNS-over-TLS y MAC Randomization:
+- **Firewalld**: Servicios mdns, ssh y soporte para contenedores Podman.
+- **DNS-over-TLS**: Cifrado oportunista con `systemd-resolved`.
+- **MAC Randomization**: Generación de MACs aleatorias en escaneo y conexión Wi-Fi.
+- **Kernel hardening**: Restricciones de dmesg, punteros de kernel y SYN cookies.
 
 ---
 
-## 5. Panel de Administración Cockpit (`cockpit.sh`)
+## 7. Panel de Administración Web Cockpit (`cockpit.sh`)
 
-Instala Cockpit para administrar el sistema mediante una interfaz web.
+Instala Cockpit para monitorizar y administrar el sistema, máquinas virtuales y almacenamiento desde el navegador:
 
 ```bash
 sudo pacman -S --needed --noconfirm cockpit cockpit-podman cockpit-machines
 sudo systemctl enable --now cockpit.socket
 ```
-
-Acceso: [https://localhost:9090](https://localhost:9090)
-
----
-
-## 6. Soporte Multimedia y yt-dlp (`yt-dlp-setup.sh`)
-
-Configura las herramientas para descargas de video y procesamiento de audio digital.
-
-1. **Instalación de yt-dlp y FFMPEG**:
-   ```bash
-   sudo pacman -S --needed --noconfirm yt-dlp ffmpeg
-   ```
-
-2. **Motor de descifrado rápido JS**:
-   Instala Deno mediante `mise` para permitir que `yt-dlp` procese la lógica JavaScript de plataformas de streaming.
+Acceso web: [https://localhost:9090](https://localhost:9090)
 
 ---
 
-## Verificación
+## 8. Soporte Multimedia y yt-dlp (`yt-dlp-setup.sh`)
 
-Para comprobar que los componentes principales se instalaron y configuraron correctamente:
+Configura el stack de extracción y procesamiento multimedia:
+- `yt-dlp` y `ffmpeg` actualizados.
+- Deno configurado mediante `mise` como motor de JavaScript para resolver tokens de streaming.
+- Atajos y funciones de audio/vídeo integrados en `ZSH.Setup/yt-dlp_aliases.sh`.
 
-- **Terminal y Utilidades**: Abre una nueva terminal. Deberías ver el prompt de **Starship** cargado y el resumen de **Fastfetch** en pantalla. Prueba utilidades ejecutando `eza` o `bat --version`.
-- **Kitty**: Ejecuta `kitty --version`. Debería abrirse con opacidad y tema Catppuccin.
-- **Cockpit**: Abre tu navegador e ingresa a [https://localhost:9090](https://localhost:9090). Inicia sesión con tus credenciales de usuario del sistema.
-- **Firewalld**: Verifica con `sudo firewall-cmd --state`.
+---
+
+## Verificación General
+
+Para verificar la correcta instalación de todo el stack:
+- **Niri y Noctalia**: Comprueba `just niri-status`.
+- **Terminal Zsh**: Abre una nueva terminal Kitty y confirma que se cargan los módulos desde `~/.zshrc.d/`.
+- **Cockpit**: Visita [https://localhost:9090](https://localhost:9090).
+- **Firewall**: Comprueba `sudo firewall-cmd --state`.

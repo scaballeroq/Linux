@@ -1,7 +1,12 @@
 # =============================================================================
-# VARIABLES DE ENTORNO (environment.sh) - Adaptado para CachyOS (Niri + Noctalia Shell)
+# VARIABLES DE ENTORNO (environment.sh) - Adaptado para Zsh en CachyOS (Niri + Noctalia)
 # =============================================================================
-# Este archivo define variables de entorno globales para la sesión de usuario.
+# Este archivo define variables de entorno globales para la sesión de usuario en Zsh y Wayland.
+
+# Deduplicar entradas en PATH para Zsh
+if [ -n "${ZSH_VERSION:-}" ]; then
+    typeset -U path
+fi
 
 # -----------------------------------------------------------------------------
 # 1. EDITORES Y VISUALIZADORES

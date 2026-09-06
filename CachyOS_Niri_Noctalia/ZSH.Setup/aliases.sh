@@ -1,17 +1,18 @@
 # =============================================================================
-# ARCHIVO DE ALIASES (aliases.sh) - Adaptado para CachyOS (Niri + Noctalia Shell)
+# ARCHIVO DE ALIASES (aliases.sh) - Adaptado para Zsh en CachyOS (Niri + Noctalia)
 # =============================================================================
 # Este archivo contiene atajos (aliases) para comandos utilizados frecuentemente.
-# Optimizado para CachyOS (Arch Linux, x86-64-v3/v4) con Niri, Noctalia Shell y herramientas Rust.
+# Optimizado para Zsh en CachyOS (Arch Linux, x86-64-v3/v4) con Niri y Noctalia Shell.
 
 # 1. NAVEGACIÓN RÁPIDA
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias ~='cd ~'
-alias repo='cd ~/Workspace/Repositorios'
-alias repos='cd ~/Workspace/Repositorios'
-alias cachyos='cd ~/Workspace/Repositorios/Linux/CachyOS'
+alias repo='cd /home/caballero/Warehouse/Repositorios'
+alias repos='cd /home/caballero/Warehouse/Repositorios'
+alias cachyos='cd /home/caballero/Warehouse/Repositorios/Linux/CachyOS_Niri_Noctalia'
+alias project='cd /home/caballero/Warehouse/Repositorios/Linux/CachyOS_Niri_Noctalia'
 
 # 2. INTEGRACIÓN CON ESCRITORIO WAYLAND (NIRI / NOCTALIA)
 alias open='xdg-open'
@@ -103,7 +104,7 @@ alias ports='sudo ss -tulanp'
 alias myip='curl -s --connect-timeout 2 ifconfig.me'
 alias localip='ip -4 addr show | grep -oP "(?<=inet\s)\d+(\.\d+){3}"'
 
-# Recarga dinámica según la shell activa
+# Recarga y edición de la shell (prioridad Zsh)
 alias reload='[ -n "$ZSH_VERSION" ] && source ~/.zshrc || source ~/.bashrc'
 alias edit-zshrc='${EDITOR:-nano} ~/.zshrc'
 alias edit-bashrc='${EDITOR:-nano} ~/.bashrc'
@@ -111,6 +112,16 @@ alias edit-shell='[ -n "$ZSH_VERSION" ] && ${EDITOR:-nano} ~/.zshrc || ${EDITOR:
 alias edit-aliases='[ -n "$ZSH_VERSION" ] && (${EDITOR:-nano} ~/.zshrc.d/aliases.sh 2>/dev/null || ${EDITOR:-nano} ~/.zshrc.d/aliases.zsh) || ${EDITOR:-nano} ~/.bashrc.d/aliases.sh'
 alias ff='fastfetch'
 alias sysinfo='ff'
+
+# Atajos globales de Zsh (Pipes inteligentes: ej. 'cat file G error')
+if [ -n "$ZSH_VERSION" ]; then
+    alias -g G='| grep -i'
+    alias -g L='| less'
+    alias -g H='| head -n 20'
+    alias -g T='| tail -n 20'
+    alias -g J='| jq'
+    alias -g W='| wc -l'
+fi
 
 # Comprobar versión de kernel activo vs última versión en kernel.org
 check-kernel-update() {

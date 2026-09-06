@@ -1,4 +1,4 @@
-# 🚀 Bash.Setup (CachyOS / Arch Linux + Niri & Noctalia Shell)
+# 🚀 ZSH.Setup (CachyOS / Arch Linux + Niri & Noctalia Shell)
 
 Colección de scripts modulares de configuración, aliases y funciones avanzadas para potenciar tu terminal en **Zsh** (la shell predeterminada en CachyOS) y **Bash**.
 
@@ -10,27 +10,27 @@ Este repositorio organiza de forma limpia tus alias, variables de entorno, utili
 
 | Archivo | Descripción |
 | :--- | :--- |
-| `aliases.sh` | Atajos generales de navegación, seguridad (`rm -i`), gestión de paquetes (`pacman` / `paru`), recarga dinámica y utilidades Rust (`eza`, `bat`). |
+| `aliases.sh` | Atajos generales de navegación (`project`, `repo`, `cachyos`), seguridad (`rm -i`), paquetes (`pacman` / `paru`), recarga de shell y pipes globales en Zsh (`G`, `L`, `H`, `J`). |
 | `functions.sh` | "Navaja suiza": utilidades multimedia (FFmpeg / ImageMagick), gestión de discos, extracción universal y navegación (`mkcd`, `up`, `hg`). |
 | `podman-functions.sh` | Funciones y aliases específicos para **Podman** y gestión de Pods / Quadlets (compatible con arrays de Zsh y Bash). |
 | `rclone_aliases.sh` | Sincronización avanzada con la nube (Google Drive / OneDrive) mediante **Rclone**. |
 | `yt-dlp_aliases.sh` | Atajos para descarga optimizada de vídeo (1080p), audio (MP3) y listas con **yt-dlp**. |
-| `history.sh` | Configuración optimizada del historial (10k/20k líneas, deduplicación, escritura inmediata en `~/.zsh_history` o `~/.bash_history`). |
-| `environment.sh` | Variables globales (`EDITOR`, `PATH`, Wayland/Qt, Docker host) y activación inteligente de **Mise** en Zsh y Bash. |
-| `options.sh` | Comportamiento interno de la shell (`autocd`, corrección de typos, `globstar`/`extended_glob`, menús y colores de autocompletado en Zsh y Readline). |
+| `history.sh` | Configuración optimizada del historial (50k líneas, deduplicación, `EXTENDED_HISTORY`, escritura inmediata en `~/.zsh_history`). |
+| `environment.sh` | Variables globales (`EDITOR`, `PATH`, deduplicación con `typeset -U path`, Wayland/Qt, Docker host) y activación de **Mise**. |
+| `options.sh` | Comportamiento interno de Zsh (`autocd`, corrección de typos, `extended_glob`, `menu select`, colores de completado). |
 | `niri_noctalia.sh` | Integración, IPC y atajos para el compositor Niri, Noctalia Shell, capturas y grabación Wayland nativo. |
 
 ---
 
 ## 🛠️ Instalación y Activación
 
-### Para Zsh (Recomendado en CachyOS)
+### Para Zsh (Recomendado y por defecto en CachyOS)
 
 Crea el directorio `~/.zshrc.d/` y enlaza los scripts:
 
 ```bash
 mkdir -p ~/.zshrc.d
-ln -sf ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.zshrc.d/
+ln -sf /home/caballero/Warehouse/Repositorios/Linux/CachyOS_Niri_Noctalia/ZSH.Setup/*.sh ~/.zshrc.d/
 ```
 
 Asegúrate de que tu `~/.zshrc` contenga el bloque de carga modular:
@@ -47,19 +47,19 @@ fi
 
 ---
 
-### Para Bash
+### Para Bash (Respaldo)
 
 Si utilizas Bash o una sesión de respaldo en Bash:
 
 ```bash
 mkdir -p ~/.bashrc.d
-ln -sf ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.bashrc.d/
+ln -sf /home/caballero/Warehouse/Repositorios/Linux/CachyOS_Niri_Noctalia/ZSH.Setup/*.sh ~/.bashrc.d/
 ```
 
 Y añade a tu `~/.bashrc`:
 
 ```bash
-# Carga modular de scripts de Bash.Setup
+# Carga modular de scripts de ZSH.Setup
 if [ -d "$HOME/.bashrc.d" ]; then
     for script in "$HOME/.bashrc.d"/*.sh; do
         [ -r "$script" ] && source "$script"

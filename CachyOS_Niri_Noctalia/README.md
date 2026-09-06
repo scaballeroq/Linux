@@ -8,15 +8,15 @@ Este repositorio contiene una colección organizada y modular de scripts de conf
 
 La configuración se ha estructurado de forma modular para facilitar el mantenimiento y la legibilidad:
 
-### 🐚 [Bash.Setup](./Bash.Setup/)
-El núcleo de la configuración de la terminal, optimizado para **Zsh** (shell predeterminada en CachyOS) y **Bash**.
-- **`aliases.sh`**: Atajos comunes para comandos frecuentemente utilizados, recarga dinámica y gestores de paquetes (`pacman` / `paru`).
-- **`environment.sh`**: Variables globales (`EDITOR`, `PATH`, flags Wayland/Qt nativas) y activación automática de Mise en Zsh/Bash.
+### 🐚 [ZSH.Setup](./ZSH.Setup/)
+El núcleo de la configuración de la terminal, optimizado primordialmente para **Zsh** (shell predeterminada en CachyOS) y con compatibilidad para **Bash**.
+- **`aliases.sh`**: Atajos comunes (`project`, `cachyos`, `repo`), pipes globales en Zsh (`G`, `L`, `H`, `J`), recarga dinámica y gestores de paquetes (`pacman` / `paru`).
+- **`environment.sh`**: Variables globales (`EDITOR`, `PATH`, deduplicación con `typeset -U path`, flags Wayland/Qt nativas) y activación de Mise.
 - **`functions.sh`**: Colección de funciones avanzadas (`mkcd`, `up`, `hg`) y utilidades multimedia.
 - **`niri_noctalia.sh`**: Atajos e IPC para Niri (`niri msg`), Noctalia Shell (`noctalia msg`), capturas interactivas Wayland (`grim` + `slurp`) y grabación (`wl-screenrec`).
-- **`history.sh`**: Control de historial optimizado (10k/20k entradas, deduplicación, `~/.zsh_history` y `~/.bash_history`).
-- **`options.sh`**: Opciones avanzadas de shell (`autocd`, corrección de typos, completado insensible a mayúsculas con `zstyle`/`shopt`).
-- **`podman-functions.sh`**: Funciones y atajos para contenedores Podman y Quadlets compatibles con ambas shells.
+- **`history.sh`**: Control de historial optimizado (50k entradas, `EXTENDED_HISTORY`, deduplicación, guardado inmediato en `~/.zsh_history`).
+- **`options.sh`**: Opciones avanzadas de Zsh (`autocd`, corrección de typos, `extended_glob`, menús y colores de autocompletado).
+- **`podman-functions.sh`**: Funciones y atajos para contenedores Podman y Quadlets compatibles con arrays de Zsh y Bash.
 - **`rclone_aliases.sh`**: Atajos para sincronización en la nube con Google Drive / OneDrive.
 - **`yt-dlp_aliases.sh`**: Descargas multimedia optimizadas.
 

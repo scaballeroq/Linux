@@ -2,100 +2,119 @@
 sidebar_position: 5
 ---
 
-# Entornos de Desarrollo (IDEs) en Debian 13
+# Entornos de Desarrollo e Inteligencia Artificial (IDEs & AI) en CachyOS
 
-Esta guía detalla la instalación y configuración de los editores y entornos de desarrollo integrados presentes en la carpeta `IDE`.
+Esta guía detalla la instalación, configuración y mantenimiento de los editores, herramientas de desarrollo asistidas por IA y utilidades presentes en la carpeta `IDE`.
 
-El entorno cubre el editor de consola moderno **Neovim** (potenciado con LazyVim), el editor de escritorio **Visual Studio Code** e integraciones de herramientas como **Google Antigravity**.
+El entorno está completamente optimizado para **CachyOS (Arch Linux)**, ejecutándose sobre el compositor Wayland **Niri** con integración en la terminal **Zsh**.
 
 ---
 
-## 1. Neovim y LazyVim (`neovim.sh`)
+## 1. Google Antigravity Desktop (`antigravity.sh`)
 
-Instala y configura un entorno de edición ultrarrápido y modular en la terminal utilizando Neovim y la distribución preconfigurada LazyVim.
+Automatiza la instalación de **Google Antigravity Desktop** (versión completa con GUI):
 
-1. **Instalación de Neovim y dependencias**:
+1. **Instalación de Dependencias**:
    ```bash
-   sudo apt update
-   sudo apt install -y neovim gcc make g++ ripgrep fd-find xclip wl-copy git
-   ```
-   *(Nota: Se instalan compiladores de C/C++ y ripgrep/fd, esenciales para el funcionamiento de buscadores difusos y servidores de lenguaje LSP dentro de Neovim).*
-
-2. **Compatibilidad de Comandos**:
-   Se asegura de mapear `fdfind` (nombre del comando de `fd` en Debian) como `fd` en el path local del usuario:
-   ```bash
-   mkdir -p ~/.local/bin
-   [ -f /usr/bin/fdfind ] && ln -sf /usr/bin/fdfind ~/.local/bin/fd
+   sudo pacman -Syu --noconfirm --needed ca-certificates curl tar desktop-file-utils python
    ```
 
-3. **Despliegue de LazyVim**:
-   Clona la plantilla de inicio oficial de LazyVim en el directorio de configuración del usuario:
+2. **Integración con Niri y Wayland**:
+   - Se integra con la variable de entorno `ELECTRON_OZONE_PLATFORM_HINT="auto"` para ejecución nativa en Wayland sin escalado borroso de XWayland.
+   - Crea el lanzador de escritorio en `/usr/share/applications/antigravity.desktop` compatible con el lanzador de **Noctalia Shell**.
+
+3. **Script de Actualización del Sistema (`update-antigravity`)**:
+   Genera el ejecutable de actualización en `/usr/local/bin/update-antigravity`, accesible mediante el alias:
    ```bash
-   git clone https://github.com/LazyVim/starter "$HOME/.config/nvim"
-   rm -rf "$HOME/.config/nvim/.git"
+   update-antigravity
    ```
 
 ---
 
-## 2. Visual Studio Code (`vscode.sh`)
+## 2. Google Antigravity CLI (`antigravity-cli.sh`)
 
-Automatiza la instalación del popular editor Visual Studio Code desde los repositorios oficiales de Microsoft para garantizar actualizaciones automáticas seguras.
+Instala la utilidad de línea de comandos de Google Antigravity (`agy`):
 
-1. **Dependencias iniciales**:
+1. **Despliegue del Binario**:
+   Se descarga e instala el binario en `~/.local/bin/agy`.
+2. **Validación**:
+   El instalador valida la integridad y las capacidades del ejecutable:
    ```bash
-   sudo apt update
-   sudo apt install -y wget gpg apt-transport-https
+   agy --version
+   agy --help
    ```
-
-2. **Importación de Clave GPG**:
+3. **Actualizaciones**:
+   La CLI permite actualizarse directamente mediante su comando interno:
    ```bash
-   wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
-   sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
-   rm -f packages.microsoft.gpg
-   ```
-
-3. **Registro del Repositorio Oficial**:
-   ```bash
-   sudo sh -c 'echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
-   ```
-
-4. **Instalación**:
-   ```bash
-   sudo apt update
-   sudo apt install -y code
+   agy update
    ```
 
 ---
 
-## 3. Google Antigravity CLI (`antigravity.sh`)
+## 3. Google Antigravity IDE Engine (`antigravity-ide.sh`)
 
-Instala la herramienta corporativa de inteligencia artificial y desarrollo de Google Antigravity para Debian.
+Despliega el motor de desarrollo de Antigravity IDE para CachyOS:
 
-1. **Configuración de Llaveros e Importación de GPG**:
+1. **Instalación y Permisos**:
+   Configura el runtime en `/opt/antigravity-ide` y el enlace en `/usr/local/bin/antigravity-ide`.
+2. **Helper de Actualización**:
+   Instala `/usr/local/bin/update-antigravity-ide` y el alias correspondiente en `ZSH.Setup`:
    ```bash
-   sudo mkdir -p /etc/apt/keyrings
-   curl -fsSL https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg | \
-   sudo gpg --dearmor --yes -o /etc/apt/keyrings/antigravity-repo-key.gpg
+   update-antigravity-ide
    ```
 
-2. **Añadir Repositorio de Google Artifact Registry**:
+---
+
+## 4. OpenCode AI CLI (`opencode.sh`)
+
+Instala y enlaza el asistente de desarrollo por terminal **OpenCode AI**:
+
+1. **Instalación**:
+   Descarga de forma desatendida el motor de OpenCode:
    ```bash
-   echo "deb [signed-by=/etc/apt/keyrings/antigravity-repo-key.gpg] https://us-central1-apt.pkg.dev/projects/antigravity-auto-updater-dev/ antigravity-debian main" | \
-   sudo tee /etc/apt/sources.list.d/antigravity.list > /dev/null
+   curl -fsSL https://opencode.ai/install | bash
+   ```
+2. **Integración en Zsh**:
+   Añade de forma transparente `~/.opencode/bin` al `PATH` en `~/.zshrc`.
+3. **Uso**:
+   ```bash
+   opencode --version
    ```
 
-3. **Instalación de la herramienta**:
+---
+
+## 5. Control de Versiones Git & Herramientas Modernas (`git.sh`)
+
+Configura el stack moderno de control de versiones con integración en Niri / Wayland:
+
+1. **Paquetes**:
    ```bash
-   sudo apt update
-   sudo apt install -y antigravity
+   sudo pacman -S --needed --noconfirm git git-delta lazygit github-cli
    ```
+2. **Git-Delta**: Diferencias coloreadas lado a lado (`side-by-side`), con números de línea y visualización clara de conflictos (`zdiff3`).
+3. **Lazygit**: Terminal UI para Git accesible escribiendo `lazygit`.
+4. **Portapapeles Wayland**: Integrado con `wl-copy` para copiar hashes de commits y diffs al portapapeles.
+
+---
+
+## 6. Automatización con `justfile`
+
+Desde la raíz del proyecto puedes instalar cualquiera de estos componentes:
+
+```bash
+just antigravity        # Antigravity Desktop
+just antigravity-cli    # Antigravity CLI (agy)
+just antigravity-ide    # Antigravity IDE Engine
+just opencode           # OpenCode AI CLI
+just git-setup          # Git + Delta + Lazygit + GH CLI
+just ides               # Instala todos los IDEs y herramientas AI
+```
 
 ---
 
 ## Verificación
 
-Para comprobar el correcto funcionamiento de los editores:
-
-- **Neovim**: Ejecuta `nvim` en tu terminal. En la primera ejecución se descargarán e instalarán automáticamente los plugins de LazyVim. Una vez completado, puedes ejecutar `:LazyHealth` para evaluar el estado de tus LSPs y compiladores integrados.
-- **VS Code**: Ejecuta `code` o búscalo en el lanzador de aplicaciones del escritorio.
-- **Antigravity**: Verifica que responda correctamente ejecutando `antigravity --version` o ejecutando sus comandos CLI asignados.
+- **Antigravity Desktop**: Ábrelo desde el lanzador de Noctalia (`Super` / `noctalia msg panel-toggle launcher`) o ejecutando `antigravity &`.
+- **Antigravity CLI**: Comprueba `agy --version`.
+- **OpenCode**: Ejecuta `opencode --help`.
+- **Git**: Verifica con `git --version` y `lazygit`.

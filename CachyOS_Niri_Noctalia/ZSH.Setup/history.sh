@@ -1,20 +1,21 @@
 # =============================================================================
-# CONFIGURACIÓN DEL HISTORIAL (history.sh) - Adaptado para Zsh y Bash
+# CONFIGURACIÓN DEL HISTORIAL (history.sh) - Adaptado para Zsh en CachyOS
 # =============================================================================
-# Controla cómo la shell recuerda los comandos ejecutados.
+# Controla el guardado, deduplicación y sincronización de comandos en Zsh.
 
 if [ -n "${ZSH_VERSION:-}" ]; then
     # -------------------------------------------------------------------------
     # CONFIGURACIÓN PARA ZSH
     # -------------------------------------------------------------------------
     export HISTFILE="${HISTFILE:-$HOME/.zsh_history}"
-    export HISTSIZE=10000
-    export SAVEHIST=20000
+    export HISTSIZE=50000
+    export SAVEHIST=50000
 
-    # Comportamiento del historial en Zsh
+    # Comportamiento avanzado del historial en Zsh
+    setopt EXTENDED_HISTORY        # Guarda marca de tiempo y duración de ejecución
     setopt APPEND_HISTORY          # Añadir al historial en vez de sobrescribir
     setopt INC_APPEND_HISTORY      # Guardar cada comando inmediatamente al ejecutarse
-    setopt SHARE_HISTORY           # Compartir historial entre múltiples terminales activas
+    setopt SHARE_HISTORY           # Compartir historial en tiempo real entre múltiples terminales
     setopt HIST_IGNORE_DUPS        # No registrar comandos consecutivos repetidos
     setopt HIST_IGNORE_ALL_DUPS    # Si se repite un comando, eliminar la ocurrencia anterior
     setopt HIST_IGNORE_SPACE       # Ignorar comandos que comiencen con espacio

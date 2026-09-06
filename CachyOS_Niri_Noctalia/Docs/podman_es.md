@@ -22,7 +22,7 @@ Esto configura:
 - **Podman rootless** con `passt` (red de alto rendimiento)
 - **Persistencia Linger**: Los contenedores siguen corriendo al cerrar sesión
 - **Socket de usuario**: API compatible con Docker en `/run/user/$UID/podman/podman.sock`
-- **DOCKER_HOST**: Exportado en `environment.d` y `.bashrc.d` para integración con IDEs
+- **DOCKER_HOST**: Exportado en `environment.d`, `~/.zshrc.d/` y `~/.bashrc.d/` para integración con IDEs
 - **Storage**: Driver overlay nativo en `~/.config/containers/storage.conf`
 - **Registries**: docker.io, quay.io, ghcr.io, registry.archlinux.org
 
