@@ -43,7 +43,6 @@ $SUDO pacman -S --needed --noconfirm \
     power-profiles-daemon \
     bluez \
     bluez-utils \
-    blueman \
     brightnessctl \
     cachyos-rate-mirrors 2>/dev/null || true
 
@@ -53,7 +52,7 @@ $SUDO systemctl enable --now bluetooth.service || true
 $SUDO systemctl enable --now power-profiles-daemon.service || true
 
 # 2. Optimizacion Bluetooth (Nivel de bateria de perifericos y reconexion rapida)
-echo "ℹ️ [3/4] Configurando Bluetooth para reportar nivel de bateria (Noctalia Shell / Blueman)..."
+echo "ℹ️ [3/4] Configurando Bluetooth para reportar nivel de bateria (Noctalia Shell)..."
 $SUDO mkdir -p /etc/bluetooth
 if [ -f /etc/bluetooth/main.conf ]; then
     $SUDO sed -i 's/^#*Experimental *=.*/Experimental = true/' /etc/bluetooth/main.conf

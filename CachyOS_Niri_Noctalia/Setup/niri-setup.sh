@@ -52,7 +52,6 @@ show_status() {
     echo "• Clipboard (wl-copy):    $(command -v wl-copy &>/dev/null && echo 'Instalado' || echo 'No instalado')"
     echo "• Capturas (grim/slurp):  $(command -v grim &>/dev/null && command -v slurp &>/dev/null && echo 'Instalados' || echo 'Incompletos')"
     echo "• Audio GUI (pavucontrol):$(command -v pavucontrol &>/dev/null && echo 'Instalado' || echo 'No instalado')"
-    echo "• Bluetooth GUI (blueman):$(command -v blueman-manager &>/dev/null && echo 'Instalado' || echo 'No instalado')"
     echo "• Config Niri:            $([ -f "$USER_HOME/.config/niri/config.kdl" ] && echo 'Presente' || echo 'No encontrada')"
 }
 
@@ -86,8 +85,6 @@ $SUDO pacman -S --needed --noconfirm \
     brightnessctl \
     playerctl \
     pavucontrol \
-    blueman \
-    network-manager-applet \
     polkit-gnome \
     qt5-wayland \
     qt6-wayland \
@@ -221,16 +218,6 @@ animations {
 // Reglas de Ventanas (Floating para utilidades del sistema)
 window-rule {
     match app-id=r#"^pavucontrol$"#
-    open-floating true
-}
-
-window-rule {
-    match app-id=r#"^blueman-manager$"#
-    open-floating true
-}
-
-window-rule {
-    match app-id=r#"^nm-connection-editor$"#
     open-floating true
 }
 

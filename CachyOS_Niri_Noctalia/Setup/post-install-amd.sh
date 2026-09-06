@@ -139,8 +139,6 @@ $SUDO pacman -S --needed --noconfirm \
     brightnessctl \
     playerctl \
     pavucontrol \
-    blueman \
-    network-manager-applet \
     polkit-gnome \
     papirus-icon-theme \
     adwaita-icon-theme \

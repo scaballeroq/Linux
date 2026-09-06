@@ -28,7 +28,7 @@ Prepara el sistema base optimizando espejos, instalando software esencial y conf
    - Monitorización y diagnóstico: `btop`, `htop`, `inxi`
    - Utilidades y compresión: `curl`, `fuse2`, `fuse3`, `exfatprogs`, `7zip`, `unrar`, `zip`, `unzip`, `bzip2`, `xz`, `ca-certificates`, `gnupg`
    - Gráficos y Multimedia: `vlc`, `mpv`, `gimp`, `gparted`
-   - Stack Wayland y Niri: `niri`, `xwayland-satellite`, portales GNOME/GTK, `wl-clipboard`, `grim`, `slurp`, `satty`, `pavucontrol`, `blueman`, `qt6ct`, `kvantum`
+   - Stack Wayland y Niri: `niri`, `xwayland-satellite`, portales GNOME/GTK, `wl-clipboard`, `grim`, `slurp`, `satty`, `pavucontrol`, `qt6ct`, `kvantum`
 
 ---
 
@@ -42,11 +42,11 @@ Despliega y optimiza el entorno gráfico moderno Wayland basado en **Niri** (com
    ```
    Instala y configura:
    - **Niri**: Compositor dinámico con cinta infinita horizontal de ventanas.
-   - **Noctalia Shell**: Barra superior integrada, lanzador de aplicaciones, centro de control de hardware y bloqueo de sesión.
+   - **Noctalia Shell**: Barra superior integrada, lanzador de aplicaciones, centro de control de hardware (Wi-Fi y Bluetooth nativos) y bloqueo de sesión.
    - **Xwayland Satellite**: Gestión desacoplada y ligera para aplicaciones X11 heredadas.
    - **Portales Wayland**: `xdg-desktop-portal-gnome` y `xdg-desktop-portal-gtk` para cuadros de diálogo y compartición de pantalla.
    - **Herramientas de Escritorio**: `wl-clipboard`, `grim` y `slurp` (capturas de pantalla), `satty` (anotación), `brightnessctl`, `playerctl`.
-   - **Interfaces de Hardware**: `pavucontrol` (audio PipeWire), `blueman` (Bluetooth), `network-manager-applet` (Wi-Fi/Red).
+   - **Interfaces de Hardware**: `pavucontrol` (audio PipeWire). Wi-Fi y Bluetooth son gestionados e integrados de forma nativa por Noctalia Shell.
    - **Tematización**: `qt5-wayland`, `qt6-wayland`, `qt6ct`, `kvantum` y `papirus-icon-theme`.
 
 2. **Diagnóstico y Estado**:

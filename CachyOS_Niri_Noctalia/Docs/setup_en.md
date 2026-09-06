@@ -28,7 +28,7 @@ Prepares the base system by optimizing mirrors, installing core development util
    - Monitoring & hardware diagnostics: `btop`, `htop`, `inxi`
    - Archive & compression utilities: `curl`, `fuse2`, `fuse3`, `exfatprogs`, `7zip`, `unrar`, `zip`, `unzip`, `bzip2`, `xz`, `ca-certificates`, `gnupg`
    - Graphics & Multimedia: `vlc`, `mpv`, `gimp`, `gparted`
-   - Wayland & Niri Stack: `niri`, `xwayland-satellite`, GNOME/GTK portals, `wl-clipboard`, `grim`, `slurp`, `satty`, `pavucontrol`, `blueman`, `qt6ct`, `kvantum`
+   - Wayland & Niri Stack: `niri`, `xwayland-satellite`, GNOME/GTK portals, `wl-clipboard`, `grim`, `slurp`, `satty`, `pavucontrol`, `qt6ct`, `kvantum`
 
 ---
 
@@ -42,11 +42,11 @@ Deploys and optimizes the modern Wayland tiling stack built around **Niri** (Rus
    ```
    Installs and configures:
    - **Niri**: Infinite horizontal scrolling tiling window manager.
-   - **Noctalia Shell**: Top status bar, application launcher, hardware control center, and lock screen.
+   - **Noctalia Shell**: Top status bar, application launcher, hardware control center (native Wi-Fi and Bluetooth), and lock screen.
    - **Xwayland Satellite**: Clean and lightweight management for legacy X11 applications.
    - **Wayland Portals**: `xdg-desktop-portal-gnome` and `xdg-desktop-portal-gtk` for file pickers and screen casting.
    - **Desktop Toolchain**: `wl-clipboard`, `grim` and `slurp` (screen capture), `satty` (annotation), `brightnessctl`, `playerctl`.
-   - **Hardware Control GUIs**: `pavucontrol` (PipeWire audio), `blueman` (Bluetooth), `network-manager-applet` (Wi-Fi/Networking).
+   - **Hardware Control GUIs**: `pavucontrol` (PipeWire audio). Wi-Fi and Bluetooth are managed and integrated natively by Noctalia Shell.
    - **Theming**: `qt5-wayland`, `qt6-wayland`, `qt6ct`, `kvantum`, and `papirus-icon-theme`.
 
 2. **Diagnostics & Status**:
