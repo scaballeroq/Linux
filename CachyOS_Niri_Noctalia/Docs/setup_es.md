@@ -46,17 +46,13 @@ El entorno gráfico Wayland basado en **Niri** (compositor scrollable-tiling en 
 
 ---
 
-## 3. Optimizaciones de Rendimiento y Portátil (`cachyos-tuning.sh` y `laptop-setup.sh`)
+## 3. Optimizaciones de Rendimiento del Sistema (`cachyos-tuning.sh`)
 
-1. **Ajustes de Rendimiento del Sistema (`cachyos-tuning.sh`)**:
-   - Sysctl para optimizar memoria virtual, latencia de red e I/O de disco.
-   - Optimización de colas de disco NVMe y planificador del kernel BORE/EEVDF de CachyOS.
-   - Diagnóstico: `./Setup/cachyos-tuning.sh --status`.
-
-2. **Optimización de Portátiles (`laptop-setup.sh`)**:
-   - Configuración de gestos en el Touchpad para Wayland.
-   - Ahorro de energía con `tuned-ppd` / `power-profiles-daemon`.
-   - Persistencia de niveles de brillo de pantalla y teclado con `systemd-backlight`.
+Ajustes profundos de kernel, memoria y timeouts de sistema:
+- **Sysctl Kernel**: Optimización de memoria virtual (ZRAM `swappiness=180`), inotify ampliado para IDEs y control de congestión TCP BBR.
+- **Servicios de Rendimiento**: Auto-nice con `ananicy-cpp`, deduplicación de RAM con `uksmd`, balanceo de interrupciones con `irqbalance` y mantenimiento SSD con `fstrim.timer`.
+- **Systemd & Energía**: Reducción de timeouts de apagado a 10s y comportamiento de tapa de portátil con cargador/docking (`logind.conf.d`).
+- **Diagnóstico y Estado**: `./Setup/cachyos-tuning.sh --status` (o vía `just tuning-status`).
 
 ---
 

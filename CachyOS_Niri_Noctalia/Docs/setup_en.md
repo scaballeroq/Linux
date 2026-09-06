@@ -46,17 +46,13 @@ The Wayland tiling environment based on **Niri** (Rust scrollable-tiling window 
 
 ---
 
-## 3. Hardware & Laptop Tuning (`cachyos-tuning.sh` and `laptop-setup.sh`)
+## 3. System Performance Tuning (`cachyos-tuning.sh`)
 
-1. **System Performance Tuning (`cachyos-tuning.sh`)**:
-   - Kernel sysctl parameters for reduced latency and improved virtual memory management.
-   - NVMe queue optimizations and scheduling tweaks for CachyOS BORE/EEVDF kernels.
-   - Status diagnosis: `./Setup/cachyos-tuning.sh --status`.
-
-2. **Laptop Optimization (`laptop-setup.sh`)**:
-   - Wayland touchpad gestures configuration.
-   - Power management with `tuned-ppd` / `power-profiles-daemon`.
-   - Screen and keyboard backlight state persistence via `systemd-backlight`.
+Deep kernel, memory, and system timeout tweaks:
+- **Kernel Sysctl**: Virtual memory tuning (ZRAM `swappiness=180`), increased inotify watches for IDEs, and TCP BBR congestion control.
+- **Performance Daemons**: Auto-nice with `ananicy-cpp`, transparent RAM deduplication with `uksmd`, interrupt balancing with `irqbalance`, and SSD maintenance with `fstrim.timer`.
+- **Systemd & Power**: 10-second service stop timeouts and laptop lid behavior on AC/docking (`logind.conf.d`).
+- **Diagnostics & Status**: `./Setup/cachyos-tuning.sh --status` (or via `just tuning-status`).
 
 ---
 

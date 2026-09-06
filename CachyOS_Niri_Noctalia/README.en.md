@@ -23,7 +23,6 @@ OS configuration, hardening, and styling scripts:
 - **`post-install.sh`**: Smart dispatcher with auto CPU detection (AMD Ryzen vs Intel Core).
 - **`post-install-amd.sh`**: AMD Ryzen optimized post-install (ZRAM, RADV, Mesa, PipeWire, Niri stack).
 - **`post-install-intel.sh`**: Intel Core optimized post-install (VA-API Intel, PipeWire, Niri stack).
-- **`laptop-setup.sh`**: Laptop optimization (Niri touchpad gestures, Bluetooth battery reporting, brightnessctl, power-profiles-daemon).
 - **`cachyos-tuning.sh`**: Kernel sysctl, Systemd user limits, Distrobox, and low-latency Wayland tuning (free of Baloo/KDE bloat).
 - **`cockpit.sh`**: Cockpit web management console setup.
 - **`fastfetch.sh`**: System info fetch initialization.

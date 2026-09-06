@@ -25,7 +25,6 @@ Scripts de configuración del sistema operativo, personalización y endurecimien
 - **`post-install.sh`**: Despachador inteligente con auto-detección de CPU (AMD Ryzen vs Intel Core).
 - **`post-install-amd.sh`**: Post-instalación optimizada para AMD Ryzen (ZRAM, RADV, Mesa, PipeWire, Niri stack).
 - **`post-install-intel.sh`**: Post-instalación optimizada para Intel Core (VA-API Intel, PipeWire, Niri stack).
-- **`laptop-setup.sh`**: Optimización para portátiles de desarrollo (Touchpad tap/scroll en Niri, Bluetooth experimental, brillo, `power-profiles-daemon`).
 - **`cachyos-tuning.sh`**: Ajustes de Kernel (`sysctl`), Systemd user limits, Distrobox y optimizaciones de baja latencia Wayland.
 - **`cockpit.sh`**: Instalación y configuración de Cockpit (administración web).
 - **`fastfetch.sh`**: Información estética del sistema al inicio (Fastfetch).

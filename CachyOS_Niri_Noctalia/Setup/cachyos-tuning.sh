@@ -223,7 +223,7 @@ apply_cachyos_services() {
 apply_systemd_tuning() {
     echo "⏱️ [4/5] Optimizando tiempos de parada de servicios en Systemd..."
 
-    $SUDO mkdir -p /etc/systemd/system.conf.d /etc/systemd/user.conf.d
+    $SUDO mkdir -p /etc/systemd/system.conf.d /etc/systemd/user.conf.d /etc/systemd/logind.conf.d
 
     cat << 'EOF' | $SUDO tee /etc/systemd/system.conf.d/99-timeout.conf > /dev/null
 [Manager]
@@ -237,7 +237,14 @@ DefaultTimeoutStopSec=10s
 DefaultTimeoutAbortSec=10s
 EOF
 
-    echo "✅ Timeout de apagado en Systemd configurado a 10 segundos (evita bloqueos al reiniciar)."
+    # Comportamiento de tapa (evita suspender si está conectado a la corriente o pantallas externas)
+    cat << 'EOF' | $SUDO tee /etc/systemd/logind.conf.d/99-lid-behavior.conf > /dev/null
+[Login]
+HandleLidSwitchDocked=ignore
+HandleLidSwitchExternalPower=ignore
+EOF
+
+    echo "✅ Ajustes de Systemd aplicados (timeouts de 10s y comportamiento de tapa con cargador/dock)."
 }
 
 # 6. Optimizaciones especificas de Niri y Wayland
