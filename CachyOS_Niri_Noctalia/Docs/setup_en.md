@@ -134,11 +134,12 @@ Installs and configures **Kitty**, a GPU-accelerated Wayland-native terminal emu
 
 ## 6. Security & Hardening (`seguridad.sh`)
 
-Hardens system attack surfaces using Firewalld, DNS-over-TLS, and MAC Randomization:
-- **Firewalld**: Open ports restricted to mdns, ssh, and Podman containers.
-- **DNS-over-TLS**: Opportunistic encryption configured in `systemd-resolved`.
-- **MAC Randomization**: Random MAC addresses for Wi-Fi scanning and associations.
-- **Kernel Hardening**: dmesg restrictions, restricted kernel pointer access, and SYN cookies.
+Firewalld, secure DNS, and networking optimizations for a home development laptop:
+- **Firewalld**: Default `home` zone with SSH, mDNS, Cockpit, dev servers (3000-3010, 5173, 8000-8080, 8501), and LocalSend/KDE Connect.
+- **Virtualization (QEMU/KVM)**: Integrates `virbr0` into the `libvirt` zone with automatic NAT forwarding (`--add-forward`).
+- **Containers (Podman Rootless)**: Bridge networks (`podman+`) in `trusted` zone, unprivileged port access (`ip_unprivileged_port_start=80`).
+- **Kernel Sysctl**: `rp_filter=2` (Loose mode for virtual bridges), `ip_forward=1`, `somaxconn=4096`, and frictionless `dmesg`.
+- **Local DNS & Privacy**: `systemd-resolved` with mDNS (`.local`) support and opportunistic DoT without breaking home router resolution.
 
 ---
 

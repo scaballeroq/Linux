@@ -134,11 +134,12 @@ Instala y optimiza **Kitty**, un emulador de terminal moderno acelerado por GPU,
 
 ## 6. Seguridad y Red (`seguridad.sh`)
 
-Endurecimiento del sistema con Firewalld, DNS-over-TLS y MAC Randomization:
-- **Firewalld**: Servicios mdns, ssh y soporte para contenedores Podman.
-- **DNS-over-TLS**: Cifrado oportunista con `systemd-resolved`.
-- **MAC Randomization**: Generación de MACs aleatorias en escaneo y conexión Wi-Fi.
-- **Kernel hardening**: Restricciones de dmesg, punteros de kernel y SYN cookies.
+Configuración de Firewalld, DNS seguro y optimizaciones de red para desarrollo doméstico:
+- **Firewalld**: Zona predeterminada `home` con SSH, mDNS, Cockpit, servidores de desarrollo (3000-3010, 5173, 8000-8080, 8501) y LocalSend/KDE Connect.
+- **Virtualización (QEMU/KVM)**: Integración de `virbr0` en la zona `libvirt` con reenvío NAT automático (`--add-forward`).
+- **Contenedores (Podman Rootless)**: Redes puente (`podman+`) en zona `trusted` y soporte para puertos sin privilegios (`ip_unprivileged_port_start=80`).
+- **Sysctl de Kernel**: `rp_filter=2` (Loose mode para puentes virtuales), `ip_forward=1`, `somaxconn=4096` y `dmesg` sin fricción.
+- **DNS Local y Privacidad**: `systemd-resolved` con soporte mDNS (`.local`) y DoT oportunista respetando el router doméstico.
 
 ---
 

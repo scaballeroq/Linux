@@ -54,9 +54,13 @@ shell:
     ./Setup/shell.sh
 
 
-# Seguridad y cortafuegos (Firewalld, DNS-over-TLS, MAC Randomization, Sysctl)
+# Seguridad y cortafuegos (Firewalld, LAN domestica, QEMU/KVM, Podman, Sysctl)
 security:
     ./Setup/seguridad.sh
+
+# Estado y diagnostico de la seguridad y Firewalld
+security-status:
+    ./Setup/seguridad.sh --status
 
 # Fuentes de desarrollo (Nerd Fonts: JetBrainsMono, FiraCode, CascadiaCode...)
 fonts:
