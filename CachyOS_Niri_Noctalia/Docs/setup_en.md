@@ -32,30 +32,17 @@ Prepares the base system by optimizing mirrors, installing core development util
 
 ---
 
-## 2. Desktop Environment: Niri Compositor & Noctalia Shell (`niri-setup.sh`)
+## 2. Desktop Environment: Niri Compositor & Noctalia Shell
 
-Deploys and optimizes the modern Wayland tiling stack built around **Niri** (Rust scrollable-tiling window manager) and **Noctalia Shell**:
+The Wayland tiling environment based on **Niri** (Rust scrollable-tiling window manager) and **Noctalia Shell** comes preinstalled and configured out of the box via CachyOS's official `cachyos-niri-noctalia` package with modular architecture in `~/.config/niri/`:
 
-1. **Wayland Stack & Packages**:
-   ```bash
-   ./Setup/niri-setup.sh
-   ```
-   Installs and configures:
-   - **Niri**: Infinite horizontal scrolling tiling window manager.
-   - **Noctalia Shell**: Top status bar, application launcher, hardware control center (native Wi-Fi and Bluetooth), and lock screen.
-   - **Xwayland Satellite**: Clean and lightweight management for legacy X11 applications.
-   - **Wayland Portals**: `xdg-desktop-portal-gnome` and `xdg-desktop-portal-gtk` for file pickers and screen casting.
-   - **Desktop Toolchain**: `wl-clipboard`, `grim` and `slurp` (screen capture), `satty` (annotation), `brightnessctl`, `playerctl`.
-   - **Hardware Control GUIs**: `pavucontrol` (PipeWire audio). Wi-Fi and Bluetooth are managed and integrated natively by Noctalia Shell.
-   - **Theming**: `qt5-wayland`, `qt6-wayland`, `qt6ct`, `kvantum`, and `papirus-icon-theme`.
-
-2. **Diagnostics & Status**:
-   Check your graphical stack status at any time:
-   ```bash
-   ./Setup/niri-setup.sh --status
-   # or via justfile:
-   just niri-status
-   ```
+- **Niri**: Infinite horizontal scrolling tiling window manager.
+- **Noctalia Shell**: Top status bar, application launcher, hardware control center (native Wi-Fi and Bluetooth), and lock screen.
+- **Xwayland Satellite**: Clean and lightweight management for legacy X11 applications.
+- **Wayland Portals**: `xdg-desktop-portal-gnome` and `xdg-desktop-portal-gtk` for file pickers and screen casting.
+- **Desktop Toolchain**: `wl-clipboard`, `grim` and `slurp` (screen capture), `satty` (annotation), `brightnessctl`, `playerctl`.
+- **Hardware Control GUIs**: `pavucontrol` (PipeWire audio). Wi-Fi and Bluetooth are managed and integrated natively by Noctalia Shell.
+- **Theming**: `qt5-wayland`, `qt6-wayland`, `qt6ct`, `kvantum`, and `papirus-icon-theme`.
 
 ---
 

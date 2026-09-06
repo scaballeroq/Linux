@@ -20,7 +20,6 @@ Core terminal configuration, optimized primarily for **Zsh** (default shell in C
 
 ### ⚙️ [Setup](./Setup/)
 OS configuration, hardening, and styling scripts:
-- **`niri-setup.sh`**: Installer and integrator for Niri, Noctalia Shell, `xwayland-satellite`, GNOME/GTK desktop portals, and optimal `config.kdl` template.
 - **`post-install.sh`**: Smart dispatcher with auto CPU detection (AMD Ryzen vs Intel Core).
 - **`post-install-amd.sh`**: AMD Ryzen optimized post-install (ZRAM, RADV, Mesa, PipeWire, Niri stack).
 - **`post-install-intel.sh`**: Intel Core optimized post-install (VA-API Intel, PipeWire, Niri stack).
@@ -68,11 +67,6 @@ git clone https://github.com/scaballeroq/CachyOS_Niri_Noctalia.git
 cd CachyOS_Niri_Noctalia
 chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/install/*.sh Podman/lib/*.sh
 just setup-all
-```
-
-Or configure only Niri and Noctalia Shell:
-```bash
-just niri-setup
 ```
 
 ---

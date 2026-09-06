@@ -32,30 +32,17 @@ Prepara el sistema base optimizando espejos, instalando software esencial y conf
 
 ---
 
-## 2. Entorno de Escritorio: Niri Compositor & Noctalia Shell (`niri-setup.sh`)
+## 2. Entorno de Escritorio: Niri Compositor & Noctalia Shell
 
-Despliega y optimiza el entorno gráfico moderno Wayland basado en **Niri** (compositor scrollable-tiling en Rust) y **Noctalia Shell**:
+El entorno gráfico Wayland basado en **Niri** (compositor scrollable-tiling en Rust) y **Noctalia Shell** viene preinstalado y configurado de forma nativa por el paquete oficial `cachyos-niri-noctalia` con arquitectura modular en `~/.config/niri/`:
 
-1. **Stack Wayland y Paquetes**:
-   ```bash
-   ./Setup/niri-setup.sh
-   ```
-   Instala y configura:
-   - **Niri**: Compositor dinámico con cinta infinita horizontal de ventanas.
-   - **Noctalia Shell**: Barra superior integrada, lanzador de aplicaciones, centro de control de hardware (Wi-Fi y Bluetooth nativos) y bloqueo de sesión.
-   - **Xwayland Satellite**: Gestión desacoplada y ligera para aplicaciones X11 heredadas.
-   - **Portales Wayland**: `xdg-desktop-portal-gnome` y `xdg-desktop-portal-gtk` para cuadros de diálogo y compartición de pantalla.
-   - **Herramientas de Escritorio**: `wl-clipboard`, `grim` y `slurp` (capturas de pantalla), `satty` (anotación), `brightnessctl`, `playerctl`.
-   - **Interfaces de Hardware**: `pavucontrol` (audio PipeWire). Wi-Fi y Bluetooth son gestionados e integrados de forma nativa por Noctalia Shell.
-   - **Tematización**: `qt5-wayland`, `qt6-wayland`, `qt6ct`, `kvantum` y `papirus-icon-theme`.
-
-2. **Diagnóstico y Estado**:
-   Puedes verificar el estado del stack gráfico en cualquier momento:
-   ```bash
-   ./Setup/niri-setup.sh --status
-   # o vía justfile:
-   just niri-status
-   ```
+- **Niri**: Compositor dinámico con cinta infinita horizontal de ventanas.
+- **Noctalia Shell**: Barra superior integrada, lanzador de aplicaciones, centro de control de hardware (Wi-Fi y Bluetooth nativos) y bloqueo de sesión.
+- **Xwayland Satellite**: Gestión desacoplada y ligera para aplicaciones X11 heredadas.
+- **Portales Wayland**: `xdg-desktop-portal-gnome` y `xdg-desktop-portal-gtk` para cuadros de diálogo y compartición de pantalla.
+- **Herramientas de Escritorio**: `wl-clipboard`, `grim` y `slurp` (capturas de pantalla), `satty` (anotación), `brightnessctl`, `playerctl`.
+- **Interfaces de Hardware**: `pavucontrol` (audio PipeWire). Wi-Fi y Bluetooth son gestionados e integrados de forma nativa por Noctalia Shell.
+- **Tematización**: `qt5-wayland`, `qt6-wayland`, `qt6ct`, `kvantum` y `papirus-icon-theme`.
 
 ---
 

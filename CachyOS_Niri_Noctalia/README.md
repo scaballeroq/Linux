@@ -22,7 +22,6 @@ El núcleo de la configuración de la terminal, optimizado primordialmente para 
 
 ### ⚙️ [Setup](./Setup/)
 Scripts de configuración del sistema operativo, personalización y endurecimiento:
-- **`niri-setup.sh`**: Instalador e integrador de Niri, Noctalia Shell, `xwayland-satellite`, portales GNOME/GTK y plantilla `config.kdl`.
 - **`post-install.sh`**: Despachador inteligente con auto-detección de CPU (AMD Ryzen vs Intel Core).
 - **`post-install-amd.sh`**: Post-instalación optimizada para AMD Ryzen (ZRAM, RADV, Mesa, PipeWire, Niri stack).
 - **`post-install-intel.sh`**: Post-instalación optimizada para Intel Core (VA-API Intel, PipeWire, Niri stack).
@@ -70,11 +69,6 @@ git clone https://github.com/scaballeroq/CachyOS_Niri_Noctalia.git
 cd CachyOS_Niri_Noctalia
 chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/install/*.sh Podman/lib/*.sh
 just setup-all
-```
-
-O para configurar únicamente Niri y Noctalia Shell:
-```bash
-just niri-setup
 ```
 
 ---
