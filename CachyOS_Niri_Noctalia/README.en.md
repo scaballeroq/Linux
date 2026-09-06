@@ -32,7 +32,6 @@ OS configuration, hardening, and styling scripts:
 - **`kitty.sh`**: GPU-accelerated Kitty terminal with opacity/blur and Catppuccin theme.
 - **`seguridad.sh`**: Security hardening with Firewalld, DNS-over-TLS, MAC Randomization and sysctl.
 - **`shell.sh`**: Modern terminal utilities (`eza`, `bat`, `fd`, `zoxide`, `ripgrep`, `btop`, `jq`).
-- **`starship.sh`**: Optional Starship prompt with enable/disable commands.
 - **`yt-dlp-setup.sh`**: Multimedia setup dependencies (yt-dlp, ffmpeg, deno).
 
 ### 🐳 [Podman](./Podman/)

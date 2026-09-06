@@ -53,13 +53,6 @@ tuning-status:
 shell:
     ./Setup/shell.sh
 
-# Starship Prompt opcional (Instalar / Activar)
-starship:
-    ./Setup/starship.sh
-
-# Desactivar Starship y restaurar prompt nativo de CachyOS (p10k)
-starship-disable:
-    ./Setup/starship.sh --disable
 
 # Seguridad y cortafuegos (Firewalld, DNS-over-TLS, MAC Randomization, Sysctl)
 security:

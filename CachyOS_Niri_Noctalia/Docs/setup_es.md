@@ -73,9 +73,9 @@ Despliega y optimiza el entorno gráfico moderno Wayland basado en **Niri** (com
 
 ---
 
-## 4. Entorno de Terminal y Zsh (`shell.sh`, `starship.sh`, `fastfetch.sh` y `fonts.sh`)
+## 4. Entorno de Terminal y Zsh (`shell.sh`, `fastfetch.sh` y `fonts.sh`)
 
-Instala utilidades modernas de consola, tipografías para desarrollo y enlaza de forma modular la configuración de **Zsh** desde `ZSH.Setup`.
+Instala utilidades modernas de consola, tipografías para desarrollo y enlaza de forma modular la configuración de **Zsh** desde `ZSH.Setup`, manteniendo **Powerlevel10k** como prompt nativo de CachyOS.
 
 ### Utilidades Modernas de Terminal (`shell.sh`)
 Se instalan alternativas modernas a herramientas clásicas y se configura la carga modular en `~/.zshrc.d/`:
@@ -95,19 +95,6 @@ Además, enlaza automáticamente todos los scripts de `ZSH.Setup/` a `~/.zshrc.d
 ./Setup/shell.sh
 # o vía justfile:
 just shell
-```
-
-### Prompt Starship Opcional (`starship.sh`)
-CachyOS incluye de serie el prompt **Powerlevel10k (p10k)** en Zsh. Si prefieres usar **Starship**, puedes alternar fácilmente:
-```bash
-# Instalar y activar Starship
-./Setup/starship.sh
-
-# Desactivar y restaurar el prompt nativo p10k de CachyOS
-./Setup/starship.sh --disable
-
-# Ver estado actual
-./Setup/starship.sh --status
 ```
 
 ### Fuentes de Desarrollo (Nerd Fonts)

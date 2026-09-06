@@ -34,7 +34,6 @@ Scripts de configuración del sistema operativo, personalización y endurecimien
 - **`kitty.sh`**: Terminal Kitty acelerada por GPU con opacidad/blur y tema Catppuccin.
 - **`seguridad.sh`**: Endurecimiento con Firewalld, DNS-over-TLS, MAC Randomization y sysctl.
 - **`shell.sh`**: Herramientas modernas de terminal (`eza`, `bat`, `fd`, `zoxide`, `ripgrep`, `btop`, `jq`).
-- **`starship.sh`**: Prompt Starship opcional con comandos de activación/desactivación.
 - **`yt-dlp-setup.sh`**: Dependencias para manejo multimedia (yt-dlp, ffmpeg, deno).
 
 ### 🐳 [Podman](./Podman/)

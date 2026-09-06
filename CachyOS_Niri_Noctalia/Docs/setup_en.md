@@ -73,9 +73,9 @@ Deploys and optimizes the modern Wayland tiling stack built around **Niri** (Rus
 
 ---
 
-## 4. Terminal Environment & Zsh (`shell.sh`, `starship.sh`, `fastfetch.sh`, and `fonts.sh`)
+## 4. Terminal Environment & Zsh (`shell.sh`, `fastfetch.sh`, and `fonts.sh`)
 
-Installs modern console utilities, programmer fonts, and links the modular **Zsh** environment from `ZSH.Setup`.
+Installs modern console utilities, programmer fonts, and links the modular **Zsh** environment from `ZSH.Setup`, keeping **Powerlevel10k** as CachyOS's native prompt.
 
 ### Modern Terminal Tools (`shell.sh`)
 Installs modern CLI alternatives and configures modular loading inside `~/.zshrc.d/`:
@@ -95,19 +95,6 @@ Automatically symlinks all modules from `ZSH.Setup/` to `~/.zshrc.d/`:
 ./Setup/shell.sh
 # or via justfile:
 just shell
-```
-
-### Optional Starship Prompt (`starship.sh`)
-CachyOS includes **Powerlevel10k (p10k)** for Zsh out of the box. You can easily switch between p10k and **Starship**:
-```bash
-# Install and enable Starship
-./Setup/starship.sh
-
-# Disable Starship and restore default p10k
-./Setup/starship.sh --disable
-
-# Check current prompt status
-./Setup/starship.sh --status
 ```
 
 ### Programmer Fonts (Nerd Fonts)

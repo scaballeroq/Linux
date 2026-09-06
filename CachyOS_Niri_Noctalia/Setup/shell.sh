@@ -38,7 +38,7 @@ run_as_user() {
 }
 
 # 1. Instalación de utilidades modernas de terminal vía Pacman
-echo "ℹ️ [1/3] Instalando utilidades CLI modernas..."
+echo "ℹ️ [1/4] Instalando utilidades CLI modernas..."
 $SUDO pacman -S --needed --noconfirm \
     eza \
     bat \
@@ -52,13 +52,20 @@ $SUDO pacman -S --needed --noconfirm \
     btop \
     curl \
     git \
-    jq 2>/dev/null || true
+    jq
 
 # 2. Integración de Zoxide y Carga Modular en Zsh
 echo "⚙️ [2/4] Configurando integración en Zsh (~/.zshrc y ~/.zshrc.d)..."
 ZSHRC="$USER_HOME/.zshrc"
 ZSHRC_D="$USER_HOME/.zshrc.d"
-run_as_user touch "$ZSHRC"
+
+# Preservar configuración nativa de CachyOS (Powerlevel10k y plugins) si ~/.zshrc no existe o está vacío
+if [ ! -s "$ZSHRC" ] && [ -f /etc/skel/.zshrc ]; then
+    run_as_user cp /etc/skel/.zshrc "$ZSHRC"
+    echo "  ℹ️ Inicializado ~/.zshrc desde /etc/skel/.zshrc (CachyOS + Powerlevel10k)"
+else
+    run_as_user touch "$ZSHRC"
+fi
 run_as_user mkdir -p "$ZSHRC_D"
 
 # 2.1. Zoxide en Zsh
@@ -70,13 +77,14 @@ else
 fi
 
 # 2.2. Cargador modular en ~/.zshrc
+# Nota: La salida se redirige a /dev/null para evitar advertencias de Powerlevel10k Instant Prompt
 if ! grep -q "\.zshrc\.d" "$ZSHRC" 2>/dev/null; then
     cat << 'EOF' | run_as_user tee -a "$ZSHRC" > /dev/null
 
 # Carga modular de configuraciones y aliases (~/.zshrc.d)
 if [ -d "$HOME/.zshrc.d" ]; then
     for script in "$HOME/.zshrc.d"/*.{sh,zsh}(N); do
-        [ -r "$script" ] && source "$script"
+        [ -r "$script" ] && source "$script" > /dev/null
     done
     unset script
 fi
@@ -90,7 +98,12 @@ fi
 echo "⚙️ [3/4] Configurando integración en Bash (~/.bashrc y ~/.bashrc.d)..."
 BASHRC="$USER_HOME/.bashrc"
 BASHRC_D="$USER_HOME/.bashrc.d"
-run_as_user touch "$BASHRC"
+
+if [ ! -s "$BASHRC" ] && [ -f /etc/skel/.bashrc ]; then
+    run_as_user cp /etc/skel/.bashrc "$BASHRC"
+else
+    run_as_user touch "$BASHRC"
+fi
 run_as_user mkdir -p "$BASHRC_D"
 
 # 3.1. Zoxide en Bash
@@ -106,7 +119,7 @@ if ! grep -q "\.bashrc\.d" "$BASHRC" 2>/dev/null; then
 # Carga modular de configuraciones y aliases (~/.bashrc.d)
 if [ -d "$HOME/.bashrc.d" ]; then
     for script in "$HOME/.bashrc.d"/*.sh; do
-        [ -r "$script" ] && source "$script"
+        [ -r "$script" ] && source "$script" > /dev/null
     done
     unset script
 fi
@@ -137,6 +150,7 @@ echo "================================================================="
 echo "✅ Utilidades modernas de terminal y configuraciones listas para CachyOS:"
 echo "  • Herramientas: eza, bat, fzf, zoxide, ripgrep, fd, duf, dust, btop, jq"
 echo "  • Shell activa: Zsh (CachyOS + Niri / Noctalia + ~/.zshrc.d/)"
+echo "  • Prompt: Powerlevel10k nativo de CachyOS (activo)"
 echo "  • Compatibilidad: Bash modular (~/.bashrc.d/)"
 echo "💡 Ejecuta 'source ~/.zshrc' o abre una nueva pestaña para disfrutar de tu entorno."
 echo "================================================================="
