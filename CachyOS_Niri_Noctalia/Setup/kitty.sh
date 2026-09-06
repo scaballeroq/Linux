@@ -232,8 +232,8 @@ ENV_DIR="$USER_HOME/.config/environment.d"
 run_as_user mkdir -p "$ENV_DIR"
 echo "TERMINAL=kitty" | run_as_user tee "$ENV_DIR/10-terminal.conf" > /dev/null
 
-# B) Definir TERMINAL=kitty global en /etc/environment (si tenemos privilegios)
-if [ -n "$SUDO" ] || [ "$EUID" -eq 0 ]; then
+# B) Definir TERMINAL=kitty global en /etc/environment (si se cuenta con privilegios root)
+if [ "$EUID" -eq 0 ] || sudo -n true 2>/dev/null; then
     if [ -f "/etc/environment" ]; then
         if grep -q "^TERMINAL=" /etc/environment; then
             $SUDO sed -i 's/^TERMINAL=.*/TERMINAL=kitty/' /etc/environment
