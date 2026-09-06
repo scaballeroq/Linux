@@ -20,17 +20,15 @@ Prepares the base system by optimizing mirrors, installing core development util
 
 2. **Pacman Optimization**:
    - `ParallelDownloads = 10`
-   - Colorized output and `ILoveCandy` enabled
-   - Fast mirror ranking with `cachyos-rate-mirrors`
+   - Colorized terminal output enabled
+   - Complete system base upgrade
 
 3. **Core Software**:
    - Build tools: `base-devel`, `cmake`
-   - Monitoring: `btop`, `htop`, `inxi`
-   - Archive and compression utilities: `curl`, `fuse2`, `fuse3`, `exfatprogs`, `7zip`, `unrar`, `zip`, `unzip`, `bzip2`, `xz`
-   - Graphics & Multimedia: `vlc`, `gimp`, `gparted`, `flatpak`
-
-4. **ZRAM**:
-   Configured with ZSTD compression algorithm allocated to 50% of total system RAM.
+   - Monitoring & hardware diagnostics: `btop`, `htop`, `inxi`
+   - Archive & compression utilities: `curl`, `fuse2`, `fuse3`, `exfatprogs`, `7zip`, `unrar`, `zip`, `unzip`, `bzip2`, `xz`, `ca-certificates`, `gnupg`
+   - Graphics & Multimedia: `vlc`, `mpv`, `gimp`, `gparted`
+   - Wayland & Niri Stack: `niri`, `xwayland-satellite`, GNOME/GTK portals, `wl-clipboard`, `grim`, `slurp`, `satty`, `pavucontrol`, `blueman`, `qt6ct`, `kvantum`
 
 ---
 

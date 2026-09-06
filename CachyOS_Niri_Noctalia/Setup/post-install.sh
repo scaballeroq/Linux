@@ -20,8 +20,8 @@ Opciones:
   --help, -h         Muestra este mensaje de ayuda.
 
 Scripts independientes disponibles:
-  - Setup/post-install-amd.sh   -> Optimizado para AMD Ryzen (firmware AMD, RADV, Mesa, Chaotic-AUR, Niri, Pacman)
-  - Setup/post-install-intel.sh -> Optimizado para Intel Core (microcodigo Intel, VA-API Intel, Chaotic-AUR, Niri, Pacman)
+  - Setup/post-install-amd.sh   -> Optimizado para AMD Ryzen (firmware AMD, RADV, Mesa, PipeWire, Niri, Pacman)
+  - Setup/post-install-intel.sh -> Optimizado para Intel Core (microcodigo Intel, VA-API Intel, PipeWire, Niri, Pacman)
 EOF
 }
 

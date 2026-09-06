@@ -20,17 +20,15 @@ Prepara el sistema base optimizando espejos, instalando software esencial y conf
 
 2. **Optimización de Pacman**:
    - `ParallelDownloads = 10`
-   - Salida en color e `ILoveCandy` habilitados
-   - Espejos ordenados por velocidad con `cachyos-rate-mirrors`
+   - Salida en color habilitada
+   - Actualización completa de la base del sistema
 
 3. **Software Esencial**:
    - Compilación: `base-devel`, `cmake`
-   - Monitorización: `btop`, `htop`, `inxi`
-   - Utilidades y compresión: `curl`, `fuse2`, `fuse3`, `exfatprogs`, `7zip`, `unrar`, `zip`, `unzip`, `bzip2`, `xz`
-   - Gráficos y Multimedia: `vlc`, `gimp`, `gparted`, `flatpak`
-
-4. **ZRAM**:
-   Configurado con algoritmo ZSTD al 50% de la memoria RAM.
+   - Monitorización y diagnóstico: `btop`, `htop`, `inxi`
+   - Utilidades y compresión: `curl`, `fuse2`, `fuse3`, `exfatprogs`, `7zip`, `unrar`, `zip`, `unzip`, `bzip2`, `xz`, `ca-certificates`, `gnupg`
+   - Gráficos y Multimedia: `vlc`, `mpv`, `gimp`, `gparted`
+   - Stack Wayland y Niri: `niri`, `xwayland-satellite`, portales GNOME/GTK, `wl-clipboard`, `grim`, `slurp`, `satty`, `pavucontrol`, `blueman`, `qt6ct`, `kvantum`
 
 ---
 
