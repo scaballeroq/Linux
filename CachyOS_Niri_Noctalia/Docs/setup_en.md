@@ -46,17 +46,7 @@ The Wayland tiling environment based on **Niri** (Rust scrollable-tiling window 
 
 ---
 
-## 3. System Performance Tuning (`cachyos-tuning.sh`)
-
-Deep kernel, memory, and system timeout tweaks:
-- **Kernel Sysctl**: Virtual memory tuning (ZRAM `swappiness=180`), increased inotify watches for IDEs, and TCP BBR congestion control.
-- **Performance Daemons**: Auto-nice with `ananicy-cpp`, transparent RAM deduplication with `uksmd`, interrupt balancing with `irqbalance`, and SSD maintenance with `fstrim.timer`.
-- **Systemd & Power**: 10-second service stop timeouts and laptop lid behavior on AC/docking (`logind.conf.d`).
-- **Diagnostics & Status**: `./Setup/cachyos-tuning.sh --status` (or via `just tuning-status`).
-
----
-
-## 4. Terminal Environment & Zsh (`shell.sh`, `fastfetch.sh`, and `fonts.sh`)
+## 3. Terminal Environment & Zsh (`shell.sh`, `fastfetch.sh`, and `fonts.sh`)
 
 Installs modern console utilities, programmer fonts, and links the modular **Zsh** environment from `ZSH.Setup`, keeping **Powerlevel10k** as CachyOS's native prompt.
 
@@ -94,7 +84,7 @@ Displays system specifications and logos upon opening new terminal tabs:
 
 ---
 
-## 5. Kitty Terminal (`kitty.sh`)
+## 4. Kitty Terminal (`kitty.sh`)
 
 Installs and configures **Kitty**, a GPU-accelerated Wayland-native terminal emulator:
 
@@ -115,18 +105,18 @@ Installs and configures **Kitty**, a GPU-accelerated Wayland-native terminal emu
 
 ---
 
-## 6. Security & Hardening (`seguridad.sh`)
+## 5. Security & Hardening (`seguridad.sh`)
 
 Firewalld, secure DNS, and networking optimizations for a home development laptop:
 - **Firewalld**: Default `home` zone with SSH, mDNS, Cockpit, dev servers (3000-3010, 5173, 8000-8080, 8501), and LocalSend/KDE Connect.
 - **Virtualization (QEMU/KVM)**: Integrates `virbr0` into the `libvirt` zone with automatic NAT forwarding (`--add-forward`).
 - **Containers (Podman Rootless)**: Bridge networks (`podman+`) in `trusted` zone, unprivileged port access (`ip_unprivileged_port_start=80`).
-- **Kernel Sysctl**: `rp_filter=2` (Loose mode for virtual bridges), `ip_forward=1`, `somaxconn=4096`, and frictionless `dmesg`.
+- **Kernel Sysctl**: `rp_filter=2` (Loose mode for virtual bridges), `ip_forward=1`, `somaxconn=4096`, `fs.inotify.max_user_watches=1048576`, TCP BBR, and frictionless `dmesg`.
 - **Local DNS & Privacy**: `systemd-resolved` with mDNS (`.local`) support and opportunistic DoT without breaking home router resolution.
 
 ---
 
-## 7. Web Management with Cockpit (`cockpit.sh`)
+## 6. Web Management with Cockpit (`cockpit.sh`)
 
 Deploys Cockpit for browser-based monitoring and management:
 ```bash
@@ -137,7 +127,7 @@ Access URL: [https://localhost:9090](https://localhost:9090)
 
 ---
 
-## 8. Multimedia & yt-dlp (`yt-dlp-setup.sh`)
+## 7. Multimedia & yt-dlp (`yt-dlp-setup.sh`)
 
 Sets up video and audio streaming extractors:
 - Latest `yt-dlp` and `ffmpeg`.
@@ -149,7 +139,7 @@ Sets up video and audio streaming extractors:
 ## Verification
 
 To confirm the installation of all system components:
-- **Niri and Noctalia**: Run `just niri-status`.
+- **Niri and Noctalia**: Verify the graphical session and keybinding cheat sheet with `Mod+Shift+/` (or `Super+Shift+/`).
 - **Zsh Shell**: Open a new Kitty window and ensure modules load from `~/.zshrc.d/`.
 - **Cockpit**: Visit [https://localhost:9090](https://localhost:9090).
-- **Firewall**: Run `sudo firewall-cmd --state`.
+- **Security & Firewall**: Run `just security-status` (or `sudo firewall-cmd --state`).

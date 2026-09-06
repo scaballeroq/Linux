@@ -46,17 +46,7 @@ El entorno gráfico Wayland basado en **Niri** (compositor scrollable-tiling en 
 
 ---
 
-## 3. Optimizaciones de Rendimiento del Sistema (`cachyos-tuning.sh`)
-
-Ajustes profundos de kernel, memoria y timeouts de sistema:
-- **Sysctl Kernel**: Optimización de memoria virtual (ZRAM `swappiness=180`), inotify ampliado para IDEs y control de congestión TCP BBR.
-- **Servicios de Rendimiento**: Auto-nice con `ananicy-cpp`, deduplicación de RAM con `uksmd`, balanceo de interrupciones con `irqbalance` y mantenimiento SSD con `fstrim.timer`.
-- **Systemd & Energía**: Reducción de timeouts de apagado a 10s y comportamiento de tapa de portátil con cargador/docking (`logind.conf.d`).
-- **Diagnóstico y Estado**: `./Setup/cachyos-tuning.sh --status` (o vía `just tuning-status`).
-
----
-
-## 4. Entorno de Terminal y Zsh (`shell.sh`, `fastfetch.sh` y `fonts.sh`)
+## 3. Entorno de Terminal y Zsh (`shell.sh`, `fastfetch.sh` y `fonts.sh`)
 
 Instala utilidades modernas de consola, tipografías para desarrollo y enlaza de forma modular la configuración de **Zsh** desde `ZSH.Setup`, manteniendo **Powerlevel10k** como prompt nativo de CachyOS.
 
@@ -94,7 +84,7 @@ Muestra un resumen estético del sistema al abrir nuevas instancias de terminal:
 
 ---
 
-## 5. Terminal Kitty (`kitty.sh`)
+## 4. Terminal Kitty (`kitty.sh`)
 
 Instala y optimiza **Kitty**, un emulador de terminal moderno acelerado por GPU, con integración en Niri y Wayland:
 
@@ -115,18 +105,18 @@ Instala y optimiza **Kitty**, un emulador de terminal moderno acelerado por GPU,
 
 ---
 
-## 6. Seguridad y Red (`seguridad.sh`)
+## 5. Seguridad y Red (`seguridad.sh`)
 
 Configuración de Firewalld, DNS seguro y optimizaciones de red para desarrollo doméstico:
 - **Firewalld**: Zona predeterminada `home` con SSH, mDNS, Cockpit, servidores de desarrollo (3000-3010, 5173, 8000-8080, 8501) y LocalSend/KDE Connect.
 - **Virtualización (QEMU/KVM)**: Integración de `virbr0` en la zona `libvirt` con reenvío NAT automático (`--add-forward`).
 - **Contenedores (Podman Rootless)**: Redes puente (`podman+`) en zona `trusted` y soporte para puertos sin privilegios (`ip_unprivileged_port_start=80`).
-- **Sysctl de Kernel**: `rp_filter=2` (Loose mode para puentes virtuales), `ip_forward=1`, `somaxconn=4096` y `dmesg` sin fricción.
+- **Sysctl de Kernel**: `rp_filter=2` (Loose mode para puentes virtuales), `ip_forward=1`, `somaxconn=4096`, `fs.inotify.max_user_watches=1048576`, TCP BBR y `dmesg` sin fricción.
 - **DNS Local y Privacidad**: `systemd-resolved` con soporte mDNS (`.local`) y DoT oportunista respetando el router doméstico.
 
 ---
 
-## 7. Panel de Administración Web Cockpit (`cockpit.sh`)
+## 6. Panel de Administración Web Cockpit (`cockpit.sh`)
 
 Instala Cockpit para monitorizar y administrar el sistema, máquinas virtuales y almacenamiento desde el navegador:
 
@@ -138,7 +128,7 @@ Acceso web: [https://localhost:9090](https://localhost:9090)
 
 ---
 
-## 8. Soporte Multimedia y yt-dlp (`yt-dlp-setup.sh`)
+## 7. Soporte Multimedia y yt-dlp (`yt-dlp-setup.sh`)
 
 Configura el stack de extracción y procesamiento multimedia:
 - `yt-dlp` y `ffmpeg` actualizados.
@@ -150,7 +140,7 @@ Configura el stack de extracción y procesamiento multimedia:
 ## Verificación General
 
 Para verificar la correcta instalación de todo el stack:
-- **Niri y Noctalia**: Comprueba `just niri-status`.
+- **Niri y Noctalia**: Comprueba la sesión gráfica y la guía de atajos de teclado con `Mod+Shift+/` (o `Super+Shift+/`).
 - **Terminal Zsh**: Abre una nueva terminal Kitty y confirma que se cargan los módulos desde `~/.zshrc.d/`.
 - **Cockpit**: Visita [https://localhost:9090](https://localhost:9090).
-- **Firewall**: Comprueba `sudo firewall-cmd --state`.
+- **Seguridad y Firewall**: Comprueba `just security-status` (o `sudo firewall-cmd --state`).
