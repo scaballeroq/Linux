@@ -28,7 +28,7 @@ Scripts de configuración del sistema operativo, personalización y endurecimien
 - **`cockpit.sh`**: Instalación y configuración de Cockpit (administración web).
 - **`fastfetch.sh`**: Información estética del sistema al inicio (Fastfetch).
 - **`fonts.sh`**: Instalación automatizada de fuentes de desarrollo (Nerd Fonts).
-- **`kitty.sh`**: Terminal Kitty acelerada por GPU con opacidad/blur y tema Catppuccin.
+- **`kitty.sh`**: Terminal Kitty acelerada por GPU con opacidad/blur y tema dinámico Noctalia.
 - **`seguridad.sh`**: Configuración de Firewalld (LAN doméstica), integración con QEMU/KVM, Podman y Sysctl.
 - **`shell.sh`**: Herramientas modernas de terminal (`eza`, `bat`, `fd`, `zoxide`, `ripgrep`, `btop`, `jq`).
 - **`yt-dlp-setup.sh`**: Dependencias para manejo multimedia (yt-dlp, ffmpeg, deno).

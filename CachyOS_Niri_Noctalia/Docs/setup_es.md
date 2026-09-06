@@ -90,7 +90,7 @@ Instala y optimiza **Kitty**, un emulador de terminal moderno acelerado por GPU,
 
 1. **Configuración Estética**:
    - Opacidad al 75% con desenfoque (`blur 32`)
-   - Tema de colores Catppuccin Mocha
+   - Tema dinámico integrado con Noctalia Shell (`themes/noctalia.conf`)
    - Fuente JetBrainsMono Nerd Font
    - Barra de pestañas estilo powerline
 

@@ -90,7 +90,7 @@ Installs and configures **Kitty**, a GPU-accelerated Wayland-native terminal emu
 
 1. **Aesthetic Enhancements**:
    - 75% opacity with background blur (`blur 32`)
-   - Catppuccin Mocha color scheme
+   - Dynamic theming integrated with Noctalia Shell (`themes/noctalia.conf`)
    - JetBrainsMono Nerd Font
    - Powerline style tab bar
 

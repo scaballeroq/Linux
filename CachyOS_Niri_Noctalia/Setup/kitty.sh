@@ -110,10 +110,10 @@ fi
 
 # 2. Crear directorio de configuracion
 echo "⚙️ [2/5] Creando directorios de configuracion en $USER_HOME/.config/kitty..."
-run_as_user mkdir -p "$USER_HOME/.config/kitty"
+run_as_user mkdir -p "$USER_HOME/.config/kitty/themes"
 
-# 3. Generar kitty.conf con tema oscuro, opacidad translucida y efectos Wayland
-echo "🎨 [3/5] Generando configuracion optimizada para Niri Wayland (Opacidad ${OPACITY}, Blur ${BLUR_RADIUS})..."
+# 3. Generar kitty.conf con integracion nativa a Noctalia Shell y Wayland
+echo "🎨 [3/5] Generando configuracion integrada con Noctalia (Opacidad ${OPACITY}, Blur ${BLUR_RADIUS})..."
 cat <<EOF | run_as_user tee "$USER_HOME/.config/kitty/kitty.conf" > /dev/null
 # =============================================================================
 # KITTY CONFIGURATION - CACHYOS + NIRI WAYLAND + NOCTALIA
@@ -160,9 +160,7 @@ copy_on_select          no
 
 # --- Cursor ---
 cursor_shape          beam
-cursor_beam_thickness 1.8
 cursor_blink_interval 0.5
-cursor_trail          3
 
 # --- Barra de Pestanas (Tab Bar) ---
 tab_bar_edge          top
@@ -171,63 +169,9 @@ tab_powerline_style   slanted
 tab_title_template    " {title}{' [' + num_windows.__str__() + ']' if num_windows > 1 else ''} "
 active_tab_font_style bold
 
-# --- Esquema de Color Oscuro (Catppuccin Mocha) ---
-foreground            #cdd6f4
-background            #181825
-selection_foreground  #1e1e2e
-selection_background  #f5e0dc
-
-# Cursor
-cursor                #f5e0dc
-cursor_text_color     #11111b
-
-# URL
-url_color             #89b4fa
-url_style             curly
-
-# Colores de pestanas
-active_tab_foreground   #11111b
-active_tab_background   #cba6f7
-inactive_tab_foreground #cdd6f4
-inactive_tab_background #181825
-tab_bar_background      #11111b
-
-# Colores ANSI Estandar
-# Black
-color0  #45475a
-color8  #585b70
-
-# Red
-color1  #f38ba8
-color9  #f38ba8
-
-# Green
-color2  #a6e3a1
-color10 #a6e3a1
-
-# Yellow
-color3  #f9e2af
-color11 #f9e2af
-
-# Blue
-color4  #89b4fa
-color12 #89b4fa
-
-# Magenta
-color5  #f5c2e7
-color13 #f5c2e7
-
-# Cyan
-color6  #94e2d5
-color14 #94e2d5
-
-# White
-color7  #bac2de
-color15 #a6adc8
-
 # --- Desactivar campana acustica/visual molesta ---
-enable_audio_bell no
-visual_bell_duration 0.0
+enable_audio_bell     no
+visual_bell_duration  0.0
 
 # --- Atajos de teclado utiles ---
 # 1. Control directo de opacidad (Ctrl+Alt + Flechas / +/-):
@@ -261,7 +205,19 @@ map ctrl+shift+a>0       set_background_opacity default
 map ctrl+shift+t         new_tab_with_cwd
 map ctrl+shift+enter     new_window_with_cwd
 map ctrl+shift+f5        load_config_file
+
+# =============================================================================
+# TEMA DINAMICO NOCTALIA (Renderizado automaticamente por Noctalia Shell)
+# =============================================================================
+include themes/noctalia.conf
 EOF
+
+# Aplicar plantilla de tema Noctalia para Kitty si Noctalia esta instalado
+if command -v noctalia &>/dev/null; then
+    run_as_user noctalia msg templates-apply 2>/dev/null || true
+elif [ -f "/usr/share/noctalia/assets/templates/kitty/apply.sh" ]; then
+    run_as_user bash /usr/share/noctalia/assets/templates/kitty/apply.sh 2>/dev/null || true
+fi
 
 # Asegurar propiedad correcta del directorio y archivo de configuracion
 if [ -n "$SUDO" ] || [ "$EUID" -eq 0 ]; then

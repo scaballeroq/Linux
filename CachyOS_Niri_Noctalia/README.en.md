@@ -26,7 +26,7 @@ OS configuration, hardening, and styling scripts:
 - **`cockpit.sh`**: Cockpit web management console setup.
 - **`fastfetch.sh`**: System info fetch initialization.
 - **`fonts.sh`**: Automated Nerd Fonts installer.
-- **`kitty.sh`**: GPU-accelerated Kitty terminal with opacity/blur and Catppuccin theme.
+- **`kitty.sh`**: GPU-accelerated Kitty terminal with opacity/blur and Noctalia dynamic theme.
 - **`seguridad.sh`**: Firewalld configuration (home LAN), QEMU/KVM and Podman integration, and Sysctl.
 - **`shell.sh`**: Modern terminal utilities (`eza`, `bat`, `fd`, `zoxide`, `ripgrep`, `btop`, `jq`).
 - **`yt-dlp-setup.sh`**: Multimedia setup dependencies (yt-dlp, ffmpeg, deno).
