@@ -188,3 +188,8 @@ backup:
 backup-list:
     ./Setup/backup-niri-noctalia.sh --list
 
+# Restaurar ultima copia de seguridad
+backup-restore:
+    ./Setup/backup-niri-noctalia.sh --restore
+
+

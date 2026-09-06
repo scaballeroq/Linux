@@ -139,9 +139,12 @@ alias noctalia-backup="niri-backup"
 
 # Listar copias de seguridad disponibles
 alias niri-backup-list="niri-backup --list"
+alias noctalia-backup-list="niri-backup --list"
 
 # Restaurar última copia o copia específica
 alias niri-backup-restore="niri-backup --restore"
+alias noctalia-backup-restore="niri-backup --restore"
+
 
 # =============================================================================
 # MENSAJE DE CARGA
