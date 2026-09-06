@@ -94,9 +94,10 @@ Installs and configures **Kitty**, a GPU-accelerated Wayland-native terminal emu
    - JetBrainsMono Nerd Font
    - Powerline style tab bar
 
-2. **Niri Integration**:
-   - Set as default terminal emulator (`TERMINAL=kitty` in `environment.d`)
-   - Global Niri keybinding: `Mod+Return` (or `Super+Enter`)
+2. **Niri & System Integration**:
+   - System-wide default terminal (`TERMINAL=kitty` in `environment.d`, `/etc/environment`, XDG MIME, and x-terminal-emulator)
+   - Automatic Niri global keybinding binding: `Mod+Return` (or `Super+Enter`)
+   - Clean tiling without redundant CSD titlebars (`hide_window_decorations yes`) and expanded 10,000-line scrollback
 
 3. **Keybindings**:
    - `Ctrl+Alt+Up/Down`: Adjust background opacity

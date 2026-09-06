@@ -98,26 +98,33 @@ echo "==========================================================="
 
 # 1. Instalar Kitty y dependencias solo si no esta instalado
 if ! command -v kitty &> /dev/null; then
-    echo "📦 [1/4] Instalando Kitty Terminal con Pacman..."
+    echo "📦 [1/5] Instalando Kitty Terminal con Pacman..."
     if [ -n "$SUDO" ]; then
         $SUDO pacman -S --needed --noconfirm kitty
     else
         pacman -S --needed --noconfirm kitty
     fi
 else
-    echo "📦 [1/4] Kitty Terminal ya se encuentra instalado."
+    echo "📦 [1/5] Kitty Terminal ya se encuentra instalado."
 fi
 
 # 2. Crear directorio de configuracion
-echo "⚙️ [2/4] Creando directorios de configuracion en $USER_HOME/.config/kitty..."
-mkdir -p "$USER_HOME/.config/kitty"
+echo "⚙️ [2/5] Creando directorios de configuracion en $USER_HOME/.config/kitty..."
+run_as_user mkdir -p "$USER_HOME/.config/kitty"
 
-# 3. Generar kitty.conf con tema oscuro, opacidad translucida y efectos
-echo "🎨 [3/4] Generando configuracion (Opacidad ${OPACITY}, Blur ${BLUR_RADIUS})..."
-cat <<EOF > "$USER_HOME/.config/kitty/kitty.conf"
+# 3. Generar kitty.conf con tema oscuro, opacidad translucida y efectos Wayland
+echo "🎨 [3/5] Generando configuracion optimizada para Niri Wayland (Opacidad ${OPACITY}, Blur ${BLUR_RADIUS})..."
+cat <<EOF | run_as_user tee "$USER_HOME/.config/kitty/kitty.conf" > /dev/null
 # =============================================================================
-# KITTY CONFIGURATION - CACHYOS + NIRI WAYLAND
+# KITTY CONFIGURATION - CACHYOS + NIRI WAYLAND + NOCTALIA
 # =============================================================================
+
+# --- Integracion Wayland y Rendimiento ---
+linux_display_server       wayland
+wayland_enable_ime         yes
+repaint_delay              10
+input_delay                3
+sync_to_monitor            yes
 
 # --- Fuentes & Tipografia ---
 font_family      JetBrainsMono Nerd Font
@@ -132,13 +139,24 @@ background_opacity         ${OPACITY}
 dynamic_background_opacity yes
 background_blur            ${BLUR_RADIUS}
 
-# --- Ventana y Margenes ---
-window_padding_width 10
-hide_window_decorations no
+# --- Ventana y Estetica Niri Tiling ---
+window_padding_width    10
+hide_window_decorations yes
 confirm_os_window_close 0
-remember_window_size   yes
-initial_window_width   950
-initial_window_height  600
+remember_window_size    yes
+initial_window_width    950
+initial_window_height   600
+
+# --- Desplazamiento y Scrollback para Desarrollo ---
+scrollback_lines               10000
+scrollback_pager_history_size  64
+wheel_scroll_multiplier        5.0
+touch_scroll_multiplier        2.0
+
+# --- Portapapeles e Interaccion ---
+clipboard_control       write-clipboard write-primary read-clipboard read-primary
+detect_urls             yes
+copy_on_select          no
 
 # --- Cursor ---
 cursor_shape          beam
@@ -153,7 +171,7 @@ tab_powerline_style   slanted
 tab_title_template    " {title}{' [' + num_windows.__str__() + ']' if num_windows > 1 else ''} "
 active_tab_font_style bold
 
-# --- Esquema de Color Oscuro (Tokyo Night / Catppuccin Mocha) ---
+# --- Esquema de Color Oscuro (Catppuccin Mocha) ---
 foreground            #cdd6f4
 background            #181825
 selection_foreground  #1e1e2e
@@ -207,11 +225,6 @@ color14 #94e2d5
 color7  #bac2de
 color15 #a6adc8
 
-# --- Rendimiento y Graficos ---
-repaint_delay   10
-input_delay     3
-sync_to_monitor yes
-
 # --- Desactivar campana acustica/visual molesta ---
 enable_audio_bell no
 visual_bell_duration 0.0
@@ -250,28 +263,92 @@ map ctrl+shift+enter     new_window_with_cwd
 map ctrl+shift+f5        load_config_file
 EOF
 
-# 4. Integracion con Niri y Terminal Predeterminado del Sistema
-echo "📁 [4/4] Configurando Kitty como terminal predeterminado..."
+# Asegurar propiedad correcta del directorio y archivo de configuracion
+if [ -n "$SUDO" ] || [ "$EUID" -eq 0 ]; then
+    chown -R "$REAL_USER:" "$USER_HOME/.config/kitty"
+fi
 
-# Exportar TERMINAL=kitty en la sesión del usuario
+# 4. Configurar Kitty como terminal predeterminado del sistema
+echo "📁 [4/5] Estableciendo Kitty como terminal predeterminado del sistema..."
+
+# A) Exportar TERMINAL=kitty en la sesión del usuario (environment.d para systemd user session)
 ENV_DIR="$USER_HOME/.config/environment.d"
 run_as_user mkdir -p "$ENV_DIR"
 echo "TERMINAL=kitty" | run_as_user tee "$ENV_DIR/10-terminal.conf" > /dev/null
 
+# B) Definir TERMINAL=kitty global en /etc/environment (si tenemos privilegios)
+if [ -n "$SUDO" ] || [ "$EUID" -eq 0 ]; then
+    if [ -f "/etc/environment" ]; then
+        if grep -q "^TERMINAL=" /etc/environment; then
+            $SUDO sed -i 's/^TERMINAL=.*/TERMINAL=kitty/' /etc/environment
+        else
+            echo "TERMINAL=kitty" | $SUDO tee -a /etc/environment > /dev/null
+        fi
+    fi
+    # Enlace simbolico para scripts clasicos que invocan x-terminal-emulator
+    if [ -x "/usr/bin/kitty" ]; then
+        $SUDO ln -sf /usr/bin/kitty /usr/local/bin/x-terminal-emulator
+    fi
+fi
+
+# C) Esquemas GSettings / GNOME / Portales
 if command -v gsettings &>/dev/null; then
     run_as_user gsettings set org.gnome.desktop.default-applications.terminal exec 'kitty' 2>/dev/null || true
     run_as_user gsettings set org.gnome.desktop.default-applications.terminal exec-arg '-e' 2>/dev/null || true
 fi
 
-# Recargar configuracion en caliente si hay instancias activas de Kitty
+# D) Registrar esquema MIME de terminal para gestores de archivos y aplicaciones XDG
+if command -v xdg-mime &>/dev/null; then
+    run_as_user xdg-mime default kitty.desktop x-scheme-handler/terminal 2>/dev/null || true
+fi
+
+# 5. Integrar Kitty en Niri y Noctalia Shell (Mod+Return -> Kitty)
+echo "⌨️ [5/5] Vinculando atajo de teclado global en Niri (Mod+Return -> Kitty)..."
+
+update_niri_keybind() {
+    local target_file="$1"
+    if [ -f "$target_file" ]; then
+        # Crear respaldo si no existe
+        if [ ! -f "${target_file}.kitty_bak" ]; then
+            run_as_user cp "$target_file" "${target_file}.kitty_bak"
+        fi
+
+        # Actualizar la linea con hotkey-overlay de Noctalia (ej: Open Terminal: Alacritty -> Kitty)
+        if grep -q 'hotkey-overlay-title=.*Open Terminal' "$target_file"; then
+            sed -i -E 's/(Mod\+Return[^{]*hotkey-overlay-title="Open Terminal:)[^"]+(" *\{ *spawn ")[^"]+("; *\})/\1 Kitty\2kitty\3/' "$target_file"
+        fi
+
+        # Formato estandar sin overlay o si quedo algun spawn alacritty/foot
+        sed -i -E 's/(Mod\+Return *\{ *spawn *")[^"]+("; *\})/\1kitty\2/' "$target_file"
+        sed -i -E 's/spawn "alacritty"/spawn "kitty"/g' "$target_file"
+        sed -i -E 's/spawn "foot"/spawn "kitty"/g' "$target_file"
+        sed -i -E 's/hotkey-overlay-title="Open Terminal: Alacritty"/hotkey-overlay-title="Open Terminal: Kitty"/g' "$target_file"
+
+        if [ -n "$SUDO" ] || [ "$EUID" -eq 0 ]; then
+            chown "$REAL_USER:" "$target_file"
+        fi
+        echo "   -> Atajo Mod+Return actualizado en $(basename "$target_file")"
+    fi
+}
+
+update_niri_keybind "$USER_HOME/.config/niri/cfg/keybinds.kdl"
+update_niri_keybind "$USER_HOME/.config/niri/config.kdl"
+
+# Recargar Niri en caliente si el compositor esta activo
+if command -v niri &>/dev/null; then
+    run_as_user niri msg action reload-config 2>/dev/null || true
+fi
+
+# Recargar instancias activas de Kitty
 killall -USR1 kitty 2>/dev/null || true
 
 echo "==========================================================="
-echo "✅ Kitty se ha configurado con opacidad al ${OPACITY} (${OPACITY_PERCENT}%) y blur ${BLUR_RADIUS}."
-echo "💡 Atajos rapidos en Kitty:"
+echo "✅ Kitty se ha configurado y establecido como terminal por defecto."
+echo "🎨 Opacidad: ${OPACITY} (${OPACITY_PERCENT}%) | Desenfoque (Blur): ${BLUR_RADIUS} | Wayland nativo"
+echo "💡 Atajos rapidos y uso:"
+echo "   - Atajo global en Niri / Noctalia: Mod+Return (Super+Enter) para abrir Kitty."
 echo "   - Opacidad directa: Ctrl+Alt+Arriba (+5%) | Ctrl+Alt+Abajo (-5%) | Ctrl+Alt+0 (Default) | Ctrl+Alt+1 (100% Opaco)"
 echo "   - Opacidad por F-Keys: Ctrl+Shift+F11 (+5%) | Ctrl+Shift+F10 (-5%) | Ctrl+Shift+F9 (Default)"
-echo "   - Atajo global en Niri: Mod+Return para abrir Kitty."
 echo "   - Recargar configuracion en vivo: Ctrl+Shift+F5"
 echo "   - Nueva pestana en mismo directorio: Ctrl+Shift+T"
 echo "   - Nueva ventana dividida: Ctrl+Shift+Enter"

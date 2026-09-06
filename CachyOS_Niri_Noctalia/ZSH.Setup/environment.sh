@@ -19,6 +19,10 @@ else
     export VISUAL='nano'
 fi
 
+if command -v kitty &> /dev/null; then
+    export TERMINAL='kitty'
+fi
+
 export PAGER='less'
 
 # Opciones para 'less' (colores, búsqueda insensible a mayúsculas si todo es minúscula)

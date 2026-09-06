@@ -94,9 +94,10 @@ Instala y optimiza **Kitty**, un emulador de terminal moderno acelerado por GPU,
    - Fuente JetBrainsMono Nerd Font
    - Barra de pestañas estilo powerline
 
-2. **Integración con Niri Wayland**:
-   - Terminal predeterminado del sistema (`TERMINAL=kitty` en `environment.d`)
-   - Atajo global en Niri: `Mod+Return` (o `Super+Enter`)
+2. **Integración con Niri Wayland y Sistema**:
+   - Terminal predeterminado global (`TERMINAL=kitty` en `environment.d`, `/etc/environment`, MIME XDG y x-terminal-emulator)
+   - Vinculación automática del atajo global en Niri: `Mod+Return` (o `Super+Enter`)
+   - Tiling sin barras CSD redundantes (`hide_window_decorations yes`) y scrollback ampliado a 10.000 líneas
 
 3. **Atajos de teclado en Kitty**:
    - `Ctrl+Alt+Arriba/Abajo`: Ajustar nivel de opacidad
