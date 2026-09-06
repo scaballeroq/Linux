@@ -175,3 +175,16 @@ podman-status:
 # Steam + Proton Cachyos
 steam:
     ./Juegos/steam.sh
+
+# =============================================================================
+# COPIAS DE SEGURIDAD
+# =============================================================================
+
+# Copia de seguridad de configuraciones de Niri y Noctalia Shell
+backup:
+    ./Setup/backup-niri-noctalia.sh
+
+# Listar copias de seguridad disponibles
+backup-list:
+    ./Setup/backup-niri-noctalia.sh --list
+

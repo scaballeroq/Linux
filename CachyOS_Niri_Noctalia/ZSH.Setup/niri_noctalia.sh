@@ -129,7 +129,22 @@ if command -v wl-screenrec &>/dev/null && command -v slurp &>/dev/null; then
     }
 fi
 
+# -----------------------------------------------------------------------------
+# 5. COPIAS DE SEGURIDAD (NIRI + NOCTALIA SHELL)
+# -----------------------------------------------------------------------------
+
+# Crear copia de seguridad inmediata de Niri + Noctalia
+alias niri-backup="niri-backup"
+alias noctalia-backup="niri-backup"
+
+# Listar copias de seguridad disponibles
+alias niri-backup-list="niri-backup --list"
+
+# Restaurar última copia o copia específica
+alias niri-backup-restore="niri-backup --restore"
+
 # =============================================================================
 # MENSAJE DE CARGA
 # =============================================================================
 echo "✅ Configuración y utilidades de Niri + Noctalia Shell cargadas"
+
