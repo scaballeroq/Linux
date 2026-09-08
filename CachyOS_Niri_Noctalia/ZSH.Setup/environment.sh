@@ -105,6 +105,9 @@ if [ -S "$XDG_RUNTIME_DIR/podman/podman.sock" ]; then
     export DOCKER_HOST="unix://$XDG_RUNTIME_DIR/podman/podman.sock"
 fi
 
+# Virtualización (KVM/QEMU / Libvirt): conectar a nivel de sistema por defecto
+export LIBVIRT_DEFAULT_URI="qemu:///system"
+
 # -----------------------------------------------------------------------------
 # 5. VARIOS
 # -----------------------------------------------------------------------------

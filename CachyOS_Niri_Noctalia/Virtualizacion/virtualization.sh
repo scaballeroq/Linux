@@ -23,13 +23,16 @@ OPCIONES:
   --with-windows        Descarga también la ISO de controladores VirtIO para Windows (virtio-win.iso).
   -h, --help            Muestra esta ayuda y recomendaciones para VMs Linux.
 
-CARACTERÍSTICAS PARA LINUX GUESTS:
+CARACTERÍSTICAS Y OPTIMIZACIONES:
   - Soporte 3D VirGL (virglrenderer + virtio-gpu-gl) para escritorios Wayland/X11 fluidos.
   - Compartición ultrarrápida de carpetas mediante VirtioFS (virtiofsd en Rust).
   - Aceleración por hardware AMD AVIC / Intel EPT y virtualización anidada (Nested KVM).
   - Aceleración de red del kernel (vhost_net, vhost_vsock) y sockets modulares Libvirt 12+.
   - Deduplicación de memoria RAM entre VMs con KSM del kernel y perfil Tuned 'virtual-host'.
   - Protección de interfaces Wi-Fi para evitar pérdida de conexión.
+  - Reglas de Polkit para gestionar máquinas virtuales sin solicitudes de contraseña (grupo libvirt).
+  - Integración nativa con Niri Compositor (reglas para virt-manager y visores sin recorte de esquinas).
+  - Entorno de terminal configurado para Zsh (Noctalia Shell), Wayland y Bash (LIBVIRT_DEFAULT_URI).
 EOF
 }
 
@@ -67,7 +70,7 @@ check_status() {
     echo "${loaded[*]:-Ninguno cargado}"
 
     echo "• Estado de sockets modulares de Libvirt:"
-    local sockets=("virtqemud.socket" "virtnetworkd.socket" "virtstoraged.socket" "virtnodedevd.socket" "virtproxyd.socket")
+    local sockets=("virtqemud.socket" "virtnetworkd.socket" "virtstoraged.socket" "virtnodedevd.socket" "virtsecretd.socket" "virtnwfilterd.socket" "virtproxyd.socket")
     for s in "${sockets[@]}"; do
         local state
         state=$(systemctl is-active "$s" 2>/dev/null || true)
@@ -108,7 +111,7 @@ check_status() {
     fi
 
     echo -n "• Herramientas de optimización Linux Guest: "
-    local tools=("virglrenderer" "virtiofsd" "osinfo-db" "tuned" "swtpm")
+    local tools=("virglrenderer" "virtiofsd" "osinfo-db" "tuned" "swtpm" "spice-gtk")
     local found_tools=()
     for t in "${tools[@]}"; do
         if pacman -Q "$t" >/dev/null 2>&1; then
@@ -176,6 +179,7 @@ sudo pacman -S --needed --noconfirm \
     virglrenderer \
     virtiofsd \
     spice-vdagent \
+    spice-gtk \
     qemu-guest-agent
 
 # Herramientas opcionales de inspección de discos VM
@@ -312,6 +316,8 @@ sudo systemctl enable --now \
     virtnetworkd.socket \
     virtstoraged.socket \
     virtnodedevd.socket \
+    virtsecretd.socket \
+    virtnwfilterd.socket \
     virtproxyd.socket 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
@@ -402,9 +408,48 @@ sudo setfacl -R -m u:"$TARGET_USER":rwX /var/lib/libvirt/images 2>/dev/null || t
 sudo setfacl -d -m u:"$TARGET_USER":rwX /var/lib/libvirt/images 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
-# 12. Variable de Entorno LIBVIRT_DEFAULT_URI
+# 12. Regla de Polkit para Gestión sin Contraseña (Grupo libvirt)
 # ---------------------------------------------------------------------------
-echo "ℹ️ Configurando LIBVIRT_DEFAULT_URI en el entorno del usuario..."
+echo "ℹ️ Configurando regla de Polkit para grupo libvirt (acceso sin contraseñas)..."
+sudo mkdir -p /etc/polkit-1/rules.d
+cat <<'EOF' | sudo tee /etc/polkit-1/rules.d/50-libvirt.rules > /dev/null
+/* Permitir a usuarios en grupo libvirt gestionar hipervisores sin solicitar clave */
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.libvirt.unix.manage" || action.id.indexOf("org.libvirt") == 0) &&
+        subject.isInGroup("libvirt")) {
+        return polkit.Result.YES;
+    }
+});
+EOF
+
+# ---------------------------------------------------------------------------
+# 13. Variable de Entorno LIBVIRT_DEFAULT_URI (Wayland, Zsh y Bash)
+# ---------------------------------------------------------------------------
+echo "ℹ️ Configurando LIBVIRT_DEFAULT_URI para el entorno global, Zsh y Bash..."
+
+# 1. Sesión global del sistema / Wayland / Noctalia (systemd environment generator)
+sudo mkdir -p /etc/environment.d
+cat <<EOF | sudo tee /etc/environment.d/10-libvirt.conf > /dev/null
+# Configuración KVM/QEMU conectando al modo de sistema por defecto
+LIBVIRT_DEFAULT_URI="qemu:///system"
+EOF
+
+# 2. Configuración para Zsh (shell predeterminada en CachyOS + Noctalia)
+if [ -d "$HOME/.zshrc.d" ]; then
+    cat <<EOF > "$HOME/.zshrc.d/virtualization.zsh"
+# Configuración KVM/QEMU conectando al modo de sistema por defecto
+export LIBVIRT_DEFAULT_URI="qemu:///system"
+EOF
+    echo "✅ Configuración de Virtualización creada en ~/.zshrc.d/virtualization.zsh"
+elif [ -f "$HOME/.zshrc" ]; then
+    if ! grep -q "LIBVIRT_DEFAULT_URI" "$HOME/.zshrc" 2>/dev/null; then
+        echo '' >> "$HOME/.zshrc"
+        echo '# Configuración KVM/QEMU conectando al modo de sistema por defecto' >> "$HOME/.zshrc"
+        echo "export LIBVIRT_DEFAULT_URI='qemu:///system'" >> "$HOME/.zshrc"
+    fi
+fi
+
+# 3. Configuración para Bash (compatibilidad)
 if [ -d "/etc/bashrc.d" ] || [ -d "$HOME/.bashrc.d" ]; then
     mkdir -p "$HOME/.bashrc.d"
     cat <<EOF > "$HOME/.bashrc.d/virtualization.sh"
@@ -417,6 +462,46 @@ else
         echo '' >> "$HOME/.bashrc"
         echo '# Configuración KVM/QEMU conectando al modo de sistema por defecto' >> "$HOME/.bashrc"
         echo "export LIBVIRT_DEFAULT_URI='qemu:///system'" >> "$HOME/.bashrc"
+    fi
+fi
+
+# ---------------------------------------------------------------------------
+# 14. Reglas de Ventana para Niri Compositor (virt-manager y remote-viewer)
+# ---------------------------------------------------------------------------
+NIRI_RULES="$HOME/.config/niri/cfg/rules.kdl"
+if [ -f "$NIRI_RULES" ]; then
+    echo "ℹ️ Niri Compositor detectado: asegurando reglas de ventana para virt-manager y visores..."
+    if ! grep -q "virt-manager" "$NIRI_RULES" 2>/dev/null; then
+        cat <<'EOF' >> "$NIRI_RULES"
+
+// Reglas para Gestor de Máquinas Virtuales (virt-manager)
+window-rule {
+    match app-id="virt-manager" title=r"^Virtual Machine Manager|Gestor de máquinas virtuales$"
+    default-column-width { proportion 0.5; }
+}
+
+window-rule {
+    match app-id="virt-manager"
+    exclude title=r"^Virtual Machine Manager|Gestor de máquinas virtuales$"
+    open-floating true
+}
+
+// Visor de VM (remote-viewer / virt-viewer): flotante, tamaño inicial y sin esquinas cortadas
+window-rule {
+    match app-id="remote-viewer"
+    open-floating true
+    default-column-width { fixed 1280; }
+    default-window-height { fixed 800; }
+    geometry-corner-radius 0
+    clip-to-geometry false
+}
+EOF
+        echo "✅ Reglas de ventana añadidas a ~/.config/niri/cfg/rules.kdl"
+        if command -v niri &>/dev/null; then
+            niri msg action reload-config 2>/dev/null || true
+        fi
+    else
+        echo "✅ Las reglas para virt-manager ya están presentes en Niri."
     fi
 fi
 

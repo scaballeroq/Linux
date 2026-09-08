@@ -54,6 +54,8 @@ Los servicios se activan bajo demanda (*Systemd Socket Activation*) a través de
 - `virtnetworkd.socket`: Gestión de redes virtuales (NAT `default`, bridges).
 - `virtstoraged.socket`: Gestión de pools de almacenamiento (`/var/lib/libvirt/images`).
 - `virtnodedevd.socket`: Asignación de dispositivos PCI/USB.
+- `virtsecretd.socket`: Gestión de secretos, cifrado de volúmenes LUKS y claves TPM.
+- `virtnwfilterd.socket`: Gestión de filtros de cortafuegos de red virtual.
 - `virtproxyd.socket`: Provee compatibilidad hacia atrás escuchando en `/run/libvirt/libvirt-sock` para que `virt-manager`, `virsh` y Cockpit funcionen de forma transparente.
 
 ---
@@ -154,7 +156,45 @@ sudo systemctl enable --now qemu-guest-agent
 
 ---
 
-## 7. Diagnóstico y Verificación
+## 7. Integración con Niri Compositor y Noctalia Shell
+
+### A. Reglas de Ventana en Niri (`~/.config/niri/cfg/rules.kdl`)
+Para evitar que las esquinas redondeadas globales de Niri recorten elementos de la pantalla invitada y asegurar que los cuadros de diálogo no rompan el carrusel horizontal:
+
+```kdl
+// Gestor de Máquinas Virtuales (virt-manager)
+window-rule {
+    match app-id="virt-manager" title=r"^Virtual Machine Manager|Gestor de máquinas virtuales$"
+    default-column-width { proportion 0.5; }
+}
+
+// Diálogos y subventanas de virt-manager en modo flotante
+window-rule {
+    match app-id="virt-manager"
+    exclude title=r"^Virtual Machine Manager|Gestor de máquinas virtuales$"
+    open-floating true
+}
+
+// Visor de VM (remote-viewer / virt-viewer): flotante y sin esquinas cortadas
+window-rule {
+    match app-id="remote-viewer"
+    open-floating true
+    default-column-width { fixed 1280; }
+    default-window-height { fixed 800; }
+    geometry-corner-radius 0
+    clip-to-geometry false
+}
+```
+
+### B. Gestión sin Contraseñas con Polkit (`/etc/polkit-1/rules.d/50-libvirt.rules`)
+Permite a cualquier usuario del grupo `libvirt` crear y administrar máquinas virtuales sin requerir autenticación administrativa continua en Wayland.
+
+### C. Variables de Entorno en Zsh y Wayland
+`export LIBVIRT_DEFAULT_URI="qemu:///system"` configurado en `ZSH.Setup/environment.sh` y `/etc/environment.d/10-libvirt.conf` asegura que comandos y aliases como `vms` (`virsh list --all`) conecten de forma transparente al hipervisor del sistema.
+
+---
+
+## 8. Diagnóstico y Verificación
 
 ```bash
 # Diagnóstico integral del script
