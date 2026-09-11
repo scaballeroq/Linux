@@ -292,19 +292,34 @@ cmd_install_global() {
     local service="${1:-}"
     [ -z "$service" ] && { log_error "Uso: podman-utils install-global <servicio>"; exit 1; }
 
+    # Soportar nombres directos o con sufijo -global (postgres -> postgres-global)
     local container_file="$SERVICES_SHARED/${service}.container"
+    if [ ! -f "$container_file" ] && [ -f "$SERVICES_SHARED/${service}-global.container" ]; then
+        container_file="$SERVICES_SHARED/${service}-global.container"
+    fi
 
     if [ ! -f "$container_file" ]; then
         log_error "El servicio '$service' no existe en $SERVICES_SHARED."
         echo "Servicios compartidos disponibles:"
-        ls -1 "$SERVICES_SHARED" 2>/dev/null | sed 's/\.container$//' | sed 's/^/  • /'
+        ls -1 "$SERVICES_SHARED"/*.container 2>/dev/null | while read -r f; do
+            basename "$f" .container
+        done | sed 's/^/  • /'
         exit 1
     fi
 
     mkdir -p "$SYSTEMD_GLOBAL"
 
+    # Asegurar que dev-shared.network esté instalado
+    if [ -f "$SERVICES_SHARED/dev-shared.network" ] && [ ! -f "$SYSTEMD_GLOBAL/dev-shared.network" ]; then
+        cp "$SERVICES_SHARED/dev-shared.network" "$SYSTEMD_GLOBAL/dev-shared.network"
+        log_ok "Red global 'dev-shared.network' enlazada a systemd user."
+    fi
+
+    local basename
+    basename="$(basename "$container_file")"
+    local base_service="${basename%.container}"
     local socket_path="/run/user/$(id -u)/podman/podman.sock"
-    local target="$SYSTEMD_GLOBAL/${service}.container"
+    local target="$SYSTEMD_GLOBAL/$basename"
 
     if grep -q "__PODMAN_SOCKET__" "$container_file" 2>/dev/null; then
         sed "s|__PODMAN_SOCKET__|$socket_path|g" "$container_file" > "$target"
@@ -313,18 +328,24 @@ cmd_install_global() {
     fi
 
     systemctl --user daemon-reload
-    log_ok "Servicio global '$service' instalado en ~/.config/containers/systemd/global/."
-    echo "  Para iniciar: systemctl --user start ${service}.service"
+    log_ok "Servicio global '$base_service' instalado en ~/.config/containers/systemd/global/."
+    echo "  Para iniciar: systemctl --user start ${base_service}.service"
+    echo "  Para estado:  systemctl --user status ${base_service}.service"
 }
 
 cmd_uninstall_global() {
     local service="${1:-}"
     [ -z "$service" ] && { log_error "Uso: podman-utils uninstall-global <servicio>"; exit 1; }
 
-    systemctl --user stop "${service}.service" 2>/dev/null || true
-    rm -f "$SYSTEMD_GLOBAL/${service}".* 2>/dev/null || true
+    local target_name="$service"
+    if [ ! -f "$SYSTEMD_GLOBAL/${service}.container" ] && [ -f "$SYSTEMD_GLOBAL/${service}-global.container" ]; then
+        target_name="${service}-global"
+    fi
+
+    systemctl --user stop "${target_name}.service" 2>/dev/null || true
+    rm -f "$SYSTEMD_GLOBAL/${target_name}".* 2>/dev/null || true
     systemctl --user daemon-reload
-    log_ok "Servicio global '$service' desinstalado."
+    log_ok "Servicio global '$target_name' desinstalado."
 }
 
 # =============================================================================
@@ -398,14 +419,32 @@ cmd_doctor() {
         log_error "Podman no está instalado."
     fi
 
-    # 2. Systemd Socket
+    # 2. Runtime OCI (crun)
+    local oci_name
+    oci_name=$(podman info --format '{{.Host.OCIRuntime.Name}}' 2>/dev/null || echo "desconocido")
+    if [ "$oci_name" = "crun" ]; then
+        log_ok "Runtime OCI: crun (optimizado para AMD Ryzen)"
+    else
+        log_info "Runtime OCI: $oci_name"
+    fi
+
+    # 3. Backend de Red (netavark)
+    local net_backend
+    net_backend=$(podman info --format '{{.Host.NetworkBackend}}' 2>/dev/null || echo "desconocido")
+    if [ "$net_backend" = "netavark" ]; then
+        log_ok "Backend de Red: netavark + aardvark-dns"
+    else
+        log_info "Backend de Red: $net_backend"
+    fi
+
+    # 4. Systemd Socket
     if systemctl --user is-active podman.socket &>/dev/null; then
         log_ok "Socket de Podman: Activo (/run/user/$(id -u)/podman/podman.sock)"
     else
         log_info "Socket de Podman: Inactivo (Ejecuta: systemctl --user enable --now podman.socket)"
     fi
 
-    # 3. Linger
+    # 5. Linger
     local linger_val
     linger_val=$(loginctl show-user "$USER" 2>/dev/null | grep -i "Linger=" | cut -d= -f2 || echo "no")
     if [ "$linger_val" = "yes" ]; then
@@ -414,7 +453,7 @@ cmd_doctor() {
         log_info "Persistencia Linger: Deshabilitada (Ejecuta: loginctl enable-linger $USER)"
     fi
 
-    # 4. DOCKER_HOST
+    # 6. DOCKER_HOST
     if [ -n "${DOCKER_HOST:-}" ]; then
         log_ok "DOCKER_HOST: $DOCKER_HOST"
     else
@@ -425,7 +464,21 @@ cmd_doctor() {
         log_info "DOCKER_HOST: No exportado en el shell actual (Carga con: $reload_hint)"
     fi
 
-    # 5. Generador Quadlet
+    # 7. Puertos no privilegiados
+    local port_start
+    port_start=$(sysctl -n net.ipv4.ip_unprivileged_port_start 2>/dev/null || echo "1024")
+    if [ "$port_start" -le 80 ]; then
+        log_ok "Puertos Rootless: Permite enlace directo a puertos >= $port_start"
+    else
+        log_info "Puertos Rootless: Requiere root para puertos < $port_start (Recomendado: 80)"
+    fi
+
+    # 8. Firewall
+    if command -v firewall-cmd &>/dev/null && systemctl is-active firewalld &>/dev/null; then
+        log_ok "Firewall: Firewalld activo y gestionando tráfico"
+    fi
+
+    # 9. Generador Quadlet
     if [ -f /usr/lib/systemd/user-generators/podman-user-generator ]; then
         log_ok "Generador Quadlet: Integrado en Systemd"
     else

@@ -11,7 +11,7 @@ Environment=POSTGRES_PASSWORD=postgres
 Environment=POSTGRES_DB=postgres
 Volume=postgres-global-data:/var/lib/postgresql/data
 PublishPort=5432:5432
-Network=host
+Network=dev-shared.network
 
 [Service]
 Restart=on-failure

@@ -3,12 +3,12 @@
 
 set -e
 
-if ! podman network exists devfed-net; then podman network create devfed-net; fi
+if ! podman network exists dev-net; then podman network create dev-net; fi
 
 echo "ℹ️ Iniciando WordPress..."
 podman run -d --replace \
     --name wordpress-dev \
-    --network devfed-net \
+    --network dev-net \
     -e WORDPRESS_DB_HOST=mysql-dev:3306 \
     -e WORDPRESS_DB_USER=root \
     -e WORDPRESS_DB_PASSWORD=root \

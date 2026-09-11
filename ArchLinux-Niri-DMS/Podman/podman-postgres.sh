@@ -3,12 +3,12 @@
 
 set -e
 
-if ! podman network exists devfed-net; then podman network create devfed-net; fi
+if ! podman network exists dev-net; then podman network create dev-net; fi
 
 echo "ℹ️ Iniciando PostgreSQL (latest)..."
 podman run -d --replace \
     --name postgres-dev \
-    --network devfed-net \
+    --network dev-net \
     -e POSTGRES_PASSWORD=postgres \
     -p 5432:5432 \
     docker.io/library/postgres:latest

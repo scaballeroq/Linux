@@ -3,12 +3,12 @@
 
 set -e
 
-if ! podman network exists devfed-net; then podman network create devfed-net; fi
+if ! podman network exists dev-net; then podman network create dev-net; fi
 
 echo "ℹ️ Iniciando Keycloak..."
 podman run -d --replace \
     --name keycloak-dev \
-    --network devfed-net \
+    --network dev-net \
     -e KEYCLOAK_ADMIN=admin \
     -e KEYCLOAK_ADMIN_PASSWORD=admin \
     -p 8083:8080 \

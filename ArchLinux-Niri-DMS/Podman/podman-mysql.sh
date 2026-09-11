@@ -3,12 +3,12 @@
 
 set -e
 
-if ! podman network exists devfed-net; then podman network create devfed-net; fi
+if ! podman network exists dev-net; then podman network create dev-net; fi
 
 echo "ℹ️ Iniciando MySQL (latest)..."
 podman run -d --replace \
     --name mysql-dev \
-    --network devfed-net \
+    --network dev-net \
     -e MYSQL_ROOT_PASSWORD=root \
     -p 3306:3306 \
     docker.io/library/mysql:latest

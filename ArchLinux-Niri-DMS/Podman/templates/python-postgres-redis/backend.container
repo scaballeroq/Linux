@@ -10,8 +10,8 @@ EnvironmentFile=__PROJECT_DIR__/.env
 WorkingDir=/app
 Volume=__PROJECT_DIR__/src:/app/src:ro
 Volume=__PROJECT_DIR__/requirements.txt:/app/requirements.txt:ro
-Command=sh -c "pip install -r requirements.txt && uvicorn src.main:app --host 0.0.0.0 --port ${APP_PORT:-8000}"
-PublishPort=${APP_PORT:-8000}:${APP_PORT:-8000}
+Exec=sh -c "pip install -r requirements.txt && uvicorn src.main:app --host 0.0.0.0 --port 8000"
+PublishPort=8000:8000
 Network=__PROJECT__.network
 
 [Service]
