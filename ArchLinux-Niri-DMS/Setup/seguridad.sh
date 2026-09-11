@@ -55,8 +55,8 @@ check_status() {
     echo "================================================================="
 
     echo -n "• Estado de Firewalld:          "
-    if command -v firewall-cmd &>/dev/null && firewall-cmd --state &>/dev/null; then
-        echo "✅ Activo ($(firewall-cmd --version 2>/dev/null || echo 'en ejecución'))"
+    if command -v firewall-cmd &>/dev/null && $SUDO firewall-cmd --state &>/dev/null; then
+        echo "✅ Activo ($($SUDO firewall-cmd --version 2>/dev/null || echo 'en ejecución'))"
     else
         echo "❌ Inactivo o no instalado"
     fi
@@ -68,15 +68,15 @@ check_status() {
         echo "✅ No instalado (limpio)"
     fi
 
-    if command -v firewall-cmd &>/dev/null && firewall-cmd --state &>/dev/null; then
-        echo "• Zona por defecto:             $(firewall-cmd --get-default-zone 2>/dev/null || echo 'desconocida')"
+    if command -v firewall-cmd &>/dev/null && $SUDO firewall-cmd --state &>/dev/null; then
+        echo "• Zona por defecto:             $($SUDO firewall-cmd --get-default-zone 2>/dev/null || echo 'desconocida')"
         echo "• Zonas activas con interfaces:"
-        firewall-cmd --get-active-zones 2>/dev/null | sed 's/^/    /' || echo "    (Ninguna)"
-        echo "• Servicios en zona 'home':     $(firewall-cmd --zone=home --list-services 2>/dev/null || echo 'n/a')"
-        echo "• Puertos dev en zona 'home':   $(firewall-cmd --zone=home --list-ports 2>/dev/null || echo 'n/a')"
-        echo "• Masquerade (NAT saliente):    $(firewall-cmd --zone=home --query-masquerade >/dev/null 2>&1 && echo '✅ Activo en home' || echo '❌ Inactivo')"
-        echo "• Interfaz virbr0 en libvirt:   $(firewall-cmd --zone=libvirt --list-interfaces 2>/dev/null | grep -q 'virbr0' && echo '✅ Asignada' || echo 'ℹ️ Pendiente de inicio de red KVM')"
-        echo "• Interfaces Podman en trusted: $(firewall-cmd --zone=trusted --list-interfaces 2>/dev/null || echo 'n/a')"
+        $SUDO firewall-cmd --get-active-zones 2>/dev/null | sed 's/^/    /' || echo "    (Ninguna)"
+        echo "• Servicios en zona 'home':     $($SUDO firewall-cmd --zone=home --list-services 2>/dev/null || echo 'n/a')"
+        echo "• Puertos dev en zona 'home':   $($SUDO firewall-cmd --zone=home --list-ports 2>/dev/null || echo 'n/a')"
+        echo "• Masquerade (NAT saliente):    $($SUDO firewall-cmd --zone=home --query-masquerade >/dev/null 2>&1 && echo '✅ Activo en home' || echo '❌ Inactivo')"
+        echo "• Interfaz virbr0 en libvirt:   $($SUDO firewall-cmd --zone=libvirt --list-interfaces 2>/dev/null | grep -q 'virbr0' && echo '✅ Asignada' || echo 'ℹ️ Pendiente de inicio de red KVM')"
+        echo "• Interfaces Podman en trusted: $($SUDO firewall-cmd --zone=trusted --list-interfaces 2>/dev/null || echo 'n/a')"
     fi
 
     echo ""
@@ -121,6 +121,16 @@ apply_security() {
     # Establecer 'home' como zona predeterminada (ideal para portátiles en LAN doméstica)
     $SUDO firewall-cmd --set-default-zone=home
 
+    # Sincronizar conexiones activas de NetworkManager a la zona 'home' si están en blanco o en 'public'
+    if command -v nmcli &>/dev/null; then
+        for conn in $(nmcli -t -f UUID connection show --active 2>/dev/null); do
+            ZONE=$(nmcli -g connection.zone connection show "$conn" 2>/dev/null || true)
+            if [ -z "$ZONE" ] || [ "$ZONE" = "public" ]; then
+                $SUDO nmcli connection modify "$conn" connection.zone home 2>/dev/null || true
+            fi
+        done
+    fi
+
     # Servicios esenciales en la zona 'home'
     $SUDO firewall-cmd --permanent --zone=home --add-service=ssh 2>/dev/null || true
     $SUDO firewall-cmd --permanent --zone=home --add-service=mdns 2>/dev/null || true
@@ -132,9 +142,11 @@ apply_security() {
 
     # Puertos para servidores de desarrollo y pruebas locales (móvil, tablet, otros equipos en LAN)
     $SUDO firewall-cmd --permanent --zone=home --add-port=3000-3010/tcp 2>/dev/null || true
+    $SUDO firewall-cmd --permanent --zone=home --add-port=4200/tcp 2>/dev/null || true
     $SUDO firewall-cmd --permanent --zone=home --add-port=5173-5175/tcp 2>/dev/null || true
     $SUDO firewall-cmd --permanent --zone=home --add-port=8000-8080/tcp 2>/dev/null || true
     $SUDO firewall-cmd --permanent --zone=home --add-port=8501/tcp 2>/dev/null || true
+    $SUDO firewall-cmd --permanent --zone=home --add-port=9000-9005/tcp 2>/dev/null || true
     $SUDO firewall-cmd --permanent --zone=home --add-port=53317/tcp 2>/dev/null || true
     $SUDO firewall-cmd --permanent --zone=home --add-port=53317/udp 2>/dev/null || true
 
