@@ -18,3 +18,12 @@
      - TV Sony 32" (1920x1080)
      - Pantalla de portátil 15.6" (1920x1080)
    - Ten en cuenta esta configuración al sugerir reglas de ventanas, scripts de captura de pantalla o layouts en `config.kdl`.
+
+4. **Cortafuegos y Seguridad de Red (Firewalld Obligatorio)**:
+   - El sistema utiliza exclusivamente **Firewalld** (`firewall-cmd`).
+   - Zona predeterminada del equipo: `home` (red local confiable).
+   - Zona para Podman Rootless: `trusted` (interfaces `podman0`).
+   - Zona para QEMU/KVM: `libvirt` (interfaz `virbr0`).
+   - **Prohibición**: NUNCA sugieras ni utilices comandos de `ufw` ni reglas crudas de `iptables`.
+   - Ante cualquier propuesta de despliegue de servidor de desarrollo (ej. Vite, FastAPI, Django, Docker/Podman, bases de datos), comprueba o añade la regla en Firewalld:
+     `sudo firewall-cmd --zone=home --add-port=<puerto>/tcp --permanent && sudo firewall-cmd --reload`
