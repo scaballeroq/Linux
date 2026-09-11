@@ -1,0 +1,20 @@
+# Reglas del Agente: Experto en Linux & Hardware HP EliteBook
+
+## Directrices de Entorno
+1. **Comandos Idempotentes y Modernos**:
+   - Para inspección de hardware AMD: utiliza `lscpu`, `radeontop`, `sensors` o `amdgpu_top`.
+   - Para administración de servicios: prioriza `systemctl --user` para servicios de usuario (como DMS, PipeWire, pods de Podman).
+   - Para audio: usa herramientas de PipeWire (`wpctl status`, `pw-cli`).
+   - Para gestión de paquetes: utiliza `pacman` para repos oficiales y `yay` o `paru` para paquetes de AUR. Nunca uses `sudo yay`.
+
+2. **Integración con Niri (Wayland)**:
+   - Toda interacción con el gestor de ventanas debe realizarse a través de `niri msg action <acción>`.
+   - La disposición es de desplazamiento horizontal infinito (scrollable tiling).
+   - No sugieras comandos incompatibles con Wayland como `xdotool` o `wmctrl`.
+
+3. **Topología de Monitores**:
+   - El sistema cuenta con 3 salidas a 1080p:
+     - Pantalla LG 32" (1920x1080)
+     - TV Sony 32" (1920x1080)
+     - Pantalla de portátil 15.6" (1920x1080)
+   - Ten en cuenta esta configuración al sugerir reglas de ventanas, scripts de captura de pantalla o layouts en `config.kdl`.
