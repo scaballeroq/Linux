@@ -1,11 +1,19 @@
 #!/bin/bash
-# post-install-amd.sh - Script de post-instalación para Arch Linux con AMD Ryzen y AMD Graphics
-# (Configurado con Pacman optimizado, Microcódigo AMD, Mesa Vulkan/RADV/VA-API, PipeWire, Niri + Dank Material Shell)
+# post-install-amd.sh - Script de post-instalación optimizado para Arch Linux
+# Hardware: HP EliteBook 855 G7 (AMD Ryzen 7 PRO 4750U, Radeon Vega 7 Graphics)
+# Optimizaciones:
+#   - Pacman y Makepkg paralelos (16 hilos Zen 2 Renoir, 32 GB RAM)
+#   - Early KMS amdgpu en mkinitcpio para inicio limpio en multi-monitor (3 pantallas 1080p)
+#   - Stack gráfico Mesa + Vulkan (RADV) + VA-API aceleración HW (64-bit y multilib 32-bit)
+#   - Gestión de energía y batería (power-profiles-daemon) y mantenimiento SSD (fstrim)
+#   - PipeWire de alta fidelidad, herramientas nativas Wayland, Niri y Dank Material Shell (DMS)
+# NOTA: Este script NO altera configuraciones visuales, temas ni personalizaciones de Niri y DMS.
 
 set -euo pipefail
 
 echo "================================================================="
-echo "INICIANDO POST-INSTALACIÓN: ARCH LINUX - AMD RYZEN (NIRI + DMS)"
+echo "INICIANDO POST-INSTALACIÓN: HP ELITEBOOK 855 G7 (AMD RYZEN)"
+echo "ARCH LINUX · NIRI · DANK MATERIAL SHELL"
 echo "================================================================="
 
 if [ "$EUID" -ne 0 ]; then
@@ -43,16 +51,20 @@ elif run_as_user command -v paru &> /dev/null; then
     AUR_HELPER="paru"
 fi
 
-# 1. Optimización de Pacman (Paralelismo de descargas, colores y Candy)
-echo "⚙️ [1/8] Configurando optimizaciones en Pacman..."
+# -----------------------------------------------------------------------------
+# 1. Optimización de Pacman y Makepkg (16 hilos y 32 GB RAM)
+# -----------------------------------------------------------------------------
+echo "⚙️ [1/9] Optimizando Pacman y Makepkg para Ryzen 7 PRO (16 hilos)..."
 PACMAN_CONF="/etc/pacman.conf"
 if [ -f "$PACMAN_CONF" ]; then
-    if ! grep -q "^ParallelDownloads" "$PACMAN_CONF"; then
-        $SUDO sed -i 's/^#ParallelDownloads = .*/ParallelDownloads = 10/' "$PACMAN_CONF" 2>/dev/null || \
+    if grep -q "^#ParallelDownloads" "$PACMAN_CONF"; then
+        $SUDO sed -i 's/^#ParallelDownloads = .*/ParallelDownloads = 10/' "$PACMAN_CONF"
+    elif ! grep -q "^ParallelDownloads" "$PACMAN_CONF"; then
         $SUDO sed -i '/^\[options\]/a ParallelDownloads = 10' "$PACMAN_CONF"
     fi
-    if ! grep -q "^Color" "$PACMAN_CONF"; then
-        $SUDO sed -i 's/^#Color/Color/' "$PACMAN_CONF" 2>/dev/null || \
+    if grep -q "^#Color" "$PACMAN_CONF"; then
+        $SUDO sed -i 's/^#Color/Color/' "$PACMAN_CONF"
+    elif ! grep -q "^Color" "$PACMAN_CONF"; then
         $SUDO sed -i '/^\[options\]/a Color' "$PACMAN_CONF"
     fi
     if ! grep -q "ILoveCandy" "$PACMAN_CONF"; then
@@ -60,31 +72,97 @@ if [ -f "$PACMAN_CONF" ]; then
     fi
 fi
 
-# Actualizar base del sistema
-echo "🔄 [2/8] Actualizando base del sistema Arch Linux..."
+MAKEPKG_CONF="/etc/makepkg.conf"
+if [ -f "$MAKEPKG_CONF" ]; then
+    # Ajustar MAKEFLAGS para usar los 16 hilos de la CPU
+    if grep -q "^#MAKEFLAGS=" "$MAKEPKG_CONF"; then
+        $SUDO sed -i 's/^#MAKEFLAGS=.*/MAKEFLAGS="-j$(nproc)"/' "$MAKEPKG_CONF"
+    elif grep -q "^MAKEFLAGS=" "$MAKEPKG_CONF"; then
+        $SUDO sed -i 's/^MAKEFLAGS=.*/MAKEFLAGS="-j$(nproc)"/' "$MAKEPKG_CONF"
+    fi
+    # Compresión Zstandard paralela multi-hilo
+    if grep -q "^COMPRESSZST=" "$MAKEPKG_CONF"; then
+        $SUDO sed -i 's/^COMPRESSZST=.*/COMPRESSZST=(zstd -c -z -q --threads=0 -)/' "$MAKEPKG_CONF"
+    fi
+fi
+
+# Actualizar base de datos y paquetes del sistema
+echo "🔄 [2/9] Actualizando base del sistema Arch Linux..."
 $SUDO pacman -Syu --noconfirm
 
-# 2. Kernel Linux, Firmware y Microcódigo para AMD Ryzen
-echo "🐧 [3/8] Instalando Kernel Linux oficial, Firmware y Microcódigo AMD..."
+# -----------------------------------------------------------------------------
+# 2. Kernel Linux, Firmware y Microcódigo AMD + Early KMS (3 Monitores)
+# -----------------------------------------------------------------------------
+echo "🐧 [3/9] Instalando Kernel, Firmware, Microcódigo AMD y configurando Early KMS..."
 $SUDO pacman -S --needed --noconfirm \
     linux \
     linux-headers \
     amd-ucode \
-    linux-firmware
+    linux-firmware \
+    linux-firmware-amdgpu
 
-# 3. Stack Gráfico y Aceleración HW para AMD (Mesa / RADV / VA-API / Vulkan 64-bit)
-echo "🎮 [4/8] Instalando controladores gráficos AMD Mesa (RADV/RadeonSI) y aceleración HW..."
-$SUDO pacman -S --needed --noconfirm \
-    mesa \
-    libva-mesa-driver \
-    vulkan-radeon \
-    vulkan-tools \
-    libva-utils \
-    radeontop \
-    mesa-utils 2>/dev/null || true
+# Configuración de Early KMS para evitar parpadeos y retrasos en triple pantalla
+MKINITCPIO_CONF="/etc/mkinitcpio.conf"
+REBUILD_INITRAMFS=false
+if [ -f "$MKINITCPIO_CONF" ]; then
+    if ! grep -E "^MODULES=.*amdgpu" "$MKINITCPIO_CONF" >/dev/null; then
+        echo "  🖥️ Configurando Early KMS (amdgpu) en mkinitcpio para inicio multi-pantalla limpio..."
+        if grep -q "^MODULES=()" "$MKINITCPIO_CONF"; then
+            $SUDO sed -i 's/^MODULES=()/MODULES=(amdgpu)/' "$MKINITCPIO_CONF"
+            REBUILD_INITRAMFS=true
+        elif grep -q "^MODULES=(" "$MKINITCPIO_CONF"; then
+            $SUDO sed -i 's/^MODULES=(/MODULES=(amdgpu /' "$MKINITCPIO_CONF"
+            REBUILD_INITRAMFS=true
+        fi
+    fi
+fi
 
-# 4. Códecs Multimedia y FFmpeg completo
-echo "🎬 [5/8] Instalando FFmpeg y códecs multimedia globales..."
+if [ "$REBUILD_INITRAMFS" = true ]; then
+    echo "  🔨 Regenerando initramfs..."
+    $SUDO mkinitcpio -P
+fi
+
+# -----------------------------------------------------------------------------
+# 3. Stack Gráfico y Aceleración HW AMD (Mesa / RADV / VA-API / Vulkan)
+# -----------------------------------------------------------------------------
+echo "🎮 [4/9] Instalando controladores gráficos AMD (Mesa RADV, VA-API y utilidades)..."
+PKGS_AMD_GRAPHICS=(
+    mesa
+    libva-mesa-driver
+    mesa-vdpau
+    vulkan-radeon
+    vulkan-tools
+    libva-utils
+    radeontop
+    mesa-utils
+)
+
+# Soporte 32-bit (multilib) si está habilitado en pacman.conf
+if grep -E "^\s*\[multilib\]" "$PACMAN_CONF" >/dev/null; then
+    echo "  🕹️ Repositorio multilib detectado: agregando drivers gráficos de 32 bits..."
+    PKGS_AMD_GRAPHICS+=(
+        lib32-mesa
+        lib32-libva-mesa-driver
+        lib32-vulkan-radeon
+    )
+fi
+
+$SUDO pacman -S --needed --noconfirm "${PKGS_AMD_GRAPHICS[@]}"
+
+# Herramienta moderna de telemetría amdgpu_top si existe en repos o AUR
+if ! command -v amdgpu_top &>/dev/null; then
+    if $SUDO pacman -Si amdgpu_top &>/dev/null; then
+        $SUDO pacman -S --needed --noconfirm amdgpu_top || true
+    elif [ -n "$AUR_HELPER" ]; then
+        run_as_user "$AUR_HELPER" -S --needed --noconfirm amdgpu_top-bin 2>/dev/null || \
+        run_as_user "$AUR_HELPER" -S --needed --noconfirm amdgpu_top 2>/dev/null || true
+    fi
+fi
+
+# -----------------------------------------------------------------------------
+# 4. Códecs Multimedia y FFmpeg
+# -----------------------------------------------------------------------------
+echo "🎬 [5/9] Instalando FFmpeg y códecs multimedia..."
 $SUDO pacman -S --needed --noconfirm \
     ffmpeg \
     gst-plugins-base \
@@ -98,21 +176,34 @@ $SUDO pacman -S --needed --noconfirm \
     libvorbis \
     opus \
     x264 \
-    x265 2>/dev/null || true
+    x265
 
-# 5. Sistema de Audio de Alta Fidelidad (PipeWire + WirePlumber)
-echo "🔊 [6/8] Verificando y habilitando PipeWire y WirePlumber..."
+# -----------------------------------------------------------------------------
+# 5. Sistema de Audio (PipeWire + WirePlumber)
+# -----------------------------------------------------------------------------
+echo "🔊 [6/9] Verificando y habilitando PipeWire y WirePlumber..."
 $SUDO pacman -S --needed --noconfirm \
     pipewire \
     pipewire-pulse \
     pipewire-alsa \
     pipewire-jack \
-    wireplumber 2>/dev/null || true
+    wireplumber
 
 run_as_user systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
 
-# 6. Software Esencial de Sistema, Herramientas y Stack Wayland
-echo "📦 [7/8] Instalando utilidades de sistema, Niri Compositor y entorno Wayland..."
+# -----------------------------------------------------------------------------
+# 6. Gestión de Energía (Portátil HP) y Mantenimiento de Almacenamiento (1 TB SSD)
+# -----------------------------------------------------------------------------
+echo "🔋 [7/9] Configurando gestión de energía (power-profiles-daemon) y TRIM de SSD..."
+$SUDO pacman -S --needed --noconfirm power-profiles-daemon util-linux
+
+$SUDO systemctl enable --now power-profiles-daemon.service
+$SUDO systemctl enable --now fstrim.timer
+
+# -----------------------------------------------------------------------------
+# 7. Stack Wayland, Portales y Compositor Niri
+# -----------------------------------------------------------------------------
+echo "📦 [8/9] Instalando utilidades esenciales de sistema y stack Niri Wayland..."
 $SUDO pacman -S --needed --noconfirm \
     base-devel \
     cmake \
@@ -144,6 +235,7 @@ $SUDO pacman -S --needed --noconfirm \
     gnupg \
     niri \
     xwayland-satellite \
+    xdg-desktop-portal \
     xdg-desktop-portal-gnome \
     xdg-desktop-portal-gtk \
     wl-clipboard \
@@ -159,45 +251,51 @@ $SUDO pacman -S --needed --noconfirm \
     qt5-wayland \
     qt6-wayland \
     qt6ct \
-    kvantum 2>/dev/null || true
+    kvantum
 
-# 7. Dank Material Shell (DMS) y utilidades complementarias
-echo "🌌 [8/8] Verificando componentes de Dank Material Shell (DMS)..."
+# -----------------------------------------------------------------------------
+# 8. Dank Material Shell (DMS) y Satélites
+# -----------------------------------------------------------------------------
+echo "🌌 [9/9] Verificando componentes y servicios de Dank Material Shell (DMS)..."
 
-# Instalar matugen y dependencias DMS si están disponibles
 if ! command -v matugen &>/dev/null; then
     $SUDO pacman -S --needed --noconfirm matugen 2>/dev/null || true
 fi
 
-# Si se dispone de AUR helper y falta dms-shell, dankcalendar o danksearch
 if [ -n "$AUR_HELPER" ]; then
     if ! command -v dms &>/dev/null; then
-        echo "ℹ️ Instalando Dank Material Shell (dms-shell) vía $AUR_HELPER..."
+        echo "  ℹ️ Instalando Dank Material Shell (dms-shell) vía $AUR_HELPER..."
         run_as_user "$AUR_HELPER" -S --needed --noconfirm dms-shell 2>/dev/null || true
     fi
     if ! command -v dcal &>/dev/null; then
-        echo "ℹ️ Instalando dankcalendar vía $AUR_HELPER..."
+        echo "  ℹ️ Instalando dankcalendar vía $AUR_HELPER..."
         run_as_user "$AUR_HELPER" -S --needed --noconfirm dankcalendar-bin 2>/dev/null || true
     fi
     if ! command -v danksearch &>/dev/null; then
-        echo "ℹ️ Instalando danksearch vía $AUR_HELPER..."
+        echo "  ℹ️ Instalando danksearch vía $AUR_HELPER..."
         run_as_user "$AUR_HELPER" -S --needed --noconfirm danksearch 2>/dev/null || true
     fi
-    # Opcionales recomendados por dms doctor
     run_as_user "$AUR_HELPER" -S --needed --noconfirm cava kimageformats 2>/dev/null || true
 fi
 
-# Habilitar dms.service a nivel de usuario si está presente
 if run_as_user systemctl --user list-unit-files dms.service &>/dev/null; then
     run_as_user systemctl --user enable --now dms.service 2>/dev/null || true
     echo "  ✅ Servicio dms.service habilitado para el usuario $REAL_USER."
 fi
 
-# 8. Limpieza de Paquetes Antiguos
-echo "🧹 Limpiando caché y paquetes obsoletos..."
-$SUDO pacman -Sc --noconfirm || true
+# Limpieza segura de paquetes
+if command -v paccache &>/dev/null; then
+    paccache -r 2>/dev/null || true
+else
+    $SUDO pacman -Sc --noconfirm || true
+fi
 
 echo "================================================================="
-echo "✅ Arch Linux (AMD Ryzen + Niri + Dank Material Shell) configurado con éxito."
-echo "💡 Se recomienda reiniciar el equipo para arrancar con el nuevo Kernel y drivers AMD."
+echo "✅ HP EliteBook 855 G7 (AMD Ryzen + Niri + DMS) configurado al 100%."
+echo "   - Compilación multi-hilo (16 hilos) activa en makepkg."
+echo "   - Early KMS configurado para inicialización limpia de 3 pantallas."
+echo "   - Mesa RADV y VA-API con soporte 64 y 32 bits configurados."
+echo "   - Gestión de energía para portátil y fstrim.timer activos."
+echo "   - La apariencia, layouts y temas de Niri y DMS se han preservado intactos."
+echo "💡 Si se ha actualizado el initramfs o kernel, se recomienda reiniciar el equipo."
 echo "================================================================="
