@@ -29,8 +29,19 @@ CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}"
 BACKUP_DIR="${BACKUP_DIR:-$HOME/Backups/Niri_DMS}"
 MAX_KEEP="${MAX_KEEP:-15}" # Número máximo de backups retenidos
 
-# Carpetas a respaldar dentro de ~/.config
-TARGET_DIRS=("niri" "DankMaterialShell" "danksearch" "dankcal" "kitty")
+# Elementos a respaldar dentro de ~/.config (directorios y archivos clave)
+TARGET_ITEMS=(
+    "niri"
+    "DankMaterialShell"
+    "danksearch"
+    "dankcal"
+    "kitty"
+    "environment.d"
+    "gtk-3.0"
+    "gtk-4.0"
+    "fastfetch"
+    "starship.toml"
+)
 
 show_help() {
     echo -e "${BOLD}📦 Gestor de Copias de Seguridad: Niri + Dank Material Shell (DMS)${RESET}"
@@ -50,12 +61,16 @@ show_help() {
     echo -e "${BOLD}Ubicación de respaldos:${RESET}"
     echo "  ${BACKUP_DIR}"
     echo ""
-    echo -e "${BOLD}Configuraciones respaldadas:${RESET}"
-    echo "  • ${CONFIG_DIR}/niri (config.kdl y subcarpeta dms/)"
-    echo "  • ${CONFIG_DIR}/DankMaterialShell (settings.json, monitors.json, temas)"
-    echo "  • ${CONFIG_DIR}/danksearch (config.toml)"
-    echo "  • ${CONFIG_DIR}/dankcal (calendario)"
-    echo "  • ${CONFIG_DIR}/kitty (kitty.conf, dank-theme.conf, dank-tabs.conf)"
+    echo -e "${BOLD}Configuraciones respaldadas (dentro de ~/.config):${RESET}"
+    echo "  • niri             (config.kdl y subcarpeta dms/)"
+    echo "  • DankMaterialShell (settings.json, monitors.json, temas, firefox.css)"
+    echo "  • danksearch       (config.toml y ajustes de búsqueda)"
+    echo "  • dankcal          (calendario y recordatorios)"
+    echo "  • kitty            (kitty.conf, dank-theme.conf, dank-tabs.conf)"
+    echo "  • environment.d    (90-dms.conf y variables de sesión Wayland)"
+    echo "  • gtk-3.0/gtk-4.0  (dank-colors.css y estilos Material You de apps GTK)"
+    echo "  • fastfetch        (config.jsonc diagnóstico de terminal)"
+    echo "  • starship.toml    (estilo y prompt del terminal)"
 }
 
 notify() {
@@ -72,14 +87,14 @@ create_backup() {
     mkdir -p "$BACKUP_DIR"
 
     local existing_targets=()
-    for dir_name in "${TARGET_DIRS[@]}"; do
-        if [ -d "$CONFIG_DIR/$dir_name" ]; then
-            existing_targets+=("$dir_name")
+    for item in "${TARGET_ITEMS[@]}"; do
+        if [ -e "$CONFIG_DIR/$item" ]; then
+            existing_targets+=("$item")
         fi
     done
 
     if [ ${#existing_targets[@]} -eq 0 ]; then
-        echo -e "${RED}❌ Error: No se encontraron directorios de configuración para respaldar en $CONFIG_DIR.${RESET}"
+        echo -e "${RED}❌ Error: No se encontraron elementos de configuración para respaldar en $CONFIG_DIR.${RESET}"
         exit 1
     fi
 
@@ -102,11 +117,6 @@ create_backup() {
 
     local size
     size="$(du -h "$archive_path" | awk '{print $1}')"
-
-    # También realizar backup nativo de DMS si el CLI está disponible
-    if command -v dms &>/dev/null; then
-        dms backup create &>/dev/null || true
-    fi
 
     echo -e "${GREEN}✅ Copia de seguridad completada con éxito.${RESET} (Tamaño: ${size})"
     echo -e "🔗 Enlace rápido: ${latest_link}"
@@ -184,9 +194,9 @@ restore_backup() {
     local snapshot_file="$BACKUP_DIR/pre_restore_snapshot_${snapshot_time}.tar.gz"
 
     local current_targets=()
-    for dir_name in "${TARGET_DIRS[@]}"; do
-        if [ -d "$CONFIG_DIR/$dir_name" ]; then
-            current_targets+=("$dir_name")
+    for item in "${TARGET_ITEMS[@]}"; do
+        if [ -e "$CONFIG_DIR/$item" ]; then
+            current_targets+=("$item")
         fi
     done
 
@@ -202,6 +212,10 @@ restore_backup() {
     echo -e "${GREEN}✅ Restauración finalizada con éxito.${RESET}"
 
     # 3.3. Recargar Niri y DMS si están en ejecución
+    if command -v systemctl &>/dev/null; then
+        systemctl --user daemon-reload 2>/dev/null || true
+    fi
+
     if command -v niri &>/dev/null && pgrep -x niri &>/dev/null; then
         echo "🔄 Recargando Niri Compositor..."
         niri msg action reload-config 2>/dev/null || true
