@@ -1,11 +1,19 @@
 #!/bin/bash
-# post-install-intel.sh - Script de post-instalación para Arch Linux con Intel Core y Intel Graphics
-# (Configurado con Pacman optimizado, Microcódigo Intel, VA-API Intel, PipeWire, Niri + Dank Material Shell)
+# post-install-intel.sh - Script de post-instalación optimizado para Arch Linux
+# Hardware: Intel Core e Intel Graphics (UHD / Iris Xe / Arc)
+# Optimizaciones:
+#   - Pacman y Makepkg paralelos (aprovecha todos los hilos de la CPU)
+#   - Early KMS i915 en mkinitcpio para inicio limpio en multi-monitor
+#   - Stack gráfico Mesa + Intel Media Driver (VA-API) + Vulkan (ANV) (64-bit y multilib 32-bit)
+#   - Gestión de energía (power-profiles-daemon), TRIM de SSD (fstrim.timer) y soporte DDC/CI (I2C)
+#   - PipeWire de alta fidelidad, herramientas nativas Wayland, adw-gtk-theme, Niri y Dank Material Shell (DMS)
+# NOTA: Este script NO altera configuraciones visuales, temas ni personalizaciones de Niri y DMS.
 
 set -euo pipefail
 
 echo "================================================================="
-echo "INICIANDO POST-INSTALACIÓN: ARCH LINUX - INTEL CORE (NIRI + DMS)"
+echo "INICIANDO POST-INSTALACIÓN: ARQUITECTURA INTEL (NIRI + DMS)"
+echo "ARCH LINUX · NIRI · DANK MATERIAL SHELL"
 echo "================================================================="
 
 if [ "$EUID" -ne 0 ]; then
@@ -43,16 +51,20 @@ elif run_as_user command -v paru &> /dev/null; then
     AUR_HELPER="paru"
 fi
 
-# 1. Optimización de Pacman (Paralelismo de descargas, colores y Candy)
-echo "⚙️ [1/8] Configurando optimizaciones en Pacman..."
+# -----------------------------------------------------------------------------
+# 1. Optimización de Pacman y Makepkg (Multi-hilo)
+# -----------------------------------------------------------------------------
+echo "⚙️ [1/9] Optimizando Pacman y Makepkg para compilación paralela..."
 PACMAN_CONF="/etc/pacman.conf"
 if [ -f "$PACMAN_CONF" ]; then
-    if ! grep -q "^ParallelDownloads" "$PACMAN_CONF"; then
-        $SUDO sed -i 's/^#ParallelDownloads = .*/ParallelDownloads = 10/' "$PACMAN_CONF" 2>/dev/null || \
+    if grep -q "^#ParallelDownloads" "$PACMAN_CONF"; then
+        $SUDO sed -i 's/^#ParallelDownloads = .*/ParallelDownloads = 10/' "$PACMAN_CONF"
+    elif ! grep -q "^ParallelDownloads" "$PACMAN_CONF"; then
         $SUDO sed -i '/^\[options\]/a ParallelDownloads = 10' "$PACMAN_CONF"
     fi
-    if ! grep -q "^Color" "$PACMAN_CONF"; then
-        $SUDO sed -i 's/^#Color/Color/' "$PACMAN_CONF" 2>/dev/null || \
+    if grep -q "^#Color" "$PACMAN_CONF"; then
+        $SUDO sed -i 's/^#Color/Color/' "$PACMAN_CONF"
+    elif ! grep -q "^Color" "$PACMAN_CONF"; then
         $SUDO sed -i '/^\[options\]/a Color' "$PACMAN_CONF"
     fi
     if ! grep -q "ILoveCandy" "$PACMAN_CONF"; then
@@ -60,31 +72,82 @@ if [ -f "$PACMAN_CONF" ]; then
     fi
 fi
 
-# Actualizar base del sistema
-echo "🔄 [2/8] Actualizando base del sistema Arch Linux..."
+MAKEPKG_CONF="/etc/makepkg.conf"
+if [ -f "$MAKEPKG_CONF" ]; then
+    if grep -q "^#MAKEFLAGS=" "$MAKEPKG_CONF"; then
+        $SUDO sed -i 's/^#MAKEFLAGS=.*/MAKEFLAGS="-j$(nproc)"/' "$MAKEPKG_CONF"
+    elif grep -q "^MAKEFLAGS=" "$MAKEPKG_CONF"; then
+        $SUDO sed -i 's/^MAKEFLAGS=.*/MAKEFLAGS="-j$(nproc)"/' "$MAKEPKG_CONF"
+    fi
+    if grep -q "^COMPRESSZST=" "$MAKEPKG_CONF"; then
+        $SUDO sed -i 's/^COMPRESSZST=.*/COMPRESSZST=(zstd -c -z -q --threads=0 -)/' "$MAKEPKG_CONF"
+    fi
+fi
+
+# Actualizar base de datos y paquetes del sistema
+echo "🔄 [2/9] Actualizando base del sistema Arch Linux..."
 $SUDO pacman -Syu --noconfirm
 
-# 2. Kernel Linux, Firmware y Microcódigo para Intel
-echo "🐧 [3/8] Instalando Kernel Linux oficial, Firmware y Microcódigo Intel..."
+# -----------------------------------------------------------------------------
+# 2. Kernel Linux, Firmware y Microcódigo Intel + Early KMS
+# -----------------------------------------------------------------------------
+echo "🐧 [3/9] Instalando Kernel, Firmware, Microcódigo Intel y Early KMS..."
 $SUDO pacman -S --needed --noconfirm \
     linux \
     linux-headers \
     intel-ucode \
     linux-firmware
 
-# 3. Stack Gráfico y Aceleración HW para Intel (Mesa / VA-API Intel / Vulkan 64-bit)
-echo "🎮 [4/8] Instalando controladores gráficos Intel y aceleración HW..."
-$SUDO pacman -S --needed --noconfirm \
-    mesa \
-    intel-media-driver \
-    libva-intel-driver \
-    vulkan-intel \
-    vulkan-tools \
-    libva-utils \
-    mesa-utils 2>/dev/null || true
+# Configuración de Early KMS (i915) para evitar parpadeos en arranque multi-monitor
+MKINITCPIO_CONF="/etc/mkinitcpio.conf"
+REBUILD_INITRAMFS=false
+if [ -f "$MKINITCPIO_CONF" ]; then
+    if ! grep -E "^MODULES=.*(i915|xe)" "$MKINITCPIO_CONF" >/dev/null; then
+        echo "  🖥️ Configurando Early KMS (i915) en mkinitcpio para inicio limpio..."
+        if grep -q "^MODULES=()" "$MKINITCPIO_CONF"; then
+            $SUDO sed -i 's/^MODULES=()/MODULES=(i915)/' "$MKINITCPIO_CONF"
+            REBUILD_INITRAMFS=true
+        elif grep -q "^MODULES=(" "$MKINITCPIO_CONF"; then
+            $SUDO sed -i 's/^MODULES=(/MODULES=(i915 /' "$MKINITCPIO_CONF"
+            REBUILD_INITRAMFS=true
+        fi
+    fi
+fi
 
-# 4. Códecs Multimedia y FFmpeg completo
-echo "🎬 [5/8] Instalando FFmpeg y códecs multimedia globales..."
+if [ "$REBUILD_INITRAMFS" = true ]; then
+    echo "  🔨 Regenerando initramfs..."
+    $SUDO mkinitcpio -P
+fi
+
+# -----------------------------------------------------------------------------
+# 3. Stack Gráfico y Aceleración HW Intel (Mesa / VA-API / Vulkan)
+# -----------------------------------------------------------------------------
+echo "🎮 [4/9] Instalando controladores gráficos Intel (Mesa, intel-media-driver y Vulkan)..."
+PKGS_INTEL_GRAPHICS=(
+    mesa
+    intel-media-driver
+    vulkan-intel
+    vulkan-tools
+    libva-utils
+    mesa-utils
+)
+
+# Soporte 32-bit (multilib) si está habilitado en pacman.conf
+if grep -E "^\s*\[multilib\]" "$PACMAN_CONF" >/dev/null; then
+    echo "  🕹️ Repositorio multilib detectado: agregando drivers gráficos Intel de 32 bits..."
+    PKGS_INTEL_GRAPHICS+=(
+        lib32-mesa
+        lib32-intel-media-driver
+        lib32-vulkan-intel
+    )
+fi
+
+$SUDO pacman -S --needed --noconfirm "${PKGS_INTEL_GRAPHICS[@]}"
+
+# -----------------------------------------------------------------------------
+# 4. Códecs Multimedia y FFmpeg
+# -----------------------------------------------------------------------------
+echo "🎬 [5/9] Instalando FFmpeg y códecs multimedia..."
 $SUDO pacman -S --needed --noconfirm \
     ffmpeg \
     gst-plugins-base \
@@ -98,21 +161,34 @@ $SUDO pacman -S --needed --noconfirm \
     libvorbis \
     opus \
     x264 \
-    x265 2>/dev/null || true
+    x265
 
-# 5. Sistema de Audio de Alta Fidelidad (PipeWire + WirePlumber)
-echo "🔊 [6/8] Verificando y habilitando PipeWire y WirePlumber..."
+# -----------------------------------------------------------------------------
+# 5. Sistema de Audio (PipeWire + WirePlumber)
+# -----------------------------------------------------------------------------
+echo "🔊 [6/9] Verificando y habilitando PipeWire y WirePlumber..."
 $SUDO pacman -S --needed --noconfirm \
     pipewire \
     pipewire-pulse \
     pipewire-alsa \
     pipewire-jack \
-    wireplumber 2>/dev/null || true
+    wireplumber
 
 run_as_user systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
 
-# 6. Software Esencial de Sistema, Herramientas y Stack Wayland
-echo "📦 [7/8] Instalando utilidades de sistema, Niri Compositor y entorno Wayland..."
+# -----------------------------------------------------------------------------
+# 6. Gestión de Energía y Mantenimiento de Almacenamiento SSD
+# -----------------------------------------------------------------------------
+echo "🔋 [7/9] Configurando gestión de energía (power-profiles-daemon) y TRIM de SSD..."
+$SUDO pacman -S --needed --noconfirm power-profiles-daemon util-linux
+
+$SUDO systemctl enable --now power-profiles-daemon.service
+$SUDO systemctl enable --now fstrim.timer
+
+# -----------------------------------------------------------------------------
+# 7. Stack Wayland, Portales, Compositor Niri y Temas GTK3/DDC
+# -----------------------------------------------------------------------------
+echo "📦 [8/9] Instalando utilidades esenciales de sistema y stack Niri Wayland..."
 $SUDO pacman -S --needed --noconfirm \
     base-devel \
     cmake \
@@ -144,6 +220,7 @@ $SUDO pacman -S --needed --noconfirm \
     gnupg \
     niri \
     xwayland-satellite \
+    xdg-desktop-portal \
     xdg-desktop-portal-gnome \
     xdg-desktop-portal-gtk \
     wl-clipboard \
@@ -151,52 +228,72 @@ $SUDO pacman -S --needed --noconfirm \
     slurp \
     satty \
     brightnessctl \
+    ddcutil \
+    fprintd \
+    khal \
     playerctl \
     pavucontrol \
     inter-font \
     papirus-icon-theme \
     adwaita-icon-theme \
+    adw-gtk-theme \
     qt5-wayland \
     qt6-wayland \
     qt6ct \
-    kvantum 2>/dev/null || true
+    kvantum
 
-# 7. Dank Material Shell (DMS) y utilidades complementarias
-echo "🌌 [8/8] Verificando componentes de Dank Material Shell (DMS)..."
+# Configurar módulo i2c-dev y permisos para control DDC/CI de brillo en monitores externos (DMS)
+if ! lsmod | grep -q "i2c_dev"; then
+    $SUDO modprobe i2c-dev 2>/dev/null || true
+fi
+if [ ! -f /etc/modules-load.d/i2c-dev.conf ]; then
+    echo "i2c-dev" | $SUDO tee /etc/modules-load.d/i2c-dev.conf >/dev/null
+fi
+$SUDO usermod -aG i2c "$REAL_USER" 2>/dev/null || true
 
-# Instalar matugen y dependencias DMS si están disponibles
+# -----------------------------------------------------------------------------
+# 8. Dank Material Shell (DMS) y Satélites
+# -----------------------------------------------------------------------------
+echo "🌌 [9/9] Verificando componentes y servicios de Dank Material Shell (DMS)..."
+
 if ! command -v matugen &>/dev/null; then
     $SUDO pacman -S --needed --noconfirm matugen 2>/dev/null || true
 fi
 
-# Si se dispone de AUR helper y falta dms-shell, dankcalendar o danksearch
 if [ -n "$AUR_HELPER" ]; then
     if ! command -v dms &>/dev/null; then
-        echo "ℹ️ Instalando Dank Material Shell (dms-shell) vía $AUR_HELPER..."
+        echo "  ℹ️ Instalando Dank Material Shell (dms-shell) vía $AUR_HELPER..."
         run_as_user "$AUR_HELPER" -S --needed --noconfirm dms-shell 2>/dev/null || true
     fi
     if ! command -v dcal &>/dev/null; then
-        echo "ℹ️ Instalando dankcalendar vía $AUR_HELPER..."
+        echo "  ℹ️ Instalando dankcalendar vía $AUR_HELPER..."
         run_as_user "$AUR_HELPER" -S --needed --noconfirm dankcalendar-bin 2>/dev/null || true
     fi
     if ! command -v danksearch &>/dev/null; then
-        echo "ℹ️ Instalando danksearch vía $AUR_HELPER..."
+        echo "  ℹ️ Instalando danksearch vía $AUR_HELPER..."
         run_as_user "$AUR_HELPER" -S --needed --noconfirm danksearch 2>/dev/null || true
     fi
     run_as_user "$AUR_HELPER" -S --needed --noconfirm cava kimageformats 2>/dev/null || true
 fi
 
-# Habilitar dms.service a nivel de usuario si está presente
 if run_as_user systemctl --user list-unit-files dms.service &>/dev/null; then
     run_as_user systemctl --user enable --now dms.service 2>/dev/null || true
     echo "  ✅ Servicio dms.service habilitado para el usuario $REAL_USER."
 fi
 
-# 8. Limpieza de Paquetes Antiguos
-echo "🧹 Limpiando caché y paquetes obsoletos..."
-$SUDO pacman -Sc --noconfirm || true
+# Limpieza segura de paquetes
+if command -v paccache &>/dev/null; then
+    paccache -r 2>/dev/null || true
+else
+    $SUDO pacman -Sc --noconfirm || true
+fi
 
 echo "================================================================="
-echo "✅ Arch Linux (Intel Core + Niri + Dank Material Shell) configurado con éxito."
-echo "💡 Se recomienda reiniciar el equipo para arrancar con el nuevo Kernel y drivers Intel."
+echo "✅ Arch Linux (Intel Core + Niri + DMS) configurado al 100%."
+echo "   - Compilación multi-hilo activa en makepkg."
+echo "   - Early KMS (i915) configurado para arranque limpio multi-monitor."
+echo "   - Mesa ANV y VA-API con soporte 64 y 32 bits configurados."
+echo "   - Soporte DDC/CI (I2C) y adw-gtk-theme instalados para DMS."
+echo "   - Gestión de energía y fstrim.timer activos."
+echo "💡 Si se ha actualizado el initramfs o kernel, se recomienda reiniciar el equipo."
 echo "================================================================="

@@ -95,7 +95,11 @@ echo -n "• DankCalendar (dcal):   "
 command -v dcal &>/dev/null && echo "✅ Instalado" || echo "⚠️ No encontrado"
 
 echo -n "• DankSearch:            "
-command -v danksearch &>/dev/null && echo "✅ Instalado" || echo "⚠️ No encontrado"
+if command -v danksearch &>/dev/null || (command -v dms &>/dev/null && dms doctor 2>/dev/null | grep -q "danksearch.*Installed"); then
+    echo "✅ Instalado"
+else
+    echo "⚠️ No encontrado"
+fi
 
 echo -n "• Matugen:               "
 command -v matugen &>/dev/null && echo "✅ Instalado" || echo "⚠️ No encontrado"

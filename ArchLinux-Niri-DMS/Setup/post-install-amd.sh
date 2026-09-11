@@ -242,15 +242,28 @@ $SUDO pacman -S --needed --noconfirm \
     slurp \
     satty \
     brightnessctl \
+    ddcutil \
+    fprintd \
+    khal \
     playerctl \
     pavucontrol \
     inter-font \
     papirus-icon-theme \
     adwaita-icon-theme \
+    adw-gtk-theme \
     qt5-wayland \
     qt6-wayland \
     qt6ct \
     kvantum
+
+# Configurar módulo i2c-dev y permisos para control DDC/CI de brillo en monitores externos (DMS)
+if ! lsmod | grep -q "i2c_dev"; then
+    $SUDO modprobe i2c-dev 2>/dev/null || true
+fi
+if [ ! -f /etc/modules-load.d/i2c-dev.conf ]; then
+    echo "i2c-dev" | $SUDO tee /etc/modules-load.d/i2c-dev.conf >/dev/null
+fi
+$SUDO usermod -aG i2c "$REAL_USER" 2>/dev/null || true
 
 # -----------------------------------------------------------------------------
 # 8. Dank Material Shell (DMS) y Satélites
