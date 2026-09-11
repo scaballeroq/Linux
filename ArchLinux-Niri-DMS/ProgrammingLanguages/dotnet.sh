@@ -70,16 +70,27 @@ echo "ℹ️ [2/3] Descargando e instalando .NET SDK (LTS) vía Mise..."
 run_as_user mise use --global dotnet@lts
 run_as_user mise reshim 2>/dev/null || true
 
+# Determinar ruta real instalada por Mise y crear symlink canónico 'lts'
+DOTNET_RESOLVED_PATH=$(run_as_user mise where dotnet 2>/dev/null || true)
+if [ -n "$DOTNET_RESOLVED_PATH" ] && [ -d "$DOTNET_RESOLVED_PATH" ]; then
+    run_as_user mkdir -p "$USER_HOME/.local/share/mise/installs/dotnet"
+    run_as_user ln -sfn "$DOTNET_RESOLVED_PATH" "$USER_HOME/.local/share/mise/installs/dotnet/lts" 2>/dev/null || true
+    DOTNET_FINAL_ROOT="$DOTNET_RESOLVED_PATH"
+else
+    DOTNET_FINAL_ROOT="\${HOME}/.local/share/mise/installs/dotnet/lts"
+fi
+
 # 4. Integración con Niri / Wayland y Shells (environment.d, bash, zsh)
 echo "ℹ️ [3/3] Configurando variables de entorno e integración de IDEs..."
 ENV_DIR="$USER_HOME/.config/environment.d"
 run_as_user mkdir -p "$ENV_DIR"
 
-cat << 'EOF' | run_as_user tee "$ENV_DIR/10-dotnet.conf" > /dev/null
+cat << EOF | run_as_user tee "$ENV_DIR/10-dotnet.conf" > /dev/null
 # Integración de .NET SDK para Niri / Wayland, JetBrains Rider, VS Code y Antigravity
-DOTNET_ROOT=${HOME}/.local/share/mise/installs/dotnet/lts
+DOTNET_ROOT=$DOTNET_FINAL_ROOT
 DOTNET_CLI_TELEMETRY_OPTOUT=1
 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+DOTNET_NOLOGO=1
 EOF
 
 # Integración modular en Shells
@@ -87,16 +98,20 @@ BASHRC_D="$USER_HOME/.bashrc.d"
 ZSHRC_D="$USER_HOME/.zshrc.d"
 run_as_user mkdir -p "$BASHRC_D" "$ZSHRC_D"
 
-cat << 'EOF' | run_as_user tee "$BASHRC_D/dotnet.sh" > /dev/null
+cat << EOF | run_as_user tee "$BASHRC_D/dotnet.sh" > /dev/null
 # .NET Environment Variables
+export DOTNET_ROOT="$DOTNET_FINAL_ROOT"
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+export DOTNET_NOLOGO=1
 EOF
 
-cat << 'EOF' | run_as_user tee "$ZSHRC_D/dotnet.zsh" > /dev/null
+cat << EOF | run_as_user tee "$ZSHRC_D/dotnet.zsh" > /dev/null
 # .NET Environment Variables
+export DOTNET_ROOT="$DOTNET_FINAL_ROOT"
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+export DOTNET_NOLOGO=1
 EOF
 
 # Autocompletado de .NET CLI
@@ -105,7 +120,7 @@ ZSH_COMPLETIONS_DIR="$USER_HOME/.local/share/zsh/site-functions"
 ZFUNC_DIR="$USER_HOME/.zfunc"
 run_as_user mkdir -p "$COMPLETIONS_DIR" "$ZSH_COMPLETIONS_DIR" "$ZFUNC_DIR"
 
-if command -v mise &>/dev/null; then
+if command -v mise &>/dev/null || [ -x "$USER_HOME/.local/bin/mise" ]; then
     run_as_user mise exec dotnet@lts -- dotnet complete --position 1 --script bash > "$COMPLETIONS_DIR/dotnet" 2>/dev/null || true
     run_as_user mise exec dotnet@lts -- dotnet complete --position 1 --script zsh > "$ZSH_COMPLETIONS_DIR/_dotnet" 2>/dev/null || true
     run_as_user mise exec dotnet@lts -- dotnet complete --position 1 --script zsh > "$ZFUNC_DIR/_dotnet" 2>/dev/null || true

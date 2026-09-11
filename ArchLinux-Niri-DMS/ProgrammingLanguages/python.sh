@@ -30,7 +30,7 @@ else
 fi
 
 # Flags de optimización para compilación de Python en Arch Linux (PGO + LTO + multinúcleo)
-NPROC=$(nproc 2>/dev/null || echo 4)
+NPROC=$(nproc 2>/dev/null || echo 8)
 export MAKEFLAGS="-j$NPROC"
 export PYTHON_CONFIGURE_OPTS="--enable-optimizations --with-lto"
 export UV_LINK_MODE="copy"
@@ -69,9 +69,12 @@ else
 fi
 
 # 3. Instalar la última versión estable de Python y uv con Mise
-echo "ℹ️ [2/5] Descargando e instalando Python (Latest) y uv vía Mise..."
+echo "ℹ️ [2/5] Descargando e instalando Python (Última versión estable) y uv vía Mise..."
 run_as_user mise use --global python@latest
 run_as_user mise use --global uv@latest
+
+# Configurar integración automática de entornos virtuales uv en Mise
+run_as_user mise settings set python.uv_venv_auto "create|source" 2>/dev/null || true
 
 # 4. Actualizar pip, setuptools y wheel
 echo "ℹ️ [3/5] Actualizando herramientas base de empaquetado (pip, setuptools, wheel)..."

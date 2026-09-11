@@ -65,13 +65,13 @@ Una vez instalado Mise, se despliegan de forma global los siguientes lenguajes o
   ```bash
   mise use --global dotnet@lts
   ```
-* **Niri / Wayland & IDEs**: Configura `DOTNET_ROOT` en `~/.config/environment.d/10-dotnet.conf` para JetBrains Rider, VS Code y Antigravity, desactivando telemetría de compilación.
+* **Niri / Wayland & IDEs**: Resuelve dinámicamente la ruta canónica y configura `DOTNET_ROOT` en `~/.config/environment.d/10-dotnet.conf` para JetBrains Rider, VS Code y Antigravity, desactivando telemetría de compilación y habilitando autocompletado en Zsh y Bash.
 
 ---
 
 ## 3. Entorno de Rust (`rust.sh`)
 
-Rust se gestiona mediante su herramienta oficial estándar e independiente **Rustup** en su canal **Stable** (producción/LTS).
+Rust se gestiona mediante su herramienta oficial estándar e independiente **Rustup** en su canal **Stable** (última versión estable oficial de producción).
 
 1. **Compiladores y Herramientas del Sistema**:
    ```bash
@@ -85,33 +85,37 @@ Rust se gestiona mediante su herramienta oficial estándar e independiente **Rus
    ```
 
 3. **Herramientas de Desarrollo para IDEs**:
-   Instala `rust-analyzer`, `clippy`, `rustfmt` y `rust-src` para soporte total en VS Code, RustRover y Antigravity:
+   Instala `rust-src`, `rust-analyzer`, `clippy`, `rustfmt` para soporte total en VS Code, RustRover y Antigravity:
    ```bash
    rustup component add rust-src rust-analyzer clippy rustfmt
    ```
 
-4. **Integración con Niri / Wayland y Shells**:
+4. **Optimización Multihilo de Cargo**:
+   Configura `~/.cargo/config.toml` con `jobs = 8` adaptado al procesador AMD Ryzen 7 PRO 4750U (8 núcleos) y descargas con CLI nativo.
+
+5. **Integración con Niri / Wayland y Shells**:
    - Niri Wayland & IDEs: `~/.config/environment.d/10-rust.conf`
    - Bash & Zsh: `~/.bashrc.d/rust.sh` y `~/.zshrc.d/rust.zsh`
    - Autocompletados: `_cargo` y `_rustup` para Zsh y Bash.
 
-5. **Instalador de Binarios Rápidos (`cargo-binstall`)**:
+6. **Instalador de Binarios Rápidos (`cargo-binstall`)**:
    Descarga e integra `cargo-binstall`, permitiendo descargar e instalar herramientas escritas en Rust directamente en binarios precompilados de sus repositorios de GitHub en lugar de compilarlas desde cero.
 
 ---
 
 ## 4. OpenJDK Java (`java.sh`)
 
-Instalación de OpenJDK LTS para Arch Linux vía Pacman:
-* **Paquetes**: `jdk25-openjdk` / `jdk21-openjdk` (LTS) junto con `nss` y `pcsclite` (soporte para AutoFirma, DNIe y lectores de tarjetas inteligentes).
+Instalación de OpenJDK LTS para Arch Linux vía Pacman y vinculación con Mise:
+* **Paquetes**: `jdk25-openjdk` / `jdk21-openjdk` / `jdk17-openjdk` (LTS) junto con `nss` y `pcsclite` (soporte para AutoFirma, DNIe y lectores de tarjetas inteligentes vía `pcscd.socket`).
 * **Gestión JVM**: Configuración del runtime activo con `archlinux-java`.
+* **Vinculación con Mise**: Se registra como runtime `java@system` para que Mise e IDEs reconozcan el SDK de forma homogénea.
 * **Integración Niri / Wayland**: Configuración de `JAVA_HOME=/usr/lib/jvm/default` en `~/.config/environment.d/10-java.conf` para Android Studio, IntelliJ IDEA, Gradle y Maven.
 
 ---
 
 ## 5. Automatización de Tareas (`justfile`)
 
-Se incluye un archivo de tareas `just` (`justfile`) para facilitar la instalación selectiva de los diferentes lenguajes con comandos rápidos:
+Se incluye un archivo de tareas `just` (`justfile`) para facilitar la instalación selectiva, consulta de estado y actualización de los diferentes lenguajes:
 
 ```make
 # Instala Mise
@@ -122,11 +126,11 @@ mise:
 node:
     ./nodejs.sh
 
-# Instala Python
+# Instala Python (Latest) + uv
 python:
     ./python.sh
 
-# Instala Rust
+# Instala Rust Stable
 rust:
     ./rust.sh
 
@@ -141,6 +145,14 @@ java:
 # Instala Angular CLI
 angular:
     ./angular.sh
+
+# Consulta el estado y versiones instaladas de todos los lenguajes
+status:
+    just status
+
+# Actualiza todos los runtimes y toolchains
+update:
+    just update
 ```
 
-Puedes ejecutar cualquiera de estas tareas con el comando `just <tarea>` en la raíz de la carpeta `ProgrammingLanguages`.
+Puedes ejecutar cualquiera de estas tareas con el comando `just <tarea>` en la raíz de la carpeta `ProgrammingLanguages` o desde la raíz del repositorio (`just languages-status`, `just languages-update`).

@@ -65,13 +65,13 @@ Once Mise is installed, the following development environments are deployed glob
   ```bash
   mise use --global dotnet@lts
   ```
-* **Niri / Wayland & IDEs**: Configures `DOTNET_ROOT` in `~/.config/environment.d/10-dotnet.conf` for JetBrains Rider, VS Code, and Antigravity, while opting out of build telemetry.
+* **Niri / Wayland & IDEs**: Dynamically resolves the canonical install path and sets `DOTNET_ROOT` in `~/.config/environment.d/10-dotnet.conf` for JetBrains Rider, VS Code, and Antigravity, while opting out of build telemetry (`DOTNET_NOLOGO=1`, `DOTNET_CLI_TELEMETRY_OPTOUT=1`).
 
 ---
 
 ## 3. Rust Environment (`rust.sh`)
 
-Rust is managed through its official standard toolchain installer **Rustup** using the **Stable** production channel (Rust's release model).
+Rust is managed through its official standard toolchain installer **Rustup** using the **Stable** production channel (Rust's official production release).
 
 1. **System Build Dependencies**:
    ```bash
@@ -90,28 +90,32 @@ Rust is managed through its official standard toolchain installer **Rustup** usi
    rustup component add rust-src rust-analyzer clippy rustfmt
    ```
 
-4. **Niri / Wayland and Shell Integration**:
+4. **Cargo Multi-thread Optimization**:
+   Configures `~/.cargo/config.toml` with `jobs = 8` tailored to the AMD Ryzen 7 PRO 4750U (8 cores / 16 threads).
+
+5. **Niri / Wayland and Shell Integration**:
    - Niri Wayland & IDEs: `~/.config/environment.d/10-rust.conf`
    - Bash & Zsh: `~/.bashrc.d/rust.sh` and `~/.zshrc.d/rust.zsh`
    - Autocompletions: `_cargo` and `_rustup` for Zsh and Bash.
 
-5. **Fast Binary Installer (`cargo-binstall`)**:
+6. **Fast Binary Installer (`cargo-binstall`)**:
    Downloads and integrates `cargo-binstall`, which installs Rust-written CLI tools directly from GitHub pre-compiled binaries instead of compiling them from source locally.
 
 ---
 
 ## 4. OpenJDK Java (`java.sh`)
 
-Installs OpenJDK LTS for Arch Linux via Pacman:
-* **Packages**: `jdk25-openjdk` / `jdk21-openjdk` (LTS) along with `nss` and `pcsclite` (AutoFirma and DNIe / Smartcard reader support).
+Installs OpenJDK LTS for Arch Linux via Pacman and integrates with Mise:
+* **Packages**: `jdk25-openjdk` / `jdk21-openjdk` / `jdk17-openjdk` (LTS) along with `nss` and `pcsclite` (AutoFirma and DNIe / Smartcard reader support via `pcscd.socket`).
 * **JVM Management**: Configures the active runtime using `archlinux-java`.
+* **Mise Linking**: Links system Java into Mise as `java@system` for unified SDK management across IDEs and terminals.
 * **Niri / Wayland Integration**: Exports `JAVA_HOME=/usr/lib/jvm/default` in `~/.config/environment.d/10-java.conf` for Android Studio, IntelliJ IDEA, Gradle, and Maven.
 
 ---
 
 ## 5. Task Automation (`justfile`)
 
-A `justfile` is included to trigger individual runtime installations using simple commands:
+A `justfile` is included to trigger individual runtime installations, check runtime status, and perform updates:
 
 ```make
 # Installs Mise
@@ -122,7 +126,7 @@ mise:
 node:
     ./nodejs.sh
 
-# Installs Python
+# Installs Python (Latest) + uv
 python:
     ./python.sh
 
@@ -141,6 +145,14 @@ java:
 # Installs Angular CLI
 angular:
     ./angular.sh
+
+# Check versions and active runtimes
+status:
+    just status
+
+# Upgrade all runtimes and toolchains
+update:
+    just update
 ```
 
-You can execute any recipe with `just <recipe>` inside the `ProgrammingLanguages` folder.
+You can execute any recipe with `just <recipe>` inside the `ProgrammingLanguages` folder or from the workspace root (`just languages-status`, `just languages-update`).

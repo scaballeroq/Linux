@@ -38,15 +38,18 @@ run_as_user() {
 }
 
 # 1. Determinar el paquete OpenJDK LTS más moderno disponible en los repositorios de Arch Linux
-echo "ℹ️ [1/3] Verificando paquetes de OpenJDK LTS y dependencias de certificados..."
+echo "ℹ️ [1/4] Verificando paquetes de OpenJDK LTS y dependencias de certificados..."
 
-# Prioridad: JDK 25 LTS -> JDK 21 LTS -> OpenJDK general
+# Prioridad: JDK 25 LTS -> JDK 21 LTS -> JDK 17 LTS -> OpenJDK general
 if pacman -Si jdk25-openjdk &>/dev/null; then
     JAVA_JDK_PKG="jdk25-openjdk"
     JAVA_JRE_PKG="jre25-openjdk"
 elif pacman -Si jdk21-openjdk &>/dev/null; then
     JAVA_JDK_PKG="jdk21-openjdk"
     JAVA_JRE_PKG="jre21-openjdk"
+elif pacman -Si jdk17-openjdk &>/dev/null; then
+    JAVA_JDK_PKG="jdk17-openjdk"
+    JAVA_JRE_PKG="jre17-openjdk"
 else
     JAVA_JDK_PKG="jdk-openjdk"
     JAVA_JRE_PKG="jre-openjdk"
@@ -59,24 +62,34 @@ REQUIRED_PKGS="$JAVA_JDK_PKG $JAVA_JRE_PKG $SECURITY_PKGS"
 MISSING_PKGS=$(pacman -T $REQUIRED_PKGS 2>/dev/null || true)
 
 if [ -n "$MISSING_PKGS" ]; then
-    echo "  ⬇️ Instalando OpenJDK y librerías del sistema: $MISSING_PKGS..."
+    echo "  ⬇️ Instalando OpenJDK LTS y librerías del sistema: $MISSING_PKGS..."
     $SUDO pacman -S --needed --noconfirm $MISSING_PKGS
 else
-    echo "  ✅ OpenJDK y dependencias ya instaladas."
+    echo "  ✅ OpenJDK LTS y dependencias ya instaladas."
 fi
 
-# 2. Configurar JVM por defecto con archlinux-java
-echo "ℹ️ [2/3] Configurando entorno de Java por defecto..."
+# Habilitar socket de pcscd para lectores de Smartcards/DNIe (AutoFirma)
+$SUDO systemctl enable --now pcscd.socket 2>/dev/null || true
+
+# 2. Configurar JVM LTS por defecto con archlinux-java
+echo "ℹ️ [2/4] Configurando entorno de Java LTS por defecto..."
 if command -v archlinux-java &>/dev/null; then
-    # Buscar el JVM LTS instalado más reciente
-    LTS_JVM=$(archlinux-java status 2>/dev/null | grep -E "java-(25|21|26)-openjdk" | tail -n1 | awk '{print $1}' || true)
+    # Buscar el JVM LTS instalado más reciente (25 -> 21 -> 17)
+    LTS_JVM=$(archlinux-java status 2>/dev/null | grep -E "java-(25|21|17)-openjdk" | tail -n1 | awk '{print $1}' || true)
     if [ -n "$LTS_JVM" ]; then
         $SUDO archlinux-java set "$LTS_JVM" 2>/dev/null || true
     fi
 fi
 
-# 3. Configurar JAVA_HOME para Niri, Wayland e IDEs (IntelliJ, Android Studio, Gradle, Maven)
-echo "ℹ️ [3/3] Configurando variables de entorno (JAVA_HOME) para Niri y Shells..."
+# 3. Vincular Java con Mise si está disponible
+echo "ℹ️ [3/4] Vinculando OpenJDK del sistema con Mise..."
+if command -v mise &>/dev/null || [ -x "$USER_HOME/.local/bin/mise" ]; then
+    run_as_user mise use --global java@system 2>/dev/null || true
+    run_as_user mise reshim 2>/dev/null || true
+fi
+
+# 4. Configurar JAVA_HOME para Niri, Wayland e IDEs (IntelliJ, Android Studio, Gradle, Maven)
+echo "ℹ️ [4/4] Configurando variables de entorno (JAVA_HOME) para Niri y Shells..."
 ENV_DIR="$USER_HOME/.config/environment.d"
 run_as_user mkdir -p "$ENV_DIR"
 
@@ -120,6 +133,7 @@ JAVA_VER=$(java -version 2>&1 | head -n 1 | awk -F '"' '{print $2}' || echo "ins
 echo "✅ OpenJDK LTS configurado con éxito para Arch Linux y Niri / Wayland:"
 echo "  • OpenJDK:      v$JAVA_VER (LTS)"
 echo "  • JAVA_HOME:    /usr/lib/jvm/default"
+echo "  • Gestor Mise:  Vinculado como runtime java@system"
 echo "  • IDEs/Wayland: ~/.config/environment.d/10-java.conf (IntelliJ, Android Studio)"
 echo "  • AutoFirma:   Soporte DNIe y Smartcards habilitado (nss, pcsclite)"
 echo "  • Shells:      Bash & Zsh"

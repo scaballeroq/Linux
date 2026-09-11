@@ -73,8 +73,23 @@ else
     echo "  ✅ cargo-binstall ya está instalado."
 fi
 
-# 5. Integración con Niri / Wayland (environment.d) y Shells (Zsh / Bash)
-echo "ℹ️ [4/4] Configurando integración con Niri / Wayland y Shells..."
+# 5. Optimización de Cargo para AMD Ryzen 7 PRO 4750U (8 núcleos)
+echo "ℹ️ [4/5] Configurando ajustes de rendimiento de Cargo (~/.cargo/config.toml)..."
+CARGO_DIR="$USER_HOME/.cargo"
+run_as_user mkdir -p "$CARGO_DIR"
+if [ ! -f "$CARGO_DIR/config.toml" ]; then
+    cat << 'EOF' | run_as_user tee "$CARGO_DIR/config.toml" > /dev/null
+[build]
+jobs = 8
+
+[net]
+git-fetch-with-cli = true
+EOF
+    echo "  ✅ Configuración de compilación multihilo (8 jobs) creada en ~/.cargo/config.toml"
+fi
+
+# 6. Integración con Niri / Wayland (environment.d) y Shells (Zsh / Bash)
+echo "ℹ️ [5/5] Configurando integración con Niri / Wayland y Shells..."
 ENV_DIR="$USER_HOME/.config/environment.d"
 run_as_user mkdir -p "$ENV_DIR"
 

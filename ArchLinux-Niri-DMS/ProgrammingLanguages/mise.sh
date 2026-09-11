@@ -121,16 +121,26 @@ if command -v mise &>/dev/null; then
     run_as_user mise completion zsh > "$ZFUNC_DIR/_mise" 2>/dev/null || true
 fi
 
-# 4. Generar Shims iniciales
-echo "ℹ️ [4/4] Inicializando y regenerando shims de Mise..."
-if command -v mise &>/dev/null; then
+# 4. Configurar ajustes de optimización de Mise
+echo "ℹ️ [4/5] Aplicando ajustes de optimización para Mise (AMD Ryzen 7 PRO / 8 núcleos)..."
+if command -v mise &>/dev/null || [ -x "$USER_HOME/.local/bin/mise" ]; then
+    # Ajustar descargas/compilaciones paralelas para AMD Ryzen 7 PRO 4750U (8 núcleos)
+    run_as_user mise settings set jobs 8 2>/dev/null || true
+    # Habilitar reconocimiento automático de archivos de versión (.nvmrc, global.json, .python-version, etc.)
+    run_as_user mise settings add idiomatic_version_file_enable_tools dotnet node python java 2>/dev/null || true
+fi
+
+# 5. Generar Shims iniciales
+echo "ℹ️ [5/5] Inicializando y regenerando shims de Mise..."
+if command -v mise &>/dev/null || [ -x "$USER_HOME/.local/bin/mise" ]; then
     run_as_user mise reshim 2>/dev/null || true
 fi
 
 echo "================================================================="
 echo "✅ Mise configurado con éxito para Arch Linux y Niri / Wayland:"
-echo "  • CLI & Shims:  ~/.local/share/mise/shims y /usr/bin/mise"
-echo "  • Niri Wayland: ~/.config/environment.d/10-mise.conf (sesión gráfica e IDEs)"
-echo "  • Shell Bash:   ~/.bashrc.d/mise.sh + autocompletado"
-echo "  • Shell Zsh:    ~/.zshrc + autocompletado (_mise)"
+echo "  • CLI & Shims:   ~/.local/share/mise/shims y /usr/bin/mise"
+echo "  • Optimización:  8 hilos paralelos (Ryzen 7 PRO) + idiomatic version files"
+echo "  • Niri Wayland:  ~/.config/environment.d/10-mise.conf (sesión gráfica e IDEs)"
+echo "  • Shell Bash:    ~/.bashrc.d/mise.sh + autocompletado"
+echo "  • Shell Zsh:     ~/.zshrc + autocompletado (_mise)"
 echo "================================================================="

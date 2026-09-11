@@ -65,13 +65,26 @@ else
 fi
 
 # 3. Instalar la última versión LTS de Node.js de forma global con Mise
-echo "ℹ️ [2/3] Descargando e instalando la última versión Node.js LTS vía Mise..."
+echo "ℹ️ [2/4] Descargando e instalando la última versión Node.js LTS vía Mise..."
 run_as_user mise use --global node@lts
 
 # 4. Habilitar Corepack para soportar pnpm y yarn de serie
-echo "ℹ️ [3/3] Habilitando Corepack (pnpm y yarn) y regenerando shims..."
+echo "ℹ️ [3/4] Habilitando Corepack (pnpm y yarn)..."
 run_as_user mise exec node@lts -- corepack enable 2>/dev/null || true
-run_as_user mise reshim 2>/dev/null || true
+
+# 5. Generar autocompletados para npm (Bash & Zsh) y shims
+echo "ℹ️ [4/4] Generando autocompletados para npm y regenerando shims..."
+COMPLETIONS_DIR="$USER_HOME/.local/share/bash-completion/completions"
+ZSH_COMPLETIONS_DIR="$USER_HOME/.local/share/zsh/site-functions"
+ZFUNC_DIR="$USER_HOME/.zfunc"
+run_as_user mkdir -p "$COMPLETIONS_DIR" "$ZSH_COMPLETIONS_DIR" "$ZFUNC_DIR"
+
+if command -v mise &>/dev/null || [ -x "$USER_HOME/.local/bin/mise" ]; then
+    run_as_user mise exec node@lts -- npm completion > "$COMPLETIONS_DIR/npm" 2>/dev/null || true
+    run_as_user mise exec node@lts -- npm completion > "$ZSH_COMPLETIONS_DIR/_npm" 2>/dev/null || true
+    run_as_user mise exec node@lts -- npm completion > "$ZFUNC_DIR/_npm" 2>/dev/null || true
+    run_as_user mise reshim 2>/dev/null || true
+fi
 
 # Obtener versiones instaladas
 NODE_VER=$(run_as_user mise exec node@lts -- node --version 2>/dev/null || echo "instalado")
@@ -80,10 +93,10 @@ PNPM_VER=$(run_as_user mise exec node@lts -- pnpm --version 2>/dev/null || echo 
 YARN_VER=$(run_as_user mise exec node@lts -- yarn --version 2>/dev/null || echo "disponible vía corepack")
 
 echo "================================================================="
-echo "✅ Node.js LTS configurado con éxito para Arch Linux y Zsh:"
+echo "✅ Node.js LTS configurado con éxito para Arch Linux y Niri / Wayland:"
 echo "  • Node.js:  $NODE_VER (LTS)"
-echo "  • npm:      $NPM_VER"
+echo "  • npm:      $NPM_VER (autocompletado en Bash y Zsh)"
 echo "  • pnpm:     $PNPM_VER"
 echo "  • yarn:     $YARN_VER"
-echo "  • Entorno:  Niri + Zsh (~/.local/share/mise/shims)"
+echo "  • Entorno:  Niri + Zsh / Bash (~/.local/share/mise/shims)"
 echo "================================================================="

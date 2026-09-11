@@ -113,9 +113,17 @@ mise:
 # LENGUAJES DE PROGRAMACION
 # =============================================================================
 
-# Todos los lenguajes
+# Todos los lenguajes (LTS / Stable)
 languages: node python rust dotnet java angular
-    @echo "✅ Lenguajes instalados."
+    @echo "✅ Lenguajes y runtimes (LTS / Stable) instalados."
+
+# Consultar versiones y estado de runtimes
+languages-status:
+    cd ProgrammingLanguages && just status
+
+# Actualizar runtimes a últimas versiones LTS / Stable
+languages-update:
+    cd ProgrammingLanguages && just update
 
 # Node.js LTS
 node:
