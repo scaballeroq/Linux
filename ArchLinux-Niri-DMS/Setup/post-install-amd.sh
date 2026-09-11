@@ -126,10 +126,10 @@ fi
 # 3. Stack Gráfico y Aceleración HW AMD (Mesa / RADV / VA-API / Vulkan)
 # -----------------------------------------------------------------------------
 echo "🎮 [4/9] Instalando controladores gráficos AMD (Mesa RADV, VA-API y utilidades)..."
+# En Arch Linux moderno, 'mesa' y 'lib32-mesa' ya incluyen y proveen libva-mesa-driver (VA-API radeonsi) y OpenGL.
+# Especificar nombres canónicos explícitos evita conflictos de proveedores con repositorios de terceros como chaotic-aur.
 PKGS_AMD_GRAPHICS=(
     mesa
-    libva-mesa-driver
-    mesa-vdpau
     vulkan-radeon
     vulkan-tools
     libva-utils
@@ -142,7 +142,6 @@ if grep -E "^\s*\[multilib\]" "$PACMAN_CONF" >/dev/null; then
     echo "  🕹️ Repositorio multilib detectado: agregando drivers gráficos de 32 bits..."
     PKGS_AMD_GRAPHICS+=(
         lib32-mesa
-        lib32-libva-mesa-driver
         lib32-vulkan-radeon
     )
 fi
