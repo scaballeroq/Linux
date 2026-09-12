@@ -63,7 +63,7 @@ check_status() {
     local modules=("vhost_net" "vhost_vsock" "tun")
     local loaded=()
     for mod in "${modules[@]}"; do
-        if lsmod | grep -q "^$mod "; then
+        if grep -q "^$mod " /proc/modules 2>/dev/null; then
             loaded+=("$mod")
         fi
     done
@@ -79,10 +79,8 @@ check_status() {
     done
 
     echo -n "• Estado de la red virtual 'default': "
-    if ip link show virbr0 >/dev/null 2>&1; then
-        echo "✅ Activa (interfaz virbr0 levantada)"
-    elif command -v virsh >/dev/null 2>&1 && virsh -c qemu:///system net-info default >/dev/null 2>&1; then
-        echo "✅ Activa (iniciada en libvirt)"
+    if command -v virsh >/dev/null 2>&1 && virsh -c qemu:///system net-list --name 2>/dev/null | grep -qx "default"; then
+        echo "✅ Activa (iniciada en libvirt con virbr0)"
     elif [ -f /etc/libvirt/qemu/networks/autostart/default.xml ] || [ -f /etc/libvirt/qemu/networks/default.xml ]; then
         echo "ℹ️ Definida pero inactiva (se activará al iniciar los sockets de libvirt)"
     else
@@ -255,14 +253,27 @@ fi
 # ---------------------------------------------------------------------------
 echo "ℹ️ Configurando backend de firewall e integración de red en libvirt..."
 
-# Resolver conflicto de múltiples firewalls (UFW vs Firewalld)
+# 1. Evitar que NetworkManager interfiera con puentes virtuales de libvirt (virbr*, vnet*)
+if [ -d /etc/NetworkManager/conf.d ]; then
+    echo "ℹ️ Configurando NetworkManager para excluir interfaces virtuales (virbr*, vnet*)..."
+    cat <<EOF | sudo tee /etc/NetworkManager/conf.d/10-libvirt-unmanaged.conf > /dev/null
+# Excluir puentes de virtualización para que sean gestionados exclusivamente por libvirt
+[keyfile]
+unmanaged-devices=interface-name:virbr*;interface-name:vnet*
+EOF
+    # Eliminar perfiles automáticos huérfanos que NetworkManager haya podido registrar
+    nmcli con delete virbr0 2>/dev/null || true
+    nmcli general reload 2>/dev/null || true
+fi
+
+# 2. Resolver conflicto de múltiples firewalls (UFW vs Firewalld)
 if systemctl is-active --quiet firewalld && systemctl is-active --quiet ufw; then
     echo "⚠️ Detectados firewalld y ufw activos simultáneamente. UFW bloquea virbr0/vnet por defecto."
     echo "ℹ️ Desactivando UFW para evitar colisiones con Firewalld..."
     sudo systemctl disable --now ufw 2>/dev/null || true
 fi
 
-# Con Firewalld activo, el backend recomendado en Arch Linux es "iptables" (mediante iptables-nft)
+# 3. Con Firewalld activo, el backend recomendado en Arch Linux es "iptables" (mediante iptables-nft)
 # para evitar que virtnetworkd cree cadenas nftables independientes que colisionen con las zonas de firewalld.
 if [ -f /etc/libvirt/network.conf ]; then
     if systemctl is-active --quiet firewalld || systemctl is-enabled --quiet firewalld; then
@@ -274,13 +285,15 @@ if [ -f /etc/libvirt/network.conf ]; then
     fi
 fi
 
-# Configuración de reglas en Firewalld para NAT y puente virtual (virbr0)
+# 4. Configuración de reglas en Firewalld para NAT y puente virtual (virbr0)
 if command -v firewall-cmd >/dev/null 2>&1 && systemctl is-active --quiet firewalld; then
     echo "ℹ️ Configurando zonas y reenvío NAT en Firewalld para libvirt..."
+    sudo firewall-cmd --permanent --zone=libvirt --add-interface=virbr0 2>/dev/null || true
     sudo firewall-cmd --permanent --zone=libvirt --add-forward 2>/dev/null || true
-    sudo firewall-cmd --permanent --zone=public --add-masquerade 2>/dev/null || true
+    ACTIVE_ZONE=$(firewall-cmd --get-default-zone 2>/dev/null || echo "home")
+    sudo firewall-cmd --permanent --zone="$ACTIVE_ZONE" --add-masquerade 2>/dev/null || true
     sudo firewall-cmd --reload 2>/dev/null || true
-    echo "  ✅ Reglas de reenvío y masquerade aplicadas en Firewalld."
+    echo "  ✅ Reglas de zona libvirt, reenvío y masquerade aplicadas en Firewalld (zona: $ACTIVE_ZONE)."
 fi
 
 # Si solo se usa UFW (sin firewalld), permitir reenvío y tráfico en virbr0
@@ -325,10 +338,26 @@ sudo systemctl enable --now \
 # ---------------------------------------------------------------------------
 echo "ℹ️ Asegurando red virtual NAT por defecto (virbr0)..."
 sudo systemctl restart virtnetworkd.service 2>/dev/null || true
-# Si la red default ya estaba activa, la recargamos para aplicar cambios de backend/firewall
-if sudo virsh net-info default 2>/dev/null | grep -q "Activo:.*sí"; then
+
+# Definir red default si aún no está registrada en libvirt
+if ! virsh -c qemu:///system net-list --all --name 2>/dev/null | grep -qx "default"; then
+    if [ -f /etc/libvirt/qemu/networks/default.xml ]; then
+        sudo virsh net-define /etc/libvirt/qemu/networks/default.xml 2>/dev/null || true
+    fi
+fi
+
+# Si la red default ya estaba activa, la reiniciamos para aplicar cambios de backend/firewall
+if virsh -c qemu:///system net-list --name 2>/dev/null | grep -qx "default"; then
     sudo virsh net-destroy default 2>/dev/null || true
 fi
+
+# Limpieza preventiva de interfaz huérfana virbr0 en el host para evitar "ya está siendo utilizada"
+if ip link show virbr0 >/dev/null 2>&1; then
+    nmcli con down virbr0 2>/dev/null || true
+    nmcli con delete virbr0 2>/dev/null || true
+    sudo ip link delete virbr0 2>/dev/null || true
+fi
+
 sudo virsh net-start default 2>/dev/null || true
 sudo virsh net-autostart default 2>/dev/null || true
 
