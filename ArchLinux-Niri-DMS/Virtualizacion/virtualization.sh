@@ -70,7 +70,7 @@ check_status() {
     echo "${loaded[*]:-Ninguno cargado}"
 
     echo "• Estado de sockets modulares de Libvirt:"
-    local sockets=("virtqemud.socket" "virtnetworkd.socket" "virtstoraged.socket" "virtnodedevd.socket" "virtsecretd.socket" "virtnwfilterd.socket" "virtproxyd.socket")
+    local sockets=("virtqemud.socket" "virtnetworkd.socket" "virtstoraged.socket" "virtnodedevd.socket" "virtsecretd.socket" "virtnwfilterd.socket" "virtinterfaced.socket" "virtproxyd.socket")
     for s in "${sockets[@]}"; do
         local state
         state=$(systemctl is-active "$s" 2>/dev/null || true)
@@ -331,6 +331,7 @@ sudo systemctl enable --now \
     virtnodedevd.socket \
     virtsecretd.socket \
     virtnwfilterd.socket \
+    virtinterfaced.socket \
     virtproxyd.socket 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
@@ -558,4 +559,6 @@ echo "     - Fedora       : sudo dnf install spice-vdagent qemu-guest-agent"
 echo "     - Ubuntu/Debian: sudo apt install spice-vdagent qemu-guest-agent"
 echo "================================================================="
 echo "💡 Recuerda reiniciar o cerrar sesión para aplicar los cambios de grupo (libvirt, kvm)."
+echo "💡 NOTA VIRT-MANAGER: Al abrir la interfaz gráfica por primera vez tras reiniciar, asegúrate de"
+echo "   que la fila 'QEMU/KVM' muestre estado conectado antes de pulsar 'Crear una nueva máquina virtual'."
 echo "================================================================="
