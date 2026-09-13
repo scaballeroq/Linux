@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # Dank Material Shell (DMS) & Niri Compositor Guide
 
-This guide provides an in-depth reference on the architecture, command-line utilities, IPC interfaces, and keybindings for **Dank Material Shell (DMS)** running alongside the **Niri** scrollable-tiling compositor on **Arch Linux**.
+This guide provides an in-depth reference on the architecture, command-line utilities, IPC interfaces, and keybindings for **Dank Material Shell (DMS)** running alongside the **Niri** scrollable-tiling compositor on **CachyOS**.
 
 ---
 

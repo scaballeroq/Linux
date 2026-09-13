@@ -1,9 +1,9 @@
-# Arch Linux Environment Configuration Justfile
-# (Arch Linux + Niri & Dank Material Shell)
+# CachyOS Environment Configuration Justfile
+# (CachyOS + Niri & Dank Material Shell)
 
 # Instala todo el entorno por defecto (Auto-detección de CPU / Portátil AMD)
 setup-all: post-install shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup dms-setup
-    @echo "🚀 Entorno completo de Arch Linux (Niri + Dank Material Shell) configurado. Por favor, reinicia el sistema."
+    @echo "🚀 Entorno completo de CachyOS (Niri + Dank Material Shell) configurado. Por favor, reinicia el sistema."
 
 # Perfil completo para Portátil de desarrollo (AMD Ryzen + Virtualización + Contenedores)
 setup-laptop-amd: post-install-amd shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup dms-setup

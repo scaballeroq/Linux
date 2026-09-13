@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==============================================================================
-# dms-setup.sh - Gestor y Verificador de Dank Material Shell (DMS) en Arch Linux
+# dms-setup.sh - Gestor y Verificador de Dank Material Shell (DMS) en CachyOS
 # ==============================================================================
 # Administra la integración de Dank Material Shell con Niri, Quickshell y Matugen.
 #
@@ -16,7 +16,7 @@ set -euo pipefail
 
 show_help() {
     cat <<HELPEOF
-🌌 Gestor de Dank Material Shell (DMS) - Arch Linux + Niri
+🌌 Gestor de Dank Material Shell (DMS) - CachyOS + Niri
 
 Uso:
   $0 [OPCIÓN]

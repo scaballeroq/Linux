@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "=== Google Antigravity Desktop Installer for Arch Linux ==="
+echo "=== Google Antigravity Desktop Installer for CachyOS ==="
 
 # --- Dependencies ---
-echo "[1/4] Installing dependencies (Arch Linux)..."
+echo "[1/4] Installing dependencies (CachyOS)..."
 sudo pacman -Syu --noconfirm --needed ca-certificates curl tar desktop-file-utils python
 
 # --- Helper script ---
@@ -499,4 +499,4 @@ echo "Sandbox permissions:"
 stat -c '%U %G %a %n' /opt/antigravity/Antigravity-*/chrome-sandbox
 
 echo ""
-echo "=== Antigravity installed successfully on Arch Linux ==="
+echo "=== Antigravity installed successfully on CachyOS ==="

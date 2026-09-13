@@ -1,13 +1,13 @@
 #!/bin/bash
 # ==============================================================================
-# angular.sh - Instalación de Angular CLI vía Mise para Arch Linux
+# angular.sh - Instalación de Angular CLI vía Mise para CachyOS
 # Optimizado para Niri / Wayland y Zsh (Node.js LTS)
 # ==============================================================================
 
 set -euo pipefail
 
 echo "================================================================="
-echo "🅰️  Instalando Angular CLI para Arch Linux"
+echo "🅰️  Instalando Angular CLI para CachyOS"
 echo "================================================================="
 
 if [ "$EUID" -ne 0 ]; then
@@ -101,7 +101,7 @@ fi
 NG_VER=$(run_as_user mise exec -- ng version 2>/dev/null | grep -E "Angular CLI:" | awk '{print $3}' || run_as_user ng version 2>/dev/null | grep -E "Angular CLI:" | awk '{print $3}' || echo "instalado")
 
 echo "================================================================="
-echo "✅ Angular CLI configurado con éxito para Arch Linux y Niri / Wayland:"
+echo "✅ Angular CLI configurado con éxito para CachyOS y Niri / Wayland:"
 echo "  • Angular CLI:  v$NG_VER (Última versión estable)"
 echo "  • Node Runtime: Node.js LTS (~/.local/share/mise/shims)"
 echo "  • Telemetría:   Desactivada (~/.config/environment.d/10-angular.conf)"

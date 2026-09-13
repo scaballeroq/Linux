@@ -2,7 +2,7 @@
 sidebar_position: 8
 ---
 
-# Gestión de Contenedores con Podman en Arch Linux
+# Gestión de Contenedores con Podman en CachyOS
 
 Esta guía detalla la instalación de la plataforma de contenedores **Podman** con **Quadlets** (systemd native) y el listado de servicios preconfigurados en la carpeta `Podman`.
 

@@ -2,7 +2,7 @@
 sidebar_position: 6
 ---
 
-# Programming Languages Management on Arch Linux
+# Programming Languages Management on CachyOS
 
 This guide details the installation, control, and maintenance of programming languages and their development environments managed in the `ProgrammingLanguages` folder.
 
@@ -14,7 +14,7 @@ Environment management is centralized through **Mise** (runtimes and SDKs) and *
 
 Mise is a modern CLI version manager that replaces older tools like `asdf`, `nvm`, or `pyenv`. It downloads and configures development environments globally or locally.
 
-1. **Installation on Arch Linux**:
+1. **Installation on CachyOS**:
    ```bash
    sudo pacman -S --needed --noconfirm mise
    ```
@@ -105,7 +105,7 @@ Rust is managed through its official standard toolchain installer **Rustup** usi
 
 ## 4. OpenJDK Java (`java.sh`)
 
-Installs OpenJDK LTS for Arch Linux via Pacman and integrates with Mise:
+Installs OpenJDK LTS for CachyOS via Pacman and integrates with Mise:
 * **Packages**: `jdk25-openjdk` / `jdk21-openjdk` / `jdk17-openjdk` (LTS) along with `nss` and `pcsclite` (AutoFirma and DNIe / Smartcard reader support via `pcscd.socket`).
 * **JVM Management**: Configures the active runtime using `archlinux-java`.
 * **Mise Linking**: Links system Java into Mise as `java@system` for unified SDK management across IDEs and terminals.

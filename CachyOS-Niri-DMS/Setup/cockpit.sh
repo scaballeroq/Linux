@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==============================================================================
-# cockpit.sh - Administración Web Ligera (Cockpit) para Arch Linux (Niri + DMS)
+# cockpit.sh - Administración Web Ligera (Cockpit) para CachyOS (Niri + DMS)
 # Optimizado para HP EliteBook 855 G7:
 #   - Podman Rootless (Quadlets) + QEMU/KVM (cockpit-machines)
 #   - Almacenamiento NVMe/SSD (cockpit-storaged) + Explorador de archivos (cockpit-files)
@@ -11,7 +11,7 @@
 set -euo pipefail
 
 echo "================================================================="
-echo "🚀 Configurando Cockpit (Panel Web On-Demand) para Arch Linux..."
+echo "🚀 Configurando Cockpit (Panel Web On-Demand) para CachyOS..."
 echo "================================================================="
 
 if [ "$EUID" -ne 0 ]; then

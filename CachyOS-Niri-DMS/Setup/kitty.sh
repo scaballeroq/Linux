@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# kitty.sh - Instalación y Configuración Estética de Kitty Terminal para Arch Linux + Niri + DMS
+# kitty.sh - Instalación y Configuración Estética de Kitty Terminal para CachyOS + Niri + DMS
 #
 # Uso:
 #   ./kitty.sh                       -> Instala y aplica configuración estética con opacidad al 75% y blur 32
@@ -43,7 +43,7 @@ BLUR_RADIUS="32"
 
 show_help() {
     cat <<EOF
-🐱 Configuración Estética de Kitty Terminal - Arch Linux (Niri + Dank Material Shell)
+🐱 Configuración Estética de Kitty Terminal - CachyOS (Niri + Dank Material Shell)
 
 Uso:
   $0 [OPCIÓN]
@@ -92,7 +92,7 @@ fi
 OPACITY_PERCENT=$(awk "BEGIN {print int($OPACITY * 100)}")
 
 echo "==========================================================="
-echo "🐱 Configurando Kitty Terminal en Arch Linux (Niri + DMS)"
+echo "🐱 Configurando Kitty Terminal en CachyOS (Niri + DMS)"
 echo "🎨 Nivel de opacidad seleccionado: ${OPACITY} (${OPACITY_PERCENT}% opaco, $((100 - OPACITY_PERCENT))% transparente)"
 echo "==========================================================="
 
@@ -116,7 +116,7 @@ run_as_user mkdir -p "$USER_HOME/.config/kitty"
 echo "🎨 [3/4] Generando configuración integrada con DMS (Opacidad ${OPACITY}, Blur ${BLUR_RADIUS})..."
 cat <<EOF | run_as_user tee "$USER_HOME/.config/kitty/kitty.conf" > /dev/null
 # =============================================================================
-# KITTY CONFIGURATION - ARCH LINUX + NIRI WAYLAND + DANK MATERIAL SHELL (DMS)
+# KITTY CONFIGURATION - CACHYOS + NIRI WAYLAND + DANK MATERIAL SHELL (DMS)
 # =============================================================================
 
 # --- Integracion Wayland y Rendimiento ---
@@ -220,7 +220,7 @@ if command -v dms &>/dev/null; then
 fi
 
 echo "==========================================================="
-echo "✅ Kitty configurado con éxito para Arch Linux + Niri + DMS:"
+echo "✅ Kitty configurado con éxito para CachyOS + Niri + DMS:"
 echo "  • Archivo:   $USER_HOME/.config/kitty/kitty.conf"
 echo "  • Opacidad:  ${OPACITY} (Fondo dinámico translúcido)"
 echo "  • Blur:      ${BLUR_RADIUS} (Desenfoque Wayland)"

@@ -1,13 +1,13 @@
 #!/bin/bash
 # ==============================================================================
-# dotnet.sh - Instalación de .NET SDK (Última LTS) vía Mise para Arch Linux
+# dotnet.sh - Instalación de .NET SDK (Última LTS) vía Mise para CachyOS
 # Optimizado para Niri / Wayland y Zsh / Bash (IDEs y CLI)
 # ==============================================================================
 
 set -euo pipefail
 
 echo "================================================================="
-echo "🟣 Instalando .NET SDK (Última versión LTS) para Arch Linux"
+echo "🟣 Instalando .NET SDK (Última versión LTS) para CachyOS"
 echo "================================================================="
 
 if [ "$EUID" -ne 0 ]; then
@@ -130,7 +130,7 @@ fi
 DOTNET_VER=$(run_as_user mise exec dotnet@lts -- dotnet --version 2>/dev/null || echo "LTS instalado")
 
 echo "================================================================="
-echo "✅ .NET SDK LTS configurado con éxito para Arch Linux y Niri / Wayland:"
+echo "✅ .NET SDK LTS configurado con éxito para CachyOS y Niri / Wayland:"
 echo "  • .NET SDK:     $DOTNET_VER (LTS)"
 echo "  • IDEs/Wayland: ~/.config/environment.d/10-dotnet.conf (Rider, VS Code)"
 echo "  • Telemetría:  Desactivada (DOTNET_CLI_TELEMETRY_OPTOUT=1)"

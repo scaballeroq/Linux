@@ -1,6 +1,6 @@
-# Instalación y Configuración de Virtualización (KVM/QEMU) en Arch Linux
+# Instalación y Configuración de Virtualización (KVM/QEMU) en CachyOS
 
-Este manual está optimizado para **Arch Linux** (basado en Arch Linux). Utiliza el esquema estándar de `libvirt` integrado con el sistema.
+Este manual está optimizado para **CachyOS** (basado en Arch Linux). Utiliza el esquema estándar de `libvirt` integrado con el sistema.
 
 ## 1. Instalación de Paquetes
 Instalamos KVM, libvirt, virt-manager y utilidades asociadas vía `pacman`.
@@ -57,8 +57,8 @@ Para que las máquinas virtuales tengan salida a Internet mediante la red NAT po
    sudo systemctl restart virtnetworkd.service
    ```
 
-4. **Solución en la consola del instalador de Arch Linux (Guest)**:
-   Si al iniciar la ISO de Arch Linux no tienes IP asignada:
+4. **Solución en la consola del instalador de CachyOS (Guest)**:
+   Si al iniciar la ISO de CachyOS no tienes IP asignada:
    ```bash
    # Comprueba el nombre de la interfaz (ej. ens3 o enp1s0)
    ip a

@@ -51,7 +51,7 @@ EOF
 
 check_status() {
     echo "================================================================="
-    echo "🔍 DIAGNÓSTICO DE SEGURIDAD Y FIREWALL (Arch Linux)"
+    echo "🔍 DIAGNÓSTICO DE SEGURIDAD Y FIREWALL (CachyOS)"
     echo "================================================================="
 
     echo -n "• Estado de Firewalld:          "
@@ -99,7 +99,7 @@ check_status() {
 
 apply_security() {
     echo "================================================================="
-    echo "🛡️ Configurando Seguridad, Firewalld, QEMU/KVM y Podman (Arch Linux)"
+    echo "🛡️ Configurando Seguridad, Firewalld, QEMU/KVM y Podman (CachyOS)"
     echo "================================================================="
 
     # 1. Migración limpia de UFW a Firewalld

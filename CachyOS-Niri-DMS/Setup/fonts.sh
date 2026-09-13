@@ -1,11 +1,11 @@
 #!/bin/bash
-# fonts.sh - Instalación de Fuentes de Desarrollo (Nerd Fonts) para Arch Linux
+# fonts.sh - Instalación de Fuentes de Desarrollo (Nerd Fonts) para CachyOS
 # Incluye JetBrainsMono, FiraCode, CascadiaCode, Meslo, Hack e Inter Variable (DMS)
 
 set -euo pipefail
 
 echo "================================================================="
-echo "🔤 Instalando fuentes de desarrollo y Nerd Fonts para Arch Linux..."
+echo "🔤 Instalando fuentes de desarrollo y Nerd Fonts para CachyOS..."
 echo "================================================================="
 
 if [ "$EUID" -ne 0 ]; then
@@ -18,8 +18,8 @@ else
     SUDO=""
 fi
 
-# 1. Intentar instalar vía paquetes oficiales de Arch Linux (más rápido y limpio)
-echo "📦 [1/3] Instalando paquetes de fuentes oficiales de Arch Linux..."
+# 1. Intentar instalar vía paquetes oficiales de CachyOS/Arch Linux (más rápido y limpio)
+echo "📦 [1/3] Instalando paquetes de fuentes oficiales de CachyOS..."
 $SUDO pacman -S --needed --noconfirm \
     ttf-jetbrains-mono-nerd \
     ttf-firacode-nerd \

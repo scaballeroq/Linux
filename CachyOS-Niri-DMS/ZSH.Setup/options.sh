@@ -1,5 +1,5 @@
 # =============================================================================
-# OPCIONES DE LA SHELL (options.sh) - Adaptado para Zsh en Arch Linux
+# OPCIONES DE LA SHELL (options.sh) - Adaptado para Zsh en CachyOS
 # =============================================================================
 # Configura el comportamiento interno de Zsh (navegación, globbing y completado).
 

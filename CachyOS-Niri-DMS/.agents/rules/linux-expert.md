@@ -5,7 +5,7 @@
    - Para inspección de hardware AMD: utiliza `lscpu`, `radeontop`, `sensors` o `amdgpu_top`.
    - Para administración de servicios: prioriza `systemctl --user` para servicios de usuario (como DMS, PipeWire, pods de Podman).
    - Para audio: usa herramientas de PipeWire (`wpctl status`, `pw-cli`).
-   - Para gestión de paquetes: utiliza `pacman` para repos oficiales y `yay` o `paru` para paquetes de AUR. Nunca uses `sudo yay`.
+   - Para gestión de paquetes: utiliza `pacman` para repos oficiales y `paru` (preferido en CachyOS) o `yay` para paquetes de AUR. Nunca uses `sudo yay` ni `sudo paru`.
 
 2. **Integración con Niri (Wayland)**:
    - Toda interacción con el gestor de ventanas debe realizarse a través de `niri msg action <acción>`.

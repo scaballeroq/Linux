@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==============================================================================
-# opencode.sh - Instalación de OpenCode AI CLI para Arch Linux
+# opencode.sh - Instalación de OpenCode AI CLI para CachyOS
 # Optimizado para Zsh y Niri (Wayland)
 # ==============================================================================
 

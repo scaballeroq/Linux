@@ -1,13 +1,13 @@
 #!/bin/bash
 # ==============================================================================
 # mise.sh - Instalador y Optimizador de Mise (Language Runtime Manager)
-# Adaptado para Arch Linux + Niri (Wayland / Systemd User Environment)
+# Adaptado para CachyOS + Niri (Wayland / Systemd User Environment)
 # ==============================================================================
 
 set -euo pipefail
 
 echo "================================================================="
-echo "⚡ Configurando Mise (Gestor de Runtimes) para Arch Linux + Niri"
+echo "⚡ Configurando Mise (Gestor de Runtimes) para CachyOS + Niri"
 echo "================================================================="
 
 if [ "$EUID" -ne 0 ]; then
@@ -137,7 +137,7 @@ if command -v mise &>/dev/null || [ -x "$USER_HOME/.local/bin/mise" ]; then
 fi
 
 echo "================================================================="
-echo "✅ Mise configurado con éxito para Arch Linux y Niri / Wayland:"
+echo "✅ Mise configurado con éxito para CachyOS y Niri / Wayland:"
 echo "  • CLI & Shims:   ~/.local/share/mise/shims y /usr/bin/mise"
 echo "  • Optimización:  8 hilos paralelos (Ryzen 7 PRO) + idiomatic version files"
 echo "  • Niri Wayland:  ~/.config/environment.d/10-mise.conf (sesión gráfica e IDEs)"

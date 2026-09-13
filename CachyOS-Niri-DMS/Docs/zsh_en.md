@@ -2,9 +2,9 @@
 sidebar_position: 3
 ---
 
-# Terminal & Zsh Configuration on Arch Linux (ZSH.Setup)
+# Terminal & Zsh Configuration on CachyOS (ZSH.Setup)
 
-This guide details the terminal environment (optimized primarily for **Zsh**, the default shell in Arch Linux, with fallback compatibility for **Bash**) along with the modular scripts provided under the `ZSH.Setup` folder.
+This guide details the terminal environment (optimized primarily for **Zsh**, the default shell in CachyOS, with fallback compatibility for **Bash**) along with the modular scripts provided under the `ZSH.Setup` folder.
 
 The modular configuration is structured through `~/.zshrc.d/` and `~/.bashrc.d/` directories to ensure fast, clean, and maintainable configurations.
 

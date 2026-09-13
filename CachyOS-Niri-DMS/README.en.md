@@ -1,12 +1,12 @@
-# 🔧 Arch Linux Environment Configuration (Niri + Dank Material Shell)
+# 🔧 CachyOS Environment Configuration (Niri + Dank Material Shell)
 
-An organized, modular, and automated collection of configuration and provisioning scripts for **Arch Linux** running the **Niri** scrollable-tiling Wayland compositor alongside the modern **Dank Material Shell (DMS)** desktop environment based on Material Design 3 (Material You).
+An organized, modular, and automated collection of configuration and provisioning scripts for **CachyOS** running the **Niri** scrollable-tiling Wayland compositor alongside the modern **Dank Material Shell (DMS)** desktop environment based on Material Design 3 (Material You).
 
 ---
 
 ## 🌟 Key Highlights
 
-- **Distribution**: Pure Arch Linux (rolling release, official kernel, microcode, and optimized Pacman).
+- **Distribution**: CachyOS (Arch-based, rolling release, optimized kernels, microcode, and optimized Pacman).
 - **Compositor**: [Niri](https://github.com/YaLTeR/niri) (Rust scrollable-tiling Wayland window manager).
 - **Desktop Shell**: [Dank Material Shell](https://danklinux.com/) (DMS) built on Quickshell and Material 3 principles:
   - Integrated top bar and responsive dock.
@@ -64,7 +64,7 @@ Rootless container ecosystem with native systemd Quadlets:
 
 ### 🖥️ [Virtualizacion](./Virtualizacion/)
 - **`virtualization.sh`**: KVM/QEMU setup, Libvirt modular sockets, VirGL 3D, VirtioFS, and Niri rules.
-- **`notas_virtualizacion_arch.md`**: Detailed technical manual on virtualization in Arch Linux.
+- **`notas_virtualizacion_arch.md`**: Detailed technical manual on virtualization in CachyOS.
 
 ### 💻 [IDE](./IDE/), [Apps](./Apps/) & [AI](./AI/)
 - **`git.sh`**: Git, Delta, Lazygit, and GitHub CLI setup.

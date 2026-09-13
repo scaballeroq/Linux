@@ -1,13 +1,13 @@
 #!/bin/bash
 # ==============================================================================
 # rust.sh - Instalación de Rust (Canal Stable / Producción) y Cargo-Binstall
-# Optimizado para Arch Linux, Niri (Wayland) y Zsh / Bash (IDEs y CLI)
+# Optimizado para CachyOS, Niri (Wayland) y Zsh / Bash (IDEs y CLI)
 # ==============================================================================
 
 set -euo pipefail
 
 echo "================================================================="
-echo "🦀 Instalando Rust (Canal Stable / Producción) para Arch Linux"
+echo "🦀 Instalando Rust (Canal Stable / Producción) para CachyOS"
 echo "================================================================="
 
 if [ "$EUID" -ne 0 ]; then
@@ -40,8 +40,8 @@ run_as_user() {
 # Exportar PATH para este proceso
 export PATH="$USER_HOME/.cargo/bin:$USER_HOME/.local/bin:/usr/bin:$PATH"
 
-# 1. Dependencias de compilación para Rust y módulos nativos en Arch Linux
-echo "ℹ️ [1/4] Verificando dependencias de compilación para Rust (Arch Linux toolchain)..."
+# 1. Dependencias de compilación para Rust y módulos nativos en CachyOS
+echo "ℹ️ [1/4] Verificando dependencias de compilación para Rust (CachyOS toolchain)..."
 MISSING_PKGS=$(pacman -T base-devel cmake openssl pkgconf curl git 2>/dev/null || true)
 if [ -n "$MISSING_PKGS" ]; then
     echo "  ⬇️ Instalando librerías de compilación: $MISSING_PKGS..."
@@ -145,7 +145,7 @@ CARGO_VER=$(run_as_user cargo --version 2>/dev/null || echo "instalado")
 BINSTALL_VER=$(run_as_user cargo-binstall --version 2>/dev/null || echo "disponible")
 
 echo "================================================================="
-echo "✅ Rust (Stable) configurado con éxito para Arch Linux y Niri / Wayland:"
+echo "✅ Rust (Stable) configurado con éxito para CachyOS y Niri / Wayland:"
 echo "  • Rustc:        $RUSTC_VER"
 echo "  • Cargo:        $CARGO_VER"
 echo "  • Binstall:     $BINSTALL_VER"

@@ -2,7 +2,7 @@
 sidebar_position: 8
 ---
 
-# Container Management with Podman on Arch Linux
+# Container Management with Podman on CachyOS
 
 This guide details the installation of the **Podman** container platform with **Quadlets** (systemd native) and the list of pre-configured services inside the `Podman` folder.
 

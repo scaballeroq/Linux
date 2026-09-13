@@ -1,6 +1,6 @@
 #compdef podman-utils
 # =============================================================================
-# Zsh Completion for podman-utils (Arch Linux + Niri / Wayland)
+# Zsh Completion for podman-utils (CachyOS + Niri / Wayland)
 # =============================================================================
 
 _podman_utils_get_repo_dir() {

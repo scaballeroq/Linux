@@ -1,12 +1,12 @@
-# 🔧 Arch Linux Environment Configuration (Niri + Dank Material Shell)
+# 🔧 CachyOS Environment Configuration (Niri + Dank Material Shell)
 
-Colección organizada, modular y automatizada de scripts de configuración y aprovisionamiento para **Arch Linux** con el compositor scrollable-tiling **Niri** (Wayland) y el entorno de escritorio moderno **Dank Material Shell (DMS)** con diseño Material 3 (Material You).
+Colección organizada, modular y automatizada de scripts de configuración y aprovisionamiento para **CachyOS** con el compositor scrollable-tiling **Niri** (Wayland) y el entorno de escritorio moderno **Dank Material Shell (DMS)** con diseño Material 3 (Material You).
 
 ---
 
 ## 🌟 Características Principales
 
-- **Distribución**: Arch Linux pura (rolling release, kernel oficial, microcódigo y pacman optimizado).
+- **Distribución**: CachyOS (basada en Arch Linux, rolling release, kernels optimizados, microcódigo y pacman optimizado).
 - **Compositor**: [Niri](https://github.com/YaLTeR/niri) (compositor Wayland con disposición scrollable-tiling infinita).
 - **Entorno de Escritorio**: [Dank Material Shell](https://danklinux.com/) (DMS) basado en Quickshell y Material Design 3:
   - Barra superior / dock integrada y reactiva.
@@ -43,7 +43,7 @@ Scripts de configuración del sistema operativo, personalización y endurecimien
 
 ### 🐚 [ZSH.Setup](./ZSH.Setup/)
 Configuración modular de terminal para **Zsh** y **Bash**:
-- **`aliases.sh`**: Atajos de navegación (`arch`, `project`, `repo`), seguridad (`rm -i`), paquetes (`pacman` / `yay`), espejos (`rate-mirrors`) y pipes globales en Zsh (`G`, `L`, `H`, `J`).
+- **`aliases.sh`**: Atajos de navegación (`cachyos`, `project`, `repo`), seguridad (`rm -i`), paquetes (`pacman` / `paru`), espejos (`cachyos-rate-mirrors`) y pipes globales en Zsh (`G`, `L`, `H`, `J`).
 - **`niri_dms.sh`**: Control e IPC de Niri y Dank Material Shell (`dms ipc`), capturas Wayland (`grim` + `slurp` + `satty`) y grabación (`wl-screenrec`).
 - **`environment.sh`**: Variables globales (`EDITOR`, `PATH`, Wayland/Qt, Docker host) y activación de Mise.
 - **`functions.sh`**: Utilidades multimedia, gestión de discos, extracción universal y navegación rápida (`mkcd`, `up`).
@@ -64,7 +64,7 @@ Ecosistema de contenedores rootless con Quadlets (systemd native):
 
 ### 🖥️ [Virtualizacion](./Virtualizacion/)
 - **`virtualization.sh`**: Configuración de KVM/QEMU, Libvirt modular sockets, VirGL 3D, VirtioFS y reglas de ventana Niri.
-- **`notas_virtualizacion_arch.md`**: Manual técnico exhaustivo de virtualización en Arch Linux.
+- **`notas_virtualizacion_arch.md`**: Manual técnico exhaustivo de virtualización en CachyOS.
 
 ### 💻 [IDE](./IDE/), [Apps](./Apps/) & [AI](./AI/)
 - **`git.sh`**: Git, Delta, Lazygit y GitHub CLI.

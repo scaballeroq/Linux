@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "=== Google Antigravity CLI Installer for Arch Linux ==="
+echo "=== Google Antigravity CLI Installer for CachyOS ==="
 
 # --- Dependencies ---
-echo "[1/3] Installing dependencies (Arch Linux)..."
+echo "[1/3] Installing dependencies (CachyOS)..."
 sudo pacman -Syu --noconfirm --needed curl
 
 # --- Initial CLI install ---
@@ -186,4 +186,4 @@ command -v agy
 agy --version
 
 echo ""
-echo "=== Antigravity CLI installed successfully on Arch Linux ==="
+echo "=== Antigravity CLI installed successfully on CachyOS ==="

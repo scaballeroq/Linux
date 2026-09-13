@@ -1,5 +1,5 @@
 #!/bin/bash
-# fastfetch.sh - Instalación y configuración de Fastfetch para Arch Linux
+# fastfetch.sh - Instalación y configuración de Fastfetch para CachyOS
 # (Niri + Dank Material Shell)
 
 set -euo pipefail

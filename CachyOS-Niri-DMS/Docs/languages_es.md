@@ -2,7 +2,7 @@
 sidebar_position: 6
 ---
 
-# Gestión de Lenguajes de Programación en Arch Linux
+# Gestión de Lenguajes de Programación en CachyOS
 
 Esta guía detalla la instalación, control y mantenimiento de lenguajes de programación y sus herramientas de desarrollo en la carpeta `ProgrammingLanguages`.
 
@@ -14,7 +14,7 @@ La gestión de entornos se centraliza principalmente a través de **Mise** (runt
 
 Mise es una herramienta de terminal moderna que reemplaza a herramientas como `asdf`, `nvm` o `pyenv`. Se encarga de descargar y configurar rápidamente entornos de desarrollo locales o globales.
 
-1. **Instalación en Arch Linux**:
+1. **Instalación en CachyOS**:
    ```bash
    sudo pacman -S --needed --noconfirm mise
    ```
@@ -105,7 +105,7 @@ Rust se gestiona mediante su herramienta oficial estándar e independiente **Rus
 
 ## 4. OpenJDK Java (`java.sh`)
 
-Instalación de OpenJDK LTS para Arch Linux vía Pacman y vinculación con Mise:
+Instalación de OpenJDK LTS para CachyOS vía Pacman y vinculación con Mise:
 * **Paquetes**: `jdk25-openjdk` / `jdk21-openjdk` / `jdk17-openjdk` (LTS) junto con `nss` y `pcsclite` (soporte para AutoFirma, DNIe y lectores de tarjetas inteligentes vía `pcscd.socket`).
 * **Gestión JVM**: Configuración del runtime activo con `archlinux-java`.
 * **Vinculación con Mise**: Se registra como runtime `java@system` para que Mise e IDEs reconozcan el SDK de forma homogénea.

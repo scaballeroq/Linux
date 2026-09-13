@@ -1,5 +1,5 @@
 #!/bin/bash
-# yt-dlp-setup.sh - Instalación de dependencias para yt-dlp y multimedia para Arch Linux
+# yt-dlp-setup.sh - Instalación de dependencias para yt-dlp y multimedia para CachyOS
 
 set -euo pipefail
 

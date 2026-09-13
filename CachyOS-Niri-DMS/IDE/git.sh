@@ -2,7 +2,7 @@
 # ==============================================================================
 # git.sh - Instalación y Optimización de Git, Git-Delta, Lazygit y GitHub CLI
 # ==============================================================================
-# Plataforma: Arch Linux (Niri + Dank Material Shell)
+# Plataforma: CachyOS (Niri + Dank Material Shell)
 # ==============================================================================
 
 set -euo pipefail

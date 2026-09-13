@@ -2,9 +2,9 @@
 sidebar_position: 1
 ---
 
-# Configuración de Seguridad en Arch Linux
+# Configuración de Seguridad en CachyOS
 
-Esta guía detalla el proceso de endurecimiento de seguridad (hardening) aplicado a un sistema **Arch Linux** con **Niri y Dank Material Shell**, tal y como se automatiza en el script de seguridad.
+Esta guía detalla el proceso de endurecimiento de seguridad (hardening) aplicado a un sistema **CachyOS** con **Niri y Dank Material Shell**, tal y como se automatiza en el script de seguridad.
 
 El proceso cubre la configuración del firewall (Firewalld), privacidad DNS, MAC Randomization y endurecimiento del kernel.
 
@@ -12,7 +12,7 @@ El proceso cubre la configuración del firewall (Firewalld), privacidad DNS, MAC
 
 Se utiliza Firewalld para definir políticas estrictas de red con zonas dinámicas.
 
-1. Desactiva UFW si vino preinstalado en Arch Linux, e instala/habilita Firewalld:
+1. Desactiva UFW si vino preinstalado en CachyOS, e instala/habilita Firewalld:
    ```bash
    sudo systemctl disable --now ufw 2>/dev/null || true
    sudo pacman -S --needed --noconfirm firewalld

@@ -2,7 +2,7 @@
 # CONFIGURACIÓN Y ALIASES PARA NIRI + DANK MATERIAL SHELL (niri_dms.sh)
 # =============================================================================
 # Integración de entorno, IPC y utilidades para Niri (Wayland) y Dank Material Shell (DMS)
-# Compatible con Zsh y Bash en Arch Linux.
+# Compatible con Zsh y Bash en CachyOS.
 
 # -----------------------------------------------------------------------------
 # 1. CONTROL E IPC DE NIRI (Compositor Scrollable-Tiling)

@@ -1,6 +1,6 @@
 ## Optimizado para Distribuciones Linux (Kernel 7.x, Niri / Wayland, AMD Ryzen / Intel)
 
-Este manual detalla la arquitectura, configuración y optimización de **KVM / QEMU / virt-manager** en **Arch Linux**, aprovechando al máximo el kernel optimizado de Arch Linux, los sockets modulares de `libvirt 12+`, aceleración 3D por hardware (VirGL) y compartición de archivos ultrarrápida (VirtioFS).
+Este manual detalla la arquitectura, configuración y optimización de **KVM / QEMU / virt-manager** en **CachyOS**, aprovechando al máximo el kernel optimizado de CachyOS, los sockets modulares de `libvirt 12+`, aceleración 3D por hardware (VirGL) y compartición de archivos ultrarrápida (VirtioFS).
 
 ---
 
@@ -47,7 +47,7 @@ options kvm_intel nested=1 ept=1 vpid=1 pml=1
 
 ## 3. Arquitectura Modular de Daemons en Libvirt 12+
 
-En sistemas modernos como Arch Linux y Arch Linux, el servicio monolítico tradicional `libvirtd.service` está en desuso y **no debe** habilitarse simultáneamente con los sockets modulares.
+En sistemas modernos como CachyOS, el servicio monolítico tradicional `libvirtd.service` está en desuso y **no debe** habilitarse simultáneamente con los sockets modulares.
 
 Los servicios se activan bajo demanda (*Systemd Socket Activation*) a través de:
 - `virtqemud.socket`: Controlador del hipervisor QEMU.
@@ -84,7 +84,7 @@ Al crear una máquina virtual para cualquier distribución Linux (Arch, Fedora, 
 2. Opciones de rendimiento:
    - Modo de caché: **`writeback`**.
    - Modo de descarte: **`unmap`** (permite que el comando `fstrim` en el Linux invitado libere espacio real en el SSD del host).
-   - Motor de E/S: **`io_uring`** (proporciona la mayor tasa de IOPS y menor latencia en el Kernel 7.x de Arch Linux).
+   - Motor de E/S: **`io_uring`** (proporciona la mayor tasa de IOPS y menor latencia en el Kernel optimizado de CachyOS).
 
 ### D. Red Virtual
 - Dispositivo de red: Modelo **VirtIO**.
@@ -130,7 +130,7 @@ workspace_host /mnt/workspace virtiofs defaults,_netdev 0 0
 
 Para disfrutar de resolución de pantalla dinámica que se adapte al tamaño de ventana en tu entorno Wayland, sincronización bidireccional del portapapeles y apagado limpio:
 
-### Arch Linux / Arch Linux / Manjaro:
+### CachyOS / Arch Linux / Manjaro:
 ```bash
 sudo pacman -S --needed spice-vdagent qemu-guest-agent
 sudo systemctl enable --now qemu-guest-agent

@@ -2,7 +2,7 @@
 sidebar_position: 4
 ---
 
-# Git Configuration in Arch Linux
+# Git Configuration in CachyOS
 
 This guide details the version control environment and optimized toolchain configured in [IDE/git.sh](../IDE/git.sh).
 

@@ -1,5 +1,5 @@
 # =============================================================================
-# FUNCIONES DE SHELL (functions.sh) - Adaptado para Zsh y Bash en Arch Linux
+# FUNCIONES DE SHELL (functions.sh) - Adaptado para Zsh y Bash en CachyOS
 # =============================================================================
 # Colección de funciones y utilidades para potenciar la terminal.
 #

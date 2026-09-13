@@ -1,5 +1,5 @@
 # =============================================================================
-# VARIABLES DE ENTORNO (environment.sh) - Adaptado para Zsh en Arch Linux (Niri + Dank Material Shell)
+# VARIABLES DE ENTORNO (environment.sh) - Adaptado para Zsh en CachyOS (Niri + Dank Material Shell)
 # =============================================================================
 # Este archivo define variables de entorno globales para la sesión de usuario en Zsh y Wayland.
 

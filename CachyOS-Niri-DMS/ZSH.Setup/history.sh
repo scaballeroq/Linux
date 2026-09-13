@@ -1,5 +1,5 @@
 # =============================================================================
-# CONFIGURACIÓN DEL HISTORIAL (history.sh) - Adaptado para Zsh en Arch Linux
+# CONFIGURACIÓN DEL HISTORIAL (history.sh) - Adaptado para Zsh en CachyOS
 # =============================================================================
 # Controla el guardado, deduplicación y sincronización de comandos en Zsh.
 

@@ -1,13 +1,13 @@
 #!/bin/bash
 # ==============================================================================
-# java.sh - Instalación de OpenJDK (Última LTS) y soporte AutoFirma en Arch Linux
+# java.sh - Instalación de OpenJDK (Última LTS) y soporte AutoFirma en CachyOS
 # Optimizado para Niri / Wayland (JAVA_HOME para IDEs, Gradle, Maven y DNIe)
 # ==============================================================================
 
 set -euo pipefail
 
 echo "================================================================="
-echo "☕ Instalando OpenJDK (Última versión LTS) para Arch Linux"
+echo "☕ Instalando OpenJDK (Última versión LTS) para CachyOS"
 echo "================================================================="
 
 if [ "$EUID" -ne 0 ]; then
@@ -37,7 +37,7 @@ run_as_user() {
     fi
 }
 
-# 1. Determinar el paquete OpenJDK LTS más moderno disponible en los repositorios de Arch Linux
+# 1. Determinar el paquete OpenJDK LTS más moderno disponible en los repositorios de CachyOS/Arch Linux
 echo "ℹ️ [1/4] Verificando paquetes de OpenJDK LTS y dependencias de certificados..."
 
 # Prioridad: JDK 25 LTS -> JDK 21 LTS -> JDK 17 LTS -> OpenJDK general
@@ -130,7 +130,7 @@ fi
 # Obtener versión instalada
 JAVA_VER=$(java -version 2>&1 | head -n 1 | awk -F '"' '{print $2}' || echo "instalado")
 
-echo "✅ OpenJDK LTS configurado con éxito para Arch Linux y Niri / Wayland:"
+echo "✅ OpenJDK LTS configurado con éxito para CachyOS y Niri / Wayland:"
 echo "  • OpenJDK:      v$JAVA_VER (LTS)"
 echo "  • JAVA_HOME:    /usr/lib/jvm/default"
 echo "  • Gestor Mise:  Vinculado como runtime java@system"

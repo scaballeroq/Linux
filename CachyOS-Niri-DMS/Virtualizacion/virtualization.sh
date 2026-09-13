@@ -1,5 +1,5 @@
 #!/bin/bash
-# virtualization.sh - Instalación y Optimización Avanzada de Virtualización (KVM/QEMU) para Arch Linux
+# virtualization.sh - Instalación y Optimización Avanzada de Virtualización (KVM/QEMU) para CachyOS
 # Optimizado para virtualizar distribuciones Linux (Kernel 7.x, AMD Ryzen/Intel, Niri / Wayland, 3D VirGL, VirtioFS, Modular Daemons)
 
 set -euo pipefail
@@ -15,7 +15,7 @@ show_help() {
     cat <<EOF
 Uso: $0 [OPCIONES]
 
-Script de aprovisionamiento y optimización de virtualización KVM/QEMU en Arch Linux,
+Script de aprovisionamiento y optimización de virtualización KVM/QEMU en CachyOS,
 diseñado para maximizar el rendimiento y la integración de distribuciones Linux invitadas.
 
 OPCIONES:
@@ -38,7 +38,7 @@ EOF
 
 check_status() {
     echo "================================================================="
-    echo "🔍 DIAGNÓSTICO DEL ENTORNO DE VIRTUALIZACIÓN (Arch Linux)"
+    echo "🔍 DIAGNÓSTICO DEL ENTORNO DE VIRTUALIZACIÓN (CachyOS)"
     echo "================================================================="
 
     echo -n "• Soporte de Virtualización Hardware: "
@@ -149,7 +149,7 @@ if [ "$STATUS_ONLY" = true ]; then
     exit 0
 fi
 
-echo "🚀 Configurando entorno de virtualización de alto rendimiento (KVM/QEMU) en Arch Linux..."
+echo "🚀 Configurando entorno de virtualización de alto rendimiento (KVM/QEMU) en CachyOS..."
 echo "🎯 Optimizado para distribuciones Linux invitadas (Arch, Fedora, Ubuntu, Debian, openSUSE)..."
 
 # ---------------------------------------------------------------------------
@@ -273,7 +273,7 @@ if systemctl is-active --quiet firewalld && systemctl is-active --quiet ufw; the
     sudo systemctl disable --now ufw 2>/dev/null || true
 fi
 
-# 3. Con Firewalld activo, el backend recomendado en Arch Linux es "iptables" (mediante iptables-nft)
+# 3. Con Firewalld activo, el backend recomendado en CachyOS es "iptables" (mediante iptables-nft)
 # para evitar que virtnetworkd cree cadenas nftables independientes que colisionen con las zonas de firewalld.
 if [ -f /etc/libvirt/network.conf ]; then
     if systemctl is-active --quiet firewalld || systemctl is-enabled --quiet firewalld; then
@@ -317,7 +317,7 @@ virt-host-validate qemu || echo "⚠️ Advertencia: Revisa que la virtualizaci�
 # 7. Configuración de Sockets Modulares de Libvirt (Eliminando conflictos)
 # ---------------------------------------------------------------------------
 echo "ℹ️ Configurando daemons modulares de Libvirt (Systemd Socket Activation)..."
-# En Arch Linux con libvirt moderno, libvirtd.service monolítico entra en conflicto con los sockets modulares.
+# En CachyOS con libvirt moderno, libvirtd.service monolítico entra en conflicto con los sockets modulares.
 # Desactivamos el demonio monolítico heredado:
 sudo systemctl stop libvirtd.service libvirtd.socket libvirtd-ro.socket libvirtd-admin.socket 2>/dev/null || true
 sudo systemctl disable libvirtd.service libvirtd.socket libvirtd-ro.socket libvirtd-admin.socket 2>/dev/null || true
@@ -464,7 +464,7 @@ cat <<EOF | sudo tee /etc/environment.d/10-libvirt.conf > /dev/null
 LIBVIRT_DEFAULT_URI="qemu:///system"
 EOF
 
-# 2. Configuración para Zsh (shell predeterminada en Arch Linux + DMS)
+# 2. Configuración para Zsh (shell predeterminada en CachyOS + DMS)
 if [ -d "$HOME/.zshrc.d" ]; then
     cat <<EOF > "$HOME/.zshrc.d/virtualization.zsh"
 # Configuración KVM/QEMU conectando al modo de sistema por defecto
@@ -539,7 +539,7 @@ fi
 # Resumen y Recomendaciones para VMs Linux
 # ---------------------------------------------------------------------------
 echo "================================================================="
-echo "✅ Entorno KVM/QEMU en Arch Linux configurado y optimizado con éxito."
+echo "✅ Entorno KVM/QEMU en CachyOS configurado y optimizado con éxito."
 echo "================================================================="
 echo "💡 GUÍA RÁPIDA DE CONFIGURACIÓN PARA LINUX GUESTS EN VIRT-MANAGER:"
 echo "  1. Procesador (CPU):"

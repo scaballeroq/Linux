@@ -2,9 +2,9 @@
 sidebar_position: 3
 ---
 
-# Configuración de Terminal y Zsh en Arch Linux (ZSH.Setup)
+# Configuración de Terminal y Zsh en CachyOS (ZSH.Setup)
 
-Esta guía detalla la configuración del entorno de terminal (optimizado primordialmente para **Zsh**, la shell predeterminada en Arch Linux, con compatibilidad para **Bash**) junto a las utilidades modulares organizadas en el directorio `ZSH.Setup`.
+Esta guía detalla la configuración del entorno de terminal (optimizado primordialmente para **Zsh**, la shell predeterminada en CachyOS, con compatibilidad para **Bash**) junto a las utilidades modulares organizadas en el directorio `ZSH.Setup`.
 
 La carga modular está estructurada a través de los directorios `~/.zshrc.d/` y `~/.bashrc.d/` para garantizar modularidad, velocidad y mantenibilidad de tus configuraciones.
 

@@ -1,13 +1,13 @@
 #!/bin/bash
 # ==============================================================================
-# shell.sh - Instalación de herramientas modernas de terminal para Arch Linux
+# shell.sh - Instalación de herramientas modernas de terminal para CachyOS
 # (eza, bat, fzf, zoxide, ripgrep, fd, duf, dust, procs, btop, jq, zsh, starship)
 # ==============================================================================
 
 set -euo pipefail
 
 echo "================================================================="
-echo "🐚 Configurando utilidades modernas de terminal para Arch Linux"
+echo "🐚 Configurando utilidades modernas de terminal para CachyOS"
 echo "================================================================="
 
 if [ "$EUID" -ne 0 ]; then
@@ -161,7 +161,7 @@ fi
 run_as_user mkdir -p "$USER_HOME/.local/bin"
 
 echo "================================================================="
-echo "✅ Utilidades modernas de terminal y configuraciones listas para Arch Linux:"
+echo "✅ Utilidades modernas de terminal y configuraciones listas para CachyOS:"
 echo "  • Herramientas: eza, bat, fzf, zoxide, ripgrep, fd, duf, dust, btop, jq"
 echo "  • Shells: Zsh & Bash con cargador modular (~/.zshrc.d/ y ~/.bashrc.d/)"
 echo "  • Prompt: Starship con iconos Nerd Fonts y contexto git/lenguajes"

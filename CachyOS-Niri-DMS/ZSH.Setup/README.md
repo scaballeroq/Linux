@@ -1,6 +1,6 @@
-# 🚀 ZSH.Setup (Arch Linux + Niri & Dank Material Shell)
+# 🚀 ZSH.Setup (CachyOS + Niri & Dank Material Shell)
 
-Colección de scripts modulares de configuración, aliases y funciones avanzadas para potenciar tu terminal en **Zsh** y **Bash** en **Arch Linux**.
+Colección de scripts modulares de configuración, aliases y funciones avanzadas para potenciar tu terminal en **Zsh** y **Bash** en **CachyOS**.
 
 Este directorio organiza de forma limpia tus atajos de terminal, variables de entorno, utilidades multimedia, gestores de contenedores (Podman) e integración completa con **Niri** y **Dank Material Shell (DMS)**.
 

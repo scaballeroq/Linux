@@ -2,9 +2,9 @@
 sidebar_position: 2
 ---
 
-# Configuración del Sistema en Arch Linux (Niri + Dank Material Shell)
+# Configuración del Sistema en CachyOS (Niri + Dank Material Shell)
 
-Esta guía detalla el proceso de configuración base, despliegue del compositor **Niri**, la barra y entorno **Dank Material Shell (DMS)**, optimización de la terminal (**Zsh** y **Bash**), instalación de herramientas esenciales, soporte multimedia y personalización del entorno de usuario aplicados a un sistema **Arch Linux**.
+Esta guía detalla el proceso de configuración base, despliegue del compositor **Niri**, la barra y entorno **Dank Material Shell (DMS)**, optimización de la terminal (**Zsh** y **Bash**), instalación de herramientas esenciales, soporte multimedia y personalización del entorno de usuario aplicados a un sistema **CachyOS**.
 
 Las configuraciones están automatizadas a través de los scripts ubicados en la carpeta `Setup`.
 

@@ -2,11 +2,11 @@
 sidebar_position: 5
 ---
 
-# Entornos de Desarrollo e Inteligencia Artificial (IDEs & AI) en Arch Linux
+# Entornos de Desarrollo e Inteligencia Artificial (IDEs & AI) en CachyOS
 
 Esta guía detalla la instalación, configuración y mantenimiento de los editores, herramientas de desarrollo asistidas por IA y utilidades presentes en la carpeta `IDE`.
 
-El entorno está completamente optimizado para **Arch Linux (Arch Linux)**, ejecutándose sobre el compositor Wayland **Niri** con integración en la terminal **Zsh**.
+El entorno está completamente optimizado para **CachyOS** (basado en Arch Linux), ejecutándose sobre el compositor Wayland **Niri** con integración en la terminal **Zsh**.
 
 ---
 
@@ -53,7 +53,7 @@ Instala la utilidad de línea de comandos de Google Antigravity (`agy`):
 
 ## 3. Google Antigravity IDE Engine (`antigravity-ide.sh`)
 
-Despliega el motor de desarrollo de Antigravity IDE para Arch Linux:
+Despliega el motor de desarrollo de Antigravity IDE para CachyOS:
 
 1. **Instalación y Permisos**:
    Configura el runtime en `/opt/antigravity-ide` y el enlace en `/usr/local/bin/antigravity-ide`.

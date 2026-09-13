@@ -1,5 +1,5 @@
 #!/bin/bash
-# podman-install.sh - Optimización y configuración de Podman Rootless + Socket + Quadlets para Arch Linux + Niri / Wayland
+# podman-install.sh - Optimización y configuración de Podman Rootless + Socket + Quadlets para CachyOS + Niri / Wayland
 #
 # Hardware optimizado: AMD Ryzen 7 PRO 4750U (8c/16t, Zen 2), Radeon Vega 7, 32 GB RAM
 # Seguridad y Red: Firewalld (zona trusted para podman), Sysctl (puertos >= 80 rootless)
@@ -35,7 +35,7 @@ require_non_root() {
 
 show_help() {
     cat <<EOF
-🐳 Optimizador y Configurador de Podman Rootless - Arch Linux (AMD Ryzen + Niri / DMS)
+🐳 Optimizador y Configurador de Podman Rootless - CachyOS (AMD Ryzen + Niri / DMS)
 
 Uso:
   $0 [OPCION]
@@ -47,7 +47,7 @@ Opciones:
   --help, -h             Muestra este mensaje de ayuda.
 
 Características configuradas:
-  • Base Arch Linux:     Verifica e instala paquetes OCI nativos (podman, podman-compose, podman-docker,
+  • Base CachyOS:      Verifica e instala paquetes OCI nativos (podman, podman-compose, podman-docker,
                          crun, catatonit, netavark, aardvark-dns, passt, slirp4netns, cockpit-podman).
   • Runtime crun:        Configura crun como runtime OCI predeterminado (C de alto rendimiento para Ryzen Zen 2).
   • Persistencia Linger: Habilita loginctl linger para que contenedores y Quadlets sigan activos sin terminal abierta.
@@ -63,7 +63,7 @@ EOF
 # 1. Mostrar estado de Podman
 show_status() {
     echo "================================================================="
-    echo "🔍 ESTADO DE PODMAN ROOTLESS - ARCH LINUX (NIRI WAYLAND)"
+    echo "🔍 ESTADO DE PODMAN ROOTLESS - CACHYOS (NIRI WAYLAND)"
     echo "================================================================="
     if command -v podman &>/dev/null; then
         echo "• Podman instalado:    $(podman --version 2>/dev/null)"
@@ -103,7 +103,7 @@ show_status() {
 
 # 2. Verificar e instalar complementos opcionales con Pacman
 install_packages() {
-    log_info "Verificando paquetes y complementos de Podman en Arch Linux..."
+    log_info "Verificando paquetes y complementos de Podman en CachyOS..."
     local pkgs=(
         podman
         podman-compose
@@ -391,7 +391,7 @@ case "${1:-}" in
         ;;
     "")
         echo "================================================================="
-        echo "🐳 OPTIMIZADOR DE PODMAN ROOTLESS - ARCH LINUX (NIRI + DMS)"
+        echo "🐳 OPTIMIZADOR DE PODMAN ROOTLESS - CACHYOS (NIRI + DMS)"
         echo "================================================================="
         require_non_root
         install_packages

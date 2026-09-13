@@ -1,13 +1,13 @@
 #!/bin/bash
 # ==============================================================================
-# nodejs.sh - Instalación de Node.js (Última LTS) vía Mise para Arch Linux
+# nodejs.sh - Instalación de Node.js (Última LTS) vía Mise para CachyOS
 # Optimizado para Niri / Wayland y Zsh (npm, pnpm, yarn vía Corepack)
 # ==============================================================================
 
 set -euo pipefail
 
 echo "================================================================="
-echo "🟢 Instalando Node.js (Última versión LTS) para Arch Linux"
+echo "🟢 Instalando Node.js (Última versión LTS) para CachyOS"
 echo "================================================================="
 
 if [ "$EUID" -ne 0 ]; then
@@ -93,7 +93,7 @@ PNPM_VER=$(run_as_user mise exec node@lts -- pnpm --version 2>/dev/null || echo 
 YARN_VER=$(run_as_user mise exec node@lts -- yarn --version 2>/dev/null || echo "disponible vía corepack")
 
 echo "================================================================="
-echo "✅ Node.js LTS configurado con éxito para Arch Linux y Niri / Wayland:"
+echo "✅ Node.js LTS configurado con éxito para CachyOS y Niri / Wayland:"
 echo "  • Node.js:  $NODE_VER (LTS)"
 echo "  • npm:      $NPM_VER (autocompletado en Bash y Zsh)"
 echo "  • pnpm:     $PNPM_VER"

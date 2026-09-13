@@ -1,8 +1,8 @@
 # =============================================================================
-# ARCHIVO DE ALIASES (aliases.sh) - Adaptado para Arch Linux (Niri + DMS)
+# ARCHIVO DE ALIASES (aliases.sh) - Adaptado para CachyOS (Niri + DMS)
 # =============================================================================
 # Este archivo contiene atajos (aliases) para comandos utilizados frecuentemente.
-# Optimizado para Zsh y Bash en Arch Linux con Niri y Dank Material Shell.
+# Optimizado para Zsh y Bash en CachyOS con Niri y Dank Material Shell.
 
 # 1. NAVEGACIÓN RÁPIDA
 alias ..='cd ..'
@@ -11,8 +11,8 @@ alias ....='cd ../../..'
 alias ~='cd ~'
 alias repo='cd /home/caballero/Warehouse/Repositorios'
 alias repos='cd /home/caballero/Warehouse/Repositorios'
-alias arch='cd /home/caballero/Warehouse/Repositorios/Linux/ArchLinux-Niri-DMS'
-alias project='cd /home/caballero/Warehouse/Repositorios/Linux/ArchLinux-Niri-DMS'
+alias cachyos='cd /home/caballero/Warehouse/Repositorios/Linux/CachyOS-Niri-DMS'
+alias project='cd /home/caballero/Warehouse/Repositorios/Linux/CachyOS-Niri-DMS'
 
 # 2. INTEGRACIÓN CON ESCRITORIO WAYLAND (NIRI / DANK MATERIAL SHELL)
 alias open='xdg-open'
@@ -52,7 +52,7 @@ alias chown='chown --preserve-root'
 alias chmod='chmod --preserve-root'
 alias chgrp='chgrp --preserve-root'
 
-# 5. GESTIÓN DE PAQUETES (PACMAN / YAY / PARU)
+# 5. GESTIÓN DE PAQUETES (PACMAN / PARU / YAY)
 alias update='sudo pacman -Syu'
 alias upgrade='sudo pacman -Syu --noconfirm'
 alias install='sudo pacman -S'
@@ -65,19 +65,21 @@ alias pkg-history='cat /var/log/pacman.log | grep "installed\|removed" | tail -2
 alias orphan='pacman -Qdt'
 alias clean-orphans='sudo pacman -Rns $(pacman -Qdtq) --noconfirm 2>/dev/null || true'
 
-# AUR helpers
-if command -v yay &> /dev/null; then
-    alias aur='yay'
-    alias aur-update='yay -Syu'
-    alias aur-search='yay -Ss'
-elif command -v paru &> /dev/null; then
+# AUR helpers (CachyOS prefiere paru)
+if command -v paru &> /dev/null; then
     alias aur='paru'
     alias aur-update='paru -Syu'
     alias aur-search='paru -Ss'
+elif command -v yay &> /dev/null; then
+    alias aur='yay'
+    alias aur-update='yay -Syu'
+    alias aur-search='yay -Ss'
 fi
 
-# Clasificar espejos más rápidos para Arch Linux
-if command -v rate-mirrors &>/dev/null; then
+# Clasificar espejos más rápidos para CachyOS
+if command -v cachyos-rate-mirrors &>/dev/null; then
+    alias rate-mirrors='sudo cachyos-rate-mirrors'
+elif command -v rate-mirrors &>/dev/null; then
     alias rate-mirrors='rate-mirrors arch | sudo tee /etc/pacman.d/mirrorlist'
 elif command -v reflector &>/dev/null; then
     alias rate-mirrors='sudo reflector --latest 20 --protocol https --sort rate --save /etc/pacman.d/mirrorlist'
@@ -167,4 +169,4 @@ alias vminfo='virsh dominfo'
 alias update-antigravity='sudo "$UPDATE_ANTIGRAVITY_PATH"'
 alias update-antigravity-ide='sudo "$UPDATE_ANTIGRAVITY_IDE_PATH"'
 
-echo "✅ Aliases modernizados cargados (Pacman/Yay, Niri/DMS, Kernel-Check, Rust tools)"
+echo "✅ Aliases modernizados cargados (Pacman/Paru, Niri/DMS, Kernel-Check, Rust tools)"

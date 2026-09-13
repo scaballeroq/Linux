@@ -1,5 +1,5 @@
 #!/bin/bash
-# quadlets-setup.sh - Configuración de directorios y servicios systemd Quadlets para Podman en Arch Linux (Niri + Dank Material Shell)
+# quadlets-setup.sh - Configuración de directorios y servicios systemd Quadlets para Podman en CachyOS (Niri + Dank Material Shell)
 #
 # Uso:
 #   ./quadlets-setup.sh              -> Prepara los directorios de Quadlets e instala los servicios compartidos
@@ -32,7 +32,7 @@ require_podman() {
 
 show_help() {
     cat <<EOF
-⚙️ Gestor de Quadlets para Podman - Arch Linux (Niri + Dank Material Shell)
+⚙️ Gestor de Quadlets para Podman - CachyOS (Niri + Dank Material Shell)
 
 Uso:
   $0 [OPCION]
@@ -51,7 +51,7 @@ EOF
 
 show_status() {
     echo "================================================================="
-    echo "🔍 ESTADO DE SYSTEMD QUADLETS - ARCH LINUX"
+    echo "🔍 ESTADO DE SYSTEMD QUADLETS - CACHYOS"
     echo "================================================================="
     echo "• Directorio Quadlets: $HOME/.config/containers/systemd"
     echo "• Generador Quadlet:   $(if [ -f /usr/lib/systemd/user-generators/podman-user-generator ]; then echo 'Presente (/usr/lib/systemd/user-generators/podman-user-generator)'; else echo 'No detectado'; fi)"
@@ -120,7 +120,7 @@ verify_quadlets() {
     local podman_version
     podman_version=$(podman --version | grep -oP '\d+\.\d+' | head -1)
 
-    log_ok "Quadlets soportado nativamente (Podman $podman_version en Arch Linux)."
+    log_ok "Quadlets soportado nativamente (Podman $podman_version en CachyOS)."
     echo ""
     echo "============================================"
     log_ok "Quadlets configurado correctamente"
@@ -152,7 +152,7 @@ case "${1:-}" in
         ;;
     "")
         echo "============================================"
-        echo "  Configurador de Quadlets - Arch Linux"
+        echo "  Configurador de Quadlets - CachyOS"
         echo "============================================"
         echo ""
         require_podman

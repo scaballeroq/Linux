@@ -1,13 +1,13 @@
 #!/bin/bash
 # ==============================================================================
 # python.sh - Instalación y Optimización de Python y uv vía Mise
-# Optimizado para Arch Linux (PGO/LTO), Niri / Wayland (environment.d) y Zsh / Bash
+# Optimizado para CachyOS (PGO/LTO), Niri / Wayland (environment.d) y Zsh / Bash
 # ==============================================================================
 
 set -euo pipefail
 
 echo "================================================================="
-echo "🐍 Instalando y Optimizando Python & uv para Arch Linux"
+echo "🐍 Instalando y Optimizando Python & uv para CachyOS"
 echo "================================================================="
 
 if [ "$EUID" -ne 0 ]; then
@@ -29,7 +29,7 @@ else
     USER_HOME="${HOME:-/home/$REAL_USER}"
 fi
 
-# Flags de optimización para compilación de Python en Arch Linux (PGO + LTO + multinúcleo)
+# Flags de optimización para compilación de Python en CachyOS (PGO + LTO + multinúcleo)
 NPROC=$(nproc 2>/dev/null || echo 8)
 export MAKEFLAGS="-j$NPROC"
 export PYTHON_CONFIGURE_OPTS="--enable-optimizations --with-lto"
@@ -58,7 +58,7 @@ if ! command -v mise &> /dev/null && [ ! -x "$USER_HOME/.local/bin/mise" ]; then
     fi
 fi
 
-# 2. Dependencias de compilación y librerías del sistema para Python en Arch Linux
+# 2. Dependencias de compilación y librerías del sistema para Python en CachyOS
 echo "ℹ️ [1/5] Verificando dependencias nativas del sistema..."
 MISSING_PKGS=$(pacman -T base-devel openssl zlib bzip2 readline sqlite curl git ncurses xz tk libffi 2>/dev/null || true)
 if [ -n "$MISSING_PKGS" ]; then
@@ -139,7 +139,7 @@ UV_VER=$(run_as_user mise exec uv@latest -- uv --version 2>/dev/null || echo "uv
 PIP_VER=$(run_as_user mise exec python@latest -- pip --version 2>/dev/null | awk '{print $2}' || echo "pip instalado")
 
 echo "================================================================="
-echo "✅ Python & uv configurados con éxito para Arch Linux y Niri / Wayland:"
+echo "✅ Python & uv configurados con éxito para CachyOS y Niri / Wayland:"
 echo "  • Python:       $PYTHON_VER"
 echo "  • uv:           $UV_VER (Gestor ultrarrápido en Rust)"
 echo "  • pip:          v$PIP_VER (setuptools + wheel actualizados)"
