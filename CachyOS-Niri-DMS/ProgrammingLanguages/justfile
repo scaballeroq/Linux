@@ -1,0 +1,84 @@
+# ProgrammingLanguages - Justfile
+# Este justfile es para uso desde el directorio ProgrammingLanguages/
+# Para el justfile principal, usar ../justfile
+
+# Gestor de runtimes Mise
+mise:
+    ./mise.sh
+
+# Node.js LTS
+node:
+    ./nodejs.sh
+
+# Python (Última estable + uv)
+python:
+    ./python.sh
+
+# Rust (Canal Stable + cargo-binstall)
+rust:
+    ./rust.sh
+
+# .NET SDK LTS
+dotnet:
+    ./dotnet.sh
+
+# Java OpenJDK LTS (AutoFirma + Mise)
+java:
+    ./java.sh
+
+# Angular CLI (Última estable)
+angular:
+    ./angular.sh
+
+# Todos los lenguajes y runtimes (LTS / Stable)
+all: mise node python rust dotnet java angular
+    @echo "================================================================="
+    @echo "✅ Todos los entornos de desarrollo (LTS / Stable) configurados."
+    @echo "================================================================="
+
+# Consultar el estado y versiones activas de todos los lenguajes
+status:
+    @echo "================================================================="
+    @echo "🔍 Estado de Runtimes y Lenguajes (LTS / Última Estable)"
+    @echo "================================================================="
+    @echo "--- [Mise Runtimes] ---"
+    @command -v mise &>/dev/null && mise ls || echo "Mise no instalado o no activo"
+    @echo ""
+    @echo "--- [Node.js & npm] ---"
+    @command -v node &>/dev/null && node --version || echo "Node.js no encontrado"
+    @command -v npm &>/dev/null && echo "npm: $$(npm --version)" || true
+    @echo ""
+    @echo "--- [Python & uv] ---"
+    @command -v python &>/dev/null && python --version || echo "Python no encontrado"
+    @command -v uv &>/dev/null && uv --version || echo "uv no encontrado"
+    @echo ""
+    @echo "--- [Rust Toolchain] ---"
+    @command -v rustc &>/dev/null && rustc --version || echo "Rust no encontrado"
+    @command -v cargo &>/dev/null && cargo --version || true
+    @echo ""
+    @echo "--- [.NET SDK] ---"
+    @command -v dotnet &>/dev/null && dotnet --version || echo ".NET no encontrado"
+    @echo ""
+    @echo "--- [Java OpenJDK] ---"
+    @command -v java &>/dev/null && java -version 2>&1 | head -n 1 || echo "Java no encontrado"
+    @command -v archlinux-java &>/dev/null && archlinux-java status || true
+    @echo ""
+    @echo "--- [Angular CLI] ---"
+    @command -v ng &>/dev/null && ng version 2>/dev/null | grep -E "Angular CLI:" || echo "Angular CLI no encontrado"
+    @echo "================================================================="
+
+# Actualizar todos los runtimes y toolchains a sus versiones LTS / Estables más recientes
+update:
+    @echo "================================================================="
+    @echo "🔄 Actualizando runtimes y herramientas a sus versiones LTS / Stable"
+    @echo "================================================================="
+    @if command -v mise &>/dev/null; then \
+        echo "⬇️ Actualizando plugins y herramientas en Mise..."; \
+        mise upgrade; \
+        mise reshim; \
+    fi
+    @if command -v rustup &>/dev/null; then \
+        echo "⬇️ Actualizando Rust Stable vía Rustup..."; \
+        rustup update stable; \
+    fi
+    @echo "✅ Actualización completada."

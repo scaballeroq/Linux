@@ -1,0 +1,5 @@
+[Unit]
+Description=Shared Global Podman Network for Development
+
+[Network]
+NetworkName=dev-shared
