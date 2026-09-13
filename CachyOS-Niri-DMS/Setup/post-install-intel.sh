@@ -54,7 +54,7 @@ fi
 # -----------------------------------------------------------------------------
 # 1. Optimización de Pacman y Makepkg (Multi-hilo)
 # -----------------------------------------------------------------------------
-echo "⚙️ [1/9] Optimizando Pacman y Makepkg para compilación paralela..."
+echo "⚙️ [1/10] Optimizando Pacman y Makepkg para compilación paralela..."
 PACMAN_CONF="/etc/pacman.conf"
 if [ -f "$PACMAN_CONF" ]; then
     if grep -q "^#ParallelDownloads" "$PACMAN_CONF"; then
@@ -85,13 +85,13 @@ if [ -f "$MAKEPKG_CONF" ]; then
 fi
 
 # Actualizar base de datos y paquetes del sistema
-echo "🔄 [2/9] Actualizando base del sistema CachyOS..."
+echo "🔄 [2/10] Actualizando base del sistema CachyOS..."
 $SUDO pacman -Syu --noconfirm
 
 # -----------------------------------------------------------------------------
 # 2. Kernel Linux, Firmware y Microcódigo Intel + Early KMS
 # -----------------------------------------------------------------------------
-echo "🐧 [3/9] Instalando Kernel, Firmware, Microcódigo Intel y Early KMS..."
+echo "🐧 [3/10] Instalando Kernel, Firmware, Microcódigo Intel y Early KMS..."
 $SUDO pacman -S --needed --noconfirm \
     linux-cachyos \
     linux-cachyos-headers \
@@ -122,7 +122,7 @@ fi
 # -----------------------------------------------------------------------------
 # 3. Stack Gráfico y Aceleración HW Intel (Mesa / VA-API / Vulkan)
 # -----------------------------------------------------------------------------
-echo "🎮 [4/9] Instalando controladores gráficos Intel (Mesa, intel-media-driver y Vulkan)..."
+echo "🎮 [4/10] Instalando controladores gráficos Intel (Mesa, intel-media-driver y Vulkan)..."
 PKGS_INTEL_GRAPHICS=(
     mesa
     intel-media-driver
@@ -147,7 +147,7 @@ $SUDO pacman -S --needed --noconfirm "${PKGS_INTEL_GRAPHICS[@]}"
 # -----------------------------------------------------------------------------
 # 4. Códecs Multimedia y FFmpeg
 # -----------------------------------------------------------------------------
-echo "🎬 [5/9] Instalando FFmpeg y códecs multimedia..."
+echo "🎬 [5/10] Instalando FFmpeg y códecs multimedia..."
 $SUDO pacman -S --needed --noconfirm \
     ffmpeg \
     gst-plugins-base \
@@ -166,7 +166,7 @@ $SUDO pacman -S --needed --noconfirm \
 # -----------------------------------------------------------------------------
 # 5. Sistema de Audio (PipeWire + WirePlumber)
 # -----------------------------------------------------------------------------
-echo "🔊 [6/9] Verificando y habilitando PipeWire y WirePlumber..."
+echo "🔊 [6/10] Verificando y habilitando PipeWire y WirePlumber..."
 $SUDO pacman -S --needed --noconfirm \
     pipewire \
     pipewire-pulse \
@@ -179,7 +179,7 @@ run_as_user systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>
 # -----------------------------------------------------------------------------
 # 6. Gestión de Energía y Mantenimiento de Almacenamiento SSD
 # -----------------------------------------------------------------------------
-echo "🔋 [7/9] Configurando gestión de energía (power-profiles-daemon) y TRIM de SSD..."
+echo "🔋 [7/10] Configurando gestión de energía (power-profiles-daemon) y TRIM de SSD..."
 $SUDO pacman -S --needed --noconfirm power-profiles-daemon util-linux
 
 $SUDO systemctl enable --now power-profiles-daemon.service
@@ -188,7 +188,7 @@ $SUDO systemctl enable --now fstrim.timer
 # -----------------------------------------------------------------------------
 # 7. Stack Wayland, Portales, Compositor Niri y Temas GTK3/DDC
 # -----------------------------------------------------------------------------
-echo "📦 [8/9] Instalando utilidades esenciales de sistema y stack Niri Wayland..."
+echo "📦 [8/10] Instalando utilidades esenciales de sistema y stack Niri Wayland..."
 $SUDO pacman -S --needed --noconfirm \
     base-devel \
     cmake \
@@ -237,6 +237,7 @@ $SUDO pacman -S --needed --noconfirm \
     papirus-icon-theme \
     adwaita-icon-theme \
     adw-gtk-theme \
+    nwg-look \
     qt5-wayland \
     qt6-wayland \
     qt6ct \
@@ -254,7 +255,7 @@ $SUDO usermod -aG i2c "$REAL_USER" 2>/dev/null || true
 # -----------------------------------------------------------------------------
 # 8. Dank Material Shell (DMS) y Satélites
 # -----------------------------------------------------------------------------
-echo "🌌 [9/9] Verificando componentes y servicios de Dank Material Shell (DMS)..."
+echo "🌌 [9/10] Verificando componentes y servicios de Dank Material Shell (DMS)..."
 
 if ! command -v matugen &>/dev/null; then
     $SUDO pacman -S --needed --noconfirm matugen 2>/dev/null || true
@@ -281,6 +282,43 @@ if run_as_user systemctl --user list-unit-files dms.service &>/dev/null; then
     echo "  ✅ Servicio dms.service habilitado para el usuario $REAL_USER."
 fi
 
+# -----------------------------------------------------------------------------
+# 9. Forzar tema oscuro GTK (Shelly, apps GTK3/GTK4 en Wayland/Niri)
+# -----------------------------------------------------------------------------
+echo "🎨 [10/10] Aplicando tema oscuro global para GTK (Shelly, apps GTK3/GTK4)..."
+
+# Crear directorios de configuración GTK del usuario
+run_as_user mkdir -p "$USER_HOME/.config/environment.d"
+
+# Forzar esquema de color oscuro persistente vía dconf/gsettings
+run_as_user dconf write /org/gnome/desktop/interface/color-scheme '"prefer-dark"' 2>/dev/null || \
+    run_as_user gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null || true
+
+# Establecer tema GTK oscuro (adw-gtk3-dark)
+run_as_user dconf write /org/gnome/desktop/interface/gtk-theme '"adw-gtk3-dark"' 2>/dev/null || \
+    run_as_user gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' 2>/dev/null || true
+
+# Variable de entorno GTK_THEME para la sesión Wayland/Niri (environment.d)
+cat << 'EOF' | run_as_user tee "$USER_HOME/.config/environment.d/10-gtk-dark.conf" > /dev/null
+GTK_THEME=adw-gtk3-dark
+EOF
+
+# Configurar settings.ini de GTK3 para preferir modo oscuro
+run_as_user mkdir -p "$USER_HOME/.config/gtk-3.0"
+cat << 'EOF' | run_as_user tee "$USER_HOME/.config/gtk-3.0/settings.ini" > /dev/null
+[Settings]
+gtk-application-prefer-dark-theme=1
+EOF
+
+# Configurar GTK4 para modo oscuro
+run_as_user mkdir -p "$USER_HOME/.config/gtk-4.0"
+cat << 'EOF' | run_as_user tee "$USER_HOME/.config/gtk-4.0/settings.ini" > /dev/null
+[Settings]
+gtk-application-prefer-dark-theme=1
+EOF
+
+echo "  ✅ Tema oscuro GTK aplicado globalmente (Shelly y apps GTK se verán correctamente)."
+
 # Limpieza segura de paquetes
 if command -v paccache &>/dev/null; then
     paccache -r 2>/dev/null || true
@@ -294,6 +332,7 @@ echo "   - Compilación multi-hilo activa en makepkg."
 echo "   - Early KMS (i915) configurado para arranque limpio multi-monitor."
 echo "   - Mesa ANV y VA-API con soporte 64 y 32 bits configurados."
 echo "   - Soporte DDC/CI (I2C) y adw-gtk-theme instalados para DMS."
+echo "   - Tema oscuro GTK forzado para Shelly y todas las apps GTK3/GTK4."
 echo "   - Gestión de energía y fstrim.timer activos."
 echo "💡 Si se ha actualizado el initramfs o kernel, se recomienda reiniciar el equipo."
 echo "================================================================="
