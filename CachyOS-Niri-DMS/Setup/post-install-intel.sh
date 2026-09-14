@@ -207,6 +207,8 @@ $SUDO pacman -S --needed --noconfirm \
     ntfs-3g \
     vlc \
     mpv \
+    loupe \
+    fragments \
     gimp \
     gparted \
     7zip \
