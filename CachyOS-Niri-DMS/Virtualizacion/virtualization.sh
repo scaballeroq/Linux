@@ -7,6 +7,7 @@ set -euo pipefail
 TARGET_USER="${SUDO_USER:-$USER}"
 WITH_WINDOWS=false
 STATUS_ONLY=false
+CREATE_BRIDGE=false
 
 # ---------------------------------------------------------------------------
 # Funciones de ayuda y utilidades
@@ -17,19 +18,22 @@ Uso: $0 [OPCIONES]
 
 Script de aprovisionamiento y optimización de virtualización KVM/QEMU en CachyOS,
 diseñado para maximizar el rendimiento y la integración de distribuciones Linux invitadas.
+Optimizado para portátiles AMD Ryzen (HP EliteBook), Niri Compositor y Dank Material Shell.
 
 OPCIONES:
   --status, --check     Verifica el estado de KVM, sockets libvirt, módulos del kernel y red sin realizar cambios.
   --with-windows        Descarga también la ISO de controladores VirtIO para Windows (virtio-win.iso).
+  --bridge              Crea un puente de red L2 físico (br0) sobre la interfaz Ethernet cableada (opcional).
   -h, --help            Muestra esta ayuda y recomendaciones para VMs Linux.
 
 CARACTERÍSTICAS Y OPTIMIZACIONES:
-  - Soporte 3D VirGL (virglrenderer + virtio-gpu-gl) para escritorios Wayland/X11 fluidos.
+  - Soporte 3D VirGL (virglrenderer + virtio-gpu-gl) para escritorios Wayland/X11 fluidos en GPU AMD Vega.
   - Compartición ultrarrápida de carpetas mediante VirtioFS (virtiofsd en Rust).
   - Aceleración por hardware AMD AVIC / Intel EPT y virtualización anidada (Nested KVM).
-  - Aceleración de red del kernel (vhost_net, vhost_vsock) y sockets modulares Libvirt 12+.
-  - Deduplicación de memoria RAM entre VMs con KSM del kernel y perfil Tuned 'virtual-host'.
-  - Protección de interfaces Wi-Fi para evitar pérdida de conexión.
+  - Aceleración de red del kernel (vhost_net, vhost_vsock) y sockets modulares Libvirt 12+ (ahorro de batería).
+  - Integración nativa con Firewalld (zonas libvirt y home, sin conflictos de firewall).
+  - Respeto a la gestión térmica y de batería en portátiles (coexistencia con power-profiles-daemon y ananicy-cpp).
+  - Protección de interfaces Wi-Fi y Ethernet para evitar caídas de red accidentales.
   - Reglas de Polkit para gestionar máquinas virtuales sin solicitudes de contraseña (grupo libvirt).
   - Integración nativa con Niri Compositor (reglas para virt-manager y visores sin recorte de esquinas).
   - Entorno de terminal configurado para Zsh (Dank Material Shell), Wayland y Bash (LIBVIRT_DEFAULT_URI).
@@ -109,7 +113,7 @@ check_status() {
     fi
 
     echo -n "• Herramientas de optimización Linux Guest: "
-    local tools=("virglrenderer" "virtiofsd" "osinfo-db" "tuned" "swtpm" "spice-gtk")
+    local tools=("virglrenderer" "virtiofsd" "osinfo-db" "swtpm" "spice-gtk")
     local found_tools=()
     for t in "${tools[@]}"; do
         if pacman -Q "$t" >/dev/null 2>&1; then
@@ -131,6 +135,9 @@ for arg in "$@"; do
             ;;
         --with-windows)
             WITH_WINDOWS=true
+            ;;
+        --bridge)
+            CREATE_BRIDGE=true
             ;;
         -h|--help)
             show_help
@@ -165,11 +172,10 @@ sudo pacman -S --needed --noconfirm \
     dmidecode \
     bridge-utils \
     openbsd-netcat \
-    iptables-nft \
+    iptables \
     nftables \
     edk2-ovmf \
     swtpm \
-    tuned \
     acl \
     libosinfo \
     osinfo-db \
@@ -390,40 +396,58 @@ if [ -n "$PHYS_IFACE" ]; then
         echo "✅ La red NAT por defecto ('default' con virbr0 y vhost_net) ofrece máximo rendimiento y acceso a internet transparente."
     elif [ "$PHYS_IFACE" != "br0" ]; then
         echo "ℹ️ Interfaz activa cableada detectada: '$PHYS_IFACE'."
-        if command -v nmcli >/dev/null 2>&1; then
-            if ! nmcli con show br0 >/dev/null 2>&1; then
-                echo "Creando bridge br0 sobre interfaz Ethernet $PHYS_IFACE..."
-                sudo nmcli con add type bridge ifname br0 con-name br0 2>/dev/null || true
-                sudo nmcli con add type bridge-slave ifname "$PHYS_IFACE" con-name br0-port master br0 2>/dev/null || true
-                sudo nmcli con modify br0 ipv4.method auto 2>/dev/null || true
+        if [ "$CREATE_BRIDGE" = true ]; then
+            if command -v nmcli >/dev/null 2>&1; then
+                if ! nmcli con show br0 >/dev/null 2>&1; then
+                    echo "Creando bridge br0 sobre interfaz Ethernet $PHYS_IFACE..."
+                    sudo nmcli con add type bridge ifname br0 con-name br0 2>/dev/null || true
+                    sudo nmcli con add type bridge-slave ifname "$PHYS_IFACE" con-name br0-port master br0 2>/dev/null || true
+                    sudo nmcli con modify br0 ipv4.method auto 2>/dev/null || true
 
-                cat <<EOF > /tmp/host-bridge.xml
+                    cat <<EOF > /tmp/host-bridge.xml
 <network>
   <name>host-bridge</name>
   <forward mode='bridge'/>
   <bridge name='br0'/>
 </network>
 EOF
-                sudo virsh net-define /tmp/host-bridge.xml 2>/dev/null || true
-                sudo virsh net-start host-bridge 2>/dev/null || true
-                sudo virsh net-autostart host-bridge 2>/dev/null || true
-                echo "✅ Bridge br0 creado y registrado en libvirt como 'host-bridge'."
-            else
-                echo "✅ El bridge br0 ya existe, omitiendo creación."
+                    sudo virsh net-define /tmp/host-bridge.xml 2>/dev/null || true
+                    sudo virsh net-start host-bridge 2>/dev/null || true
+                    sudo virsh net-autostart host-bridge 2>/dev/null || true
+                    echo "✅ Bridge br0 creado y registrado en libvirt como 'host-bridge'."
+                else
+                    echo "✅ El bridge br0 ya existe, omitiendo creación."
+                fi
             fi
+        else
+            echo "🛡️ Portátil detectado: Para evitar caídas de red o desconfiguración de DHCP al desconectar cables/docks,"
+            echo "   la interfaz física permanece intacta. La red NAT ('default' con virbr0) gestiona el tráfico"
+            echo "   de forma transparente y segura en cualquier red (Wi-Fi o cable)."
+            echo "💡 Si requieres explícitamente un bridge físico L2 para exponer VMs en la LAN, ejecuta: $0 --bridge"
         fi
     fi
 fi
 
 # ---------------------------------------------------------------------------
-# 10. Perfil de Rendimiento Tuned (virtual-host) y Deduplicación de Memoria (KSM)
+# 10. Optimización de Rendimiento y Sysctl (Diseñado para Portátil con CachyOS)
 # ---------------------------------------------------------------------------
-echo "ℹ️ Aplicando optimizaciones de rendimiento con tuned (virtual-host) y KSM..."
+echo "ℹ️ Aplicando optimizaciones de rendimiento y energía para portátil (CachyOS + DMS)..."
+# En un portátil con CachyOS y Dank Material Shell, el perfil térmico y de batería
+# es gobernado de forma óptima por power-profiles-daemon y ananicy-cpp. 'tuned' entra
+# en conflicto directo con estos servicios, desactiva estados de reposo y degrada la batería.
+#
+# Con 32 GB de RAM, KSM (Kernel Samepage Merging) se mantiene apagado para no gastar
+# ciclos continuos de CPU escaneando páginas de memoria en segundo plano.
 if [ -d /sys/kernel/mm/ksm ]; then
-    echo 1 | sudo tee /sys/kernel/mm/ksm/run > /dev/null 2>&1 || true
+    echo 0 | sudo tee /sys/kernel/mm/ksm/run > /dev/null 2>&1 || true
 fi
-sudo systemctl enable --now tuned.service 2>/dev/null || true
-sudo tuned-adm profile virtual-host 2>/dev/null || true
+
+# Asegurar persistencia del reenvío de paquetes IPv4 para conectividad fiable de las VMs
+echo "ℹ️ Asegurando persistencia de reenvío de paquetes IPv4 (net.ipv4.ip_forward = 1)..."
+cat <<EOF | sudo tee /etc/sysctl.d/99-ipforward.conf > /dev/null
+net.ipv4.ip_forward = 1
+EOF
+sudo sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1 || true
 
 # ---------------------------------------------------------------------------
 # 11. Permisos de Usuario y Listas de Control de Acceso (ACL)
@@ -431,11 +455,11 @@ sudo tuned-adm profile virtual-host 2>/dev/null || true
 echo "ℹ️ Configurando grupos de usuario (libvirt, kvm) para $TARGET_USER..."
 sudo usermod -aG libvirt,kvm "$TARGET_USER" 2>/dev/null || sudo usermod -aG libvirt "$TARGET_USER"
 
-echo "ℹ️ Configurando permisos ACL en el directorio de imágenes (/var/lib/libvirt/images)..."
-sudo mkdir -p /var/lib/libvirt/images
-sudo setfacl -R -b /var/lib/libvirt/images 2>/dev/null || true
-sudo setfacl -R -m u:"$TARGET_USER":rwX /var/lib/libvirt/images 2>/dev/null || true
-sudo setfacl -d -m u:"$TARGET_USER":rwX /var/lib/libvirt/images 2>/dev/null || true
+echo "ℹ️ Configurando permisos ACL en directorios de libvirt (/var/lib/libvirt)..."
+sudo mkdir -p /var/lib/libvirt/images /var/lib/libvirt/qemu/nvram /var/lib/libvirt/boot
+sudo setfacl -R -b /var/lib/libvirt/images /var/lib/libvirt/qemu 2>/dev/null || true
+sudo setfacl -R -m u:"$TARGET_USER":rwX /var/lib/libvirt/images /var/lib/libvirt/qemu 2>/dev/null || true
+sudo setfacl -d -m u:"$TARGET_USER":rwX /var/lib/libvirt/images /var/lib/libvirt/qemu 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
 # 12. Regla de Polkit para Gestión sin Contraseña (Grupo libvirt)
@@ -496,29 +520,36 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 14. Reglas de Ventana para Niri Compositor (virt-manager y remote-viewer)
+# 14. Reglas de Ventana para Niri Compositor (virt-manager y visores de VM)
 # ---------------------------------------------------------------------------
-NIRI_RULES="$HOME/.config/niri/cfg/rules.kdl"
-if [ -f "$NIRI_RULES" ]; then
-    echo "ℹ️ Niri Compositor detectado: asegurando reglas de ventana para virt-manager y visores..."
-    if ! grep -q "virt-manager" "$NIRI_RULES" 2>/dev/null; then
-        cat <<'EOF' >> "$NIRI_RULES"
+NIRI_CONFIG=""
+if [ -f "$HOME/.config/niri/config.kdl" ]; then
+    NIRI_CONFIG="$HOME/.config/niri/config.kdl"
+elif [ -f "$HOME/.config/niri/cfg/rules.kdl" ]; then
+    NIRI_CONFIG="$HOME/.config/niri/cfg/rules.kdl"
+fi
+
+if [ -n "$NIRI_CONFIG" ]; then
+    echo "ℹ️ Niri Compositor detectado ($NIRI_CONFIG): asegurando reglas de ventana para virt-manager y visores..."
+    if ! grep -q "virt-manager" "$NIRI_CONFIG" 2>/dev/null; then
+        cat <<'EOF' >> "$NIRI_CONFIG"
 
 // Reglas para Gestor de Máquinas Virtuales (virt-manager)
 window-rule {
-    match app-id="virt-manager" title=r"^Virtual Machine Manager|Gestor de máquinas virtuales$"
+    match app-id=r#"^virt-manager$"# title=r#"^Virtual Machine Manager|Gestor de máquinas virtuales$"#
     default-column-width { proportion 0.5; }
 }
 
 window-rule {
-    match app-id="virt-manager"
-    exclude title=r"^Virtual Machine Manager|Gestor de máquinas virtuales$"
+    match app-id=r#"^virt-manager$"#
+    exclude title=r#"^Virtual Machine Manager|Gestor de máquinas virtuales$"#
     open-floating true
 }
 
 // Visor de VM (remote-viewer / virt-viewer): flotante, tamaño inicial y sin esquinas cortadas
 window-rule {
-    match app-id="remote-viewer"
+    match app-id=r#"^remote-viewer$"#
+    match app-id=r#"^virt-viewer$"#
     open-floating true
     default-column-width { fixed 1280; }
     default-window-height { fixed 800; }
@@ -526,12 +557,12 @@ window-rule {
     clip-to-geometry false
 }
 EOF
-        echo "✅ Reglas de ventana añadidas a ~/.config/niri/cfg/rules.kdl"
+        echo "✅ Reglas de ventana añadidas a $NIRI_CONFIG"
         if command -v niri &>/dev/null; then
             niri msg action reload-config 2>/dev/null || true
         fi
     else
-        echo "✅ Las reglas para virt-manager ya están presentes en Niri."
+        echo "✅ Las reglas para virt-manager ya están presentes en Niri ($NIRI_CONFIG)."
     fi
 fi
 
