@@ -294,8 +294,15 @@ if [ -n "$AUR_HELPER" ]; then
 fi
 
 if run_as_user systemctl --user list-unit-files dms.service &>/dev/null; then
+    # Aislar DMS para que solo se ejecute en sesión Niri (sin interferir si se inicia sesión en GNOME)
+    run_as_user mkdir -p "$USER_HOME/.config/systemd/user/dms.service.d"
+    cat << 'EOF' | run_as_user tee "$USER_HOME/.config/systemd/user/dms.service.d/override.conf" > /dev/null
+[Unit]
+ConditionEnvironment=XDG_CURRENT_DESKTOP=niri
+EOF
+    run_as_user systemctl --user daemon-reload 2>/dev/null || true
     run_as_user systemctl --user enable --now dms.service 2>/dev/null || true
-    echo "  ✅ Servicio dms.service habilitado para el usuario $REAL_USER."
+    echo "  ✅ Servicio dms.service habilitado (aislado para sesión Niri, compatible con GNOME)."
 fi
 
 # -----------------------------------------------------------------------------

@@ -106,6 +106,15 @@ command -v matugen &>/dev/null && echo "✅ Instalado" || echo "⚠️ No encont
 
 # 3. Comprobar servicio systemd user
 echo -n "• Servicio dms.service:  "
+mkdir -p "$HOME/.config/systemd/user/dms.service.d"
+if [ ! -f "$HOME/.config/systemd/user/dms.service.d/override.conf" ]; then
+    cat << 'EOF' > "$HOME/.config/systemd/user/dms.service.d/override.conf"
+[Unit]
+ConditionEnvironment=XDG_CURRENT_DESKTOP=niri
+EOF
+    systemctl --user daemon-reload 2>/dev/null || true
+fi
+
 if systemctl --user is-enabled dms.service &>/dev/null; then
     if systemctl --user is-active dms.service &>/dev/null; then
         echo "✅ Habilitado y Activo"

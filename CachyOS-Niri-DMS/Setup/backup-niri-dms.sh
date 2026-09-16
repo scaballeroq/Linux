@@ -35,10 +35,12 @@ TARGET_ITEMS=(
     "DankMaterialShell"
     "danksearch"
     "dankcal"
+    "quickshell"
     "kitty"
     "environment.d"
     "gtk-3.0"
     "gtk-4.0"
+    "qt6ct"
     "fastfetch"
     "starship.toml"
 )
@@ -69,6 +71,8 @@ show_help() {
     echo "  • kitty            (kitty.conf, dank-theme.conf, dank-tabs.conf)"
     echo "  • environment.d    (90-dms.conf y variables de sesión Wayland)"
     echo "  • gtk-3.0/gtk-4.0  (dank-colors.css y estilos Material You de apps GTK)"
+    echo "  • quickshell       (componentes y estado QML de shell)"
+    echo "  • qt6ct            (estilo y paleta Qt6 integrada con Material You)"
     echo "  • fastfetch        (config.jsonc diagnóstico de terminal)"
     echo "  • starship.toml    (estilo y prompt del terminal)"
 }
