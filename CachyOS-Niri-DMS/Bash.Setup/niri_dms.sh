@@ -53,8 +53,21 @@ alias dms-powermenu="dms ipc call powermenu toggle"
 # Bloqueo de sesión
 alias dms-lock="dms ipc call lock lock"
 
-# Alternar tema claro / oscuro (Material You / Matugen)
-alias dms-theme-toggle="dms ipc call theme toggle"
+# Alternar tema claro / oscuro (Material You / Matugen) + sincronizar Qt y GTK
+dms-theme-toggle() {
+    dms ipc call theme toggle
+    sleep 0.5
+    local mode
+    mode=$(dms ipc call theme getMode 2>/dev/null)
+    if [ "$mode" = "dark" ]; then
+        gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' 2>/dev/null || true
+        gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null || true
+    else
+        gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3' 2>/dev/null || true
+        gsettings set org.gnome.desktop.interface color-scheme 'prefer-light' 2>/dev/null || true
+    fi
+    dms matugen qtengine 2>/dev/null || true
+}
 
 # Guía de atajos de teclado
 alias dms-keybinds="dms ipc call keybinds toggle"

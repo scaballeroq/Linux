@@ -330,15 +330,25 @@ EOF
 run_as_user mkdir -p "$USER_HOME/.config/gtk-3.0"
 cat << 'EOF' | run_as_user tee "$USER_HOME/.config/gtk-3.0/settings.ini" > /dev/null
 [Settings]
+gtk-theme-name=adw-gtk3-dark
 gtk-application-prefer-dark-theme=1
 EOF
 
-# Configurar GTK4 para modo oscuro
+# Configurar GTK4 para modo oscuro (enlaces completos para apps puras GTK4 como Shelly y Pavucontrol)
 run_as_user mkdir -p "$USER_HOME/.config/gtk-4.0"
 cat << 'EOF' | run_as_user tee "$USER_HOME/.config/gtk-4.0/settings.ini" > /dev/null
 [Settings]
+gtk-theme-name=adw-gtk3-dark
 gtk-application-prefer-dark-theme=1
 EOF
+
+if [ -d "/usr/share/themes/adw-gtk3-dark/gtk-4.0" ]; then
+    run_as_user ln -sf /usr/share/themes/adw-gtk3-dark/gtk-4.0/assets "$USER_HOME/.config/gtk-4.0/assets"
+    run_as_user ln -sf /usr/share/themes/adw-gtk3-dark/gtk-4.0/gtk.css "$USER_HOME/.config/gtk-4.0/gtk.css"
+    run_as_user ln -sf /usr/share/themes/adw-gtk3-dark/gtk-4.0/gtk-dark.css "$USER_HOME/.config/gtk-4.0/gtk-dark.css"
+    run_as_user ln -sf /usr/share/themes/adw-gtk3-dark/gtk-4.0/libadwaita.css "$USER_HOME/.config/gtk-4.0/libadwaita.css"
+    run_as_user ln -sf /usr/share/themes/adw-gtk3-dark/gtk-4.0/libadwaita-tweaks.css "$USER_HOME/.config/gtk-4.0/libadwaita-tweaks.css"
+fi
 
 echo "  ✅ Tema oscuro GTK aplicado globalmente (Shelly y apps GTK se verán correctamente)."
 

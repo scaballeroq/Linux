@@ -44,10 +44,11 @@ export LESS_TERMCAP_ue=$'\E[0m'
 export XDG_CURRENT_DESKTOP="niri"
 export XDG_SESSION_TYPE="wayland"
 
-# Compatibilidad Qt/Wayland y theming sin dependencias de KDE
+# Compatibilidad Qt/Wayland y theming con Kvantum
 export QT_QPA_PLATFORM="wayland;xcb"
 export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
 export QT_QPA_PLATFORMTHEME="qt6ct"
+export QT_STYLE_OVERRIDE="kvantum"
 export QT_AUTO_SCREEN_SCALE_FACTOR=1
 
 # Firefox y navegadores en modo Wayland nativo

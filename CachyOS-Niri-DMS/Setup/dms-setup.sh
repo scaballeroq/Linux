@@ -63,7 +63,8 @@ if [ $# -gt 0 ]; then
             echo "🎨 Regenerando paletas Material You con Matugen..."
             if command -v dms &>/dev/null; then
                 dms matugen generate 2>/dev/null || true
-                echo "✅ Paletas regeneradas."
+                dms matugen qtengine 2>/dev/null || true
+                echo "✅ Paletas regeneradas y tema Qt sincronizado."
             fi
             exit 0
             ;;
