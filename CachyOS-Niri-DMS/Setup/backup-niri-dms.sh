@@ -137,13 +137,13 @@ list_backups() {
     echo -e "${BOLD}📋 Copias de seguridad disponibles en:${RESET} $BACKUP_DIR"
     echo -e "${CYAN}===========================================================${RESET}"
 
-    if [ ! -d "$BACKUP_DIR" ] || [ -z "$(find "$BACKUP_DIR" -maxdepth 1 -name "niri_dms_*.tar.gz" 2>/dev/null)" ]; then
+    if [ ! -d "$BACKUP_DIR" ] || [ -z "$(find "$BACKUP_DIR" -maxdepth 1 -name "niri_dms_*.tar.gz*" 2>/dev/null)" ]; then
         echo -e "${YELLOW}ℹ️  No hay respaldos registrados aún.${RESET}"
         return 0
     fi
 
-    printf "${BOLD}%-5s  %-35s  %-10s  %-20s${RESET}\n" "#" "Nombre del Archivo" "Tamaño" "Fecha de Creación"
-    echo "-------------------------------------------------------------------------------"
+    printf "${BOLD}%-5s  %-40s  %-10s  %-20s${RESET}\n" "#" "Nombre del Archivo" "Tamaño" "Fecha de Creación"
+    echo "--------------------------------------------------------------------------------------"
 
     local count=1
     while IFS= read -r file; do
@@ -151,14 +151,18 @@ list_backups() {
         filename="$(basename "$file")"
         size="$(du -h "$file" | awk '{print $1}')"
         mod_date="$(date -r "$file" +'%Y-%m-%d %H:%M:%S')"
-        printf "%-5s  %-35s  %-10s  %-20s\n" "[$count]" "$filename" "$size" "$mod_date"
+        printf "%-5s  %-40s  %-10s  %-20s\n" "[$count]" "$filename" "$size" "$mod_date"
         count=$((count + 1))
-    done < <(find "$BACKUP_DIR" -maxdepth 1 -name "niri_dms_*.tar.gz" -type f | sort -r)
+    done < <(find "$BACKUP_DIR" -maxdepth 1 -name "niri_dms_*.tar.gz*" -type f | sort -r)
 
     if [ -L "$BACKUP_DIR/latest.tar.gz" ]; then
         local target
         target="$(readlink "$BACKUP_DIR/latest.tar.gz")"
-        echo -e "\n⭐ ${CYAN}latest.tar.gz${RESET} -> ${target}"
+        if [ -e "$BACKUP_DIR/latest.tar.gz" ]; then
+            echo -e "\n⭐ ${CYAN}latest.tar.gz${RESET} -> ${target} (${GREEN}válido${RESET})"
+        else
+            echo -e "\n⭐ ${CYAN}latest.tar.gz${RESET} -> ${target} (${RED}enlace roto${RESET})"
+        fi
     fi
 }
 
@@ -166,7 +170,7 @@ list_backups() {
 restore_backup() {
     local target_archive="${1:-}"
 
-    # Si no se indica archivo, usar latest.tar.gz
+    # Si no se indica archivo, usar latest.tar.gz por defecto
     if [ -z "$target_archive" ]; then
         target_archive="$BACKUP_DIR/latest.tar.gz"
     fi
@@ -174,6 +178,38 @@ restore_backup() {
     # Si se pasó un nombre relativo dentro de BACKUP_DIR
     if [ ! -f "$target_archive" ] && [ -f "$BACKUP_DIR/$target_archive" ]; then
         target_archive="$BACKUP_DIR/$target_archive"
+    fi
+
+    # Si se pasó sin extensión o con variación .tar.gz
+    if [ ! -f "$target_archive" ] && [ -f "${target_archive}.tar.gz" ]; then
+        target_archive="${target_archive}.tar.gz"
+    fi
+
+    # Recuperación inteligente si el objetivo no existe o latest.tar.gz es un enlace roto
+    if [ ! -f "$target_archive" ]; then
+        if [ -L "$target_archive" ]; then
+            local broken_target
+            broken_target="$(readlink "$target_archive" 2>/dev/null || true)"
+            echo -e "${YELLOW}⚠️  Aviso: El enlace simbólico '$target_archive' apunta a '$broken_target', que no existe.${RESET}"
+            
+            # Comprobar si el archivo existe con sufijo adicional (ej. doble .tar.gz)
+            if [ -f "$BACKUP_DIR/${broken_target}.tar.gz" ]; then
+                echo -e "${CYAN}ℹ️  Detectado archivo con extensión repetida: ${broken_target}.tar.gz${RESET}"
+                target_archive="$BACKUP_DIR/${broken_target}.tar.gz"
+                ln -sf "$(basename "$target_archive")" "$BACKUP_DIR/latest.tar.gz"
+            fi
+        fi
+
+        # Si aún no existe y el usuario no especificó archivo concreto, buscar el más reciente en BACKUP_DIR
+        if [ ! -f "$target_archive" ] && [ -z "${1:-}" ]; then
+            local latest_found
+            latest_found="$(find "$BACKUP_DIR" -maxdepth 1 -name "niri_dms_*.tar.gz*" -type f 2>/dev/null | sort -r | head -n 1)"
+            if [ -n "$latest_found" ] && [ -f "$latest_found" ]; then
+                echo -e "${CYAN}ℹ️  Seleccionando automáticamente el respaldo más reciente: $(basename "$latest_found")${RESET}"
+                target_archive="$latest_found"
+                ln -sf "$(basename "$latest_found")" "$BACKUP_DIR/latest.tar.gz"
+            fi
+        fi
     fi
 
     if [ ! -f "$target_archive" ]; then
@@ -236,10 +272,10 @@ restore_backup() {
 # 4. Función de limpieza de copias antiguas
 prune_backups() {
     local count
-    count=$(find "$BACKUP_DIR" -maxdepth 1 -name "niri_dms_*.tar.gz" -type f | wc -l)
+    count=$(find "$BACKUP_DIR" -maxdepth 1 -name "niri_dms_*.tar.gz*" -type f | wc -l)
     if [ "$count" -gt "$MAX_KEEP" ]; then
         echo -e "${BLUE}🧹 Limpiando copias antiguas (conservando las últimas ${MAX_KEEP})...${RESET}"
-        find "$BACKUP_DIR" -maxdepth 1 -name "niri_dms_*.tar.gz" -type f | sort | head -n -"$MAX_KEEP" | while read -r old_file; do
+        find "$BACKUP_DIR" -maxdepth 1 -name "niri_dms_*.tar.gz*" -type f | sort | head -n -"$MAX_KEEP" | while read -r old_file; do
             rm -f "$old_file"
             echo "   Eliminado: $(basename "$old_file")"
         done
