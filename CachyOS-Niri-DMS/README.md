@@ -41,8 +41,8 @@ Scripts de configuración del sistema operativo, personalización y endurecimien
 - **`fonts.sh`**: Fuentes de desarrollo (Nerd Fonts: JetBrainsMono, FiraCode e Inter Variable).
 - **`yt-dlp-setup.sh`**: Dependencias para manejo multimedia (yt-dlp, FFmpeg, Deno/Node).
 
-### 🐚 [ZSH.Setup](./ZSH.Setup/)
-Configuración modular de terminal para **Zsh** y **Bash**:
+### 🐚 [Bash.Setup](./Bash.Setup/)
+Configuración modular de terminal para **Bash** y **Zsh**:
 - **`aliases.sh`**: Atajos de navegación (`cachyos`, `project`, `repo`), seguridad (`rm -i`), paquetes (`pacman` / `paru`), espejos (`cachyos-rate-mirrors`) y pipes globales en Zsh (`G`, `L`, `H`, `J`).
 - **`niri_dms.sh`**: Control e IPC de Niri y Dank Material Shell (`dms ipc`), capturas Wayland (`grim` + `slurp` + `satty`) y grabación (`wl-screenrec`).
 - **`environment.sh`**: Variables globales (`EDITOR`, `PATH`, Wayland/Qt, Docker host) y activación de Mise.

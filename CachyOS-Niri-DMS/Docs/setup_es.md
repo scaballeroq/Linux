@@ -50,7 +50,7 @@ El entorno gráfico Wayland combina el compositor de cinta infinita **Niri** (Ru
 
 ## 3. Entorno de Terminal y Shells (`shell.sh`, `fastfetch.sh` y `fonts.sh`)
 
-Instala utilidades modernas de consola, tipografías para desarrollo y enlaza de forma modular la configuración de **Zsh** y **Bash** desde `ZSH.Setup`, utilizando el prompt **Starship** optimizado con Nerd Fonts.
+Instala utilidades modernas de consola, tipografías para desarrollo y enlaza de forma modular la configuración de **Bash** y **Zsh** desde `Bash.Setup`, utilizando el prompt **Starship** optimizado con Nerd Fonts.
 
 ### Utilidades Modernas de Terminal (`shell.sh`)
 Se instalan alternativas modernas a herramientas clásicas y se configura la carga modular en `~/.zshrc.d/` y `~/.bashrc.d/`:

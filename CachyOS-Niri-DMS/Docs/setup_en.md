@@ -50,7 +50,7 @@ The Wayland graphical environment couples **Niri** (Rust scrollable-tiling windo
 
 ## 3. Terminal Environment & Shells (`shell.sh`, `fastfetch.sh`, `fonts.sh`)
 
-Installs modern command-line tools, programmer fonts, and modular shell configuration for both **Zsh** and **Bash** from `ZSH.Setup`, featuring the cross-shell **Starship** prompt.
+Installs modern command-line tools, programmer fonts, and modular shell configuration for both **Bash** and **Zsh** from `Bash.Setup`, featuring the cross-shell **Starship** prompt.
 
 ### Modern Terminal Utilities (`shell.sh`)
 - `eza` (modern `ls` alternative with Git integration)

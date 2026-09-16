@@ -41,8 +41,8 @@ Operating system setup, personalization, and security hardening scripts:
 - **`fonts.sh`**: Developer fonts (Nerd Fonts: JetBrainsMono, FiraCode, and Inter Variable).
 - **`yt-dlp-setup.sh`**: Multimedia stack dependencies (yt-dlp, FFmpeg, Deno/Node).
 
-### 🐚 [ZSH.Setup](./ZSH.Setup/)
-Modular shell configuration for **Zsh** and **Bash**:
+### 🐚 [Bash.Setup](./Bash.Setup/)
+Modular shell configuration for **Bash** and **Zsh**:
 - **`aliases.sh`**: Navigation shortcuts (`arch`, `project`, `repo`), safety (`rm -i`), package management (`pacman` / `yay`), mirror ranking (`rate-mirrors`), and global pipes in Zsh (`G`, `L`, `H`, `J`).
 - **`niri_dms.sh`**: Niri and Dank Material Shell IPC control (`dms ipc`), Wayland screenshots (`grim` + `slurp` + `satty`), and recording (`wl-screenrec`).
 - **`environment.sh`**: Global environment variables (`EDITOR`, `PATH`, Wayland/Qt, Docker host) and Mise activation.

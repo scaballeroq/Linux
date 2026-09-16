@@ -189,8 +189,8 @@ window-rule {
 ### B. Gestión sin Contraseñas con Polkit (`/etc/polkit-1/rules.d/50-libvirt.rules`)
 Permite a cualquier usuario del grupo `libvirt` crear y administrar máquinas virtuales sin requerir autenticación administrativa continua en Wayland.
 
-### C. Variables de Entorno en Zsh y Wayland
-`export LIBVIRT_DEFAULT_URI="qemu:///system"` configurado en `ZSH.Setup/environment.sh` y `/etc/environment.d/10-libvirt.conf` asegura que comandos y aliases como `vms` (`virsh list --all`) conecten de forma transparente al hipervisor del sistema.
+### C. Variables de Entorno en Shells y Wayland
+`export LIBVIRT_DEFAULT_URI="qemu:///system"` configurado en `Bash.Setup/environment.sh` y `/etc/environment.d/10-libvirt.conf` asegura que comandos y aliases como `vms` (`virsh list --all`) conecten de forma transparente al hipervisor del sistema.
 
 ---
 

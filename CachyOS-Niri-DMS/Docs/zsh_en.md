@@ -2,9 +2,9 @@
 sidebar_position: 3
 ---
 
-# Terminal & Zsh Configuration on CachyOS (ZSH.Setup)
+# Terminal & Shells Configuration on CachyOS (Bash.Setup)
 
-This guide details the terminal environment (optimized primarily for **Zsh**, the default shell in CachyOS, with fallback compatibility for **Bash**) along with the modular scripts provided under the `ZSH.Setup` folder.
+This guide details the terminal environment (optimized for **Bash** and **Zsh** on CachyOS) along with the modular scripts provided under the `Bash.Setup` folder.
 
 The modular configuration is structured through `~/.zshrc.d/` and `~/.bashrc.d/` directories to ensure fast, clean, and maintainable configurations.
 
@@ -42,8 +42,8 @@ fi
 You can link all modules automatically by running `./Setup/shell.sh` or manually:
 ```bash
 mkdir -p ~/.zshrc.d ~/.bashrc.d
-ln -sf /home/caballero/Warehouse/Repositorios/Linux/ArchLinux-Niri-DMS/ZSH.Setup/*.sh ~/.zshrc.d/
-ln -sf /home/caballero/Warehouse/Repositorios/Linux/ArchLinux-Niri-DMS/ZSH.Setup/*.sh ~/.bashrc.d/
+ln -sf /home/caballero/Workspace/Repositorios/Linux/CachyOS-Niri-DMS/Bash.Setup/*.sh ~/.zshrc.d/
+ln -sf /home/caballero/Workspace/Repositorios/Linux/CachyOS-Niri-DMS/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
 ---
@@ -90,8 +90,8 @@ Optimizes shell interaction through internal adjustments tailored for Zsh.
 Replaces standard commands with enriched and safe alternatives:
 
 - **Quick Navigation**:
-  - `arch` / `project`: Go to `/home/caballero/Warehouse/Repositorios/Linux/ArchLinux-Niri-DMS`
-  - `repo` / `repos`: Go to `/home/caballero/Warehouse/Repositorios`
+  - `cachyos` / `project`: Go to `/home/caballero/Workspace/Repositorios/Linux/CachyOS-Niri-DMS`
+  - `repo` / `repos`: Go to `/home/caballero/Workspace/Repositorios`
   - `..`, `...`, `....`: Go up 1, 2, or 3 directories
 - **Zsh Global Pipes** (smart suffix aliases):
   - `G` → `| grep -i` (e.g. `cat file G error`)

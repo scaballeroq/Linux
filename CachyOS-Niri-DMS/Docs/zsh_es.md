@@ -2,9 +2,9 @@
 sidebar_position: 3
 ---
 
-# Configuración de Terminal y Zsh en CachyOS (ZSH.Setup)
+# Configuración de Terminal y Shells en CachyOS (Bash.Setup)
 
-Esta guía detalla la configuración del entorno de terminal (optimizado primordialmente para **Zsh**, la shell predeterminada en CachyOS, con compatibilidad para **Bash**) junto a las utilidades modulares organizadas en el directorio `ZSH.Setup`.
+Esta guía detalla la configuración del entorno de terminal (optimizado para **Bash** y **Zsh** en CachyOS) junto a las utilidades modulares organizadas en el directorio `Bash.Setup`.
 
 La carga modular está estructurada a través de los directorios `~/.zshrc.d/` y `~/.bashrc.d/` para garantizar modularidad, velocidad y mantenibilidad de tus configuraciones.
 
@@ -29,7 +29,7 @@ fi
 Añade el siguiente bloque a tu archivo `~/.bashrc`:
 
 ```bash
-# Carga modular de scripts de ZSH.Setup
+# Carga modular de scripts de Bash.Setup
 if [ -d "$HOME/.bashrc.d" ]; then
     for script in "$HOME/.bashrc.d"/*.sh; do
         [ -r "$script" ] && source "$script"
@@ -42,8 +42,8 @@ fi
 Puedes habilitar todos los módulos ejecutando `./Setup/shell.sh` o manualmente:
 ```bash
 mkdir -p ~/.zshrc.d ~/.bashrc.d
-ln -sf /home/caballero/Warehouse/Repositorios/Linux/ArchLinux-Niri-DMS/ZSH.Setup/*.sh ~/.zshrc.d/
-ln -sf /home/caballero/Warehouse/Repositorios/Linux/ArchLinux-Niri-DMS/ZSH.Setup/*.sh ~/.bashrc.d/
+ln -sf /home/caballero/Workspace/Repositorios/Linux/CachyOS-Niri-DMS/Bash.Setup/*.sh ~/.zshrc.d/
+ln -sf /home/caballero/Workspace/Repositorios/Linux/CachyOS-Niri-DMS/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
 ---
@@ -90,8 +90,8 @@ Optimiza la interacción de la shell mediante ajustes internos adaptados a Zsh.
 Sustituye comandos estándar por alternativas enriquecidas y seguras:
 
 - **Navegación Rápida**:
-  - `arch` / `project`: Navega directamente a `/home/caballero/Warehouse/Repositorios/Linux/ArchLinux-Niri-DMS`
-  - `repo` / `repos`: Navega a `/home/caballero/Warehouse/Repositorios`
+  - `cachyos` / `project`: Navega directamente a `/home/caballero/Workspace/Repositorios/Linux/CachyOS-Niri-DMS`
+  - `repo` / `repos`: Navega a `/home/caballero/Workspace/Repositorios`
   - `..`, `...`, `....`: Subir 1, 2 o 3 niveles
 - **Pipes Globales de Zsh** (atajos de sufijo):
   - `G` → `| grep -i` (ej. `cat file G error`)

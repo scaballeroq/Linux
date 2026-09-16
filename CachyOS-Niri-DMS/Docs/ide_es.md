@@ -58,7 +58,7 @@ Despliega el motor de desarrollo de Antigravity IDE para CachyOS:
 1. **Instalación y Permisos**:
    Configura el runtime en `/opt/antigravity-ide` y el enlace en `/usr/local/bin/antigravity-ide`.
 2. **Helper de Actualización**:
-   Instala `/usr/local/bin/update-antigravity-ide` y el alias correspondiente en `ZSH.Setup`:
+   Instala `/usr/local/bin/update-antigravity-ide` y el alias correspondiente en `Bash.Setup`:
    ```bash
    update-antigravity-ide
    ```

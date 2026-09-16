@@ -140,21 +140,21 @@ INNER_EOF
     echo "  ✅ Cargador modular añadido a ~/.bashrc"
 fi
 
-# 4. Enlazar scripts de ZSH.Setup a ~/.zshrc.d y ~/.bashrc.d
-echo "🔗 [4/5] Enlazando scripts modulares de ZSH.Setup..."
+# 4. Enlazar scripts de Bash.Setup a ~/.zshrc.d y ~/.bashrc.d
+echo "🔗 [4/5] Enlazando scripts modulares de Bash.Setup..."
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-ZSH_SETUP_DIR="$WORKSPACE_ROOT/ZSH.Setup"
+BASH_SETUP_DIR="$WORKSPACE_ROOT/Bash.Setup"
 
-if [ -d "$ZSH_SETUP_DIR" ]; then
-    for sh_file in "$ZSH_SETUP_DIR"/*.sh; do
+if [ -d "$BASH_SETUP_DIR" ]; then
+    for sh_file in "$BASH_SETUP_DIR"/*.sh; do
         if [ -f "$sh_file" ]; then
             base_name="$(basename "$sh_file")"
             run_as_user ln -sf "$sh_file" "$ZSHRC_D/$base_name"
             run_as_user ln -sf "$sh_file" "$BASHRC_D/$base_name"
         fi
     done
-    echo "  ✅ Scripts de ZSH.Setup enlazados en ~/.zshrc.d/ y ~/.bashrc.d/"
+    echo "  ✅ Scripts de Bash.Setup enlazados en ~/.zshrc.d/ y ~/.bashrc.d/"
 fi
 
 # 5. Directorios de binarios de usuario

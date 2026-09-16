@@ -58,7 +58,7 @@ Deploys the core Antigravity IDE development engine for CachyOS:
 1. **Installation & Symlinks**:
    Configures the engine at `/opt/antigravity-ide` with binary link at `/usr/local/bin/antigravity-ide`.
 2. **Update Helper**:
-   Installs `/usr/local/bin/update-antigravity-ide` and creates shell shortcuts in `ZSH.Setup`:
+   Installs `/usr/local/bin/update-antigravity-ide` and creates shell shortcuts in `Bash.Setup`:
    ```bash
    update-antigravity-ide
    ```
