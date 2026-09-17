@@ -113,7 +113,13 @@ check_status() {
 
     echo -n "• Interfaz gráfica (virt-manager): "
     if pacman -Q virt-manager >/dev/null 2>&1; then
-        echo "✅ Instalado"
+        if virt-manager --version >/dev/null 2>&1; then
+            echo "✅ Instalado y operativo ($(virt-manager --version 2>/dev/null))"
+        elif /usr/bin/python3 -c "import gi; from gi.repository import Gtk, LibvirtGLib; import libvirt" >/dev/null 2>&1; then
+            echo "⚠️ Instalado pero con conflicto en el shebang/PATH (resuelto mediante wrapper ~/.local/bin/virt-manager o shebang de sistema)"
+        else
+            echo "❌ Instalado pero faltan dependencias Python (python-gobject/libvirt-python)"
+        fi
     else
         echo "❌ No instalado"
     fi
@@ -654,6 +660,66 @@ EOF
     else
         echo "✅ Las reglas para virt-manager ya están presentes en Niri ($NIRI_CONFIG)."
     fi
+fi
+
+# ---------------------------------------------------------------------------
+# 15. Blindaje de Entorno Python y Lanzadores (Compatibilidad Mise / Pyenv / DMS)
+# ---------------------------------------------------------------------------
+echo "ℹ️ Configurando blindaje de entorno Python para virt-manager y herramientas auxiliares..."
+
+# 1. Corrección directa de shebangs en /usr/bin si se ejecuta con permisos de root
+VIRT_BINS=(/usr/bin/virt-manager /usr/bin/virt-install /usr/bin/virt-clone /usr/bin/virt-xml /usr/bin/virt-qemu-qmp-proxy /usr/bin/virt-qemu-sev-validate)
+for bin in "${VIRT_BINS[@]}"; do
+    if [ -f "$bin" ]; then
+        sudo sed -i -E '1s|^#!/usr/bin/env python.*|#!/usr/bin/python3|' "$bin" 2>/dev/null || true
+    fi
+done
+
+# 2. Hook de Pacman persistente para mantener el shebang de /usr/bin/python3 tras actualizaciones del sistema
+if [ -d /etc/pacman.d ]; then
+    echo "• Creando hook persistente de Pacman (/etc/pacman.d/hooks/90-virt-manager-python.hook)..."
+    sudo mkdir -p /etc/pacman.d/hooks
+    cat <<'EOF' | sudo tee /etc/pacman.d/hooks/90-virt-manager-python.hook > /dev/null
+[Trigger]
+Type = Path
+Operation = Install
+Operation = Upgrade
+Target = usr/bin/virt-manager
+Target = usr/bin/virt-install
+Target = usr/bin/virt-clone
+Target = usr/bin/virt-xml
+Target = usr/bin/virt-qemu-qmp-proxy
+Target = usr/bin/virt-qemu-sev-validate
+
+[Action]
+Description = Blindando virt-manager y herramientas libvirt para usar /usr/bin/python3...
+When = PostTransaction
+Exec = /bin/sh -c "/usr/bin/sed -i -E '1s|^#!/usr/bin/env python.*|#!/usr/bin/python3|' /usr/bin/virt-manager /usr/bin/virt-install /usr/bin/virt-clone /usr/bin/virt-xml /usr/bin/virt-qemu-qmp-proxy /usr/bin/virt-qemu-sev-validate 2>/dev/null || true"
+EOF
+fi
+
+# 3. Wrappers en ~/.local/bin para asegurar prioridad en sesiones de usuario interactivo y DMS
+mkdir -p "$TARGET_HOME/.local/bin"
+for tool in virt-manager virt-install virt-clone virt-xml; do
+    cat <<EOF > "$TARGET_HOME/.local/bin/$tool"
+#!/bin/sh
+exec /usr/bin/python3 /usr/bin/$tool "\$@"
+EOF
+    chmod +x "$TARGET_HOME/.local/bin/$tool"
+    chown "$TARGET_USER":"$TARGET_USER" "$TARGET_HOME/.local/bin/$tool" 2>/dev/null || true
+done
+echo "✅ Wrappers creados en ~/.local/bin (virt-manager, virt-install, virt-clone, virt-xml)."
+
+# 4. Entrada de escritorio ~/.local/share/applications/virt-manager.desktop con ejecución explícita de /usr/bin/python3
+if [ -f /usr/share/applications/virt-manager.desktop ]; then
+    mkdir -p "$TARGET_HOME/.local/share/applications"
+    cp /usr/share/applications/virt-manager.desktop "$TARGET_HOME/.local/share/applications/virt-manager.desktop"
+    sed -i 's|^Exec=.*|Exec=/usr/bin/python3 /usr/bin/virt-manager|' "$TARGET_HOME/.local/share/applications/virt-manager.desktop"
+    chown "$TARGET_USER":"$TARGET_USER" "$TARGET_HOME/.local/share/applications/virt-manager.desktop" 2>/dev/null || true
+    if command -v update-desktop-database >/dev/null 2>&1; then
+        update-desktop-database "$TARGET_HOME/.local/share/applications" 2>/dev/null || true
+    fi
+    echo "✅ Entrada de escritorio optimizada creada en ~/.local/share/applications/virt-manager.desktop"
 fi
 
 # ---------------------------------------------------------------------------
