@@ -5,6 +5,9 @@
 set -euo pipefail
 
 TARGET_USER="${SUDO_USER:-$USER}"
+TARGET_HOME=$(getent passwd "$TARGET_USER" 2>/dev/null | cut -d: -f6)
+TARGET_HOME="${TARGET_HOME:-$HOME}"
+VM_STORAGE_DIR="${VM_STORAGE_DIR:-$TARGET_HOME/Workspace/MaquinasVirtuales}"
 WITH_WINDOWS=false
 STATUS_ONLY=false
 CREATE_BRIDGE=false
@@ -22,11 +25,14 @@ Optimizado para portátiles AMD Ryzen (HP EliteBook), Niri Compositor y Dank Mat
 
 OPCIONES:
   --status, --check     Verifica el estado de KVM, sockets libvirt, módulos del kernel y red sin realizar cambios.
+  --storage-dir=RUTA    Ruta personalizada para imágenes de VMs (por defecto: ~/Workspace/MaquinasVirtuales).
   --with-windows        Descarga también la ISO de controladores VirtIO para Windows (virtio-win.iso).
   --bridge              Crea un puente de red L2 físico (br0) sobre la interfaz Ethernet cableada (opcional).
   -h, --help            Muestra esta ayuda y recomendaciones para VMs Linux.
 
 CARACTERÍSTICAS Y OPTIMIZACIONES:
+  - Optimización Btrfs (NOCOW / +C) automática para evitar fragmentación y latencia en discos qcow2/raw.
+  - Creación y arranque automático del Storage Pool 'MaquinasVirtuales' de Libvirt en el espacio de trabajo.
   - Soporte 3D VirGL (virglrenderer + virtio-gpu-gl) para escritorios Wayland/X11 fluidos en GPU AMD Vega.
   - Compartición ultrarrápida de carpetas mediante VirtioFS (virtiofsd en Rust).
   - Aceleración por hardware AMD AVIC / Intel EPT y virtualización anidada (Nested KVM).
@@ -122,6 +128,35 @@ check_status() {
     done
     echo "${found_tools[*]:-Ninguna instalada}"
 
+    echo -n "• Directorio de almacenamiento de VMs ($VM_STORAGE_DIR): "
+    if [ -d "$VM_STORAGE_DIR" ]; then
+        local fs_type
+        fs_type=$(findmnt -n -o FSTYPE -T "$VM_STORAGE_DIR" 2>/dev/null || stat -f -c %T "$VM_STORAGE_DIR" 2>/dev/null || echo "desconocido")
+        local is_nocow=false
+        if lsattr -d "$VM_STORAGE_DIR" 2>/dev/null | cut -d' ' -f1 | grep -q 'C'; then
+            is_nocow=true
+        fi
+
+        if [ "$fs_type" = "btrfs" ]; then
+            if [ "$is_nocow" = true ]; then
+                echo "✅ Btrfs con atributo NOCOW (+C) activo (Óptimo)"
+            else
+                echo "⚠️ Btrfs detectado SIN NOCOW (Riesgo de fragmentación y sobrecarga de CPU)"
+            fi
+        else
+            echo "✅ Presente (FS: $fs_type)"
+        fi
+    else
+        echo "ℹ️ No creado aún (se aprovisionará al ejecutar el script)"
+    fi
+
+    echo -n "• Storage Pool Libvirt 'MaquinasVirtuales': "
+    if command -v virsh >/dev/null 2>&1 && virsh -c qemu:///system pool-list --name 2>/dev/null | grep -qx "MaquinasVirtuales"; then
+        echo "✅ Activo y registrado"
+    else
+        echo "ℹ️ No registrado o inactivo"
+    fi
+
     echo "================================================================="
 }
 
@@ -132,6 +167,9 @@ for arg in "$@"; do
     case "$arg" in
         --status|--check)
             STATUS_ONLY=true
+            ;;
+        --storage-dir=*)
+            VM_STORAGE_DIR="${arg#*=}"
             ;;
         --with-windows)
             WITH_WINDOWS=true
@@ -341,7 +379,7 @@ sudo systemctl enable --now \
     virtproxyd.socket 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
-# 8. Configuración de Red Virtual NAT y Storage Pool por Defecto
+# 8. Configuración de Red Virtual NAT, Optimización Btrfs y Storage Pools
 # ---------------------------------------------------------------------------
 echo "ℹ️ Asegurando red virtual NAT por defecto (virbr0)..."
 sudo systemctl restart virtnetworkd.service 2>/dev/null || true
@@ -371,6 +409,50 @@ sudo virsh net-autostart default 2>/dev/null || true
 echo "ℹ️ Asegurando storage pool por defecto (/var/lib/libvirt/images)..."
 sudo virsh pool-start default 2>/dev/null || true
 sudo virsh pool-autostart default 2>/dev/null || true
+
+echo "ℹ️ Configurando directorio de almacenamiento de VMs: $VM_STORAGE_DIR..."
+sudo mkdir -p "$VM_STORAGE_DIR"
+sudo chown "$TARGET_USER":kvm "$VM_STORAGE_DIR" 2>/dev/null || sudo chown "$TARGET_USER":"$TARGET_USER" "$VM_STORAGE_DIR"
+sudo chmod 775 "$VM_STORAGE_DIR" 2>/dev/null || true
+
+# Detección de Btrfs y aplicación de NOCOW (+C)
+FS_TYPE=$(findmnt -n -o FSTYPE -T "$VM_STORAGE_DIR" 2>/dev/null || stat -f -c %T "$VM_STORAGE_DIR" 2>/dev/null || true)
+if [ "$FS_TYPE" = "btrfs" ]; then
+    echo "• Sistema de archivos Btrfs detectado en $VM_STORAGE_DIR."
+    if lsattr -d "$VM_STORAGE_DIR" 2>/dev/null | cut -d' ' -f1 | grep -q 'C'; then
+        echo "  ✅ Atributo NOCOW (+C) ya activo en el directorio."
+    else
+        echo "  ⚙️ Aplicando atributo NOCOW (+C) para evitar fragmentación y compresión innecesaria..."
+        sudo chattr +C "$VM_STORAGE_DIR" 2>/dev/null || true
+        echo "  ✅ Atributo NOCOW (+C) aplicado con éxito."
+    fi
+
+    # Comprobar si existen archivos de disco (.qcow2, .raw, .img) creados con CoW previo
+    shopt -s nullglob
+    for disk in "$VM_STORAGE_DIR"/*.qcow2 "$VM_STORAGE_DIR"/*.raw "$VM_STORAGE_DIR"/*.img; do
+        [ -f "$disk" ] || continue
+        if ! lsattr "$disk" 2>/dev/null | cut -d' ' -f1 | grep -q 'C'; then
+            local_disk_name=$(basename "$disk")
+            echo "  ⚠️ Archivo con CoW activo detectado: $local_disk_name"
+            echo "  🔄 Recreando $local_disk_name sin CoW ni compresión (--reflink=never)..."
+            cp --reflink=never "$disk" "${disk}.nocow.tmp"
+            mv -f "${disk}.nocow.tmp" "$disk"
+            sudo chown "$TARGET_USER":kvm "$disk" 2>/dev/null || sudo chown "$TARGET_USER":"$TARGET_USER" "$disk"
+            echo "  ✅ $local_disk_name optimizado con NOCOW (+C)."
+        fi
+    done
+    shopt -u nullglob
+fi
+
+echo "ℹ️ Configurando y registrando Storage Pool 'MaquinasVirtuales' en Libvirt..."
+if ! virsh -c qemu:///system pool-list --all --name 2>/dev/null | grep -qx "MaquinasVirtuales"; then
+    echo "• Definiendo pool 'MaquinasVirtuales' en libvirt..."
+    sudo virsh pool-define-as MaquinasVirtuales dir --target "$VM_STORAGE_DIR" 2>/dev/null || true
+    sudo virsh pool-build MaquinasVirtuales 2>/dev/null || true
+fi
+sudo virsh pool-start MaquinasVirtuales 2>/dev/null || true
+sudo virsh pool-autostart MaquinasVirtuales 2>/dev/null || true
+echo "✅ Storage Pool 'MaquinasVirtuales' activo y con inicio automático."
 
 # ---------------------------------------------------------------------------
 # 9. Configuración de Red: Detección segura de Interfaz (Cableada vs Wi-Fi)
@@ -460,6 +542,14 @@ sudo mkdir -p /var/lib/libvirt/images /var/lib/libvirt/qemu/nvram /var/lib/libvi
 sudo setfacl -R -b /var/lib/libvirt/images /var/lib/libvirt/qemu 2>/dev/null || true
 sudo setfacl -R -m u:"$TARGET_USER":rwX /var/lib/libvirt/images /var/lib/libvirt/qemu 2>/dev/null || true
 sudo setfacl -d -m u:"$TARGET_USER":rwX /var/lib/libvirt/images /var/lib/libvirt/qemu 2>/dev/null || true
+
+echo "ℹ️ Configurando permisos ACL para acceso del hipervisor a $VM_STORAGE_DIR..."
+sudo setfacl -m u:nobody:rx "$TARGET_HOME" 2>/dev/null || true
+if [ -d "$TARGET_HOME/Workspace" ]; then
+    sudo setfacl -m u:nobody:rx "$TARGET_HOME/Workspace" 2>/dev/null || true
+fi
+sudo setfacl -R -m u:nobody:rwX,u:"$TARGET_USER":rwX,g:kvm:rwX "$VM_STORAGE_DIR" 2>/dev/null || true
+sudo setfacl -R -d -m u:nobody:rwX,u:"$TARGET_USER":rwX,g:kvm:rwX "$VM_STORAGE_DIR" 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
 # 12. Regla de Polkit para Gestión sin Contraseña (Grupo libvirt)
@@ -579,9 +669,10 @@ echo "  2. Gráficos y Pantalla (Wayland / Niri / GNOME fluido):"
 echo "     - Pantalla: 'SPICE', Tipo de escucha: 'Ninguno' (socket local Unix)."
 echo "     - Activar: 'Aceleración OpenGL'."
 echo "     - Video: 'VirtIO' con casilla 'Aceleración 3D' marcada (VirGL)."
-echo "  3. Almacenamiento (Disco):"
-echo "     - Bus: 'VirtIO' o 'SCSI' con controlador VirtIO SCSI."
-echo "     - Rendimiento: Modo de caché 'writeback', Motor de E/S 'io_uring', Descarte 'unmap' (TRIM)."
+echo "  3. Almacenamiento (Disco):
+     - Bus: 'VirtIO' o 'SCSI' con controlador VirtIO SCSI.
+     - Storage Pool: 'MaquinasVirtuales' ($VM_STORAGE_DIR) optimizado con Btrfs NOCOW (+C).
+     - Rendimiento: Modo de caché 'none' (recomendado en Btrfs NOCOW con O_DIRECT) o 'writeback', Motor de E/S 'io_uring', Descarte 'unmap' (TRIM)."
 echo "  4. Compartir Carpetas (Host <-> Guest):"
 echo "     - Añadir Hardware -> Sistema de archivos -> Modo de acceso: 'virtiofs' (requiere memoria compartida)."
 echo "  5. Dentro de la distribución Linux invitada, instala:"
