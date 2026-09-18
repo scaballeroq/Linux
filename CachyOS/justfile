@@ -37,6 +37,14 @@ laptop:
 gnome-setup:
     ./Setup/gnome-settings.sh
 
+# Extensiones de GNOME Shell desde repositorios (Dash to Dock, AppIndicator, Blur, etc.)
+gnome-extensions:
+    ./Setup/gnome-extensions.sh
+
+# Estado de las extensiones de GNOME Shell
+gnome-extensions-status:
+    ./Setup/gnome-extensions.sh --status
+
 # Optimizaciones avanzadas de rendimiento (Sysctl, limites, Systemd, Tracker, Distrobox para CachyOS + GNOME)
 tuning:
     ./Setup/cachyos-tuning.sh

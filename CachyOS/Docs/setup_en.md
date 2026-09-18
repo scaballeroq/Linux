@@ -152,9 +152,39 @@ Configures tools for video downloads and digital audio processing.
 
 ---
 
+## 7. GNOME Shell Extensions (`gnome-extensions.sh`)
+
+Installs and manages official extensions directly from CachyOS and Arch Linux repositories (`pacman`):
+
+1. **Included Tools and Extensions**:
+   - `extension-manager`: Native GTK application to browse, install, and manage GNOME Shell extensions.
+   - `gnome-shell-extension-dash-to-dock`: Visible dock outside the overview with autohide.
+   - `gnome-shell-extension-appindicator`: System tray / AppIndicator support.
+   - `gnome-shell-extension-caffeine`: Quick toggle to inhibit auto-suspend and screensaver from the top bar.
+   - `gnome-shell-extension-weather-oclock`: Integrated weather conditions displayed next to the top-bar clock.
+   - `gnome-shell-extension-bing-wallpaper`: Daily Bing dynamic desktop wallpapers.
+   - `gnome-shell-extension-blur-my-shell`: Modern blur effect for top bar, menus, and overview.
+   - `gnome-shell-extension-logo-menu`: Quick access menu with distribution logo (integrated with Extension Manager).
+
+2. **Script Usage**:
+   ```bash
+   # Install and enable all extensions
+   ./Setup/gnome-extensions.sh
+
+   # Check extension status
+   ./Setup/gnome-extensions.sh --status
+
+   # Batch enable or disable
+   ./Setup/gnome-extensions.sh --enable
+   ./Setup/gnome-extensions.sh --disable
+   ```
+
+---
+
 ## Verification
 
 - **Terminal and Utilities**: Open a new terminal. You should see the **Starship** prompt and **Fastfetch** summary. Test with `eza` or `bat --version`.
+- **GNOME Extensions**: Run `./Setup/gnome-extensions.sh --status` or `gnome-extensions list --enabled`.
 - **Kitty**: Run `kitty --version`. Should open with opacity and Catppuccin theme.
 - **Cockpit**: Open browser and go to [https://localhost:9090](https://localhost:9090). Log in with system credentials.
 - **Firewalld**: Verify with `sudo firewall-cmd --state`.

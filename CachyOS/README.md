@@ -39,6 +39,7 @@ Scripts de configuración del sistema operativo, personalización y endurecimien
 - **`post-install-amd.sh`**: Post-instalación optimizada para AMD Ryzen (ZRAM, RADV, Mesa, PipeWire, GNOME, Early KMS amdgpu).
 - **`post-install-intel.sh`**: Post-instalación optimizada para Intel Core (VA-API Intel, PipeWire, GNOME).
 - **`gnome-settings.sh`**: Configuración y personalización de GNOME (Modo oscuro `prefer-dark` y `adw-gtk3-dark`, VRR Mutter, atajo Kitty Ctrl+Alt+T, Nautilus).
+- **`gnome-extensions.sh`**: Instalador y gestor de extensiones oficiales de GNOME Shell desde repositorios (Dash to Dock, AppIndicator, Caffeine, Weather O'Clock, Bing Wallpaper, Blur my Shell, Logo Menu).
 - **`laptop-setup.sh`**: Optimización para portátiles de desarrollo en GNOME (Touchpad, Bluetooth, no suspender con corriente, persistencia de brillo).
 - **`cachyos-tuning.sh`**: Ajustes de Kernel (`sysctl`), límites de sistema, Ananicy-CPP, UKSMD, exclusiones de Tracker y Distrobox.
 - **`cockpit.sh`**: Instalación y configuración de Cockpit (administración web en zona `home`).

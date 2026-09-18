@@ -155,11 +155,41 @@ Configura las herramientas para descargas de video y procesamiento de audio digi
 
 ---
 
+## 7. Extensiones de GNOME Shell (`gnome-extensions.sh`)
+
+Instala y gestiona las extensiones oficiales desde los repositorios de CachyOS / Arch Linux (`pacman`):
+
+1. **Herramientas y Extensiones incluidas**:
+   - `extension-manager`: Aplicación gráfica nativa para buscar, explorar y administrar extensiones de GNOME Shell.
+   - `gnome-shell-extension-dash-to-dock`: Dock visible fuera del overview con autohide.
+   - `gnome-shell-extension-appindicator`: Soporte de bandeja del sistema para aplicaciones.
+   - `gnome-shell-extension-caffeine`: Desactivador de suspensión y bloqueo desde la barra superior.
+   - `gnome-shell-extension-weather-oclock`: Información meteorológica integrada con el reloj central.
+   - `gnome-shell-extension-bing-wallpaper`: Fondos de pantalla dinámicos diarios de Bing.
+   - `gnome-shell-extension-blur-my-shell`: Efecto de desenfoque moderno en menús, panel y overview.
+   - `gnome-shell-extension-logo-menu`: Menú de acceso rápido con icono de distribución (integrado con Extension Manager).
+
+2. **Uso del script**:
+   ```bash
+   # Instalar y activar todas las extensiones
+   ./Setup/gnome-extensions.sh
+
+   # Ver estado de activación
+   ./Setup/gnome-extensions.sh --status
+
+   # Activar o desactivar en lote
+   ./Setup/gnome-extensions.sh --enable
+   ./Setup/gnome-extensions.sh --disable
+   ```
+
+---
+
 ## Verificación
 
 Para comprobar que los componentes principales se instalaron y configuraron correctamente:
 
 - **Terminal y Utilidades**: Abre una nueva terminal. Deberías ver el prompt de **Starship** cargado y el resumen de **Fastfetch** en pantalla. Prueba utilidades ejecutando `eza` o `bat --version`.
+- **Extensiones GNOME**: Ejecuta `./Setup/gnome-extensions.sh --status` o `gnome-extensions list --enabled`.
 - **Kitty**: Ejecuta `kitty --version`. Debería abrirse con opacidad y tema Catppuccin.
 - **Cockpit**: Abre tu navegador e ingresa a [https://localhost:9090](https://localhost:9090). Inicia sesión con tus credenciales de usuario del sistema.
 - **Firewalld**: Verifica con `sudo firewall-cmd --state`.

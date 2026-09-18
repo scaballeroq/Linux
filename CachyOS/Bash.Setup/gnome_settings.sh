@@ -25,6 +25,8 @@ fi
 # 2. ACCESOS DIRECTOS A PANELES DE CONFIGURACIÓN (GNOME CONTROL CENTER)
 # -----------------------------------------------------------------------------
 alias gnome-settings='gnome-control-center &>/dev/null &'
+alias gnome-extensiones='extension-manager &>/dev/null &'
+alias extensiones='extension-manager &>/dev/null &'
 alias gnome-pantallas='gnome-control-center display &>/dev/null &'
 alias gnome-wifi='gnome-control-center wifi &>/dev/null &'
 alias gnome-audio='gnome-control-center sound &>/dev/null &'

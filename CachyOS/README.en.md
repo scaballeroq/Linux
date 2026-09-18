@@ -37,6 +37,7 @@ OS configuration, hardening, and styling scripts:
 - **`post-install-amd.sh`**: AMD Ryzen optimized post-install (ZRAM, RADV, Mesa, PipeWire, GNOME, Early KMS amdgpu).
 - **`post-install-intel.sh`**: Intel Core optimized post-install (VA-API Intel, PipeWire, GNOME).
 - **`gnome-settings.sh`**: GNOME customization (Dark theme `prefer-dark` & `adw-gtk3-dark`, Mutter VRR, Kitty Ctrl+Alt+T shortcut, Nautilus).
+- **`gnome-extensions.sh`**: Official GNOME Shell extensions installer and manager from repos (Dash to Dock, AppIndicator, Caffeine, Weather O'Clock, Bing Wallpaper, Blur my Shell, Logo Menu).
 - **`laptop-setup.sh`**: Laptop optimization for GNOME (Touchpad, Bluetooth, AC power sleep override, brightness persistence).
 - **`cachyos-tuning.sh`**: Kernel sysctl, Tracker exclusions, Systemd, Distrobox, and system limits tuning.
 - **`cockpit.sh`**: Cockpit web management console setup (Firewalld `home` zone).
