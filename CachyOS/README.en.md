@@ -48,14 +48,12 @@ OS configuration, hardening, and styling scripts:
 - **`starship.sh`**: Optional Starship prompt with enable/disable commands.
 - **`yt-dlp-setup.sh`**: Multimedia setup dependencies (yt-dlp, ffmpeg, deno).
 
-### 💻 [IDE](./IDE/) & [Apps](./Apps/)
+### 💻 [IDE](./IDE/)
 - **`antigravity.sh`**: Google Antigravity Desktop setup (with Nautilus context script).
 - **`antigravity-cli.sh`**: Google Antigravity CLI setup.
 - **`antigravity-ide.sh`**: Google Antigravity IDE Engine setup.
 - **`git.sh`**: Git, Delta, Lazygit and GitHub CLI setup.
 - **`opencode.sh`**: OpenCode AI CLI setup.
-- **`vscode.sh`**: Visual Studio Code setup.
-- **`Apps/meld.sh`**: Visual diff and merge tool (Meld).
 
 ### ⚡ [ProgrammingLanguages](./ProgrammingLanguages/)
 Runtime management with **mise**.

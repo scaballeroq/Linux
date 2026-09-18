@@ -2,100 +2,68 @@
 sidebar_position: 5
 ---
 
-# Integrated Development Environments (IDEs) on Debian 13
+# Development Environments and IDEs on CachyOS
 
-This guide details the installation and configuration of the code editors and development environments managed in the `IDE` folder.
+This guide details the developer tools, AI coding assistants, and version control utilities managed in the `IDE` folder.
 
-The environment covers the modern terminal editor **Neovim** (boosted with LazyVim), the desktop editor **Visual Studio Code**, and developer integrations like **Google Antigravity**.
-
----
-
-## 1. Neovim and LazyVim (`neovim.sh`)
-
-Installs and configures an ultra-fast, modular terminal editing environment using Neovim and the LazyVim pre-configured layout.
-
-1. **Neovim and Dependency Installation**:
-   ```bash
-   sudo apt update
-   sudo apt install -y neovim gcc make g++ ripgrep fd-find xclip wl-copy git
-   ```
-   *(Note: C/C++ compilers, ripgrep, and fd are installed since they are essential for fuzzy finders and LSP server operations inside Neovim).*
-
-2. **Command Compatibility Symlinks**:
-   Maps `fdfind` (Debian's package binary name) to `fd` in the user's local path:
-   ```bash
-   mkdir -p ~/.local/bin
-   [ -f /usr/bin/fdfind ] && ln -sf /usr/bin/fdfind ~/.local/bin/fd
-   ```
-
-3. **LazyVim Deployment**:
-   Clones the official starter template to the user's config directory:
-   ```bash
-   git clone https://github.com/LazyVim/starter "$HOME/.config/nvim"
-   rm -rf "$HOME/.config/nvim/.git"
-   ```
+All tools are optimized for **CachyOS**, the **Wayland** display server, the **GNOME** desktop environment, and **Zsh** and **Bash** shells.
 
 ---
 
-## 2. Visual Studio Code (`vscode.sh`)
+## 1. Google Antigravity Suite
 
-Automates Visual Studio Code installation directly from Microsoft's official repositories to guarantee secure, automatic updates.
+Google Antigravity is an AI-assisted agentic software development environment.
 
-1. **Initial Dependencies**:
-   ```bash
-   sudo apt update
-   sudo apt install -y wget gpg apt-transport-https
-   ```
+### Google Antigravity Desktop (`antigravity.sh`)
+Installs the Google Antigravity desktop application:
+- Creates the desktop entry (`antigravity.desktop`).
+- Sets up native **Nautilus** context menu integration: right-click script to open any folder with Antigravity (`~/.local/share/nautilus/scripts/Abrir con Antigravity`).
 
-2. **GPG Key Import**:
-   ```bash
-   wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
-   sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
-   rm -f packages.microsoft.gpg
-   ```
+### Google Antigravity CLI (`antigravity-cli.sh`)
+Installs the Antigravity command-line tool (`agy`), enabling agents, workflows, and terminal workflows.
 
-3. **Official Repository Registration**:
-   ```bash
-   sudo sh -c 'echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
-   ```
-
-4. **Installation**:
-   ```bash
-   sudo apt update
-   sudo apt install -y code
-   ```
+### Google Antigravity IDE Engine (`antigravity-ide.sh`)
+Installs the Antigravity IDE engine, symlinks binaries, and configures the Nautilus context script (`Abrir con Antigravity IDE`).
 
 ---
 
-## 3. Google Antigravity CLI (`antigravity.sh`)
+## 2. Git Version Control Tools (`git.sh`)
 
-Installs the corporate AI-assisted coding and developer CLI helper tool for Debian.
+Installs and optimizes the modern Git ecosystem on CachyOS:
+- **git**: Core version control system.
+- **delta** (`git-delta`): Modern syntax-highlighting pager for `git diff` and `git show`.
+- **lazygit**: Terminal UI (TUI) for Git workflows.
+- **github-cli** (`gh`): Official GitHub command-line tool.
 
-1. **Keyring Setup and GPG Import**:
-   ```bash
-   sudo mkdir -p /etc/apt/keyrings
-   curl -fsSL https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg | \
-   sudo gpg --dearmor --yes -o /etc/apt/keyrings/antigravity-repo-key.gpg
-   ```
+Configures recommended global Git settings:
+```bash
+git config --global core.pager "delta"
+git config --global interactive.diffFilter "delta --color-only"
+git config --global init.defaultBranch "main"
+```
 
-2. **Google Artifact Registry Repository Registration**:
-   ```bash
-   echo "deb [signed-by=/etc/apt/keyrings/antigravity-repo-key.gpg] https://us-central1-apt.pkg.dev/projects/antigravity-auto-updater-dev/ antigravity-debian main" | \
-   sudo tee /etc/apt/sources.list.d/antigravity.list > /dev/null
-   ```
+---
 
-3. **Tool Installation**:
-   ```bash
-   sudo apt update
-   sudo apt install -y antigravity
-   ```
+## 3. OpenCode AI CLI (`opencode.sh`)
+
+Installs the OpenCode AI terminal tool, providing CLI-based AI coding assistance.
 
 ---
 
 ## Verification
 
-To verify that the code editors are working correctly:
+To verify that the tools are properly installed:
 
-- **Neovim**: Run `nvim` in your terminal. On the first launch, it will automatically download and set up the default LazyVim plugins. Once done, you can run `:LazyHealth` to verify language servers (LSPs) and compilers.
-- **VS Code**: Run `code` in the terminal or search for "Visual Studio Code" in your desktop application drawer.
-- **Antigravity**: Confirm it responds properly by running `antigravity --version` or executing its assigned CLI commands.
+```bash
+# Git and Delta
+git --version
+delta --version
+lazygit --version
+gh --version
+
+# Antigravity CLI
+agy --version 2>/dev/null || antigravity --version
+
+# OpenCode
+opencode --version 2>/dev/null || true
+```

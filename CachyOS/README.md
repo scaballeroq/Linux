@@ -50,14 +50,12 @@ Scripts de configuración del sistema operativo, personalización y endurecimien
 - **`starship.sh`**: Prompt Starship opcional con comandos de activación/desactivación.
 - **`yt-dlp-setup.sh`**: Dependencias para manejo multimedia (yt-dlp, ffmpeg, deno).
 
-### 💻 [IDE](./IDE/) y [Apps](./Apps/)
+### 💻 [IDE](./IDE/)
 - **`antigravity.sh`**: Google Antigravity Desktop setup (con script contextual para Nautilus).
 - **`antigravity-cli.sh`**: Google Antigravity CLI setup.
 - **`antigravity-ide.sh`**: Google Antigravity IDE Engine setup.
 - **`git.sh`**: Git, Delta, Lazygit y GitHub CLI setup.
 - **`opencode.sh`**: OpenCode AI CLI setup.
-- **`vscode.sh`**: Visual Studio Code setup.
-- **`Apps/meld.sh`**: Herramienta visual de diffs y merge (Meld).
 
 ### ⚡ [ProgrammingLanguages](./ProgrammingLanguages/)
 Gestión de runtimes con **mise**.

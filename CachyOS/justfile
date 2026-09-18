@@ -101,10 +101,6 @@ cockpit:
 git-setup:
     ./IDE/git.sh
 
-# Herramienta visual de diffs y resolución de conflictos (Meld)
-meld:
-    ./Apps/meld.sh
-
 # =============================================================================
 # GESTORES DE RUNTIMES
 # =============================================================================
@@ -150,7 +146,7 @@ angular:
 # =============================================================================
 
 # Todos los IDEs
-ides: antigravity antigravity-cli antigravity-ide opencode vscode
+ides: antigravity antigravity-cli antigravity-ide opencode
     @echo "✅ IDEs instalados."
 
 # Google Antigravity Desktop 2.0 (Completo)
@@ -168,10 +164,6 @@ antigravity-ide:
 # OpenCode AI CLI/Editor
 opencode:
     ./IDE/opencode.sh
-
-# Visual Studio Code
-vscode:
-    ./IDE/vscode.sh
 
 # =============================================================================
 # PODMAN Y CONTENEDORES QUADLETS
