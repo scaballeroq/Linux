@@ -64,7 +64,8 @@ Rootless container ecosystem with native systemd Quadlets:
 
 ### 🖥️ [Virtualizacion](./Virtualizacion/)
 - **`virtualization.sh`**: KVM/QEMU setup, Libvirt modular sockets, VirGL 3D, VirtioFS, and Niri rules.
-- **`notas_virtualizacion_arch.md`**: Detailed technical manual on virtualization in CachyOS.
+- **`notas_virtualizacion_arch.md`**: Detailed technical manual on Linux virtualization in CachyOS.
+- **`virtualizacion_windows.md`**: Technical guide for Windows virtualization (10 / 11 / LTSC) with VirtIO and RDP.
 
 ### 💻 [IDE](./IDE/), [Apps](./Apps/) & [AI](./AI/)
 - **`git.sh`**: Git, Delta, Lazygit, and GitHub CLI setup.
