@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # CachyOS System Configuration
 
-This guide details the base system setup, terminal optimization, essential software installation, multimedia support, and desktop user environment customization applied to a **CachyOS** system (Arch Linux, optimized for x86-64-v3/v4) with **KDE Plasma 6**.
+This guide details the base system setup, terminal optimization, essential software installation, multimedia support, and desktop user environment customization applied to a **CachyOS** system (Arch Linux, optimized for x86-64-v3/v4) with **GNOME** (Dark Mode).
 
 These settings are automated through the scripts located in the `Setup` folder.
 
@@ -89,7 +89,7 @@ Displays system information visually upon terminal startup. Installs `fastfetch`
 
 ## 3. Kitty Terminal (`kitty.sh`)
 
-Installs and optimizes **Kitty**, a modern GPU-accelerated terminal emulator, with KDE Plasma and Dolphin integration.
+Installs and optimizes **Kitty**, a modern GPU-accelerated terminal emulator, with GNOME and Nautilus integration.
 
 1. **Installation**:
    ```bash
@@ -98,14 +98,14 @@ Installs and optimizes **Kitty**, a modern GPU-accelerated terminal emulator, wi
 
 2. **Aesthetic Configuration**:
    - 75% opacity with blur (32)
-   - Catppuccin Mocha color scheme
+   - Catppuccin Mocha / Tokyo Night color scheme
    - JetBrainsMono Nerd Font
    - Powerline tab bar style
 
-3. **KDE Plasma Integration**:
-   - Default terminal for KDE
+3. **GNOME Integration**:
+   - Default terminal for GNOME (`org.gnome.desktop.default-applications.terminal`)
    - Global shortcut Ctrl+Alt+T
-   - Dolphin context menu: "Open in Kitty"
+   - Nautilus context script: Scripts -> "Abrir en Kitty"
 
 4. **Keyboard Shortcuts**:
    - `Ctrl+Alt+Up/Down`: Adjust opacity
@@ -116,13 +116,12 @@ Installs and optimizes **Kitty**, a modern GPU-accelerated terminal emulator, wi
 
 ## 4. Security (`seguridad.sh`)
 
-System hardening with Firewalld, DNS-over-TLS, and MAC Randomization.
+System hardening with exclusive Firewalld, DNS-over-TLS, and Podman/KVM support.
 
-- **Firewalld**: FedoraWorkstation zone with kdeconnect, mdns, ssh
+- **Firewalld**: Default `home` zone with mdns, ssh (`trusted` for Podman, `libvirt` for virbr0; UFW removed)
 - **DNS-over-TLS**: Opportunistic with systemd-resolved
-- **MAC Randomization**: Wi-Fi scan and connection
 - **Kernel hardening**: dmesg_restrict, kptr_restrict, syncookies
-- **Podman rootless**: user namespaces enabled
+- **Podman rootless**: user namespaces and unprivileged ports (>=80) enabled
 
 ---
 

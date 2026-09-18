@@ -1,6 +1,6 @@
-# 🔧 CachyOS Environment Configuration (KDE Plasma 6)
+# 🔧 CachyOS Environment Configuration (GNOME Workstation)
 
-This repository contains a modular collection of configuration scripts for **CachyOS** systems (Arch Linux based, optimized for x86-64-v3/v4 performance) running the **KDE Plasma 6** desktop environment. The objective is to automate the setup of a professional, performant, and aesthetically pleasing development environment.
+This repository contains a modular collection of configuration scripts for **CachyOS** systems (Arch Linux based, optimized for x86-64-v3/v4 performance) running the **GNOME** desktop environment. The objective is to automate the setup of a professional, performant, and dark-themed development workstation.
 
 ---
 
@@ -8,10 +8,10 @@ This repository contains a modular collection of configuration scripts for **Cac
 
 ### 🐚 [Bash.Setup](./Bash.Setup/)
 Core terminal configuration, optimized for **Zsh** (default shell in CachyOS) and **Bash**.
-- **`aliases.sh`**: Frequently used command shortcuts, dynamic reload, and package manager aliases (`pacman` / `paru`).
-- **`environment.sh`**: Global environment variables (`EDITOR`, `PATH`, Wayland/Qt flags) and smart Mise activation in Zsh/Bash.
+- **`aliases.sh`**: Frequently used command shortcuts, dynamic reload, Nautilus, and package manager aliases (`pacman` / `paru`).
+- **`environment.sh`**: Global environment variables (`EDITOR`, `PATH`, Wayland/GNOME flags, `DOCKER_HOST`, `LIBVIRT_DEFAULT_URI`) and smart Mise activation in Zsh/Bash.
 - **`functions.sh`**: Advanced shell functions (`mkcd`, `up`, `hg`) and multimedia processing utilities.
-- **`kde_settings.sh`**: KDE Plasma 6 desktop environment tweaks, KWin, Spectacle, and shortcuts.
+- **`gnome_settings.sh`**: GNOME desktop environment tweaks, dark mode, Wayland screenshot tools (grim/satty), and Nautilus shortcuts.
 - **`history.sh`**: Optimized command history (10k/20k entries, deduplication, `~/.zsh_history` and `~/.bash_history`).
 - **`options.sh`**: Advanced shell options (`autocd`, typo correction, case-insensitive completions with `zstyle`/`shopt`).
 - **`podman-functions.sh`**: Container management shortcuts and Quadlets functions compatible with both shells.
@@ -28,31 +28,34 @@ Rootless container ecosystem with Quadlets (systemd native):
 - **`templates/`**: Project templates (python-postgres, python-postgres-redis, fullstack).
 
 ### 🖥️ [Virtualization](./Virtualizacion/)
-- **`virtualization.sh`**: KVM/QEMU and `libvirtd` setup optimized for CachyOS.
-- **`notas_virtualizacion_cachyos.md`**: Guide for KVM/QEMU virtualization on CachyOS.
+- **`virtualization.sh`**: KVM/QEMU, `libvirt`, and `virt-manager` setup optimized for CachyOS.
+- **`notas_virtualizacion_cachyos.md`**: Guide for KVM/QEMU virtualization and VirtioFS on CachyOS.
 
 ### ⚙️ [Setup](./Setup/)
 OS configuration, hardening, and styling scripts:
 - **`post-install.sh`**: Smart dispatcher with auto CPU detection (AMD Ryzen vs Intel Core).
-- **`post-install-amd.sh`**: AMD Ryzen optimized post-install (ZRAM, RADV, Mesa, PipeWire).
-- **`post-install-intel.sh`**: Intel Core optimized post-install (VA-API Intel, PipeWire).
-- **`laptop-setup.sh`**: Laptop optimization (Touchpad, Bluetooth, HiDPI, VRR).
-- **`cachyos-tuning.sh`**: Kernel sysctl, Baloo, Systemd, Distrobox, and system limits tuning.
-- **`cockpit.sh`**: Cockpit web management console setup.
+- **`post-install-amd.sh`**: AMD Ryzen optimized post-install (ZRAM, RADV, Mesa, PipeWire, GNOME, Early KMS amdgpu).
+- **`post-install-intel.sh`**: Intel Core optimized post-install (VA-API Intel, PipeWire, GNOME).
+- **`gnome-settings.sh`**: GNOME customization (Dark theme `prefer-dark` & `adw-gtk3-dark`, Mutter VRR, Kitty Ctrl+Alt+T shortcut, Nautilus).
+- **`laptop-setup.sh`**: Laptop optimization for GNOME (Touchpad, Bluetooth, AC power sleep override, brightness persistence).
+- **`cachyos-tuning.sh`**: Kernel sysctl, Tracker exclusions, Systemd, Distrobox, and system limits tuning.
+- **`cockpit.sh`**: Cockpit web management console setup (Firewalld `home` zone).
 - **`fastfetch.sh`**: System info fetch initialization.
 - **`fonts.sh`**: Automated Nerd Fonts installer.
-- **`kitty.sh`**: GPU-accelerated Kitty terminal with opacity/blur and Catppuccin theme.
-- **`seguridad.sh`**: Security hardening with Firewalld, DNS-over-TLS, MAC Randomization and sysctl.
+- **`kitty.sh`**: GPU-accelerated Kitty terminal with opacity/blur, Catppuccin Mocha theme, and GNOME integration.
+- **`seguridad.sh`**: Security hardening with exclusive Firewalld (default `home` zone), DNS-over-TLS, Podman/KVM sysctl.
 - **`shell.sh`**: Modern terminal utilities (`eza`, `bat`, `fd`, `zoxide`, `ripgrep`, `btop`, `jq`).
 - **`starship.sh`**: Optional Starship prompt with enable/disable commands.
 - **`yt-dlp-setup.sh`**: Multimedia setup dependencies (yt-dlp, ffmpeg, deno).
 
-### 💻 [IDE](./IDE/)
-- **`antigravity.sh`**: Google Antigravity Desktop setup.
+### 💻 [IDE](./IDE/) & [Apps](./Apps/)
+- **`antigravity.sh`**: Google Antigravity Desktop setup (with Nautilus context script).
 - **`antigravity-cli.sh`**: Google Antigravity CLI setup.
 - **`antigravity-ide.sh`**: Google Antigravity IDE Engine setup.
 - **`git.sh`**: Git, Delta, Lazygit and GitHub CLI setup.
 - **`opencode.sh`**: OpenCode AI CLI setup.
+- **`vscode.sh`**: Visual Studio Code setup.
+- **`Apps/meld.sh`**: Visual diff and merge tool (Meld).
 
 ### ⚡ [ProgrammingLanguages](./ProgrammingLanguages/)
 Runtime management with **mise**.
@@ -69,7 +72,7 @@ Runtime management with **mise**.
 ```bash
 git clone https://github.com/scaballeroq/Environment-Configuration.git
 cd Repos-Linux/CachyOS
-chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/install/*.sh Podman/lib/*.sh Juegos/*.sh
+chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Apps/*.sh Podman/install/*.sh Podman/lib/*.sh
 just setup-all
 ```
 

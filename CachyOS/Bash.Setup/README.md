@@ -1,4 +1,4 @@
-# 🚀 Bash.Setup (CachyOS / Arch Linux + KDE Plasma 6)
+# 🚀 Bash.Setup (CachyOS / Arch Linux + GNOME)
 
 Colección de scripts modulares de configuración, aliases y funciones avanzadas para potenciar tu terminal en **Zsh** (la shell predeterminada en CachyOS) y **Bash**.
 
@@ -16,9 +16,9 @@ Este repositorio organiza de forma limpia tus alias, variables de entorno, utili
 | `rclone_aliases.sh` | Sincronización avanzada con la nube (Google Drive / OneDrive) mediante **Rclone**. |
 | `yt-dlp_aliases.sh` | Atajos para descarga optimizada de vídeo (1080p), audio (MP3) y listas con **yt-dlp**. |
 | `history.sh` | Configuración optimizada del historial (10k/20k líneas, deduplicación, escritura inmediata en `~/.zsh_history` o `~/.bash_history`). |
-| `environment.sh` | Variables globales (`EDITOR`, `PATH`, Wayland/Qt, Docker host) y activación inteligente de **Mise** en Zsh y Bash. |
+| `environment.sh` | Variables globales (`EDITOR`, `PATH`, Wayland/GNOME, Docker host, KVM libvirt) y activación inteligente de **Mise** en Zsh y Bash. |
 | `options.sh` | Comportamiento interno de la shell (`autocd`, corrección de typos, `globstar`/`extended_glob`, menús y colores de autocompletado en Zsh y Readline). |
-| `kde_settings.sh` | Optimizaciones para KDE Plasma 6 Wayland (touchpad, KWin, KCM Shell, Spectacle y temas). |
+| `gnome_settings.sh` | Optimizaciones para GNOME Wayland (panel de control, tema oscuro, capturas con grim/satty, Nautilus). |
 
 ---
 

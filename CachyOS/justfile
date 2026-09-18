@@ -1,17 +1,17 @@
 # CachyOS Environment Configuration Justfile
-# (CachyOS + KDE Plasma 6)
+# (CachyOS + GNOME)
 
 # Instala todo el entorno por defecto (Auto-deteccion de CPU / Portatil AMD)
-setup-all: post-install laptop tuning shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
-    @echo "🚀 Entorno completo de CachyOS (KDE Plasma 6) configurado. Por favor, reinicia el sistema."
+setup-all: post-install laptop tuning gnome-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+    @echo "🚀 Entorno completo de CachyOS (GNOME) configurado. Por favor, reinicia el sistema."
 
 # Perfil completo para Portatil de desarrollo (AMD Ryzen + Virtualizacion + Contenedores)
-setup-laptop-amd: post-install-amd laptop tuning shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
-    @echo "🚀 Entorno Portatil AMD Ryzen configurado con exito. Por favor, reinicia el sistema."
+setup-laptop-amd: post-install-amd laptop tuning gnome-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+    @echo "🚀 Entorno Portatil AMD Ryzen (GNOME) configurado con exito. Por favor, reinicia el sistema."
 
 # Perfil para Sobremesa (Intel Core - Sin virtualizacion ni bateria)
-setup-media-desktop: post-install-intel tuning shell security fonts fastfetch kitty yt-dlp
-    @echo "🚀 Entorno Sobremesa Intel configurado con exito. Por favor, reinicia el sistema."
+setup-media-desktop: post-install-intel tuning gnome-setup shell security fonts fastfetch kitty yt-dlp
+    @echo "🚀 Entorno Sobremesa Intel (GNOME) configurado con exito. Por favor, reinicia el sistema."
 
 # =============================================================================
 # CONFIGURACION BASE DEL SISTEMA
@@ -21,19 +21,23 @@ setup-media-desktop: post-install-intel tuning shell security fonts fastfetch ki
 post-install:
     ./Setup/post-install.sh
 
-# Configuracion post-instalacion para AMD Ryzen (Kernel, firmware-amd, RADV, Mesa, PipeWire, KDE Plasma)
+# Configuracion post-instalacion para AMD Ryzen (Kernel, firmware-amd, RADV, Mesa, PipeWire, GNOME)
 post-install-amd:
     ./Setup/post-install-amd.sh
 
-# Configuracion post-instalacion para Intel Core (Kernel, microcodigo Intel, VA-API Intel, PipeWire, KDE Plasma)
+# Configuracion post-instalacion para Intel Core (Kernel, microcodigo Intel, VA-API Intel, PipeWire, GNOME)
 post-install-intel:
     ./Setup/post-install-intel.sh
 
-# Optimizacion para portatiles de desarrollo (Touchpad, Bateria, Bluetooth, tuned-ppd, persistencia de brillo 95%)
+# Optimizacion para portatiles de desarrollo (Touchpad, Bateria, Bluetooth, tuned-ppd, persistencia de brillo)
 laptop:
     ./Setup/laptop-setup.sh
 
-# Optimizaciones avanzadas de rendimiento (Sysctl, limites, Systemd, Baloo, Distrobox para CachyOS + KDE Plasma)
+# Personalizacion y configuracion de GNOME (Modo oscuro, gsettings, Mutter VRR, Nautilus, atajos)
+gnome-setup:
+    ./Setup/gnome-settings.sh
+
+# Optimizaciones avanzadas de rendimiento (Sysctl, limites, Systemd, Tracker, Distrobox para CachyOS + GNOME)
 tuning:
     ./Setup/cachyos-tuning.sh
 
@@ -53,7 +57,7 @@ starship:
 starship-disable:
     ./Setup/starship.sh --disable
 
-# Seguridad y cortafuegos (Firewalld, DNS-over-TLS, MAC Randomization, Sysctl)
+# Seguridad y cortafuegos (Firewalld zona home, DNS-over-TLS, MAC Randomization, Sysctl)
 security:
     ./Setup/seguridad.sh
 
@@ -77,7 +81,7 @@ yt-dlp:
 # CONFIGURACION DE RED Y VIRTUALIZACION
 # =============================================================================
 
-# Configuracion de KVM/QEMU y Libvirt (Optimizado para distribuciones Linux)
+# Configuracion de KVM/QEMU y Libvirt (Optimizado para distribuciones Linux y virt-manager)
 virtualization:
     ./Virtualizacion/virtualization.sh
 
@@ -96,6 +100,10 @@ cockpit:
 # Git, Delta, Lazygit, GH CLI
 git-setup:
     ./IDE/git.sh
+
+# Herramienta visual de diffs y resolución de conflictos (Meld)
+meld:
+    ./Apps/meld.sh
 
 # =============================================================================
 # GESTORES DE RUNTIMES
@@ -142,7 +150,7 @@ angular:
 # =============================================================================
 
 # Todos los IDEs
-ides: antigravity antigravity-cli antigravity-ide opencode
+ides: antigravity antigravity-cli antigravity-ide opencode vscode
     @echo "✅ IDEs instalados."
 
 # Google Antigravity Desktop 2.0 (Completo)
@@ -160,6 +168,10 @@ antigravity-ide:
 # OpenCode AI CLI/Editor
 opencode:
     ./IDE/opencode.sh
+
+# Visual Studio Code
+vscode:
+    ./IDE/vscode.sh
 
 # =============================================================================
 # PODMAN Y CONTENEDORES QUADLETS

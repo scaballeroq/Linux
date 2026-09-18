@@ -1,18 +1,18 @@
 #!/bin/bash
 # ==============================================================================
-# laptop-setup.sh - Optimizacion para portatiles de desarrollo en CachyOS + KDE Plasma 6
-# Hardware: AMD Ryzen (HP EliteBook) + Monitores/Escritorio fijo
+# laptop-setup.sh - Optimización para portátiles de desarrollo en CachyOS + GNOME
+# Hardware: AMD Ryzen (HP EliteBook 855 G7) + Triple Pantalla / Escritorio fijo
 # ==============================================================================
 
 set -euo pipefail
 
 echo "================================================================="
-echo "🚀 INICIANDO OPTIMIZACION PARA PORTATIL - CACHYOS (KDE PLASMA 6)"
+echo "🚀 INICIANDO OPTIMIZACIÓN PARA PORTÁTIL - CACHYOS (GNOME)"
 echo "================================================================="
 
 if [ "$EUID" -ne 0 ]; then
     if ! command -v sudo &> /dev/null; then
-        echo "❌ Error: 'sudo' no esta disponible."
+        echo "❌ Error: 'sudo' no está disponible."
         exit 1
     fi
     SUDO="sudo"
@@ -20,7 +20,7 @@ else
     SUDO=""
 fi
 
-# Detectar usuario real en caso de ejecucion con sudo
+# Detectar usuario real en caso de ejecución con sudo
 if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
     REAL_USER="$SUDO_USER"
     USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
@@ -37,13 +37,12 @@ run_as_user() {
     fi
 }
 
-# 1. Herramientas de Hardware, Conectividad y Energia
-echo "ℹ️ [1/4] Instalando servicios de energia, bluetooth y utilidades de hardware..."
+# 1. Herramientas de Hardware, Conectividad y Energía
+echo "ℹ️ [1/4] Instalando servicios de energía, bluetooth y utilidades de hardware..."
 $SUDO pacman -S --needed --noconfirm \
     power-profiles-daemon \
     bluez \
     bluez-utils \
-    bluedevil \
     brightnessctl \
     cachyos-rate-mirrors 2>/dev/null || true
 
@@ -52,8 +51,8 @@ echo "ℹ️ [2/4] Habilitando servicios de sistema..."
 $SUDO systemctl enable --now bluetooth.service || true
 $SUDO systemctl enable --now power-profiles-daemon.service || true
 
-# 2. Optimizacion Bluetooth (Nivel de bateria de perifericos y reconexion rapida)
-echo "ℹ️ [3/4] Configurando Bluetooth para mostrar bateria de dispositivos en KDE..."
+# 2. Optimización Bluetooth (Nivel de batería de periféricos y reconexión rápida)
+echo "ℹ️ [3/4] Configurando Bluetooth (batería de dispositivos y FastConnectable)..."
 $SUDO mkdir -p /etc/bluetooth
 if [ -f /etc/bluetooth/main.conf ]; then
     $SUDO sed -i 's/^#*Experimental *=.*/Experimental = true/' /etc/bluetooth/main.conf
@@ -75,38 +74,28 @@ HandleLidSwitchDocked=ignore
 HandleLidSwitchExternalPower=ignore
 EOF
 
-# 4. Configuraciones de KDE Plasma 6 (Touchpad, Pantalla y KWin)
-echo "ℹ️ [4/4] Aplicando configuraciones de Touchpad, gestos Wayland 1:1 y KWin..."
-KWRITE=$(command -v kwriteconfig6 2>/dev/null || command -v kwriteconfig5 2>/dev/null || true)
+# 4. Configuraciones de GNOME (Touchpad, Pantalla y Energía)
+echo "ℹ️ [4/4] Aplicando configuraciones de Touchpad, gestos Wayland y energía en GNOME..."
 
-if [ -n "$KWRITE" ]; then
-    # Touchpad: Tap-to-click, desplazamiento natural, doble toque para arrastrar y desactivar al teclear
-    run_as_user "$KWRITE" --file kcminputrc --group Touchpad --key tapToClick true 2>/dev/null || true
-    run_as_user "$KWRITE" --file kcminputrc --group Touchpad --key naturalScroll true 2>/dev/null || true
-    run_as_user "$KWRITE" --file kcminputrc --group Touchpad --key twoFingerTap "2" 2>/dev/null || true
-    run_as_user "$KWRITE" --file kcminputrc --group Touchpad --key disableWhileTyping true 2>/dev/null || true
-    run_as_user "$KWRITE" --file kcminputrc --group Touchpad --key tapAndDrag true 2>/dev/null || true
-    run_as_user "$KWRITE" --file touchpadrsrc --group General --key tapToClick true 2>/dev/null || true
-    run_as_user "$KWRITE" --file touchpadrsrc --group General --key naturalScroll true 2>/dev/null || true
+# Touchpad: Tap-to-click, desplazamiento natural, dos dedos y no suspender al teclear
+run_as_user gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true 2>/dev/null || true
+run_as_user gsettings set org.gnome.desktop.peripherals.touchpad natural-scroll true 2>/dev/null || true
+run_as_user gsettings set org.gnome.desktop.peripherals.touchpad two-finger-scrolling-enabled true 2>/dev/null || true
+run_as_user gsettings set org.gnome.desktop.peripherals.touchpad disable-while-typing true 2>/dev/null || true
+run_as_user gsettings set org.gnome.desktop.peripherals.touchpad tap-and-drag true 2>/dev/null || true
 
-    # KWin: Frecuencia adaptativa y gestos de escritorio en Wayland
-    run_as_user "$KWRITE" --file kwinrc --group Compositing --key AdaptiveSync "true" 2>/dev/null || true
-    run_as_user "$KWRITE" --file kwinrc --group Wayland --key VirtualDesktopGestures "true" 2>/dev/null || true
-    run_as_user "$KWRITE" --file kglobalshortcutsrc --group kwin --key "Overview" "Meta+W,none,Toggle Overview" 2>/dev/null || true
-    run_as_user "$KWRITE" --file kglobalshortcutsrc --group kwin --key "Grid" "Meta+G,none,Toggle Desktop Grid" 2>/dev/null || true
+# Energía: No suspender al estar conectado a la corriente (Workstation de desarrollo)
+run_as_user gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing' 2>/dev/null || true
+run_as_user gsettings set org.gnome.settings-daemon.plugins.power power-button-action 'interactive' 2>/dev/null || true
+run_as_user gsettings set org.gnome.desktop.interface show-battery-percentage true 2>/dev/null || true
 
-    # PowerDevil: Niveles de alerta de bateria
-    run_as_user "$KWRITE" --file powerdevilrc --group BatteryManagement --key BatteryCriticalAction "1" 2>/dev/null || true
-    run_as_user "$KWRITE" --file powerdevilrc --group BatteryManagement --key BatteryLowLevel "15" 2>/dev/null || true
-    run_as_user "$KWRITE" --file powerdevilrc --group BatteryManagement --key BatteryCriticalLevel "5" 2>/dev/null || true
+# Luz nocturna suave para sesiones nocturnas de desarrollo
+run_as_user gsettings set org.gnome.settings-daemon.plugins.color night-light-enabled true 2>/dev/null || true
+run_as_user gsettings set org.gnome.settings-daemon.plugins.color night-light-temperature 4000 2>/dev/null || true
 
-    echo "✅ Parametros de Touchpad, gestos Wayland 1:1, KWin y bateria configurados en KDE Plasma 6."
-fi
-
-# Permisos de brillo para usuarios
-$SUDO usermod -aG video "$REAL_USER" 2>/dev/null || true
+# Permisos de brillo y dispositivos de entrada para el usuario
+$SUDO usermod -aG video,input "$REAL_USER" 2>/dev/null || true
 
 echo "================================================================="
-echo "✅ Optimizacion para portatil (CachyOS + KDE Plasma 6) completada."
-echo "💡 Recuerda reiniciar la sesion para que los cambios de KDE entren en vigor."
+echo "✅ Optimización para portátil (CachyOS + GNOME) completada con éxito."
 echo "================================================================="

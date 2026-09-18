@@ -1,6 +1,6 @@
 #!/bin/bash
 # virtualization.sh - Instalación y Optimización Avanzada de Virtualización (KVM/QEMU) para CachyOS
-# Optimizado para virtualizar distribuciones Linux (Kernel 7.x, AMD Ryzen/Intel, KDE Plasma 6 Wayland, 3D VirGL, VirtioFS, Modular Daemons)
+# Optimizado para virtualizar distribuciones Linux (Kernel 7.x, AMD Ryzen/Intel, GNOME Wayland, 3D VirGL, VirtioFS, Modular Daemons)
 
 set -euo pipefail
 
@@ -251,10 +251,10 @@ fi
 # ---------------------------------------------------------------------------
 echo "ℹ️ Configurando backend de firewall e integración de red en libvirt..."
 
-# Resolver conflicto de múltiples firewalls (UFW vs Firewalld)
-if systemctl is-active --quiet firewalld && systemctl is-active --quiet ufw; then
-    echo "⚠️ Detectados firewalld y ufw activos simultáneamente. UFW bloquea virbr0/vnet por defecto."
-    echo "ℹ️ Desactivando UFW para evitar colisiones con Firewalld..."
+# Desactivar y purgar UFW si existe (CachyOS utiliza exclusivamente Firewalld)
+if command -v ufw >/dev/null 2>&1 || systemctl is-active --quiet ufw; then
+    echo "⚠️ UFW detectado. UFW no es compatible con el diseño de red y bloquea virbr0/vnet."
+    echo "ℹ️ Desactivando UFW en favor exclusivo de Firewalld..."
     sudo systemctl disable --now ufw 2>/dev/null || true
 fi
 
@@ -273,21 +273,12 @@ fi
 # Configuración de reglas en Firewalld para NAT y puente virtual (virbr0)
 if command -v firewall-cmd >/dev/null 2>&1 && systemctl is-active --quiet firewalld; then
     echo "ℹ️ Configurando zonas y reenvío NAT en Firewalld para libvirt..."
+    sudo firewall-cmd --permanent --zone=libvirt --add-interface=virbr0 2>/dev/null || true
     sudo firewall-cmd --permanent --zone=libvirt --add-forward 2>/dev/null || true
+    sudo firewall-cmd --permanent --zone=home --add-masquerade 2>/dev/null || true
     sudo firewall-cmd --permanent --zone=public --add-masquerade 2>/dev/null || true
     sudo firewall-cmd --reload 2>/dev/null || true
-    echo "  ✅ Reglas de reenvío y masquerade aplicadas en Firewalld."
-fi
-
-# Si solo se usa UFW (sin firewalld), permitir reenvío y tráfico en virbr0
-if command -v ufw >/dev/null 2>&1 && systemctl is-active --quiet ufw && ! systemctl is-active --quiet firewalld; then
-    echo "ℹ️ UFW detectado: configurando política de reenvío y permisos para virbr0..."
-    if [ -f /etc/default/ufw ]; then
-        sudo sed -i 's/DEFAULT_FORWARD_POLICY="DROP"/DEFAULT_FORWARD_POLICY="ACCEPT"/' /etc/default/ufw 2>/dev/null || true
-    fi
-    sudo ufw route allow in on virbr0 2>/dev/null || true
-    sudo ufw allow in on virbr0 2>/dev/null || true
-    sudo ufw reload 2>/dev/null || true
+    echo "  ✅ Reglas de reenvío y masquerade aplicadas en Firewalld (zonas libvirt y home)."
 fi
 
 # ---------------------------------------------------------------------------
@@ -404,21 +395,34 @@ sudo setfacl -d -m u:"$TARGET_USER":rwX /var/lib/libvirt/images 2>/dev/null || t
 # ---------------------------------------------------------------------------
 # 12. Variable de Entorno LIBVIRT_DEFAULT_URI
 # ---------------------------------------------------------------------------
-echo "ℹ️ Configurando LIBVIRT_DEFAULT_URI en el entorno del usuario..."
-if [ -d "/etc/bashrc.d" ] || [ -d "$HOME/.bashrc.d" ]; then
-    mkdir -p "$HOME/.bashrc.d"
-    cat <<EOF > "$HOME/.bashrc.d/virtualization.sh"
+echo "ℹ️ Configurando LIBVIRT_DEFAULT_URI en el entorno del usuario (Zsh, Bash, environment.d)..."
+# 12.1. Sesión de escritorio y virt-manager (environment.d)
+mkdir -p "$HOME/.config/environment.d"
+cat <<EOF > "$HOME/.config/environment.d/10-libvirt.conf"
+LIBVIRT_DEFAULT_URI=qemu:///system
+EOF
+
+# 12.2. Zsh modular (~/.zshrc.d)
+mkdir -p "$HOME/.zshrc.d"
+cat <<EOF > "$HOME/.zshrc.d/virtualization.zsh"
 # Configuración KVM/QEMU conectando al modo de sistema por defecto
 export LIBVIRT_DEFAULT_URI="qemu:///system"
 EOF
-    echo "✅ Configuración de Virtualización creada en ~/.bashrc.d/virtualization.sh"
-else
-    if ! grep -q "LIBVIRT_DEFAULT_URI" "$HOME/.bashrc" 2>/dev/null; then
-        echo '' >> "$HOME/.bashrc"
-        echo '# Configuración KVM/QEMU conectando al modo de sistema por defecto' >> "$HOME/.bashrc"
-        echo "export LIBVIRT_DEFAULT_URI='qemu:///system'" >> "$HOME/.bashrc"
-    fi
+
+# 12.3. Bash modular (~/.bashrc.d)
+mkdir -p "$HOME/.bashrc.d"
+cat <<EOF > "$HOME/.bashrc.d/virtualization.sh"
+# Configuración KVM/QEMU conectando al modo de sistema por defecto
+export LIBVIRT_DEFAULT_URI="qemu:///system"
+EOF
+
+# Fallback en ~/.bashrc si no se usa carga modular
+if ! grep -q "LIBVIRT_DEFAULT_URI" "$HOME/.bashrc" 2>/dev/null; then
+    echo '' >> "$HOME/.bashrc"
+    echo '# Configuración KVM/QEMU conectando al modo de sistema por defecto' >> "$HOME/.bashrc"
+    echo "export LIBVIRT_DEFAULT_URI='qemu:///system'" >> "$HOME/.bashrc"
 fi
+echo "✅ Configuración de Virtualización creada en environment.d, ~/.zshrc.d y ~/.bashrc.d"
 
 # ---------------------------------------------------------------------------
 # Resumen y Recomendaciones para VMs Linux
@@ -429,7 +433,7 @@ echo "================================================================="
 echo "💡 GUÍA RÁPIDA DE CONFIGURACIÓN PARA LINUX GUESTS EN VIRT-MANAGER:"
 echo "  1. Procesador (CPU):"
 echo "     - Modelo: 'host-passthrough' (rendimiento nativo de CPU e instrucciones AVX2/Zen)."
-echo "  2. Gráficos y Pantalla (KDE Plasma / GNOME / Wayland fluído):"
+echo "  2. Gráficos y Pantalla (GNOME / Wayland fluido):"
 echo "     - Pantalla: 'SPICE', Tipo de escucha: 'Ninguno' (socket local Unix)."
 echo "     - Activar: 'Aceleración OpenGL'."
 echo "     - Video: 'VirtIO' con casilla 'Aceleración 3D' marcada (VirGL)."

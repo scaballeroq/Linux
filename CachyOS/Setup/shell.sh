@@ -121,6 +121,9 @@ WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 BASH_SETUP_DIR="$WORKSPACE_ROOT/Bash.Setup"
 
 if [ -d "$BASH_SETUP_DIR" ]; then
+    # Limpiar symlinks obsoletos de KDE si existieran
+    run_as_user rm -f "$ZSHRC_D/kde_settings.sh" "$BASHRC_D/kde_settings.sh" 2>/dev/null || true
+
     for sh_file in "$BASH_SETUP_DIR"/*.sh; do
         if [ -f "$sh_file" ]; then
             base_name="$(basename "$sh_file")"
@@ -136,7 +139,7 @@ run_as_user mkdir -p "$USER_HOME/.local/bin"
 echo "================================================================="
 echo "✅ Utilidades modernas de terminal y configuraciones listas para CachyOS:"
 echo "  • Herramientas: eza, bat, fzf, zoxide, ripgrep, fd, duf, dust, btop, jq"
-echo "  • Shell activa: Zsh (CachyOS + KDE Plasma 6 + ~/.zshrc.d/)"
+echo "  • Shell activa: Zsh (CachyOS + GNOME + ~/.zshrc.d/)"
 echo "  • Compatibilidad: Bash modular (~/.bashrc.d/)"
 echo "💡 Ejecuta 'source ~/.zshrc' o abre una nueva pestaña para disfrutar de tu entorno."
 echo "================================================================="

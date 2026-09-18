@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==============================================================================
-# cockpit.sh - Administración Web Ligera (Cockpit) para CachyOS + KDE Plasma
+# cockpit.sh - Administración Web Ligera (Cockpit) para CachyOS + GNOME
 # Optimizado para Podman, KVM, Almacenamiento y Sensores Térmicos
 # ==============================================================================
 
@@ -39,18 +39,13 @@ $SUDO sensors-detect --auto &>/dev/null || true
 echo "ℹ️ [3/4] Habilitando cockpit.socket..."
 $SUDO systemctl enable --now cockpit.socket
 
-# 4. Configuración del Firewall (Firewalld y UFW fallback)
-echo "ℹ️ [4/4] Configurando reglas de Firewall para el puerto 9090..."
+# 4. Configuración del Firewall (Firewalld en zona home)
+echo "ℹ️ [4/4] Configurando reglas de Firewall en zona 'home' para el puerto 9090..."
 if command -v firewall-cmd &> /dev/null && systemctl is-active --quiet firewalld; then
-    $SUDO firewall-cmd --permanent --add-service=cockpit 2>/dev/null || \
-    $SUDO firewall-cmd --permanent --add-port=9090/tcp 2>/dev/null || true
+    $SUDO firewall-cmd --permanent --zone=home --add-service=cockpit 2>/dev/null || \
+    $SUDO firewall-cmd --permanent --zone=home --add-port=9090/tcp 2>/dev/null || true
     $SUDO firewall-cmd --reload 2>/dev/null || true
-    echo "  ✅ Regla añadida a Firewalld (servicio cockpit / 9090)."
-fi
-
-if command -v ufw &> /dev/null && $SUDO ufw status 2>/dev/null | grep -q "Status: active"; then
-    $SUDO ufw limit 9090/tcp 2>/dev/null || $SUDO ufw allow 9090/tcp || true
-    echo "  ✅ Regla añadida a UFW (puerto 9090)."
+    echo "  ✅ Regla añadida a Firewalld zona 'home' (servicio cockpit / 9090)."
 fi
 
 # Obtener IP local para el enlace

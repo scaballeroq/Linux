@@ -39,15 +39,17 @@ Para que las máquinas virtuales tengan salida a Internet mediante la red NAT po
 
 1. **Firewalld**: Habilitar el reenvío de tráfico y masquerading:
    ```bash
+   sudo firewall-cmd --permanent --zone=libvirt --add-interface=virbr0 2>/dev/null || true
    sudo firewall-cmd --permanent --zone=libvirt --add-forward
-   sudo firewall-cmd --permanent --zone=public --add-masquerade
+   sudo firewall-cmd --permanent --zone=home --add-masquerade
    sudo firewall-cmd --reload
    ```
 
-2. **Evitar conflictos con UFW**:
-   Si `ufw` está activo en paralelo a Firewalld, bloqueará por defecto el tráfico de `virbr0` y las interfaces virtuales (`vnet*`). Se recomienda desactivarlo:
+2. **Eliminación definitiva de UFW**:
+   UFW genera conflictos graves con libvirt y Firewalld bloqueando el tráfico de `virbr0` y las interfaces virtuales (`vnet*`). Se desinstala por completo:
    ```bash
-   sudo systemctl disable --now ufw
+   sudo systemctl disable --now ufw 2>/dev/null || true
+   sudo pacman -Rns --noconfirm ufw 2>/dev/null || true
    ```
 
 3. **Backend de Libvirt**:
@@ -57,7 +59,14 @@ Para que las máquinas virtuales tengan salida a Internet mediante la red NAT po
    sudo systemctl restart virtnetworkd.service
    ```
 
-4. **Solución en la consola del instalador de Arch Linux (Guest)**:
+4. **Variables de Entorno para Virt-Manager**:
+   Para gestionar el hipervisor del sistema directamente sin pedir root en GNOME:
+   ```bash
+   # En ~/.config/environment.d/10-virtualization.conf
+   LIBVIRT_DEFAULT_URI="qemu:///system"
+   ```
+
+5. **Solución en la consola del instalador de Arch Linux (Guest)**:
    Si al iniciar la ISO de Arch Linux no tienes IP asignada:
    ```bash
    # Comprueba el nombre de la interfaz (ej. ens3 o enp1s0)

@@ -98,10 +98,10 @@ Replaces standard commands with enriched and safe alternatives:
   - `install` → `sudo pacman -S`
   - `aur` → `paru` or `yay` (whichever is available)
   - `rate-mirrors` → `cachyos-rate-mirrors`
-- **KDE Plasma**:
+- **GNOME & Desktop**:
   - `open` / `o` → `xdg-open`
-  - `dolphin` → Opens Dolphin in current directory
-  - `clipcopy` / `clippaste` → Wayland/X11 clipboard
+  - `nautilus` / `files` → Opens Nautilus in current directory
+  - `clipcopy` / `clippaste` → Native Wayland clipboard (`wl-clipboard`)
 - **Kernel Check**: `check-kernel` compares active kernel vs kernel.org
 
 ---
@@ -121,18 +121,15 @@ Helper shell functions to simplify recurring tasks:
 
 ---
 
-## 6. KDE Plasma 6 Configuration (`kde_settings.sh`)
+## 6. GNOME Configuration (`gnome_settings.sh`)
 
-Applies automatic configurations for the KDE Plasma 6 desktop environment:
+Applies automatic configurations and shortcuts for the GNOME desktop environment:
 
-- **Touchpad**: Tap-to-click, natural scrolling
-- **Window Buttons**: Minimize, Maximize, Close on the right
-- **Clock**: 24-hour format, ISO date
-- **KWin**: Reload configuration without restarting session
-- **KCM Shell**: Shortcuts to configuration modules (displays, wifi, audio, bluetooth, etc.)
-- **Themes**: `kde-theme-dark`, `kde-theme-light`, `kde-set-wallpaper`
-- **Spectacle**: `captura` (region capture), `grabacion` (screen recording)
-- **Plasmoids**: `plasmoids-list`, `kwin-scripts-list`
+- **Dark Theme**: `gnome-theme-dark`, `gnome-theme-light`
+- **GNOME Control Center**: Direct shortcuts (`gnome-settings`, `gnome-pantallas`, `gnome-wifi`, `gnome-audio`, `gnome-bluetooth`, `gnome-teclado`, `gnome-energia`, `gnome-red`, `gnome-info`)
+- **Night Light**: `gnome-night-light-on`, `gnome-night-light-off`
+- **Wayland Utilities**: `captura` (grim + slurp + satty/wl-copy), `grabacion` (wl-screenrec)
+- **File Manager**: `nautilus`, `files`
 
 ---
 

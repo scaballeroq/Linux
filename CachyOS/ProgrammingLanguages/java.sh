@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==============================================================================
 # java.sh - Instalación de OpenJDK (Última LTS) y soporte AutoFirma en CachyOS
-# Optimizado para KDE Plasma 6 (JAVA_HOME para IDEs, Gradle, Maven y DNIe)
+# Optimizado para GNOME (JAVA_HOME para IDEs, Gradle, Maven y DNIe)
 # ==============================================================================
 
 set -euo pipefail
@@ -75,13 +75,13 @@ if command -v archlinux-java &>/dev/null; then
     fi
 fi
 
-# 3. Configurar JAVA_HOME para KDE Plasma 6, Wayland e IDEs (IntelliJ, Android Studio, Gradle, Maven)
-echo "ℹ️ [3/3] Configurando variables de entorno (JAVA_HOME) para KDE Plasma 6 y Shells..."
+# 3. Configurar JAVA_HOME para GNOME, Wayland e IDEs (IntelliJ, Android Studio, Gradle, Maven)
+echo "ℹ️ [3/3] Configurando variables de entorno (JAVA_HOME) para GNOME y Shells..."
 ENV_DIR="$USER_HOME/.config/environment.d"
 run_as_user mkdir -p "$ENV_DIR"
 
 cat << 'EOF' | run_as_user tee "$ENV_DIR/10-java.conf" > /dev/null
-# Integración de Java / OpenJDK para KDE Plasma 6 y aplicaciones gráficas (IDEs, Maven, Gradle)
+# Integración de Java / OpenJDK para GNOME y aplicaciones gráficas (IDEs, Maven, Gradle)
 JAVA_HOME=/usr/lib/jvm/default
 PATH=${JAVA_HOME}/bin:${PATH}
 EOF
@@ -118,10 +118,10 @@ fi
 JAVA_VER=$(java -version 2>&1 | head -n 1 | awk -F '"' '{print $2}' || echo "instalado")
 
 echo "================================================================="
-echo "✅ OpenJDK LTS configurado con éxito para CachyOS y KDE Plasma 6:"
+echo "✅ OpenJDK LTS configurado con éxito para CachyOS y GNOME:"
 echo "  • OpenJDK:     v$JAVA_VER (LTS)"
 echo "  • JAVA_HOME:   /usr/lib/jvm/default"
-echo "  • KDE/IDEs:    ~/.config/environment.d/10-java.conf (IntelliJ, Android Studio)"
+echo "  • GNOME/IDEs:  ~/.config/environment.d/10-java.conf (IntelliJ, Android Studio)"
 echo "  • AutoFirma:   Soporte DNIe y Smartcards habilitado (nss, pcsclite)"
 echo "  • Shells:      Bash & Zsh"
 echo "================================================================="

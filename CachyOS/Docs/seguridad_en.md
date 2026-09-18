@@ -4,33 +4,43 @@ sidebar_position: 1
 
 # CachyOS Security Hardening
 
-This guide details the security hardening process applied to a **CachyOS** system with **KDE Plasma 6**, as automated in the security setup script.
+This guide details the security hardening process applied to a **CachyOS** system with **GNOME** for a development workstation, as automated in the `Setup/seguridad.sh` script.
 
-The process covers firewall configuration (Firewalld), DNS privacy, MAC Randomization, and kernel hardening.
+The process covers exclusive firewall configuration (**Firewalld**), Podman and KVM integration, DNS privacy, MAC Randomization, and kernel hardening.
 
 ## 1. Firewall Configuration (Firewalld)
 
-Firewalld is used to define strict network policies with dynamic zones.
+**Firewalld** is used exclusively with the default `home` zone, integrating isolated zones for containers and virtual machines. UFW is uninstalled and purged.
 
-1. Disable UFW if it came pre-installed with CachyOS, then install/enable Firewalld:
+1. Disable and remove UFW if it came pre-installed with CachyOS, then install/enable Firewalld:
    ```bash
    sudo systemctl disable --now ufw 2>/dev/null || true
+   sudo pacman -Rns --noconfirm ufw 2>/dev/null || true
    sudo pacman -S --needed --noconfirm firewalld
    sudo systemctl enable --now firewalld
    ```
 
-2. Configure useful services for development and KDE Plasma:
+2. Configure default `home` zone and services for development:
    ```bash
-   sudo firewall-cmd --permanent --add-service=kdeconnect
-   sudo firewall-cmd --permanent --add-service=mdns
-   sudo firewall-cmd --permanent --add-service=ssh
+   # Default zone: home
+   sudo firewall-cmd --set-default-zone=home
+   sudo firewall-cmd --permanent --zone=home --add-service=mdns
+   sudo firewall-cmd --permanent --zone=home --add-service=ssh
+
+   # Isolated zone for Podman Rootless
+   sudo firewall-cmd --permanent --zone=trusted --add-interface=podman+ 2>/dev/null || true
+
+   # Zone for KVM / libvirt virtual network
+   sudo firewall-cmd --permanent --zone=libvirt --add-interface=virbr0 2>/dev/null || true
+
    sudo firewall-cmd --reload
    ```
 
 3. Verify status:
    ```bash
    sudo firewall-cmd --state
-   sudo firewall-cmd --list-all
+   sudo firewall-cmd --get-default-zone
+   sudo firewall-cmd --zone=home --list-all
    ```
 
 ## 2. DNS Privacy (DNS-over-TLS)
@@ -96,6 +106,7 @@ net.ipv4.tcp_syncookies=1
 # Rootless container support (Podman)
 kernel.unprivileged_userns_clone=1
 user.max_user_namespaces=28633
+net.ipv4.ip_unprivileged_port_start=80
 ```
 
 Apply changes:

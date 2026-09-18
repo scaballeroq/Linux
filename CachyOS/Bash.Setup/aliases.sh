@@ -1,8 +1,8 @@
 # =============================================================================
-# ARCHIVO DE ALIASES (aliases.sh) - Adaptado para CachyOS (KDE Plasma 6)
+# ARCHIVO DE ALIASES (aliases.sh) - Adaptado para CachyOS (GNOME)
 # =============================================================================
 # Este archivo contiene atajos (aliases) para comandos utilizados frecuentemente.
-# Optimizado para CachyOS (Arch Linux, x86-64-v3/v4) con KDE Plasma 6, Wayland y herramientas Rust.
+# Optimizado para CachyOS (Arch Linux, x86-64-v3/v4) con GNOME, Wayland y herramientas Rust.
 
 # 1. NAVEGACIÓN RÁPIDA
 alias ..='cd ..'
@@ -13,19 +13,17 @@ alias repo='cd ~/Workspace/Repositorios'
 alias repos='cd ~/Workspace/Repositorios'
 alias cachyos='cd ~/Workspace/Repositorios/Linux/CachyOS'
 
-# 2. INTEGRACIÓN CON KDE PLASMA Y ESCRITORIO
+# 2. INTEGRACIÓN CON GNOME Y ESCRITORIO
 alias open='xdg-open'
 alias o='xdg-open'
-alias dolphin='dolphin . &>/dev/null &'
+alias nautilus='nautilus . &>/dev/null &'
+alias files='nautilus . &>/dev/null &'
 alias trash='gio trash'
 
-# Portapapeles (Wayland nativo con fallback a X11)
+# Portapapeles (Wayland nativo con wl-clipboard)
 if command -v wl-copy &> /dev/null; then
     alias clipcopy='wl-copy'
     alias clippaste='wl-paste'
-elif command -v xclip &> /dev/null; then
-    alias clipcopy='xclip -selection clipboard'
-    alias clippaste='xclip -selection clipboard -o'
 fi
 
 # 3. MEJORAS DE 'LS' (USANDO EZA)
@@ -152,5 +150,5 @@ alias vminfo='virsh dominfo'
 alias update-antigravity='sudo "$UPDATE_ANTIGRAVITY_PATH"'
 alias update-antigravity-ide='sudo "$UPDATE_ANTIGRAVITY_IDE_PATH"'
 
-echo "✅ Aliases modernizados cargados (Pacman/Paru, KDE Plasma, Kernel-Check, Rust tools)"
+echo "✅ Aliases modernizados cargados (Pacman/Paru, GNOME, Kernel-Check, Rust tools)"
 

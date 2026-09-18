@@ -33,15 +33,17 @@ To grant virtual machines outbound Internet access through the default NAT netwo
 
 1. **Firewalld**: Enable inter-zone forwarding and masquerading:
    ```bash
+   sudo firewall-cmd --permanent --zone=libvirt --add-interface=virbr0 2>/dev/null || true
    sudo firewall-cmd --permanent --zone=libvirt --add-forward
-   sudo firewall-cmd --permanent --zone=public --add-masquerade
+   sudo firewall-cmd --permanent --zone=home --add-masquerade
    sudo firewall-cmd --reload
    ```
 
-2. **Avoid UFW Conflicts**:
-   If `ufw` is active alongside Firewalld, it blocks `virbr0` and virtual interfaces (`vnet*`) by default. Disable it:
+2. **Complete UFW Removal**:
+   UFW creates severe conflicts with libvirt and Firewalld by blocking `virbr0` and virtual interfaces (`vnet*`). It is completely uninstalled:
    ```bash
-   sudo systemctl disable --now ufw
+   sudo systemctl disable --now ufw 2>/dev/null || true
+   sudo pacman -Rns --noconfirm ufw 2>/dev/null || true
    ```
 
 3. **Libvirt Firewall Backend**:
@@ -51,7 +53,14 @@ To grant virtual machines outbound Internet access through the default NAT netwo
    sudo systemctl restart virtnetworkd.service
    ```
 
-4. **Arch Linux Installer Console Troubleshooting (Guest)**:
+4. **Environment Variables for Virt-Manager**:
+   To manage the system hypervisor without sudo prompts in GNOME:
+   ```bash
+   # In ~/.config/environment.d/10-virtualization.conf
+   LIBVIRT_DEFAULT_URI="qemu:///system"
+   ```
+
+5. **Arch Linux Installer Console Troubleshooting (Guest)**:
    If the guest does not obtain an IP automatically upon booting the Arch ISO:
    ```bash
    # Check interface name (e.g., ens3 or enp1s0)

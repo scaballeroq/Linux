@@ -402,21 +402,17 @@ mkdir -p "$(dirname "$icon_file")"
 install -m 0644 "$icon_source" "$icon_file"
 install -m 0644 "$desktop_staged" "$desktop_file"
 
-# Menu contextual de Dolphin en KDE Plasma 6
-mkdir -p /usr/share/kio/servicemenus
-cat <<'SERVICEMENU' > /usr/share/kio/servicemenus/open_in_antigravity_ide.desktop
-[Desktop Entry]
-Type=Service
-MimeType=inode/directory;
-Actions=openInAntigravityIde;
-X-KDE-Priority=TopLevel
-
-[Desktop Action openInAntigravityIde]
-Name=Open in Antigravity IDE
-Name[es]=Abrir en Antigravity IDE
-Icon=antigravity-ide
-Exec=antigravity-ide %f
-SERVICEMENU
+# Menú contextual para Nautilus en GNOME
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+	USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+	mkdir -p "$USER_HOME/.local/share/nautilus/scripts"
+	cat <<'NAUTILUS_SCRIPT' > "$USER_HOME/.local/share/nautilus/scripts/Abrir con Antigravity IDE"
+#!/bin/sh
+antigravity-ide "$@" &
+NAUTILUS_SCRIPT
+	chmod +x "$USER_HOME/.local/share/nautilus/scripts/Abrir con Antigravity IDE"
+	chown "$SUDO_USER:" "$USER_HOME/.local/share/nautilus/scripts/Abrir con Antigravity IDE" 2>/dev/null || true
+fi
 
 if command -v update-desktop-database >/dev/null 2>&1; then
 	update-desktop-database /usr/share/applications >/dev/null 2>&1 || true

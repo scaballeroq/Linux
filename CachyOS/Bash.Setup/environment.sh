@@ -1,5 +1,5 @@
 # =============================================================================
-# VARIABLES DE ENTORNO (environment.sh) - Adaptado para CachyOS (KDE Plasma 6)
+# VARIABLES DE ENTORNO (environment.sh) - Adaptado para CachyOS (GNOME)
 # =============================================================================
 # Este archivo define variables de entorno globales para la sesión de usuario.
 
@@ -29,10 +29,14 @@ export LESS_TERMCAP_us=$'\E[1;32m'
 export LESS_TERMCAP_ue=$'\E[0m'
 
 # -----------------------------------------------------------------------------
-# 2. INTEGRACIÓN WAYLAND, QT Y APLICACIONES ELECTRON
+# 2. INTEGRACIÓN WAYLAND, GNOME, QT Y APLICACIONES ELECTRON
 # -----------------------------------------------------------------------------
-# Compatibilidad Qt/Wayland con fallback automático a Xwayland
+# Backend gráfico Wayland prioritario
+export GDK_BACKEND="wayland,x11,*"
+
+# Compatibilidad Qt/Wayland con integración de tema GNOME
 export QT_QPA_PLATFORM="wayland;xcb"
+export QT_QPA_PLATFORMTHEME="gnome"
 export QT_AUTO_SCREEN_SCALE_FACTOR=1
 
 # Firefox en modo Wayland nativo
@@ -84,8 +88,11 @@ if [ -S "$XDG_RUNTIME_DIR/podman/podman.sock" ]; then
 fi
 
 # -----------------------------------------------------------------------------
-# 5. VARIOS
+# 5. VIRTUALIZACIÓN Y VARIOS
 # -----------------------------------------------------------------------------
+# KVM / QEMU con conexión directa a sesión de sistema (virt-manager)
+export LIBVIRT_DEFAULT_URI="qemu:///system"
+
 # Rutas para actualización de Antigravity
 export UPDATE_ANTIGRAVITY_PATH="/usr/local/bin/update-antigravity"
 export UPDATE_ANTIGRAVITY_IDE_PATH="/usr/local/bin/update-antigravity-ide"
@@ -93,5 +100,5 @@ export UPDATE_ANTIGRAVITY_IDE_PATH="/usr/local/bin/update-antigravity-ide"
 # =============================================================================
 # MENSAJE DE CARGA
 # =============================================================================
-echo "✅ Variables de entorno aplicadas (PATH, EDITOR, LESS, Wayland/Qt...)"
+echo "✅ Variables de entorno aplicadas (PATH, EDITOR, LESS, GNOME/Wayland, KVM...)"
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# kitty.sh - Instalacion y Configuracion Estetica de Kitty Terminal para CachyOS + KDE Plasma
+# kitty.sh - Instalacion y Configuracion Estetica de Kitty Terminal para CachyOS + GNOME
 #
 # Uso:
 #   ./kitty.sh                       -> Instala y aplica configuracion estetica con opacidad al 75% y blur 32
@@ -43,7 +43,7 @@ BLUR_RADIUS="32"
 
 show_help() {
     cat <<EOF
-🐱 Configuracion Estetica de Kitty Terminal - CachyOS (KDE Plasma 6)
+🐱 Configuracion Estetica de Kitty Terminal - CachyOS (GNOME Workstation)
 
 Uso:
   $0 [OPCION]
@@ -92,7 +92,7 @@ fi
 OPACITY_PERCENT=$(awk "BEGIN {print int($OPACITY * 100)}")
 
 echo "==========================================================="
-echo "🐱 Configurando Kitty Terminal en CachyOS (KDE Plasma)"
+echo "🐱 Configurando Kitty Terminal en CachyOS (GNOME)"
 echo "🎨 Nivel de opacidad seleccionado: ${OPACITY} (${OPACITY_PERCENT}% opaco, $((100 - OPACITY_PERCENT))% transparente)"
 echo "==========================================================="
 
@@ -116,7 +116,7 @@ mkdir -p "$USER_HOME/.config/kitty"
 echo "🎨 [3/4] Generando configuracion (Opacidad ${OPACITY}, Blur ${BLUR_RADIUS})..."
 cat <<EOF > "$USER_HOME/.config/kitty/kitty.conf"
 # =============================================================================
-# KITTY CONFIGURATION - CACHYOS + KDE PLASMA
+# KITTY CONFIGURATION - CACHYOS + GNOME
 # =============================================================================
 
 # --- Fuentes & Tipografia ---
@@ -250,55 +250,29 @@ map ctrl+shift+enter     new_window_with_cwd
 map ctrl+shift+f5        load_config_file
 EOF
 
-# 4. Integracion con Dolphin y KDE Plasma
-echo "📁 [4/4] Configurando integracion con Dolphin y atajos de KDE Plasma..."
+# 4. Integracion con GNOME y Nautilus
+echo "📁 [4/4] Configurando integracion con GNOME y Nautilus..."
 
-# Configurar Kitty como terminal por defecto y atajo Ctrl+Alt+T en KDE Plasma
-if command -v kwriteconfig6 &> /dev/null; then
-    # Terminal predeterminado de KDE
-    run_as_user kwriteconfig6 --file kdeglobals --group General --key TerminalApplication "kitty" 2>/dev/null || true
-    run_as_user kwriteconfig6 --file kdeglobals --group General --key TerminalService "kitty.desktop" 2>/dev/null || true
+# Establecer Kitty como terminal predeterminada en GNOME
+run_as_user gsettings set org.gnome.desktop.default-applications.terminal exec 'kitty' 2>/dev/null || true
+run_as_user gsettings set org.gnome.desktop.default-applications.terminal exec-arg "" 2>/dev/null || true
 
-    # Atajo global Ctrl+Alt+T
-    run_as_user kwriteconfig6 --file kglobalshortcutsrc --group kitty.desktop --key _launch "Ctrl+Alt+T,none,kitty" 2>/dev/null || true
-    run_as_user kwriteconfig6 --file kglobalshortcutsrc --group kitty.desktop --key _k_friendly_name "Kitty" 2>/dev/null || true
-    if command -v qdbus6 &>/dev/null; then
-        run_as_user qdbus6 org.kde.kglobalaccel /kglobalaccel reloadConfig 2>/dev/null || true
-    fi
-elif command -v kwriteconfig5 &> /dev/null; then
-    run_as_user kwriteconfig5 --file kdeglobals --group General --key TerminalApplication "kitty" 2>/dev/null || true
-    run_as_user kwriteconfig5 --file kdeglobals --group General --key TerminalService "kitty.desktop" 2>/dev/null || true
-    run_as_user kwriteconfig5 --file kglobalshortcutsrc --group kitty.desktop --key _launch "Ctrl+Alt+T,none,kitty" 2>/dev/null || true
-    run_as_user kwriteconfig5 --file kglobalshortcutsrc --group kitty.desktop --key _k_friendly_name "Kitty" 2>/dev/null || true
-    if command -v qdbus &>/dev/null; then
-        run_as_user qdbus org.kde.kglobalaccel /kglobalaccel reloadConfig 2>/dev/null || true
-    fi
-fi
+# Configurar atajo de teclado global Ctrl+Alt+T para Kitty en GNOME
+KB_PATH="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
+run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "['$KB_PATH']" 2>/dev/null || true
+run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$KB_PATH name 'Kitty Terminal' 2>/dev/null || true
+run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$KB_PATH command 'kitty' 2>/dev/null || true
+run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$KB_PATH binding '<Primary><Alt>t' 2>/dev/null || true
 
-# Añadir accion de menu contextual para Dolphin (ServiceMenu "Abrir en Kitty")
-DOLPHIN_SERVICES_DIR="$USER_HOME/.local/share/kio/servicemenus"
-run_as_user mkdir -p "$DOLPHIN_SERVICES_DIR"
+# Añadir script nativo de menu contextual para Nautilus (Scripts -> "Abrir en Kitty")
+NAUTILUS_SCRIPTS_DIR="$USER_HOME/.local/share/nautilus/scripts"
+run_as_user mkdir -p "$NAUTILUS_SCRIPTS_DIR"
 
-cat <<'EOF' | run_as_user tee "$DOLPHIN_SERVICES_DIR/open_in_kitty.desktop" > /dev/null
-[Desktop Entry]
-Type=Service
-MimeType=inode/directory;
-Actions=openInKitty;
-X-KDE-Priority=TopLevel
-
-[Desktop Action openInKitty]
-Name=Abrir en Kitty
-Name[es]=Abrir en Kitty
-Name[en]=Open in Kitty
-Icon=kitty
-Exec=kitty --directory %f
+cat <<'EOF' | run_as_user tee "$NAUTILUS_SCRIPTS_DIR/Abrir en Kitty" > /dev/null
+#!/bin/sh
+kitty --directory "${1:-.}" &
 EOF
-run_as_user chmod +x "$DOLPHIN_SERVICES_DIR/open_in_kitty.desktop" 2>/dev/null || true
-
-# Compatibilidad con Plasma 5 si existe el directorio
-if [ -d "$USER_HOME/.local/share/kservices5/ServiceMenus" ]; then
-    cp "$DOLPHIN_SERVICES_DIR/open_in_kitty.desktop" "$USER_HOME/.local/share/kservices5/ServiceMenus/" 2>/dev/null || true
-fi
+run_as_user chmod +x "$NAUTILUS_SCRIPTS_DIR/Abrir en Kitty" 2>/dev/null || true
 
 # Recargar configuracion en caliente si hay instancias activas de Kitty
 killall -USR1 kitty 2>/dev/null || true
@@ -308,8 +282,8 @@ echo "✅ Kitty se ha configurado con opacidad al ${OPACITY} (${OPACITY_PERCENT}
 echo "💡 Atajos rapidos en Kitty:"
 echo "   - Opacidad directa: Ctrl+Alt+Arriba (+5%) | Ctrl+Alt+Abajo (-5%) | Ctrl+Alt+0 (Default) | Ctrl+Alt+1 (100% Opaco)"
 echo "   - Opacidad por F-Keys: Ctrl+Shift+F11 (+5%) | Ctrl+Shift+F10 (-5%) | Ctrl+Shift+F9 (Default)"
-echo "   - Menu contextual en Dolphin: Clic derecho -> 'Abrir en Kitty'."
-echo "   - Atajo global en KDE: Ctrl+Alt+T para abrir Kitty en cualquier momento."
+echo "   - Atajo global en GNOME: Ctrl+Alt+T para abrir Kitty en cualquier momento."
+echo "   - Menu contextual en Nautilus: Clic derecho -> Scripts -> 'Abrir en Kitty'."
 echo "   - Recargar configuracion en vivo: Ctrl+Shift+F5"
 echo "   - Nueva pestana en mismo directorio: Ctrl+Shift+T"
 echo "   - Nueva ventana dividida: Ctrl+Shift+Enter"
