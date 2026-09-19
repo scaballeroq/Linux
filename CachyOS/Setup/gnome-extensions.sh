@@ -43,6 +43,12 @@ EGO_EXTENSIONS=(
     "https://extensions.gnome.org/extension/779/clipboard-indicator/"
     "https://extensions.gnome.org/extension/36/lock-keys/"
     "https://extensions.gnome.org/extension/7065/tiling-shell/"
+    "https://extensions.gnome.org/extension/5940/quick-settings-audio-panel/"
+    "https://extensions.gnome.org/extension/8773/multi-monitor-bar/"
+    "https://extensions.gnome.org/extension/4470/media-controls/"
+    "https://extensions.gnome.org/extension/1319/gsconnect/"
+    "https://extensions.gnome.org/extension/3843/just-perfection/"
+    "https://extensions.gnome.org/extension/355/status-area-horizontal-spacing/"
 )
 
 # ------------------------------------------------------------------------------
@@ -61,6 +67,12 @@ EXTENSION_UUIDS=(
     "clipboard-indicator@tudmotu.com"
     "lockkeys@vaina.lt"
     "tilingshell@ferrarodomenico.com"
+    "quick-settings-audio-panel@rayzeq.github.io"
+    "multi-monitors-bar@frederykabryan"
+    "mediacontrols@cliffniff.github.com"
+    "gsconnect@andyholmes.github.io"
+    "just-perfection-desktop@just-perfection"
+    "status-area-horizontal-spacing@mathematical.coffee.gmail.com"
 )
 
 # ------------------------------------------------------------------------------
@@ -225,6 +237,16 @@ install_ego_extensions() {
             fi
             rm -f "$temp_zip"
 
+            # Asegurar compatibilidad de versión en metadata.json si no está presente
+            if [ -f "$dest_path/metadata.json" ] && [ -n "$shell_major" ]; then
+                local current_versions
+                current_versions=$(jq -r '."shell-version"[]?' "$dest_path/metadata.json" 2>/dev/null || echo "")
+                if ! echo "$current_versions" | grep -qx "$shell_major"; then
+                    jq --arg v "$shell_major" '."shell-version" += [$v]' "$dest_path/metadata.json" > "$dest_path/metadata.json.tmp" && \
+                    mv "$dest_path/metadata.json.tmp" "$dest_path/metadata.json"
+                fi
+            fi
+
             # Notificar a GNOME Shell por D-Bus para registrarla inmediatamente si la sesión está activa
             run_as_user busctl --user call org.gnome.Shell.Extensions /org/gnome/Shell/Extensions org.gnome.Shell.Extensions InstallRemoteExtension s "$uuid" &>/dev/null || true
 
@@ -237,8 +259,9 @@ install_ego_extensions() {
 }
 
 enable_extensions() {
-    echo "🔌 [3/4] Habilitando soporte global de extensiones de usuario..."
+    echo "🔌 [3/4] Habilitando soporte global de extensiones de usuario y relajando validación de versión..."
     run_as_user gsettings set org.gnome.shell disable-user-extensions false 2>/dev/null || true
+    run_as_user gsettings set org.gnome.shell disable-extension-version-validation true 2>/dev/null || true
 
     echo "⚡ [4/4] Activando extensiones en GNOME Shell..."
     for uuid in "${EXTENSION_UUIDS[@]}"; do
