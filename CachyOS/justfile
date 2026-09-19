@@ -61,7 +61,7 @@ shell:
 starship:
     ./Setup/starship.sh
 
-# Desactivar Starship y restaurar prompt nativo de CachyOS (p10k)
+# Desactivar Starship y restaurar prompt nativo (Bash / p10k en Zsh)
 starship-disable:
     ./Setup/starship.sh --disable
 

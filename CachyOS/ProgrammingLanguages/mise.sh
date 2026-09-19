@@ -81,16 +81,19 @@ fi
 EOF
 
 # Fallback si no se lee .bashrc.d
-if [ -f "$USER_HOME/.bashrc" ] && ! grep -q "mise activate" "$USER_HOME/.bashrc" 2>/dev/null; then
-    if ! grep -q ".bashrc.d" "$USER_HOME/.bashrc" 2>/dev/null; then
-        echo -e '\n# Mise (Language Version Manager)\nif command -v mise &>/dev/null; then eval "$(mise activate bash)"; fi' | run_as_user tee -a "$USER_HOME/.bashrc" > /dev/null
+BASHRC="$USER_HOME/.bashrc"
+run_as_user touch "$BASHRC"
+if ! grep -q "mise activate" "$BASHRC" 2>/dev/null; then
+    if ! grep -q ".bashrc.d" "$BASHRC" 2>/dev/null; then
+        echo -e '\n# Mise (Language Version Manager)\nif command -v mise &>/dev/null; then eval "$(mise activate bash)"; fi' | run_as_user tee -a "$BASHRC" > /dev/null
     fi
 fi
 
-# 3.2. Zsh
+# 3.2. Zsh (Compatibilidad condicional si existe ~/.zshrc)
 ZSHRC="$USER_HOME/.zshrc"
 ZSHRC_D="$USER_HOME/.zshrc.d"
-if [ -d "$ZSHRC_D" ]; then
+if [ -f "$ZSHRC" ]; then
+    run_as_user mkdir -p "$ZSHRC_D"
     cat << 'EOF' | run_as_user tee "$ZSHRC_D/mise.zsh" > /dev/null
 # =============================================================================
 # MISE VERSION MANAGER (Zsh Shell Activation)
@@ -99,26 +102,25 @@ if command -v mise &>/dev/null; then
     eval "$(mise activate zsh)"
 fi
 EOF
-fi
-
-if [ -f "$ZSHRC" ] || [[ "${SHELL:-}" == *"zsh"* ]]; then
-    run_as_user touch "$ZSHRC"
     if ! grep -q "mise activate zsh" "$ZSHRC" 2>/dev/null; then
         echo -e '\n# Mise (Language Version Manager)\nif command -v mise &>/dev/null; then eval "$(mise activate zsh)"; fi' | run_as_user tee -a "$ZSHRC" > /dev/null
         echo "  ✅ Activación de Mise añadida a ~/.zshrc"
     fi
 fi
 
-# 3.3. Autocompletados (Bash y Zsh)
+# 3.3. Autocompletados (Bash siempre; Zsh condicional)
 COMPLETIONS_DIR="$USER_HOME/.local/share/bash-completion/completions"
-ZSH_COMPLETIONS_DIR="$USER_HOME/.local/share/zsh/site-functions"
-ZFUNC_DIR="$USER_HOME/.zfunc"
-run_as_user mkdir -p "$COMPLETIONS_DIR" "$ZSH_COMPLETIONS_DIR" "$ZFUNC_DIR"
+run_as_user mkdir -p "$COMPLETIONS_DIR"
 
 if command -v mise &>/dev/null; then
     run_as_user mise completion bash > "$COMPLETIONS_DIR/mise" 2>/dev/null || true
-    run_as_user mise completion zsh > "$ZSH_COMPLETIONS_DIR/_mise" 2>/dev/null || true
-    run_as_user mise completion zsh > "$ZFUNC_DIR/_mise" 2>/dev/null || true
+    if [ -f "$ZSHRC" ]; then
+        ZSH_COMPLETIONS_DIR="$USER_HOME/.local/share/zsh/site-functions"
+        ZFUNC_DIR="$USER_HOME/.zfunc"
+        run_as_user mkdir -p "$ZSH_COMPLETIONS_DIR" "$ZFUNC_DIR"
+        run_as_user mise completion zsh > "$ZSH_COMPLETIONS_DIR/_mise" 2>/dev/null || true
+        run_as_user mise completion zsh > "$ZFUNC_DIR/_mise" 2>/dev/null || true
+    fi
 fi
 
 # 4. Generar Shims iniciales
@@ -131,6 +133,8 @@ echo "================================================================="
 echo "✅ Mise configurado con éxito para CachyOS y GNOME:"
 echo "  • CLI & Shims:  ~/.local/share/mise/shims y /usr/bin/mise"
 echo "  • GNOME:        ~/.config/environment.d/10-mise.conf (sesión gráfica e IDEs)"
-echo "  • Shell Bash:   ~/.bashrc.d/mise.sh + autocompletado"
-echo "  • Shell Zsh:    ~/.zshrc + autocompletado (_mise)"
+echo "  • Shell Bash:   ~/.bashrc.d/mise.sh + autocompletado (Predeterminada)"
+if [ -f "$ZSHRC" ]; then
+    echo "  • Shell Zsh:    ~/.zshrc + autocompletado (_mise)"
+fi
 echo "================================================================="

@@ -78,12 +78,11 @@ echo "ℹ️ [3/5] Actualizando herramientas base de empaquetado (pip, setuptool
 run_as_user mise exec python@latest -- python -m pip install --upgrade pip setuptools wheel --quiet 2>/dev/null || true
 run_as_user mise reshim 2>/dev/null || true
 
-# 5. Integración con GNOME (environment.d) y Shells (Zsh / Bash)
+# 5. Integración con GNOME (environment.d) y Shells (Bash predeterminado / Zsh condicional)
 echo "ℹ️ [4/5] Configurando variables de entorno para GNOME y Shells..."
 ENV_DIR="$USER_HOME/.config/environment.d"
 BASHRC_D="$USER_HOME/.bashrc.d"
-ZSHRC_D="$USER_HOME/.zshrc.d"
-run_as_user mkdir -p "$ENV_DIR" "$BASHRC_D" "$ZSHRC_D"
+run_as_user mkdir -p "$ENV_DIR" "$BASHRC_D"
 
 # 5.1. GNOME (sesión gráfica, VS Code, PyCharm, Antigravity)
 cat << 'EOF' | run_as_user tee "$ENV_DIR/10-python.conf" > /dev/null
@@ -92,42 +91,54 @@ PYTHONUNBUFFERED=1
 UV_LINK_MODE=copy
 EOF
 
-# 5.2. Shell Zsh
-cat << 'EOF' | run_as_user tee "$ZSHRC_D/python.zsh" > /dev/null
-# Python & uv Environment Settings
-export PYTHONUNBUFFERED=1
-export UV_LINK_MODE=copy
-EOF
-
-# 5.3. Shell Bash
+# 5.2. Shell Bash (Predeterminada)
 cat << 'EOF' | run_as_user tee "$BASHRC_D/python.sh" > /dev/null
 # Python & uv Environment Settings
 export PYTHONUNBUFFERED=1
 export UV_LINK_MODE=copy
 EOF
 
-# 6. Configurar autocompletado en Zsh y Bash
-echo "ℹ️ [5/5] Generando autocompletados para Zsh y Bash (uv, uvx, pip)..."
+# 5.3. Shell Zsh (Compatibilidad condicional si existe ~/.zshrc)
+if [ -f "$USER_HOME/.zshrc" ]; then
+    ZSHRC_D="$USER_HOME/.zshrc.d"
+    run_as_user mkdir -p "$ZSHRC_D"
+    cat << 'EOF' | run_as_user tee "$ZSHRC_D/python.zsh" > /dev/null
+# Python & uv Environment Settings
+export PYTHONUNBUFFERED=1
+export UV_LINK_MODE=copy
+EOF
+fi
+
+# 6. Configurar autocompletado (Bash siempre; Zsh si existe ~/.zshrc)
+echo "ℹ️ [5/5] Generando autocompletados para Bash (y Zsh si existe ~/.zshrc)..."
 COMPLETIONS_DIR="$USER_HOME/.local/share/bash-completion/completions"
-ZSH_COMPLETIONS_DIR="$USER_HOME/.local/share/zsh/site-functions"
-ZFUNC_DIR="$USER_HOME/.zfunc"
-run_as_user mkdir -p "$COMPLETIONS_DIR" "$ZSH_COMPLETIONS_DIR" "$ZFUNC_DIR"
+run_as_user mkdir -p "$COMPLETIONS_DIR"
 
 if command -v mise &>/dev/null; then
-    # uv autocompletion
+    # uv autocompletion (Bash)
     run_as_user mise exec uv@latest -- uv generate-shell-completion bash > "$COMPLETIONS_DIR/uv" 2>/dev/null || true
-    run_as_user mise exec uv@latest -- uv generate-shell-completion zsh > "$ZSH_COMPLETIONS_DIR/_uv" 2>/dev/null || true
-    run_as_user mise exec uv@latest -- uv generate-shell-completion zsh > "$ZFUNC_DIR/_uv" 2>/dev/null || true
 
-    # uvx autocompletion
+    # uvx autocompletion (Bash)
     run_as_user mise exec uv@latest -- uvx --generate-shell-completion bash > "$COMPLETIONS_DIR/uvx" 2>/dev/null || true
-    run_as_user mise exec uv@latest -- uvx --generate-shell-completion zsh > "$ZSH_COMPLETIONS_DIR/_uvx" 2>/dev/null || true
-    run_as_user mise exec uv@latest -- uvx --generate-shell-completion zsh > "$ZFUNC_DIR/_uvx" 2>/dev/null || true
 
-    # pip autocompletion
+    # pip autocompletion (Bash)
     run_as_user mise exec python@latest -- pip completion --bash > "$COMPLETIONS_DIR/pip" 2>/dev/null || true
-    run_as_user mise exec python@latest -- pip completion --zsh > "$ZSH_COMPLETIONS_DIR/_pip" 2>/dev/null || true
-    run_as_user mise exec python@latest -- pip completion --zsh > "$ZFUNC_DIR/_pip" 2>/dev/null || true
+
+    # Zsh autocompletions (condicional)
+    if [ -f "$USER_HOME/.zshrc" ]; then
+        ZSH_COMPLETIONS_DIR="$USER_HOME/.local/share/zsh/site-functions"
+        ZFUNC_DIR="$USER_HOME/.zfunc"
+        run_as_user mkdir -p "$ZSH_COMPLETIONS_DIR" "$ZFUNC_DIR"
+
+        run_as_user mise exec uv@latest -- uv generate-shell-completion zsh > "$ZSH_COMPLETIONS_DIR/_uv" 2>/dev/null || true
+        run_as_user mise exec uv@latest -- uv generate-shell-completion zsh > "$ZFUNC_DIR/_uv" 2>/dev/null || true
+
+        run_as_user mise exec uv@latest -- uvx --generate-shell-completion zsh > "$ZSH_COMPLETIONS_DIR/_uvx" 2>/dev/null || true
+        run_as_user mise exec uv@latest -- uvx --generate-shell-completion zsh > "$ZFUNC_DIR/_uvx" 2>/dev/null || true
+
+        run_as_user mise exec python@latest -- pip completion --zsh > "$ZSH_COMPLETIONS_DIR/_pip" 2>/dev/null || true
+        run_as_user mise exec python@latest -- pip completion --zsh > "$ZFUNC_DIR/_pip" 2>/dev/null || true
+    fi
 fi
 
 # Obtener versiones instaladas
@@ -141,5 +152,5 @@ echo "  • Python:      $PYTHON_VER"
 echo "  • uv:          $UV_VER (Gestor ultrarrápido en Rust)"
 echo "  • pip:         v$PIP_VER (setuptools + wheel actualizados)"
 echo "  • GNOME:       ~/.config/environment.d/10-python.conf"
-echo "  • Shells:      Bash & Zsh con autocompletado nativo (_uv, _uvx, _pip)"
+echo "  • Shells:      Bash (predeterminada)$([ -f "$USER_HOME/.zshrc" ] && echo " & Zsh (compatible)") con autocompletado nativo"
 echo "================================================================="

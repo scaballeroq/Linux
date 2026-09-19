@@ -6,7 +6,7 @@ sidebar_position: 5
 
 This guide details the developer tools, AI coding assistants, and version control utilities managed in the `IDE` folder.
 
-All tools are optimized for **CachyOS**, the **Wayland** display server, the **GNOME** desktop environment, and **Zsh** and **Bash** shells.
+All tools are optimized for **CachyOS**, the **Wayland** display server, the **GNOME** desktop environment, and **Bash** (default) and **Zsh** (compatible if `~/.zshrc` exists) shells.
 
 ---
 

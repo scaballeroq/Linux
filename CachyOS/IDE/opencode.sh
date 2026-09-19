@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==============================================================================
 # opencode.sh - Instalación de OpenCode AI CLI para CachyOS
-# Optimizado para Zsh y GNOME
+# Optimizado para Bash, Zsh y GNOME
 # ==============================================================================
 
 set -euo pipefail
@@ -51,11 +51,32 @@ curl -fsSL https://opencode.ai/install -o "$TMP_INSTALLER"
 VERSION="$OPENCODE_VERSION" run_as_user bash "$TMP_INSTALLER"
 rm -f "$TMP_INSTALLER"
 
-# 3. Exportar PATH en Zsh si no estuviera ya presente
-echo "⚙️ [3/3] Configurando PATH en Zsh..."
+# 3. Exportar PATH en Bash (predeterminado) y Zsh (condicional)
+echo "⚙️ [3/3] Configurando PATH en Bash (y Zsh si existe ~/.zshrc)..."
+BASHRC="$USER_HOME/.bashrc"
+BASHRC_D="$USER_HOME/.bashrc.d"
+run_as_user touch "$BASHRC"
+
+if [ -d "$BASHRC_D" ]; then
+    cat << 'EOF' | run_as_user tee "$BASHRC_D/opencode.sh" > /dev/null
+# OpenCode AI CLI
+export PATH="$HOME/.opencode/bin:$HOME/.local/bin:$PATH"
+EOF
+fi
+
+if ! grep -q ".opencode/bin" "$BASHRC" 2>/dev/null; then
+    echo -e '\n# OpenCode AI CLI\nexport PATH="$HOME/.opencode/bin:$HOME/.local/bin:$PATH"' | run_as_user tee -a "$BASHRC" > /dev/null
+fi
+
 ZSHRC="$USER_HOME/.zshrc"
-if [ -f "$ZSHRC" ] || [[ "${SHELL:-}" == *"zsh"* ]]; then
-    run_as_user touch "$ZSHRC"
+ZSHRC_D="$USER_HOME/.zshrc.d"
+if [ -f "$ZSHRC" ]; then
+    if [ -d "$ZSHRC_D" ]; then
+        cat << 'EOF' | run_as_user tee "$ZSHRC_D/opencode.zsh" > /dev/null
+# OpenCode AI CLI
+export PATH="$HOME/.opencode/bin:$HOME/.local/bin:$PATH"
+EOF
+    fi
     if ! grep -q ".opencode/bin" "$ZSHRC" 2>/dev/null; then
         echo -e '\n# OpenCode AI CLI\nexport PATH="$HOME/.opencode/bin:$HOME/.local/bin:$PATH"' | run_as_user tee -a "$ZSHRC" > /dev/null
     fi
@@ -72,5 +93,8 @@ if command -v opencode &> /dev/null || [ -x "$USER_HOME/.local/bin/opencode" ] |
 else
     echo "✅ Instalación finalizada."
 fi
-echo "💡 Para disponer del comando en tu terminal actual ejecuta: source ~/.zshrc"
+echo "💡 Para disponer del comando en tu terminal actual ejecuta: source ~/.bashrc"
+if [ -f "$ZSHRC" ]; then
+    echo "💡 (Si utilizas Zsh, ejecuta: 'source ~/.zshrc')"
+fi
 echo "================================================================="

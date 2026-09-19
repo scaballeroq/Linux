@@ -2,30 +2,17 @@
 sidebar_position: 3
 ---
 
-# Configuración de Terminal y Shells en CachyOS (Zsh & Bash)
+# Configuración de Terminal y Shells en CachyOS (Bash & Zsh)
 
-Esta guía detalla la configuración del entorno de terminal (optimizado para **Zsh**, la shell predeterminada en CachyOS, y **Bash**) junto a las utilidades integradas en los scripts modulares de la carpeta `Bash.Setup`.
+Esta guía detalla la configuración del entorno de terminal (optimizado para **Bash** como shell predeterminada del proyecto y compatible con **Zsh** si existe `~/.zshrc`) junto a las utilidades integradas en los scripts modulares de la carpeta `Bash.Setup`.
 
-La carga modular está estructurada a través de los directorios `~/.zshrc.d/` y `~/.bashrc.d/` para garantizar la limpieza, velocidad y mantenibilidad de tus configuraciones.
+La carga modular está estructurada a través de los directorios `~/.bashrc.d/` (predeterminado) y `~/.zshrc.d/` (compatibilidad) para garantizar la limpieza, velocidad y mantenibilidad de tus configuraciones.
 
 ---
 
 ## 1. Carga Modular del Entorno
 
-### Para Zsh (`~/.zshrc`)
-Añade el siguiente bloque a tu archivo `~/.zshrc`:
-
-```zsh
-# Carga modular de configuraciones y aliases (~/.zshrc.d)
-if [ -d "$HOME/.zshrc.d" ]; then
-    for script in "$HOME/.zshrc.d"/*.{sh,zsh}(N); do
-        [ -r "$script" ] && source "$script"
-    done
-    unset script
-fi
-```
-
-### Para Bash (`~/.bashrc`)
+### Para Bash (Predeterminado - `~/.bashrc`)
 Añade el siguiente bloque a tu archivo `~/.bashrc`:
 
 ```bash
@@ -38,12 +25,31 @@ if [ -d "$HOME/.bashrc.d" ]; then
 fi
 ```
 
+### Para Zsh (Compatibilidad condicional si existe `~/.zshrc`)
+Si utilizas Zsh y existe `~/.zshrc` en tu sistema:
+
+```zsh
+# Carga modular de configuraciones y aliases (~/.zshrc.d)
+if [ -d "$HOME/.zshrc.d" ]; then
+    for script in "$HOME/.zshrc.d"/*.{sh,zsh}(N); do
+        [ -r "$script" ] && source "$script"
+    done
+    unset script
+fi
+```
+
 ### Enlaces Simbólicos
 Puedes habilitar todos los módulos ejecutando `./Setup/shell.sh` o manualmente:
 ```bash
-mkdir -p ~/.zshrc.d ~/.bashrc.d
-ln -sf ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.zshrc.d/
+# Para Bash (Predeterminado)
+mkdir -p ~/.bashrc.d
 ln -sf ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.bashrc.d/
+
+# Para Zsh (si existe ~/.zshrc)
+if [ -f "$HOME/.zshrc" ]; then
+    mkdir -p ~/.zshrc.d
+    ln -sf ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.zshrc.d/
+fi
 ```
 
 ---

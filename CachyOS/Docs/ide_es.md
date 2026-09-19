@@ -6,7 +6,7 @@ sidebar_position: 5
 
 Esta guía detalla las herramientas de desarrollo, editores con soporte de Inteligencia Artificial y utilidades de control de versiones gestionadas en la carpeta `IDE`.
 
-Todas las herramientas están optimizadas para **CachyOS**, el compositor **Wayland**, el entorno **GNOME** y las terminales **Zsh** y **Bash**.
+Todas las herramientas están optimizadas para **CachyOS**, el compositor **Wayland**, el entorno **GNOME** y las terminales **Bash** (predeterminada) y **Zsh** (compatible si existe `~/.zshrc`).
 
 ---
 

@@ -1,11 +1,26 @@
 # =============================================================================
-# CONFIGURACIÓN DEL HISTORIAL (history.sh) - Adaptado para Zsh y Bash
+# CONFIGURACIÓN DEL HISTORIAL (history.sh) - Adaptado para Bash y Zsh
 # =============================================================================
 # Controla cómo la shell recuerda los comandos ejecutados.
 
-if [ -n "${ZSH_VERSION:-}" ]; then
+if [ -n "${BASH_VERSION:-}" ]; then
     # -------------------------------------------------------------------------
-    # CONFIGURACIÓN PARA ZSH
+    # CONFIGURACIÓN PARA BASH (Predeterminada)
+    # -------------------------------------------------------------------------
+    export HISTFILE="${HISTFILE:-$HOME/.bash_history}"
+    export HISTSIZE=10000
+    export HISTFILESIZE=20000
+    export HISTCONTROL=ignoreboth:erasedups
+    export HISTTIMEFORMAT="%F %T "
+
+    shopt -s histappend 2>/dev/null || true
+    shopt -s cmdhist 2>/dev/null || true
+
+    export HISTIGNORE="ls:ll:la:lt:tree:cd:pwd:exit:clear:c:h:history:bg:fg:..:...:....:~"
+
+elif [ -n "${ZSH_VERSION:-}" ]; then
+    # -------------------------------------------------------------------------
+    # CONFIGURACIÓN PARA ZSH (Compatibilidad)
     # -------------------------------------------------------------------------
     export HISTFILE="${HISTFILE:-$HOME/.zsh_history}"
     export HISTSIZE=10000
@@ -26,21 +41,6 @@ if [ -n "${ZSH_VERSION:-}" ]; then
 
     # Comandos a ignorar en el historial
     export HISTORY_IGNORE="(ls|ll|la|lt|tree|cd|cd ..|pwd|exit|clear|c|h|history|bg|fg|..|...|....|~)"
-
-elif [ -n "${BASH_VERSION:-}" ]; then
-    # -------------------------------------------------------------------------
-    # CONFIGURACIÓN PARA BASH
-    # -------------------------------------------------------------------------
-    export HISTFILE="${HISTFILE:-$HOME/.bash_history}"
-    export HISTSIZE=10000
-    export HISTFILESIZE=20000
-    export HISTCONTROL=ignoreboth:erasedups
-    export HISTTIMEFORMAT="%F %T "
-
-    shopt -s histappend 2>/dev/null || true
-    shopt -s cmdhist 2>/dev/null || true
-
-    export HISTIGNORE="ls:ll:la:lt:tree:cd:pwd:exit:clear:c:h:history:bg:fg:..:...:....:~"
 fi
 
 # =============================================================================

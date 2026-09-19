@@ -77,57 +77,47 @@ install_starship() {
     fi
 
     # 3. Activar en Zsh y Bash
-    echo "⚙️ [3/3] Activando Starship en ~/.zshrc y ~/.bashrc..."
+    echo "⚙️ [3/3] Activando Starship en ~/.bashrc (y ~/.zshrc si existe)..."
     enable_starship
 
     echo "================================================================="
     echo "✅ Starship configurado y activado con éxito."
-    echo "💡 Nota: En Zsh, Starship sustituye visualmente el prompt Powerlevel10k."
-    echo "💡 Para revertir y volver al prompt por defecto de CachyOS ejecuta: $0 --disable"
+    echo "💡 Nota: Starship proporciona un prompt moderno y enriquecido."
+    echo "💡 Para revertir y volver al prompt por defecto ejecuta: $0 --disable"
     echo "================================================================="
 }
 
 enable_starship() {
-    # Zsh
+    # 1. Bash (Predeterminado)
+    local BASHRC="$USER_HOME/.bashrc"
+    run_as_user touch "$BASHRC"
+    if ! grep -q "starship init bash" "$BASHRC" 2>/dev/null; then
+        echo -e '\n# Starship Prompt\neval "$(starship init bash)"' | run_as_user tee -a "$BASHRC" > /dev/null
+        echo "  ✅ Starship activado en ~/.bashrc"
+    else
+        echo "  ℹ️ Starship ya estaba presente en ~/.bashrc"
+    fi
+
+    # 2. Zsh (Compatibilidad condicional si existe ~/.zshrc)
     local ZSHRC="$USER_HOME/.zshrc"
-    if [ -f "$ZSHRC" ] || [[ "${SHELL:-}" == *"zsh"* ]]; then
-        run_as_user touch "$ZSHRC"
+    if [ -f "$ZSHRC" ]; then
         if ! grep -q "starship init zsh" "$ZSHRC" 2>/dev/null; then
             echo -e '\n# Starship Prompt\neval "$(starship init zsh)"' | run_as_user tee -a "$ZSHRC" > /dev/null
             echo "  ✅ Starship activado en ~/.zshrc"
         else
             echo "  ℹ️ Starship ya estaba presente en ~/.zshrc"
         fi
-    fi
-
-    # Bash
-    local BASHRC="$USER_HOME/.bashrc"
-    if [ -f "$BASHRC" ]; then
-        if ! grep -q "starship init bash" "$BASHRC" 2>/dev/null; then
-            echo -e '\n# Starship Prompt\neval "$(starship init bash)"' | run_as_user tee -a "$BASHRC" > /dev/null
-            echo "  ✅ Starship activado en ~/.bashrc"
-        else
-            echo "  ℹ️ Starship ya estaba presente en ~/.bashrc"
-        fi
+    else
+        echo "  ℹ️ ~/.zshrc no encontrado; se omite activación en Zsh."
     fi
 }
 
 disable_starship() {
     echo "================================================================="
-    echo "🔄 Desactivando Starship para restaurar el prompt nativo de CachyOS..."
+    echo "🔄 Desactivando Starship para restaurar el prompt nativo..."
     echo "================================================================="
 
-    # Zsh
-    local ZSHRC="$USER_HOME/.zshrc"
-    if [ -f "$ZSHRC" ] && grep -q "starship init zsh" "$ZSHRC" 2>/dev/null; then
-        sed -i '/# Starship Prompt/d' "$ZSHRC" 2>/dev/null || true
-        sed -i '/eval "$(starship init zsh)"/d' "$ZSHRC" 2>/dev/null || true
-        echo "  ✅ Starship desactivado en ~/.zshrc (Powerlevel10k restaurado)."
-    else
-        echo "  ℹ️ Starship no estaba activo en ~/.zshrc."
-    fi
-
-    # Bash
+    # 1. Bash (Predeterminado)
     local BASHRC="$USER_HOME/.bashrc"
     if [ -f "$BASHRC" ] && grep -q "starship init bash" "$BASHRC" 2>/dev/null; then
         sed -i '/# Starship Prompt/d' "$BASHRC" 2>/dev/null || true
@@ -137,9 +127,19 @@ disable_starship() {
         echo "  ℹ️ Starship no estaba activo en ~/.bashrc."
     fi
 
+    # 2. Zsh (Compatibilidad)
+    local ZSHRC="$USER_HOME/.zshrc"
+    if [ -f "$ZSHRC" ] && grep -q "starship init zsh" "$ZSHRC" 2>/dev/null; then
+        sed -i '/# Starship Prompt/d' "$ZSHRC" 2>/dev/null || true
+        sed -i '/eval "$(starship init zsh)"/d' "$ZSHRC" 2>/dev/null || true
+        echo "  ✅ Starship desactivado en ~/.zshrc (Powerlevel10k restaurado si está instalado)."
+    elif [ -f "$ZSHRC" ]; then
+        echo "  ℹ️ Starship no estaba activo en ~/.zshrc."
+    fi
+
     echo "================================================================="
-    echo "✅ Prompt nativo de CachyOS (p10k) activo."
-    echo "💡 Ejecuta 'source ~/.zshrc' para aplicar los cambios."
+    echo "✅ Prompt nativo restaurado."
+    echo "💡 Ejecuta 'source ~/.bashrc' (o 'source ~/.zshrc' si usas Zsh) para aplicar los cambios."
     echo "================================================================="
 }
 
@@ -149,8 +149,12 @@ show_status() {
     echo "================================================================="
     echo "• Binario instalado: $(command -v starship &>/dev/null && echo "Sí ($(starship --version | head -n1))" || echo "No")"
     echo "• Configuración:     $([ -f "$USER_HOME/.config/starship.toml" ] && echo "Presente en ~/.config/starship.toml" || echo "No presente")"
-    echo "• Activo en Zsh:     $(grep -q "starship init zsh" "$USER_HOME/.zshrc" 2>/dev/null && echo "Sí (Starship activo)" || echo "No (Prompt nativo CachyOS / p10k)")"
-    echo "• Activo en Bash:    $(grep -q "starship init bash" "$USER_HOME/.bashrc" 2>/dev/null && echo "Sí" || echo "No")"
+    echo "• Activo en Bash:    $(grep -q "starship init bash" "$USER_HOME/.bashrc" 2>/dev/null && echo "Sí (Starship activo)" || echo "No")"
+    if [ -f "$USER_HOME/.zshrc" ]; then
+        echo "• Activo en Zsh:     $(grep -q "starship init zsh" "$USER_HOME/.zshrc" 2>/dev/null && echo "Sí (Starship activo)" || echo "No (Prompt nativo / p10k)")"
+    else
+        echo "• Activo en Zsh:     No aplicable (~/.zshrc no existe)"
+    fi
     echo "================================================================="
 }
 

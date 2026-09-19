@@ -21,8 +21,8 @@ Mise is a modern CLI version manager that replaces older tools like `asdf`, `nvm
 
 2. **Session and Shell Activation**:
    - For GNOME & desktop environments: `~/.config/environment.d/10-mise.conf`
-   - For Zsh: `~/.zshrc` (`eval "$(mise activate zsh)"`) and `_mise` completions
-   - For Bash: `~/.bashrc.d/mise.sh`
+   - For Bash (default): `~/.bashrc.d/mise.sh` and Bash completions
+   - For Zsh (compatible if `~/.zshrc` exists): `~/.zshrc` (`eval "$(mise activate zsh)"`) and `_mise` completions
 
 ---
 
@@ -57,7 +57,7 @@ Once Mise is installed, the following development environments are deployed glob
   mise use --global uv@latest
   mise exec python@latest -- python -m pip install --upgrade pip setuptools wheel
   ```
-* **GNOME & Shells**: Generates `~/.config/environment.d/10-python.conf`, `~/.zshrc.d/python.zsh` and native Zsh/Bash autocompletions (`_uv`, `_uvx`, `_pip`).
+* **GNOME & Shells**: Generates `~/.config/environment.d/10-python.conf`, `~/.bashrc.d/python.sh` (and `~/.zshrc.d/python.zsh` if `~/.zshrc` exists) and native Bash/Zsh autocompletions (`_uv`, `_uvx`, `_pip`).
 
 ### .NET SDK (`dotnet.sh`)
 * **Dependencies**: Native runtime libraries (`icu`, `krb5`, `openssl`, `zlib`, `libunwind`).
@@ -92,8 +92,8 @@ Rust is managed through its official standard toolchain installer **Rustup** usi
 
 4. **GNOME and Shell Integration**:
    - GNOME / Systemd: `~/.config/environment.d/10-rust.conf`
-   - Bash & Zsh: `~/.bashrc.d/rust.sh` and `~/.zshrc.d/rust.zsh`
-   - Autocompletions: `_cargo` and `_rustup` for Zsh and Bash.
+   - Bash & Zsh: `~/.bashrc.d/rust.sh` (and `~/.zshrc.d/rust.zsh` if `~/.zshrc` exists)
+   - Autocompletions: `cargo` and `rustup` for Bash (and `_cargo` / `_rustup` for Zsh).
 
 5. **Fast Binary Installer (`cargo-binstall`)**:
    Downloads and integrates `cargo-binstall`, which installs Rust-written CLI tools directly from GitHub pre-compiled binaries instead of compiling them from source locally.

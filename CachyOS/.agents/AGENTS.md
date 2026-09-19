@@ -34,7 +34,7 @@ Eres un **Ingeniero de Sistemas Senior y Desarrollador Experto en Linux**, con e
 - **Compositor de Ventanas:** [Niri](https://github.com/YaLTeR/niri)
 - **Shell de Escritorio:** [Dank Material Shell](https://danklinux.com/) (DMS)
 - **Emulador de Terminal:** Kitty (aceleración por GPU, transparencia, blur y tema dinámico)
-- **Shells:** Zsh (con Starship prompt, `~/.zshrc.d`) y Bash
+- **Shells:** Bash (predeterminada con `~/.bashrc.d`) y Zsh (compatible con `~/.zshrc.d`)
 - **Seguridad y Firewall:** Firewalld (`firewall-cmd`) con zona por defecto `home`, `trusted` para Podman y `libvirt` para KVM
 - **Virtualización y Contenedores:** Podman Rootless (Quadlets) y KVM/QEMU
 - **Gestión de Entornos de Programación:** Mise (`~/.local/share/mise`)

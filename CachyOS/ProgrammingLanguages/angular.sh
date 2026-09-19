@@ -78,16 +78,23 @@ run_as_user mise exec node@lts -- ng config -g cli.analytics false 2>/dev/null |
 echo "ℹ️ [2/2] Regenerando shims de Mise..."
 run_as_user mise reshim 2>/dev/null || true
 
-# 6. Autocompletado de Angular CLI (Zsh y Bash)
+# 6. Autocompletado de Angular CLI (Bash predeterminado; Zsh si existe ~/.zshrc)
 COMPLETIONS_DIR="$USER_HOME/.local/share/bash-completion/completions"
-ZSH_COMPLETIONS_DIR="$USER_HOME/.local/share/zsh/site-functions"
-ZFUNC_DIR="$USER_HOME/.zfunc"
-run_as_user mkdir -p "$COMPLETIONS_DIR" "$ZSH_COMPLETIONS_DIR" "$ZFUNC_DIR"
+run_as_user mkdir -p "$COMPLETIONS_DIR"
 
 if command -v mise &>/dev/null; then
     run_as_user mise exec node@lts -- ng completion script bash > "$COMPLETIONS_DIR/ng" 2>/dev/null || true
-    run_as_user mise exec node@lts -- ng completion script zsh > "$ZSH_COMPLETIONS_DIR/_ng" 2>/dev/null || true
-    run_as_user mise exec node@lts -- ng completion script zsh > "$ZFUNC_DIR/_ng" 2>/dev/null || true
+fi
+
+if [ -f "$USER_HOME/.zshrc" ]; then
+    ZSH_COMPLETIONS_DIR="$USER_HOME/.local/share/zsh/site-functions"
+    ZFUNC_DIR="$USER_HOME/.zfunc"
+    run_as_user mkdir -p "$ZSH_COMPLETIONS_DIR" "$ZFUNC_DIR"
+
+    if command -v mise &>/dev/null; then
+        run_as_user mise exec node@lts -- ng completion script zsh > "$ZSH_COMPLETIONS_DIR/_ng" 2>/dev/null || true
+        run_as_user mise exec node@lts -- ng completion script zsh > "$ZFUNC_DIR/_ng" 2>/dev/null || true
+    fi
 fi
 
 # Obtener versión instalada
@@ -98,5 +105,5 @@ echo "✅ Angular CLI configurado con éxito para CachyOS y GNOME:"
 echo "  • Angular CLI: v$NG_VER"
 echo "  • Node Runtime: Node.js LTS (~/.local/share/mise/shims)"
 echo "  • Telemetría:  Desactivada (sin bloqueos interactivos)"
-echo "  • Shells:      Autocompletado habilitado para Bash y Zsh"
+echo "  • Shells:      Autocompletado habilitado para Bash (predeterminada)$([ -f "$USER_HOME/.zshrc" ] && echo " & Zsh (compatible)")"
 echo "================================================================="

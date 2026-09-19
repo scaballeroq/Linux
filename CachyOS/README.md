@@ -9,13 +9,13 @@ Este repositorio contiene una colección organizada y modular de scripts de conf
 La configuración se ha estructurado de forma modular para facilitar el mantenimiento y la legibilidad:
 
 ### 🐚 [Bash.Setup](./Bash.Setup/)
-El núcleo de la configuración de la terminal, optimizado para **Zsh** (shell predeterminada en CachyOS) y **Bash**.
+El núcleo de la configuración de la terminal, optimizado para **Bash** (shell predeterminada del proyecto) y **Zsh** (compatible si existe `~/.zshrc`).
 - **`aliases.sh`**: Atajos comunes para comandos frecuentemente utilizados, recarga dinámica, Nautilus y gestores de paquetes (`pacman` / `paru`).
-- **`environment.sh`**: Variables globales (`EDITOR`, `PATH`, Wayland/GNOME, `DOCKER_HOST`, `LIBVIRT_DEFAULT_URI`) y activación automática de Mise en Zsh/Bash.
+- **`environment.sh`**: Variables globales (`EDITOR`, `PATH`, Wayland/GNOME, `DOCKER_HOST`, `LIBVIRT_DEFAULT_URI`) y activación automática de Mise en Bash y Zsh.
 - **`functions.sh`**: Colección de funciones avanzadas (`mkcd`, `up`, `hg`) y utilidades multimedia.
 - **`gnome_settings.sh`**: Configuraciones de entorno y atajos para GNOME Wayland (tema oscuro, night light, captura Wayland con grim/satty, Nautilus).
-- **`history.sh`**: Control de historial optimizado (10k/20k entradas, deduplicación, `~/.zsh_history` y `~/.bash_history`).
-- **`options.sh`**: Opciones avanzadas de shell (`autocd`, corrección de typos, completado insensible a mayúsculas con `zstyle`/`shopt`).
+- **`history.sh`**: Control de historial optimizado (10k/20k entradas, deduplicación, `~/.bash_history` y `~/.zsh_history`).
+- **`options.sh`**: Opciones avanzadas de shell (`autocd`, corrección de typos, completado insensible a mayúsculas con `shopt`/`zstyle`).
 - **`podman-functions.sh`**: Funciones y atajos para contenedores Podman y Quadlets compatibles con ambas shells.
 - **`rclone_aliases.sh`**: Atajos para sincronización en la nube con Google Drive / OneDrive.
 - **`yt-dlp_aliases.sh`**: Descargas multimedia optimizadas.

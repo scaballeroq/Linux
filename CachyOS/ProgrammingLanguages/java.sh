@@ -86,10 +86,9 @@ JAVA_HOME=/usr/lib/jvm/default
 PATH=${JAVA_HOME}/bin:${PATH}
 EOF
 
-# Integración modular en Shells (Bash y Zsh)
+# Integración modular en Shells (Bash predeterminado; Zsh si existe ~/.zshrc)
 BASHRC_D="$USER_HOME/.bashrc.d"
-ZSHRC_D="$USER_HOME/.zshrc.d"
-run_as_user mkdir -p "$BASHRC_D" "$ZSHRC_D"
+run_as_user mkdir -p "$BASHRC_D"
 
 cat << 'EOF' | run_as_user tee "$BASHRC_D/java.sh" > /dev/null
 # Java Environment Variables
@@ -99,18 +98,32 @@ if [ -d "/usr/lib/jvm/default" ]; then
 fi
 EOF
 
-cat << 'EOF' | run_as_user tee "$ZSHRC_D/java.zsh" > /dev/null
+# Fallback para .bashrc
+BASHRC="$USER_HOME/.bashrc"
+run_as_user touch "$BASHRC"
+if ! grep -q "JAVA_HOME" "$BASHRC" 2>/dev/null; then
+    if ! grep -q ".bashrc.d" "$BASHRC" 2>/dev/null; then
+        echo -e '\n# Java Environment\nif [ -d "/usr/lib/jvm/default" ]; then export JAVA_HOME="/usr/lib/jvm/default"; export PATH="${JAVA_HOME}/bin:${PATH}"; fi' | run_as_user tee -a "$BASHRC" > /dev/null
+    fi
+fi
+
+# Integración Zsh condicional
+ZSHRC="$USER_HOME/.zshrc"
+if [ -f "$ZSHRC" ]; then
+    ZSHRC_D="$USER_HOME/.zshrc.d"
+    run_as_user mkdir -p "$ZSHRC_D"
+
+    cat << 'EOF' | run_as_user tee "$ZSHRC_D/java.zsh" > /dev/null
 # Java Environment Variables
 if [ -d "/usr/lib/jvm/default" ]; then
     export JAVA_HOME="/usr/lib/jvm/default"
     export PATH="${JAVA_HOME}/bin:${PATH}"
 fi
 EOF
-
-# Fallback para .bashrc y .zshrc
-if [ -f "$USER_HOME/.bashrc" ] && ! grep -q "JAVA_HOME" "$USER_HOME/.bashrc" 2>/dev/null; then
-    if ! grep -q ".bashrc.d" "$USER_HOME/.bashrc" 2>/dev/null; then
-        echo -e '\n# Java Environment\nif [ -d "/usr/lib/jvm/default" ]; then export JAVA_HOME="/usr/lib/jvm/default"; export PATH="${JAVA_HOME}/bin:${PATH}"; fi' | run_as_user tee -a "$USER_HOME/.bashrc" > /dev/null
+    if ! grep -q "JAVA_HOME" "$ZSHRC" 2>/dev/null; then
+        if ! grep -q ".zshrc.d" "$ZSHRC" 2>/dev/null; then
+            echo -e '\n# Java Environment\nif [ -d "/usr/lib/jvm/default" ]; then export JAVA_HOME="/usr/lib/jvm/default"; export PATH="${JAVA_HOME}/bin:${PATH}"; fi' | run_as_user tee -a "$ZSHRC" > /dev/null
+        fi
     fi
 fi
 
@@ -123,5 +136,5 @@ echo "  • OpenJDK:     v$JAVA_VER (LTS)"
 echo "  • JAVA_HOME:   /usr/lib/jvm/default"
 echo "  • GNOME/IDEs:  ~/.config/environment.d/10-java.conf (IntelliJ, Android Studio)"
 echo "  • AutoFirma:   Soporte DNIe y Smartcards habilitado (nss, pcsclite)"
-echo "  • Shells:      Bash & Zsh"
+echo "  • Shells:      Bash (predeterminada)$([ -f "$ZSHRC" ] && echo " & Zsh (compatible)")"
 echo "================================================================="

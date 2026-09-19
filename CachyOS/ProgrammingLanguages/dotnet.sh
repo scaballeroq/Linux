@@ -82,10 +82,9 @@ DOTNET_CLI_TELEMETRY_OPTOUT=1
 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
 EOF
 
-# Integración modular en Shells
+# Integración modular en Shells (Bash predeterminado; Zsh si existe ~/.zshrc)
 BASHRC_D="$USER_HOME/.bashrc.d"
-ZSHRC_D="$USER_HOME/.zshrc.d"
-run_as_user mkdir -p "$BASHRC_D" "$ZSHRC_D"
+run_as_user mkdir -p "$BASHRC_D"
 
 cat << 'EOF' | run_as_user tee "$BASHRC_D/dotnet.sh" > /dev/null
 # .NET Environment Variables
@@ -93,22 +92,33 @@ export DOTNET_CLI_TELEMETRY_OPTOUT=1
 export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
 EOF
 
-cat << 'EOF' | run_as_user tee "$ZSHRC_D/dotnet.zsh" > /dev/null
+# Autocompletado de .NET CLI para Bash
+COMPLETIONS_DIR="$USER_HOME/.local/share/bash-completion/completions"
+run_as_user mkdir -p "$COMPLETIONS_DIR"
+
+if command -v mise &>/dev/null; then
+    run_as_user mise exec dotnet@lts -- dotnet complete --position 1 --script bash > "$COMPLETIONS_DIR/dotnet" 2>/dev/null || true
+fi
+
+# Integración Zsh condicional
+if [ -f "$USER_HOME/.zshrc" ]; then
+    ZSHRC_D="$USER_HOME/.zshrc.d"
+    run_as_user mkdir -p "$ZSHRC_D"
+
+    cat << 'EOF' | run_as_user tee "$ZSHRC_D/dotnet.zsh" > /dev/null
 # .NET Environment Variables
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
 EOF
 
-# Autocompletado de .NET CLI
-COMPLETIONS_DIR="$USER_HOME/.local/share/bash-completion/completions"
-ZSH_COMPLETIONS_DIR="$USER_HOME/.local/share/zsh/site-functions"
-ZFUNC_DIR="$USER_HOME/.zfunc"
-run_as_user mkdir -p "$COMPLETIONS_DIR" "$ZSH_COMPLETIONS_DIR" "$ZFUNC_DIR"
+    ZSH_COMPLETIONS_DIR="$USER_HOME/.local/share/zsh/site-functions"
+    ZFUNC_DIR="$USER_HOME/.zfunc"
+    run_as_user mkdir -p "$ZSH_COMPLETIONS_DIR" "$ZFUNC_DIR"
 
-if command -v mise &>/dev/null; then
-    run_as_user mise exec dotnet@lts -- dotnet complete --position 1 --script bash > "$COMPLETIONS_DIR/dotnet" 2>/dev/null || true
-    run_as_user mise exec dotnet@lts -- dotnet complete --position 1 --script zsh > "$ZSH_COMPLETIONS_DIR/_dotnet" 2>/dev/null || true
-    run_as_user mise exec dotnet@lts -- dotnet complete --position 1 --script zsh > "$ZFUNC_DIR/_dotnet" 2>/dev/null || true
+    if command -v mise &>/dev/null; then
+        run_as_user mise exec dotnet@lts -- dotnet complete --position 1 --script zsh > "$ZSH_COMPLETIONS_DIR/_dotnet" 2>/dev/null || true
+        run_as_user mise exec dotnet@lts -- dotnet complete --position 1 --script zsh > "$ZFUNC_DIR/_dotnet" 2>/dev/null || true
+    fi
 fi
 
 # Obtener versiones instaladas
@@ -119,5 +129,5 @@ echo "✅ .NET SDK LTS configurado con éxito para CachyOS y GNOME:"
 echo "  • .NET SDK:    $DOTNET_VER (LTS)"
 echo "  • IDEs/GNOME:  ~/.config/environment.d/10-dotnet.conf (Rider, VS Code)"
 echo "  • Telemetría:  Desactivada (DOTNET_CLI_TELEMETRY_OPTOUT=1)"
-echo "  • Shells:      Bash & Zsh (~/.local/share/mise/shims)"
+echo "  • Shells:      Bash (predeterminada)$([ -f "$USER_HOME/.zshrc" ] && echo " & Zsh (compatible)") (~/.local/share/mise/shims)"
 echo "================================================================="

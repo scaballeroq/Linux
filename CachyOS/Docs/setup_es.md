@@ -51,7 +51,7 @@ Prepara el sistema base optimizando espejos, instalando software esencial y conf
 Instala utilidades modernas de consola, tipografías para desarrollo y permite gestionar de forma opcional el prompt interactivo Starship.
 
 ### Utilidades Modernas de Terminal (`shell.sh`)
-Se instalan alternativas modernas a comandos clásicos y se activa la integración de `zoxide` respetando la configuración nativa de Zsh y Powerlevel10k en CachyOS:
+Se instalan alternativas modernas a comandos clásicos y se activa la integración modular en Bash (por defecto) y Zsh (si existe `~/.zshrc`) junto a `zoxide`:
 - `eza` (reemplazo de `ls`)
 - `bat` (reemplazo de `cat` con sintaxis coloreada)
 - `fzf` (buscador difuso)
@@ -64,12 +64,12 @@ Se instalan alternativas modernas a comandos clásicos y se activa la integraci�
 - `btop` (monitor de recursos)
 
 ### Prompt Starship Opcional (`starship.sh`)
-CachyOS incluye de serie el prompt **Powerlevel10k (p10k)** en Zsh. Si prefieres usar **Starship**, puedes activarlo o desactivarlo fácilmente:
+Permite activar o desactivar fácilmente el prompt **Starship** en Bash (y en Zsh si existe `~/.zshrc`):
 ```bash
 # Instalar y activar Starship
 ./Setup/starship.sh
 
-# Desactivar y restaurar el prompt nativo p10k de CachyOS
+# Desactivar y restaurar el prompt nativo
 ./Setup/starship.sh --disable
 
 # Ver estado actual

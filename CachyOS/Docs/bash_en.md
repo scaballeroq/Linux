@@ -2,30 +2,17 @@
 sidebar_position: 3
 ---
 
-# Terminal & Shells Configuration on CachyOS (Zsh & Bash)
+# Terminal & Shells Configuration on CachyOS (Bash & Zsh)
 
-This guide details the terminal environment (optimized for **Zsh**, the default shell in CachyOS, and **Bash**) along with the modular scripts provided under the `Bash.Setup` folder.
+This guide details the terminal environment (optimized for **Bash** as the project default shell, and compatible with **Zsh** if `~/.zshrc` exists) along with the modular scripts provided under the `Bash.Setup` folder.
 
-The modular configuration is structured through `~/.zshrc.d/` and `~/.bashrc.d/` directories to ensure fast, clean, and maintainable configurations.
+The modular configuration is structured through `~/.bashrc.d/` (default) and `~/.zshrc.d/` (compatibility) directories to ensure fast, clean, and maintainable configurations.
 
 ---
 
 ## 1. Modular Environment Loading
 
-### For Zsh (`~/.zshrc`)
-Add the following block to your `~/.zshrc`:
-
-```zsh
-# Modular configuration loader (~/.zshrc.d)
-if [ -d "$HOME/.zshrc.d" ]; then
-    for script in "$HOME/.zshrc.d"/*.{sh,zsh}(N); do
-        [ -r "$script" ] && source "$script"
-    done
-    unset script
-fi
-```
-
-### For Bash (`~/.bashrc`)
+### For Bash (Default - `~/.bashrc`)
 Add the following block to your `~/.bashrc`:
 
 ```bash
@@ -38,12 +25,31 @@ if [ -d "$HOME/.bashrc.d" ]; then
 fi
 ```
 
+### For Zsh (Conditional compatibility if `~/.zshrc` exists)
+If you use Zsh and `~/.zshrc` exists on your system:
+
+```zsh
+# Modular configuration loader (~/.zshrc.d)
+if [ -d "$HOME/.zshrc.d" ]; then
+    for script in "$HOME/.zshrc.d"/*.{sh,zsh}(N); do
+        [ -r "$script" ] && source "$script"
+    done
+    unset script
+fi
+```
+
 ### Symbolic Links
 You can link all modules automatically by running `./Setup/shell.sh` or manually:
 ```bash
-mkdir -p ~/.zshrc.d ~/.bashrc.d
-ln -sf ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.zshrc.d/
+# For Bash (Default)
+mkdir -p ~/.bashrc.d
 ln -sf ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.bashrc.d/
+
+# For Zsh (if ~/.zshrc exists)
+if [ -f "$HOME/.zshrc" ]; then
+    mkdir -p ~/.zshrc.d
+    ln -sf ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.zshrc.d/
+fi
 ```
 
 ---

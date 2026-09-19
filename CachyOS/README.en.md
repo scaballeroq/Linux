@@ -7,13 +7,13 @@ This repository contains a modular collection of configuration scripts for **Cac
 ## 📂 Repository Structure
 
 ### 🐚 [Bash.Setup](./Bash.Setup/)
-Core terminal configuration, optimized for **Zsh** (default shell in CachyOS) and **Bash**.
+Core terminal configuration, optimized for **Bash** (default shell of the project) and **Zsh** (compatible if `~/.zshrc` exists).
 - **`aliases.sh`**: Frequently used command shortcuts, dynamic reload, Nautilus, and package manager aliases (`pacman` / `paru`).
-- **`environment.sh`**: Global environment variables (`EDITOR`, `PATH`, Wayland/GNOME flags, `DOCKER_HOST`, `LIBVIRT_DEFAULT_URI`) and smart Mise activation in Zsh/Bash.
+- **`environment.sh`**: Global environment variables (`EDITOR`, `PATH`, Wayland/GNOME flags, `DOCKER_HOST`, `LIBVIRT_DEFAULT_URI`) and smart Mise activation in Bash and Zsh.
 - **`functions.sh`**: Advanced shell functions (`mkcd`, `up`, `hg`) and multimedia processing utilities.
 - **`gnome_settings.sh`**: GNOME desktop environment tweaks, dark mode, Wayland screenshot tools (grim/satty), and Nautilus shortcuts.
-- **`history.sh`**: Optimized command history (10k/20k entries, deduplication, `~/.zsh_history` and `~/.bash_history`).
-- **`options.sh`**: Advanced shell options (`autocd`, typo correction, case-insensitive completions with `zstyle`/`shopt`).
+- **`history.sh`**: Optimized command history (10k/20k entries, deduplication, `~/.bash_history` and `~/.zsh_history`).
+- **`options.sh`**: Advanced shell options (`autocd`, typo correction, case-insensitive completions with `shopt`/`zstyle`).
 - **`podman-functions.sh`**: Container management shortcuts and Quadlets functions compatible with both shells.
 - **`rclone_aliases.sh`**: Cloud storage synchronization shortcuts.
 - **`yt-dlp_aliases.sh`**: Optimized video/audio downloader shortcuts.

@@ -21,8 +21,8 @@ Mise es una herramienta de terminal moderna que reemplaza a herramientas como `a
 
 2. **Activación de Shell y Entorno Gráfico**:
    - Para GNOME y entornos gráficos: `~/.config/environment.d/10-mise.conf`
-   - Para Zsh: `~/.zshrc` (`eval "$(mise activate zsh)"`) y autocompletados `_mise`
-   - Para Bash: `~/.bashrc.d/mise.sh`
+   - Para Bash (predeterminado): `~/.bashrc.d/mise.sh` y autocompletados de Bash
+   - Para Zsh (compatible si existe `~/.zshrc`): `~/.zshrc` (`eval "$(mise activate zsh)"`) y autocompletados `_mise`
 
 ---
 
@@ -57,7 +57,7 @@ Una vez instalado Mise, se despliegan de forma global los siguientes lenguajes o
   mise use --global uv@latest
   mise exec python@latest -- python -m pip install --upgrade pip setuptools wheel
   ```
-* **GNOME & Shells**: Genera `~/.config/environment.d/10-python.conf`, `~/.zshrc.d/python.zsh` y autocompletados nativos para Zsh y Bash (`_uv`, `_uvx`, `_pip`).
+* **GNOME & Shells**: Genera `~/.config/environment.d/10-python.conf`, `~/.bashrc.d/python.sh` (y `~/.zshrc.d/python.zsh` si existe `~/.zshrc`) y autocompletados nativos para Bash y Zsh (`_uv`, `_uvx`, `_pip`).
 
 ### .NET SDK (`dotnet.sh`)
 * **Dependencias**: Librerías nativas del sistema (`icu`, `krb5`, `openssl`, `zlib`, `libunwind`).
@@ -92,8 +92,8 @@ Rust se gestiona mediante su herramienta oficial estándar e independiente **Rus
 
 4. **Integración con GNOME y Shells**:
    - GNOME / Systemd: `~/.config/environment.d/10-rust.conf`
-   - Bash & Zsh: `~/.bashrc.d/rust.sh` y `~/.zshrc.d/rust.zsh`
-   - Autocompletados: `_cargo` y `_rustup` para Zsh y Bash.
+   - Bash & Zsh: `~/.bashrc.d/rust.sh` (y `~/.zshrc.d/rust.zsh` si existe `~/.zshrc`)
+   - Autocompletados: `cargo` y `rustup` para Bash (y `_cargo` / `_rustup` para Zsh).
 
 5. **Instalador de Binarios Rápidos (`cargo-binstall`)**:
    Descarga e integra `cargo-binstall`, permitiendo descargar e instalar herramientas escritas en Rust directamente en binarios precompilados de sus repositorios de GitHub en lugar de compilarlas desde cero.

@@ -83,10 +83,9 @@ cat << 'EOF' | run_as_user tee "$ENV_DIR/10-rust.conf" > /dev/null
 PATH=${HOME}/.cargo/bin:${PATH}
 EOF
 
-# Integración modular en Shells (Bash y Zsh)
+# Integración modular en Shells (Bash predeterminado; Zsh si existe ~/.zshrc)
 BASHRC_D="$USER_HOME/.bashrc.d"
-ZSHRC_D="$USER_HOME/.zshrc.d"
-run_as_user mkdir -p "$BASHRC_D" "$ZSHRC_D"
+run_as_user mkdir -p "$BASHRC_D"
 
 cat << 'EOF' | run_as_user tee "$BASHRC_D/rust.sh" > /dev/null
 # Rust & Cargo Environment
@@ -95,33 +94,46 @@ if [ -f "$HOME/.cargo/env" ]; then
 fi
 EOF
 
-cat << 'EOF' | run_as_user tee "$ZSHRC_D/rust.zsh" > /dev/null
+# Fallback para .bashrc
+BASHRC="$USER_HOME/.bashrc"
+run_as_user touch "$BASHRC"
+if ! grep -q ".cargo/env" "$BASHRC" 2>/dev/null; then
+    if ! grep -q ".bashrc.d" "$BASHRC" 2>/dev/null; then
+        echo -e '\n# Rust Environment\nif [ -f "$HOME/.cargo/env" ]; then . "$HOME/.cargo/env"; fi' | run_as_user tee -a "$BASHRC" > /dev/null
+    fi
+fi
+
+# Autocompletados para Bash
+COMPLETIONS_DIR="$USER_HOME/.local/share/bash-completion/completions"
+run_as_user mkdir -p "$COMPLETIONS_DIR"
+
+if command -v rustup &>/dev/null || [ -x "$USER_HOME/.cargo/bin/rustup" ]; then
+    run_as_user rustup completions bash > "$COMPLETIONS_DIR/rustup" 2>/dev/null || true
+    run_as_user rustup completions bash cargo > "$COMPLETIONS_DIR/cargo" 2>/dev/null || true
+fi
+
+# Integración Zsh condicional
+if [ -f "$USER_HOME/.zshrc" ]; then
+    ZSHRC_D="$USER_HOME/.zshrc.d"
+    run_as_user mkdir -p "$ZSHRC_D"
+
+    cat << 'EOF' | run_as_user tee "$ZSHRC_D/rust.zsh" > /dev/null
 # Rust & Cargo Environment
 if [ -f "$HOME/.cargo/env" ]; then
     . "$HOME/.cargo/env"
 fi
 EOF
 
-# Fallback para .bashrc
-if [ -f "$USER_HOME/.bashrc" ] && ! grep -q ".cargo/env" "$USER_HOME/.bashrc" 2>/dev/null; then
-    if ! grep -q ".bashrc.d" "$USER_HOME/.bashrc" 2>/dev/null; then
-        echo -e '\n# Rust Environment\nif [ -f "$HOME/.cargo/env" ]; then . "$HOME/.cargo/env"; fi' | run_as_user tee -a "$USER_HOME/.bashrc" > /dev/null
+    ZSH_COMPLETIONS_DIR="$USER_HOME/.local/share/zsh/site-functions"
+    ZFUNC_DIR="$USER_HOME/.zfunc"
+    run_as_user mkdir -p "$ZSH_COMPLETIONS_DIR" "$ZFUNC_DIR"
+
+    if command -v rustup &>/dev/null || [ -x "$USER_HOME/.cargo/bin/rustup" ]; then
+        run_as_user rustup completions zsh > "$ZSH_COMPLETIONS_DIR/_rustup" 2>/dev/null || true
+        run_as_user rustup completions zsh cargo > "$ZSH_COMPLETIONS_DIR/_cargo" 2>/dev/null || true
+        run_as_user rustup completions zsh > "$ZFUNC_DIR/_rustup" 2>/dev/null || true
+        run_as_user rustup completions zsh cargo > "$ZFUNC_DIR/_cargo" 2>/dev/null || true
     fi
-fi
-
-# Autocompletados de Rustup y Cargo
-COMPLETIONS_DIR="$USER_HOME/.local/share/bash-completion/completions"
-ZSH_COMPLETIONS_DIR="$USER_HOME/.local/share/zsh/site-functions"
-ZFUNC_DIR="$USER_HOME/.zfunc"
-run_as_user mkdir -p "$COMPLETIONS_DIR" "$ZSH_COMPLETIONS_DIR" "$ZFUNC_DIR"
-
-if command -v rustup &>/dev/null || [ -x "$USER_HOME/.cargo/bin/rustup" ]; then
-    run_as_user rustup completions bash > "$COMPLETIONS_DIR/rustup" 2>/dev/null || true
-    run_as_user rustup completions bash cargo > "$COMPLETIONS_DIR/cargo" 2>/dev/null || true
-    run_as_user rustup completions zsh > "$ZSH_COMPLETIONS_DIR/_rustup" 2>/dev/null || true
-    run_as_user rustup completions zsh cargo > "$ZSH_COMPLETIONS_DIR/_cargo" 2>/dev/null || true
-    run_as_user rustup completions zsh > "$ZFUNC_DIR/_rustup" 2>/dev/null || true
-    run_as_user rustup completions zsh cargo > "$ZFUNC_DIR/_cargo" 2>/dev/null || true
 fi
 
 # Obtener versiones instaladas
@@ -136,5 +148,5 @@ echo "  • Cargo:       $CARGO_VER"
 echo "  • Binstall:    $BINSTALL_VER"
 echo "  • IDE Tools:   rust-analyzer, clippy, rustfmt, rust-src"
 echo "  • GNOME:       ~/.config/environment.d/10-rust.conf"
-echo "  • Shells:      Autocompletado Bash & Zsh (_cargo, _rustup)"
+echo "  • Shells:      Autocompletado Bash (predeterminada)$([ -f "$USER_HOME/.zshrc" ] && echo " & Zsh (compatible)") (_cargo, _rustup)"
 echo "================================================================="

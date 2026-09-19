@@ -418,9 +418,9 @@ cmd_doctor() {
     if [ -n "${DOCKER_HOST:-}" ]; then
         log_ok "DOCKER_HOST: $DOCKER_HOST"
     else
-        local reload_hint="source ~/.zshrc"
-        if [ -n "${BASH_VERSION:-}" ] && [ -z "${ZSH_VERSION:-}" ]; then
-            reload_hint="source ~/.bashrc"
+        local reload_hint="source ~/.bashrc"
+        if [ -n "${ZSH_VERSION:-}" ]; then
+            reload_hint="source ~/.zshrc"
         fi
         log_info "DOCKER_HOST: No exportado en el shell actual (Carga con: $reload_hint)"
     fi

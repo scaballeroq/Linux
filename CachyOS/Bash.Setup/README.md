@@ -1,6 +1,6 @@
 # 🚀 Bash.Setup (CachyOS / Arch Linux + GNOME)
 
-Colección de scripts modulares de configuración, aliases y funciones avanzadas para potenciar tu terminal en **Zsh** (la shell predeterminada en CachyOS) y **Bash**.
+Colección de scripts modulares de configuración, aliases y funciones avanzadas para potenciar tu terminal en **Bash** (shell predeterminada en este proyecto) y **Zsh** (compatible si existe `~/.zshrc`).
 
 Este repositorio organiza de forma limpia tus alias, variables de entorno, utilidades multimedia, gestores de contenedores (Podman) y opciones de shell.
 
@@ -12,44 +12,21 @@ Este repositorio organiza de forma limpia tus alias, variables de entorno, utili
 | :--- | :--- |
 | `aliases.sh` | Atajos generales de navegación, seguridad (`rm -i`), gestión de paquetes (`pacman` / `paru`), recarga dinámica y utilidades Rust (`eza`, `bat`). |
 | `functions.sh` | "Navaja suiza": utilidades multimedia (FFmpeg / ImageMagick), gestión de discos, extracción universal y navegación (`mkcd`, `up`, `hg`). |
-| `podman-functions.sh` | Funciones y aliases específicos para **Podman** y gestión de Pods / Quadlets (compatible con arrays de Zsh y Bash). |
+| `podman-functions.sh` | Funciones y aliases específicos para **Podman** y gestión de Pods / Quadlets (compatible con arrays de Bash y Zsh). |
 | `rclone_aliases.sh` | Sincronización avanzada con la nube (Google Drive / OneDrive) mediante **Rclone**. |
 | `yt-dlp_aliases.sh` | Atajos para descarga optimizada de vídeo (1080p), audio (MP3) y listas con **yt-dlp**. |
-| `history.sh` | Configuración optimizada del historial (10k/20k líneas, deduplicación, escritura inmediata en `~/.zsh_history` o `~/.bash_history`). |
-| `environment.sh` | Variables globales (`EDITOR`, `PATH`, Wayland/GNOME, Docker host, KVM libvirt) y activación inteligente de **Mise** en Zsh y Bash. |
-| `options.sh` | Comportamiento interno de la shell (`autocd`, corrección de typos, `globstar`/`extended_glob`, menús y colores de autocompletado en Zsh y Readline). |
+| `history.sh` | Configuración optimizada del historial (10k/20k líneas, deduplicación, escritura inmediata en `~/.bash_history` o `~/.zsh_history`). |
+| `environment.sh` | Variables globales (`EDITOR`, `PATH`, Wayland/GNOME, Docker host, KVM libvirt) y activación inteligente de **Mise** en Bash y Zsh. |
+| `options.sh` | Comportamiento interno de la shell (`autocd`, corrección de typos, `globstar`/`extended_glob`, menús y colores de autocompletado en Readline y Zsh). |
 | `gnome_settings.sh` | Optimizaciones para GNOME Wayland (panel de control, tema oscuro, capturas con grim/satty, Nautilus). |
 
 ---
 
 ## 🛠️ Instalación y Activación
 
-### Para Zsh (Recomendado en CachyOS)
+### Para Bash (Predeterminado)
 
-Crea el directorio `~/.zshrc.d/` y enlaza los scripts:
-
-```bash
-mkdir -p ~/.zshrc.d
-ln -sf ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.zshrc.d/
-```
-
-Asegúrate de que tu `~/.zshrc` contenga el bloque de carga modular:
-
-```zsh
-# Carga modular de configuraciones (~/.zshrc.d)
-if [ -d "$HOME/.zshrc.d" ]; then
-    for script in "$HOME/.zshrc.d"/*.{sh,zsh}(N); do
-        [ -r "$script" ] && source "$script"
-    done
-    unset script
-fi
-```
-
----
-
-### Para Bash
-
-Si utilizas Bash o una sesión de respaldo en Bash:
+Crea el directorio `~/.bashrc.d/` y enlaza los scripts:
 
 ```bash
 mkdir -p ~/.bashrc.d
@@ -68,7 +45,30 @@ if [ -d "$HOME/.bashrc.d" ]; then
 fi
 ```
 
-> 💡 **Tip automático**: Ejecutando `just shell` o `./Setup/shell.sh` se realiza automáticamente la configuración de utilidades y la integración en `~/.zshrc` y `~/.bashrc`.
+---
+
+### Para Zsh (Compatibilidad condicional si existe ~/.zshrc)
+
+Si utilizas Zsh y existe `~/.zshrc` en tu sistema:
+
+```bash
+mkdir -p ~/.zshrc.d
+ln -sf ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.zshrc.d/
+```
+
+Asegúrate de que tu `~/.zshrc` contenga el bloque de carga modular:
+
+```zsh
+# Carga modular de configuraciones (~/.zshrc.d)
+if [ -d "$HOME/.zshrc.d" ]; then
+    for script in "$HOME/.zshrc.d"/*.{sh,zsh}(N); do
+        [ -r "$script" ] && source "$script"
+    done
+    unset script
+fi
+```
+
+> 💡 **Tip automático**: Ejecutando `just shell` o `./Setup/shell.sh` se realiza automáticamente la configuración de utilidades y la integración en `~/.bashrc` (y en `~/.zshrc` únicamente si existe).
 
 ---
 
