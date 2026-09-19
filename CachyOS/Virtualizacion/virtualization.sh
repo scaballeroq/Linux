@@ -1,10 +1,13 @@
 #!/bin/bash
 # virtualization.sh - Instalación y Optimización Avanzada de Virtualización (KVM/QEMU) para CachyOS
-# Optimizado para virtualizar distribuciones Linux (Kernel 7.x, AMD Ryzen/Intel, GNOME Wayland, 3D VirGL, VirtioFS, Modular Daemons)
+# Optimizado para CachyOS con GNOME Wayland (Kernel 7.x, AMD Ryzen/Intel, GPU Vega/Radeon, 3D VirGL, Btrfs NoCoW, Firewalld, Modular Daemons)
 
 set -euo pipefail
 
 TARGET_USER="${SUDO_USER:-$USER}"
+TARGET_HOME=$(getent passwd "$TARGET_USER" 2>/dev/null | cut -d: -f6)
+[ -z "$TARGET_HOME" ] && TARGET_HOME="$HOME"
+
 WITH_WINDOWS=false
 STATUS_ONLY=false
 
@@ -16,27 +19,38 @@ show_help() {
 Uso: $0 [OPCIONES]
 
 Script de aprovisionamiento y optimización de virtualización KVM/QEMU en CachyOS,
-diseñado para maximizar el rendimiento y la integración de distribuciones Linux invitadas.
+diseñado para maximizar el rendimiento y la integración de distribuciones Linux
+invitadas bajo entornos GNOME (Wayland) y el ecosistema CachyOS.
 
 OPCIONES:
-  --status, --check     Verifica el estado de KVM, sockets libvirt, módulos del kernel y red sin realizar cambios.
+  --status, --check     Verifica el estado de KVM, sockets libvirt, módulos del kernel,
+                        Polkit, Btrfs NoCoW, Firewalld y red sin realizar cambios.
   --with-windows        Descarga también la ISO de controladores VirtIO para Windows (virtio-win.iso).
   -h, --help            Muestra esta ayuda y recomendaciones para VMs Linux.
 
-CARACTERÍSTICAS PARA LINUX GUESTS:
-  - Soporte 3D VirGL (virglrenderer + virtio-gpu-gl) para escritorios Wayland/X11 fluidos.
+CARACTERÍSTICAS Y OPTIMIZACIONES PARA CACHYOS + GNOME:
+  - Integración GNOME Wayland: Regla Polkit sin contraseñas, gnome-boxes, virt-manager,
+    spice-gtk y usbredir para portapapeles y USB compartido bidireccional.
+  - Soporte 3D VirGL (virglrenderer + virtio-gpu-gl) con grupo 'render' para AMD Vega/Radeon.
+  - Almacenamiento Btrfs NoCoW (+C) en /var/lib/libvirt/images para evitar fragmentación e IOPS lentos.
   - Compartición ultrarrápida de carpetas mediante VirtioFS (virtiofsd en Rust).
   - Aceleración por hardware AMD AVIC / Intel EPT y virtualización anidada (Nested KVM).
   - Aceleración de red del kernel (vhost_net, vhost_vsock) y sockets modulares Libvirt 12+.
-  - Deduplicación de memoria RAM entre VMs con KSM del kernel y perfil Tuned 'virtual-host'.
-  - Protección de interfaces Wi-Fi para evitar pérdida de conexión.
+  - Deduplicación de memoria RAM (KSM vía tmpfiles.d) respetando power-profiles-daemon y ananicy-cpp.
+  - Integración nativa con Firewalld (zona 'libvirt' y masquerade en 'home').
+  - Protección de interfaces Wi-Fi para evitar desconexiones en portátiles.
 EOF
 }
 
 check_status() {
     echo "================================================================="
-    echo "🔍 DIAGNÓSTICO DEL ENTORNO DE VIRTUALIZACIÓN (CachyOS)"
+    echo "🔍 DIAGNÓSTICO DEL ENTORNO DE VIRTUALIZACIÓN (CachyOS + GNOME)"
     echo "================================================================="
+
+    echo -n "• Entorno de Escritorio Host: "
+    local desktop="${XDG_CURRENT_DESKTOP:-Desconocido}"
+    local session_type="${XDG_SESSION_TYPE:-Desconocido}"
+    echo "✅ $desktop ($session_type)"
 
     echo -n "• Soporte de Virtualización Hardware: "
     if grep -E -q '(vmx|svm)' /proc/cpuinfo; then
@@ -67,7 +81,15 @@ check_status() {
     echo "${loaded[*]:-Ninguno cargado}"
 
     echo "• Estado de sockets modulares de Libvirt:"
-    local sockets=("virtqemud.socket" "virtnetworkd.socket" "virtstoraged.socket" "virtnodedevd.socket" "virtproxyd.socket")
+    local sockets=(
+        "virtqemud.socket"
+        "virtnetworkd.socket"
+        "virtstoraged.socket"
+        "virtnodedevd.socket"
+        "virtnwfilterd.socket"
+        "virtsecretd.socket"
+        "virtproxyd.socket"
+    )
     for s in "${sockets[@]}"; do
         local state
         state=$(systemctl is-active "$s" 2>/dev/null || true)
@@ -86,29 +108,86 @@ check_status() {
         echo "⚠️ No iniciada o pendiente de configuración inicial"
     fi
 
+    echo -n "• Zona 'libvirt' en Firewalld: "
+    if command -v firewall-cmd >/dev/null 2>&1 && systemctl is-active --quiet firewalld; then
+        if firewall-cmd --get-zones 2>/dev/null | grep -qw "libvirt"; then
+            echo "✅ Zona 'libvirt' cargada y disponible"
+        else
+            echo "⚠️ Zona 'libvirt' no cargada aún (se activará al instalar libvirt y recargar firewalld)"
+        fi
+    else
+        echo "ℹ️ Firewalld no activo"
+    fi
+
+    echo -n "• Almacenamiento VM (/var/lib/libvirt/images): "
+    if [ -d /var/lib/libvirt/images ]; then
+        local fs_type
+        fs_type=$(stat -f -c %T /var/lib/libvirt/images 2>/dev/null || true)
+        if [ "$fs_type" = "btrfs" ]; then
+            if lsattr -d /var/lib/libvirt/images 2>/dev/null | grep -q 'C'; then
+                echo "✅ Btrfs NoCoW (+C activo, optimizado para IOPS)"
+            else
+                echo "⚠️ Btrfs con Copy-on-Write activo (se recomienda chattr +C)"
+            fi
+        else
+            echo "✅ Presente ($fs_type)"
+        fi
+    else
+        echo "ℹ️ Pendiente de creación"
+    fi
+
+    echo -n "• Regla Polkit sin contraseñas para GNOME: "
+    if [ -f /etc/polkit-1/rules.d/50-libvirt.rules ]; then
+        echo "✅ Presente (/etc/polkit-1/rules.d/50-libvirt.rules)"
+    else
+        echo "⚠️ No configurada (GNOME solicitará contraseña de root para virt-manager/boxes)"
+    fi
+
     echo -n "• Pertenencia a grupos requeridos ($TARGET_USER): "
     local user_groups
     user_groups=$(id -Gn "$TARGET_USER" 2>/dev/null || true)
     local has_libvirt=false
     local has_kvm=false
+    local has_render=false
     [[ "$user_groups" =~ (^|[[:space:]])libvirt($|[[:space:]]) ]] && has_libvirt=true
     [[ "$user_groups" =~ (^|[[:space:]])kvm($|[[:space:]]) ]] && has_kvm=true
+    [[ "$user_groups" =~ (^|[[:space:]])render($|[[:space:]]) ]] && has_render=true
 
-    if [ "$has_libvirt" = true ] && [ "$has_kvm" = true ]; then
-        echo "✅ libvirt, kvm"
+    if [ "$has_libvirt" = true ] && [ "$has_kvm" = true ] && [ "$has_render" = true ]; then
+        echo "✅ libvirt, kvm, render"
     else
-        echo "⚠️ Incompleto (Grupos actuales: $user_groups). Se requiere libvirt y kvm."
+        echo "⚠️ Incompleto ($user_groups). Recomendados: libvirt, kvm, render."
     fi
 
-    echo -n "• Interfaz gráfica (virt-manager): "
+    echo "• Interfaces gráficas de usuario:"
+    echo -n "  - virt-manager (Avanzado): "
     if pacman -Q virt-manager >/dev/null 2>&1; then
         echo "✅ Instalado"
     else
         echo "❌ No instalado"
     fi
+    echo -n "  - gnome-boxes (Nativo GNOME): "
+    if pacman -Q gnome-boxes >/dev/null 2>&1; then
+        echo "✅ Instalado"
+    else
+        echo "ℹ️ No instalado (opcional para GNOME)"
+    fi
 
-    echo -n "• Herramientas de optimización Linux Guest: "
-    local tools=("virglrenderer" "virtiofsd" "osinfo-db" "tuned" "swtpm")
+    echo -n "• Gestor de energía y recursos CachyOS: "
+    local res_info=()
+    systemctl is-active --quiet ananicy-cpp && res_info+=("ananicy-cpp: activo")
+    systemctl is-active --quiet power-profiles-daemon && res_info+=("power-profiles-daemon: activo")
+    echo "${res_info[*]:-Estándar}"
+
+    echo -n "• Deduplicación de memoria KSM: "
+    if [ -f /sys/kernel/mm/ksm/run ] && [ "$(cat /sys/kernel/mm/ksm/run 2>/dev/null)" = "1" ]; then
+        echo "✅ Activo (KSM en ejecución)"
+    else
+        echo "ℹ️ Inactivo o desactivado"
+    fi
+
+    echo -n "• Herramientas de optimización y aceleración: "
+    local tools=("virglrenderer" "virtiofsd" "osinfo-db" "spice-gtk" "usbredir" "swtpm")
     local found_tools=()
     for t in "${tools[@]}"; do
         if pacman -Q "$t" >/dev/null 2>&1; then
@@ -149,17 +228,20 @@ if [ "$STATUS_ONLY" = true ]; then
 fi
 
 echo "🚀 Configurando entorno de virtualización de alto rendimiento (KVM/QEMU) en CachyOS..."
-echo "🎯 Optimizado para distribuciones Linux invitadas (Arch, Fedora, Ubuntu, Debian, openSUSE)..."
+echo "🎯 Optimizado para CachyOS con GNOME Wayland y distribuciones Linux invitadas..."
 
 # ---------------------------------------------------------------------------
 # 1. Instalación de paquetes necesarios vía Pacman
 # ---------------------------------------------------------------------------
-echo "ℹ️ Instalando QEMU, libvirt, virt-manager, virglrenderer, virtiofsd y herramientas auxiliares..."
+echo "ℹ️ Instalando QEMU, libvirt, virt-manager, gnome-boxes, virglrenderer, virtiofsd y herramientas auxiliares..."
 sudo pacman -S --needed --noconfirm \
     qemu-desktop \
     libvirt \
     virt-manager \
     virt-viewer \
+    gnome-boxes \
+    spice-gtk \
+    usbredir \
     dnsmasq \
     dmidecode \
     bridge-utils \
@@ -168,7 +250,6 @@ sudo pacman -S --needed --noconfirm \
     nftables \
     edk2-ovmf \
     swtpm \
-    tuned \
     acl \
     libosinfo \
     osinfo-db \
@@ -186,11 +267,12 @@ sudo pacman -S --needed --noconfirm guestfs-tools 2>/dev/null || true
 # ---------------------------------------------------------------------------
 if [ "$WITH_WINDOWS" = true ]; then
     echo "ℹ️ Opción --with-windows activada: Descargando controladores VirtIO para Windows..."
-    VIRTIO_DIR="$HOME/Descargas/virtio-drivers"
+    VIRTIO_DIR="$TARGET_HOME/Descargas/virtio-drivers"
     mkdir -p "$VIRTIO_DIR"
     if [ ! -f "$VIRTIO_DIR/virtio-win.iso" ]; then
         echo "⬇️ Descargando la versión estable más reciente de virtio-win.iso..."
         curl -fsSL -o "$VIRTIO_DIR/virtio-win.iso" "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso" 2>/dev/null || true
+        chown -R "$TARGET_USER:$TARGET_USER" "$VIRTIO_DIR" 2>/dev/null || true
     else
         echo "✅ ISO de VirtIO ya presente en $VIRTIO_DIR/virtio-win.iso"
     fi
@@ -244,6 +326,7 @@ echo "ℹ️ Configurando usuario y grupo en /etc/libvirt/qemu.conf para audio P
 if [ -f /etc/libvirt/qemu.conf ]; then
     sudo sed -i "s/^#*user = .*/user = \"$TARGET_USER\"/" /etc/libvirt/qemu.conf 2>/dev/null || true
     sudo sed -i "s/^#*group = .*/group = \"kvm\"/" /etc/libvirt/qemu.conf 2>/dev/null || true
+    sudo sed -i "s/^#*dynamic_ownership = .*/dynamic_ownership = 1/" /etc/libvirt/qemu.conf 2>/dev/null || true
 fi
 
 # ---------------------------------------------------------------------------
@@ -272,6 +355,10 @@ fi
 
 # Configuración de reglas en Firewalld para NAT y puente virtual (virbr0)
 if command -v firewall-cmd >/dev/null 2>&1 && systemctl is-active --quiet firewalld; then
+    echo "ℹ️ Recargando definiciones de zonas de Firewalld para cargar zona 'libvirt'..."
+    # Primero recargamos para que Firewalld detecte el archivo /usr/lib/firewalld/zones/libvirt.xml recién instalado
+    sudo firewall-cmd --reload 2>/dev/null || true
+
     echo "ℹ️ Configurando zonas y reenvío NAT en Firewalld para libvirt..."
     sudo firewall-cmd --permanent --zone=libvirt --add-interface=virbr0 2>/dev/null || true
     sudo firewall-cmd --permanent --zone=libvirt --add-forward 2>/dev/null || true
@@ -282,47 +369,86 @@ if command -v firewall-cmd >/dev/null 2>&1 && systemctl is-active --quiet firewa
 fi
 
 # ---------------------------------------------------------------------------
-# 6. Verificación de capacidades KVM del Host
+# 6. Regla Polkit para GNOME Wayland (Evita petición de contraseñas continuas)
+# ---------------------------------------------------------------------------
+echo "ℹ️ Configurando regla Polkit para gestión sin contraseña en GNOME..."
+sudo mkdir -p /etc/polkit-1/rules.d
+cat <<EOF | sudo tee /etc/polkit-1/rules.d/50-libvirt.rules > /dev/null
+/* Permitir a usuarios en el grupo libvirt gestionar la virtualización sin pedir contraseña en GNOME */
+polkit.addRule(function(action, subject) {
+    if (action.id.indexOf("org.libvirt") === 0 && subject.isInGroup("libvirt")) {
+        return polkit.Result.YES;
+    }
+});
+EOF
+sudo chmod 644 /etc/polkit-1/rules.d/50-libvirt.rules
+echo "  ✅ Regla Polkit /etc/polkit-1/rules.d/50-libvirt.rules configurada."
+
+# ---------------------------------------------------------------------------
+# 7. Verificación de capacidades KVM del Host
 # ---------------------------------------------------------------------------
 echo "ℹ️ Verificando capacidades de virtualización del hardware con virt-host-validate..."
 virt-host-validate qemu || echo "⚠️ Advertencia: Revisa que la virtualización VT-x / AMD-V esté habilitada en tu BIOS/UEFI."
 
 # ---------------------------------------------------------------------------
-# 7. Configuración de Sockets Modulares de Libvirt (Eliminando conflictos)
+# 8. Configuración de Sockets Modulares de Libvirt 12+ (Eliminando conflictos)
 # ---------------------------------------------------------------------------
 echo "ℹ️ Configurando daemons modulares de Libvirt (Systemd Socket Activation)..."
-# En Arch/CachyOS con libvirt moderno, libvirtd.service monolítico entra en conflicto con los sockets modulares.
-# Desactivamos el demonio monolítico heredado:
+# Desactivamos el demonio monolítico heredado para evitar conflictos:
 sudo systemctl stop libvirtd.service libvirtd.socket libvirtd-ro.socket libvirtd-admin.socket 2>/dev/null || true
 sudo systemctl disable libvirtd.service libvirtd.socket libvirtd-ro.socket libvirtd-admin.socket 2>/dev/null || true
 
 # Habilitamos los sockets modulares bajo demanda:
-# virtproxyd.socket expone /run/libvirt/libvirt-sock para compatibilidad con virt-manager, virsh y cockpit
+# virtproxyd.socket expone /run/libvirt/libvirt-sock para compatibilidad con virt-manager, gnome-boxes y virsh
 sudo systemctl enable --now \
     virtqemud.socket \
     virtnetworkd.socket \
     virtstoraged.socket \
     virtnodedevd.socket \
+    virtnwfilterd.socket \
+    virtsecretd.socket \
     virtproxyd.socket 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
-# 8. Configuración de Red Virtual NAT y Storage Pool por Defecto
+# 9. Configuración de Red Virtual NAT y Storage Pool con Btrfs NoCoW
 # ---------------------------------------------------------------------------
 echo "ℹ️ Asegurando red virtual NAT por defecto (virbr0)..."
 sudo systemctl restart virtnetworkd.service 2>/dev/null || true
-# Si la red default ya estaba activa, la recargamos para aplicar cambios de backend/firewall
+
+# Definir la red default si no existe en el sistema
+if ! sudo virsh net-info default >/dev/null 2>&1; then
+    if [ -f /etc/libvirt/qemu/networks/default.xml ]; then
+        sudo virsh net-define /etc/libvirt/qemu/networks/default.xml 2>/dev/null || true
+    fi
+fi
+
+# Si la red default ya estaba activa, la reiniciamos para aplicar cambios de firewalld
 if sudo virsh net-info default 2>/dev/null | grep -q "Activo:.*sí"; then
     sudo virsh net-destroy default 2>/dev/null || true
 fi
 sudo virsh net-start default 2>/dev/null || true
 sudo virsh net-autostart default 2>/dev/null || true
 
-echo "ℹ️ Asegurando storage pool por defecto (/var/lib/libvirt/images)..."
+echo "ℹ️ Configurando directorio de imágenes (/var/lib/libvirt/images)..."
+sudo mkdir -p /var/lib/libvirt/images
+
+# Optimización Btrfs NoCoW (+C): evita fragmentación severa y mejora latencia de E/S
+FS_TYPE=$(stat -f -c %T /var/lib/libvirt/images 2>/dev/null || true)
+if [ "$FS_TYPE" = "btrfs" ]; then
+    echo "  ⚡ Btrfs detectado en /var/lib/libvirt/images: desactivando Copy-on-Write (+C)..."
+    sudo chattr +C /var/lib/libvirt/images 2>/dev/null || true
+fi
+
+echo "ℹ️ Asegurando storage pool por defecto..."
+if ! sudo virsh pool-info default >/dev/null 2>&1; then
+    sudo virsh pool-define-as --name default --type dir --target /var/lib/libvirt/images 2>/dev/null || true
+    sudo virsh pool-build default 2>/dev/null || true
+fi
 sudo virsh pool-start default 2>/dev/null || true
 sudo virsh pool-autostart default 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
-# 9. Configuración de Red: Detección segura de Interfaz (Cableada vs Wi-Fi)
+# 10. Configuración de Red: Detección segura de Interfaz (Cableada vs Wi-Fi)
 # ---------------------------------------------------------------------------
 echo "ℹ️ Comprobando interfaz de red principal para conectividad de VMs..."
 PHYS_IFACE=$(ip route | grep default | awk '{print $5}' | head -n1 || true)
@@ -371,81 +497,106 @@ EOF
 fi
 
 # ---------------------------------------------------------------------------
-# 10. Perfil de Rendimiento Tuned (virtual-host) y Deduplicación de Memoria (KSM)
+# 11. Optimización de Memoria (KSM) y Coexistencia con Gestor de Batería GNOME
 # ---------------------------------------------------------------------------
-echo "ℹ️ Aplicando optimizaciones de rendimiento con tuned (virtual-host) y KSM..."
+echo "ℹ️ Configurando deduplicación de memoria RAM (KSM) sin alterar power-profiles-daemon..."
+# Habilitamos KSM de forma persistente y nativa con systemd-tmpfiles
+sudo mkdir -p /etc/tmpfiles.d
+cat <<EOF | sudo tee /etc/tmpfiles.d/ksm.conf > /dev/null
+# Deduplicación de páginas de memoria RAM compartidas entre VMs KVM
+w /sys/kernel/mm/ksm/run - - - - 1
+w /sys/kernel/mm/ksm/sleep_millisecs - - - - 100
+EOF
+
 if [ -d /sys/kernel/mm/ksm ]; then
     echo 1 | sudo tee /sys/kernel/mm/ksm/run > /dev/null 2>&1 || true
+    echo 100 | sudo tee /sys/kernel/mm/ksm/sleep_millisecs > /dev/null 2>&1 || true
 fi
-sudo systemctl enable --now tuned.service 2>/dev/null || true
-sudo tuned-adm profile virtual-host 2>/dev/null || true
+echo "  ✅ KSM habilitado. Preservado power-profiles-daemon y ananicy-cpp para gestión óptima de batería en portátil."
 
 # ---------------------------------------------------------------------------
-# 11. Permisos de Usuario y Listas de Control de Acceso (ACL)
+# 12. Permisos de Usuario y Grupos (libvirt, kvm, render)
 # ---------------------------------------------------------------------------
-echo "ℹ️ Configurando grupos de usuario (libvirt, kvm) para $TARGET_USER..."
-sudo usermod -aG libvirt,kvm "$TARGET_USER" 2>/dev/null || sudo usermod -aG libvirt "$TARGET_USER"
+echo "ℹ️ Configurando grupos de usuario (libvirt, kvm, render) para $TARGET_USER..."
+# Grupo render permite aceleración 3D VirGL directa en GPU AMD Radeon Vega (/dev/dri/renderD128)
+sudo usermod -aG libvirt,kvm,render "$TARGET_USER" 2>/dev/null || sudo usermod -aG libvirt,kvm "$TARGET_USER"
 
 echo "ℹ️ Configurando permisos ACL en el directorio de imágenes (/var/lib/libvirt/images)..."
-sudo mkdir -p /var/lib/libvirt/images
 sudo setfacl -R -b /var/lib/libvirt/images 2>/dev/null || true
 sudo setfacl -R -m u:"$TARGET_USER":rwX /var/lib/libvirt/images 2>/dev/null || true
 sudo setfacl -d -m u:"$TARGET_USER":rwX /var/lib/libvirt/images 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
-# 12. Variable de Entorno LIBVIRT_DEFAULT_URI
+# 13. Variable de Entorno LIBVIRT_DEFAULT_URI en el Perfil de Usuario Real
 # ---------------------------------------------------------------------------
-echo "ℹ️ Configurando LIBVIRT_DEFAULT_URI en el entorno del usuario (Zsh, Bash, environment.d)..."
-# 12.1. Sesión de escritorio y virt-manager (environment.d)
-mkdir -p "$HOME/.config/environment.d"
-cat <<EOF > "$HOME/.config/environment.d/10-libvirt.conf"
+echo "ℹ️ Configurando LIBVIRT_DEFAULT_URI para el usuario $TARGET_USER ($TARGET_HOME)..."
+
+# 13.1. Sesión de escritorio GNOME / systemd --user (environment.d)
+mkdir -p "$TARGET_HOME/.config/environment.d"
+cat <<EOF > "$TARGET_HOME/.config/environment.d/10-libvirt.conf"
 LIBVIRT_DEFAULT_URI=qemu:///system
 EOF
 
-# 12.2. Zsh modular (~/.zshrc.d)
-mkdir -p "$HOME/.zshrc.d"
-cat <<EOF > "$HOME/.zshrc.d/virtualization.zsh"
+# 13.2. Zsh modular (~/.zshrc.d)
+mkdir -p "$TARGET_HOME/.zshrc.d"
+cat <<EOF > "$TARGET_HOME/.zshrc.d/virtualization.zsh"
 # Configuración KVM/QEMU conectando al modo de sistema por defecto
 export LIBVIRT_DEFAULT_URI="qemu:///system"
 EOF
 
-# 12.3. Bash modular (~/.bashrc.d)
-mkdir -p "$HOME/.bashrc.d"
-cat <<EOF > "$HOME/.bashrc.d/virtualization.sh"
+# 13.3. Bash modular (~/.bashrc.d)
+mkdir -p "$TARGET_HOME/.bashrc.d"
+cat <<EOF > "$TARGET_HOME/.bashrc.d/virtualization.sh"
 # Configuración KVM/QEMU conectando al modo de sistema por defecto
 export LIBVIRT_DEFAULT_URI="qemu:///system"
 EOF
 
 # Fallback en ~/.bashrc si no se usa carga modular
-if ! grep -q "LIBVIRT_DEFAULT_URI" "$HOME/.bashrc" 2>/dev/null; then
-    echo '' >> "$HOME/.bashrc"
-    echo '# Configuración KVM/QEMU conectando al modo de sistema por defecto' >> "$HOME/.bashrc"
-    echo "export LIBVIRT_DEFAULT_URI='qemu:///system'" >> "$HOME/.bashrc"
+if ! grep -q "LIBVIRT_DEFAULT_URI" "$TARGET_HOME/.bashrc" 2>/dev/null; then
+    echo '' >> "$TARGET_HOME/.bashrc"
+    echo '# Configuración KVM/QEMU conectando al modo de sistema por defecto' >> "$TARGET_HOME/.bashrc"
+    echo "export LIBVIRT_DEFAULT_URI='qemu:///system'" >> "$TARGET_HOME/.bashrc"
 fi
-echo "✅ Configuración de Virtualización creada en environment.d, ~/.zshrc.d y ~/.bashrc.d"
+
+# Asignar propiedad correcta de los archivos creados al usuario objetivo
+chown -R "$TARGET_USER:$TARGET_USER" \
+    "$TARGET_HOME/.config/environment.d" \
+    "$TARGET_HOME/.zshrc.d" \
+    "$TARGET_HOME/.bashrc.d" 2>/dev/null || true
+
+# Propagar inmediatamente al entorno de activación de systemd/D-Bus del usuario si hay sesión activa
+sudo -u "$TARGET_USER" dbus-update-activation-environment --systemd LIBVIRT_DEFAULT_URI=qemu:///system 2>/dev/null || true
+
+echo "✅ Configuración de Virtualización creada con éxito en el perfil de $TARGET_USER."
 
 # ---------------------------------------------------------------------------
-# Resumen y Recomendaciones para VMs Linux
+# Resumen y Recomendaciones para VMs Linux en GNOME Wayland
 # ---------------------------------------------------------------------------
 echo "================================================================="
-echo "✅ Entorno KVM/QEMU en CachyOS configurado y optimizado con éxito."
+echo "✅ Entorno KVM/QEMU en CachyOS con GNOME configurado y optimizado."
 echo "================================================================="
+echo "💡 OPCIONES GRÁFICAS DISPONIBLES EN GNOME:"
+echo "  • GNOME Boxes: Aplicación nativa y minimalista integrada en GNOME."
+echo "    - Ideal para pruebas rápidas y descargas directas de ISOs."
+echo "  • Virt-Manager: Interfaz avanzada de control total de máquinas virtuales."
+echo ""
 echo "💡 GUÍA RÁPIDA DE CONFIGURACIÓN PARA LINUX GUESTS EN VIRT-MANAGER:"
 echo "  1. Procesador (CPU):"
 echo "     - Modelo: 'host-passthrough' (rendimiento nativo de CPU e instrucciones AVX2/Zen)."
-echo "  2. Gráficos y Pantalla (GNOME / Wayland fluido):"
+echo "  2. Gráficos y Pantalla (GNOME Wayland 60+ FPS):"
 echo "     - Pantalla: 'SPICE', Tipo de escucha: 'Ninguno' (socket local Unix)."
 echo "     - Activar: 'Aceleración OpenGL'."
-echo "     - Video: 'VirtIO' con casilla 'Aceleración 3D' marcada (VirGL)."
+echo "     - Video: 'VirtIO' con casilla 'Aceleración 3D' marcada (VirGL en AMD Vega)."
 echo "  3. Almacenamiento (Disco):"
 echo "     - Bus: 'VirtIO' o 'SCSI' con controlador VirtIO SCSI."
 echo "     - Rendimiento: Modo de caché 'writeback', Motor de E/S 'io_uring', Descarte 'unmap' (TRIM)."
 echo "  4. Compartir Carpetas (Host <-> Guest):"
-echo "     - Añadir Hardware -> Sistema de archivos -> Modo de acceso: 'virtiofs' (requiere memoria compartida)."
-echo "  5. Dentro de la distribución Linux invitada, instala:"
-echo "     - Arch/CachyOS : sudo pacman -S spice-vdagent qemu-guest-agent"
-echo "     - Fedora       : sudo dnf install spice-vdagent qemu-guest-agent"
-echo "     - Ubuntu/Debian: sudo apt install spice-vdagent qemu-guest-agent"
+echo "     - Añadir Hardware -> Sistema de archivos -> Modo de acceso: 'virtiofs' (requiere memoria compartida memfd)."
+echo "  5. Integración de Portapapeles y Resolución Dinámica:"
+echo "     - En la VM invitada instala: spice-vdagent y qemu-guest-agent"
+echo "       * Arch/CachyOS : sudo pacman -S spice-vdagent qemu-guest-agent"
+echo "       * Fedora       : sudo dnf install spice-vdagent qemu-guest-agent"
+echo "       * Ubuntu/Debian: sudo apt install spice-vdagent qemu-guest-agent"
 echo "================================================================="
-echo "💡 Recuerda reiniciar o cerrar sesión para aplicar los cambios de grupo (libvirt, kvm)."
+echo "💡 Recuerda reiniciar o cerrar sesión para aplicar los cambios de grupo (libvirt, kvm, render)."
 echo "================================================================="

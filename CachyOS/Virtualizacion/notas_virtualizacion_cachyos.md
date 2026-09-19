@@ -1,7 +1,7 @@
 # Manual de Virtualización de Alto Rendimiento (KVM/QEMU) en CachyOS
 ## Optimizado para Distribuciones Linux (Kernel 7.x, GNOME Wayland, AMD Ryzen / Intel)
 
-Este manual detalla la arquitectura, configuración y optimización de **KVM / QEMU / virt-manager** en **CachyOS**, aprovechando al máximo el kernel optimizado de CachyOS, los sockets modulares de `libvirt 12+`, aceleración 3D por hardware (VirGL) y compartición de archivos ultrarrápida (VirtioFS).
+Este manual detalla la arquitectura, configuración y optimización de **KVM / QEMU / virt-manager / GNOME Boxes** en **CachyOS**, aprovechando al máximo el kernel optimizado de CachyOS, los sockets modulares de `libvirt 12+`, aceleración 3D por hardware (VirGL sobre AMD Vega/Radeon), almacenamiento Btrfs NoCoW, integración con GNOME Wayland (Polkit sin contraseñas) y compartición de archivos ultrarrápida (VirtioFS).
 
 ---
 
@@ -10,10 +10,10 @@ Este manual detalla la arquitectura, configuración y optimización de **KVM / Q
 El repositorio incluye el script modular [`virtualization.sh`](file:///home/caballero/Workspace/Repositorios/Linux/CachyOS/Virtualizacion/virtualization.sh):
 
 ```bash
-# Diagnóstico rápido sin modificar el sistema
+# Diagnóstico rápido y exhaustivo del entorno (GNOME, KVM, Btrfs, Polkit, Firewalld, grupos)
 ./Virtualizacion/virtualization.sh --status
 
-# Instalación y optimización completa para distribuciones Linux
+# Instalación y optimización completa para CachyOS con GNOME
 ./Virtualizacion/virtualization.sh
 
 # Instalación incluyendo también controladores VirtIO para Windows
@@ -30,7 +30,7 @@ En `/etc/modprobe.d/kvm_amd.conf`:
 options kvm_amd nested=1 avic=1 npt=1
 ```
 - **`nested=1`**: Permite virtualización anidada (ejecutar Docker, Podman o KVM dentro de la máquina virtual).
-- **`avic=1`** (*Advanced Virtual Interrupt Controller*): Reduce significativamente las salidas de VM (*VM exits*) y la sobrecarga de interrupciones en CPUs AMD.
+- **`avic=1`** (*Advanced Virtual Interrupt Controller*): Reduce significativamente las salidas de VM (*VM exits*) y la sobrecarga de interrupciones en CPUs AMD Zen.
 - **`npt=1`** (*Nested Page Tables*): Paginación asistida por hardware para eliminar latencia en la gestión de memoria.
 
 ### Procesadores Intel Core / Xeon:
@@ -55,13 +55,54 @@ Los servicios se activan bajo demanda (*Systemd Socket Activation*) a través de
 - `virtnetworkd.socket`: Gestión de redes virtuales (NAT `default`, bridges).
 - `virtstoraged.socket`: Gestión de pools de almacenamiento (`/var/lib/libvirt/images`).
 - `virtnodedevd.socket`: Asignación de dispositivos PCI/USB.
-- `virtproxyd.socket`: Provee compatibilidad hacia atrás escuchando en `/run/libvirt/libvirt-sock` para que `virt-manager`, `virsh` y Cockpit funcionen de forma transparente.
+- `virtnwfilterd.socket`: Filtrado de red y reglas nwfilter para interfaces virtuales.
+- `virtsecretd.socket`: Gestión de claves y secretos cifrados (LUKS/TLS).
+- `virtproxyd.socket`: Provee compatibilidad hacia atrás escuchando en `/run/libvirt/libvirt-sock` para que `virt-manager`, `gnome-boxes`, `virsh` y Cockpit funcionen de forma transparente.
 
 ---
 
-## 4. Configuración Óptima para VMs Linux en `virt-manager`
+## 4. Integración con GNOME (Wayland) y Seguridad Polkit
 
-Al crear una máquina virtual para cualquier distribución Linux (Arch, Fedora, Ubuntu, Debian, openSUSE, Alpine, etc.), aplica estos ajustes para obtener rendimiento cercano al 100% nativo:
+### A. Regla Polkit sin Contraseñas (`/etc/polkit-1/rules.d/50-libvirt.rules`)
+Para evitar que GNOME Shell muestre continuos cuadros de diálogo emergentes pidiendo contraseña de administrador al abrir `virt-manager` o gestionar máquinas virtuales:
+```javascript
+/* Permitir a usuarios en el grupo libvirt gestionar la virtualización sin pedir contraseña en GNOME */
+polkit.addRule(function(action, subject) {
+    if (action.id.indexOf("org.libvirt") === 0 && subject.isInGroup("libvirt")) {
+        return polkit.Result.YES;
+    }
+});
+```
+
+### B. Grupos de Usuario
+El usuario debe pertenecer a:
+- `libvirt`: Gestión del hipervisor a través de sockets y Polkit.
+- `kvm`: Acceso de lectura/escritura directo a `/dev/kvm`.
+- `render`: Acceso directo al nodo de renderizado DRI (`/dev/dri/renderD128`) para aceleración GPU 3D VirGL (AMD Vega/Radeon).
+
+### C. Variable de Entorno `LIBVIRT_DEFAULT_URI`
+Configurada en `$HOME/.config/environment.d/10-libvirt.conf`, `$HOME/.zshrc.d/` y `$HOME/.bashrc.d/`:
+```ini
+LIBVIRT_DEFAULT_URI=qemu:///system
+```
+Garantiza que tanto las herramientas de terminal (`virsh`) como las aplicaciones gráficas de GNOME se conecten de inmediato al hipervisor del sistema.
+
+---
+
+## 5. Almacenamiento Btrfs NoCoW (`chattr +C`)
+
+CachyOS instala por defecto el sistema de archivos **Btrfs**. Los discos virtuales (`.qcow2`, `.raw`) sufren una grave degradación de rendimiento y alta fragmentación si Copy-on-Write (CoW) permanece activo.
+
+El script configura automáticamente el directorio de imágenes:
+```bash
+sudo mkdir -p /var/lib/libvirt/images
+sudo chattr +C /var/lib/libvirt/images
+```
+Esto garantiza que todos los discos virtuales nuevos hereden el atributo `NoCoW`, eliminando la sobrecarga en el SSD NVMe.
+
+---
+
+## 6. Configuración Óptima para VMs Linux en GNOME
 
 ### A. Procesador (CPU)
 1. Abre los detalles de la máquina virtual -> **CPUs**.
@@ -69,14 +110,14 @@ Al crear una máquina virtual para cualquier distribución Linux (Arch, Fedora, 
    - *Beneficio*: La máquina invitada tendrá acceso a todas las instrucciones nativas de tu procesador (AVX2, AES, Zen/SSE4a), acelerando compilaciones, criptografía y ejecución general.
 3. Topología: Configura 1 socket, N núcleos y 2 hilos (si tu CPU tiene SMT).
 
-### B. Gráficos y Pantalla (GNOME / Wayland Fluido)
+### B. Gráficos y Pantalla (GNOME Wayland Fluido a 60+ FPS)
 1. **Pantalla SPICE**:
    - Tipo de escucha: **Ninguno** (Listen: None). Utiliza un socket Unix local seguro y de máxima velocidad.
    - Marca la casilla: **Aceleración OpenGL**.
 2. **Video VirtIO (VirGL)**:
    - Modelo: **VirtIO**.
    - Marca la casilla: **Aceleración 3D**.
-   - *Beneficio*: Gracias al paquete `virglrenderer` instalado en el host, la VM utilizará tu GPU física para renderizar el escritorio Wayland a 60+ FPS sin recurrir al pesado renderizado por CPU (`llvmpipe`).
+   - *Beneficio*: Gracias a `virglrenderer` y al grupo `render`, la VM utilizará la GPU física AMD Radeon Vega para renderizar el escritorio Wayland a 60+ FPS sin recurrir al pesado renderizado por CPU (`llvmpipe`).
 
 ### C. Almacenamiento (Disco Virtual)
 1. Bus del disco: **VirtIO** o **SCSI** (con controlador VirtIO SCSI).
@@ -85,16 +126,17 @@ Al crear una máquina virtual para cualquier distribución Linux (Arch, Fedora, 
    - Modo de descarte: **`unmap`** (permite que el comando `fstrim` en el Linux invitado libere espacio real en el SSD del host).
    - Motor de E/S: **`io_uring`** (proporciona la mayor tasa de IOPS y menor latencia en el Kernel 7.x de CachyOS).
 
-### D. Red Virtual
+### D. Red Virtual y Firewalld
 - Dispositivo de red: Modelo **VirtIO**.
 - Fuente de red: Red virtual `default` (NAT con `virbr0`).
+- *Firewalld*: La interfaz `virbr0` se asocia a la zona `libvirt` con reenvío (*forwarding*) activo y masquerade en la zona `home`.
 - *Nota sobre Wi-Fi*: En portátiles conectados por Wi-Fi, la red NAT `default` con `vhost_net` es la opción ideal, ya que el estándar Wi-Fi no permite bridges directos en modo cliente.
 
 ---
 
-## 5. Compartir Carpetas a Velocidad Nativa con VirtioFS
+## 7. Compartir Carpetas a Velocidad Nativa con VirtioFS
 
-`VirtioFS` (gestionado por `virtiofsd`) reemplaza al anticuado protocolo 9p con un rendimiento idéntico al disco SSD local y soporte POSIX completo.
+`VirtioFS` (gestionado por `virtiofsd` en Rust) reemplaza al anticuado protocolo 9p con un rendimiento idéntico al disco SSD local y soporte POSIX completo.
 
 ### Paso 1: Habilitar Memoria Compartida en la VM
 En `virt-manager`, edita el XML de la máquina virtual (o en detalles de memoria) asegurando:
@@ -125,7 +167,7 @@ workspace_host /mnt/workspace virtiofs defaults,_netdev 0 0
 
 ---
 
-## 6. Paquetes Recomendados Dentro del Linux Invitado
+## 8. Paquetes Recomendados Dentro del Linux Invitado
 
 Para disfrutar de resolución de pantalla dinámica que se adapte al tamaño de ventana de GNOME / virt-manager, sincronización bidireccional del portapapeles y apagado limpio:
 
@@ -155,7 +197,7 @@ sudo systemctl enable --now qemu-guest-agent
 
 ---
 
-## 7. Diagnóstico y Verificación
+## 9. Diagnóstico y Verificación
 
 ```bash
 # Diagnóstico integral del script
