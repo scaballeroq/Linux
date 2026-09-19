@@ -58,9 +58,9 @@ if ! command -v mise &> /dev/null && [ ! -x "$USER_HOME/.local/bin/mise" ]; then
     fi
 fi
 
-# 2. Dependencias de compilación y librerías del sistema para Python en CachyOS
-echo "ℹ️ [1/5] Verificando dependencias nativas del sistema..."
-MISSING_PKGS=$(pacman -T base-devel openssl zlib bzip2 readline sqlite curl git ncurses xz tk libffi 2>/dev/null || true)
+# 2. Dependencias del sistema y librerías nativas para Python en CachyOS
+echo "ℹ️ [1/5] Verificando dependencias nativas del sistema (python, gobject, base-devel)..."
+MISSING_PKGS=$(pacman -T base-devel python python-pip python-gobject openssl zlib bzip2 readline sqlite curl git ncurses xz tk libffi 2>/dev/null || true)
 if [ -n "$MISSING_PKGS" ]; then
     echo "  ⬇️ Instalando librerías requeridas: $MISSING_PKGS..."
     $SUDO pacman -S --needed --noconfirm $MISSING_PKGS
@@ -68,14 +68,12 @@ else
     echo "  ✅ Dependencias nativas ya instaladas."
 fi
 
-# 3. Instalar la última versión estable de Python y uv con Mise
-echo "ℹ️ [2/5] Descargando e instalando Python (Latest) y uv vía Mise..."
-run_as_user mise use --global python@latest
+# 3. Instalar uv con Mise de forma global (Python se mantiene en el sistema para no romper apps como gnome-tweaks)
+echo "ℹ️ [2/5] Instalando gestor uv vía Mise..."
 run_as_user mise use --global uv@latest
 
-# 4. Actualizar pip, setuptools y wheel
-echo "ℹ️ [3/5] Actualizando herramientas base de empaquetado (pip, setuptools, wheel)..."
-run_as_user mise exec python@latest -- python -m pip install --upgrade pip setuptools wheel --quiet 2>/dev/null || true
+# 4. Asegurar que no existan shims globales de Python en Mise
+run_as_user mise unuse --global python 2>/dev/null || true
 run_as_user mise reshim 2>/dev/null || true
 
 # 5. Integración con GNOME (environment.d) y Shells (Bash predeterminado / Zsh condicional)
@@ -122,7 +120,7 @@ if command -v mise &>/dev/null; then
     run_as_user mise exec uv@latest -- uvx --generate-shell-completion bash > "$COMPLETIONS_DIR/uvx" 2>/dev/null || true
 
     # pip autocompletion (Bash)
-    run_as_user mise exec python@latest -- pip completion --bash > "$COMPLETIONS_DIR/pip" 2>/dev/null || true
+    python3 -m pip completion --bash > "$COMPLETIONS_DIR/pip" 2>/dev/null || true
 
     # Zsh autocompletions (condicional)
     if [ -f "$USER_HOME/.zshrc" ]; then
@@ -136,15 +134,15 @@ if command -v mise &>/dev/null; then
         run_as_user mise exec uv@latest -- uvx --generate-shell-completion zsh > "$ZSH_COMPLETIONS_DIR/_uvx" 2>/dev/null || true
         run_as_user mise exec uv@latest -- uvx --generate-shell-completion zsh > "$ZFUNC_DIR/_uvx" 2>/dev/null || true
 
-        run_as_user mise exec python@latest -- pip completion --zsh > "$ZSH_COMPLETIONS_DIR/_pip" 2>/dev/null || true
-        run_as_user mise exec python@latest -- pip completion --zsh > "$ZFUNC_DIR/_pip" 2>/dev/null || true
+        python3 -m pip completion --zsh > "$ZSH_COMPLETIONS_DIR/_pip" 2>/dev/null || true
+        python3 -m pip completion --zsh > "$ZFUNC_DIR/_pip" 2>/dev/null || true
     fi
 fi
 
 # Obtener versiones instaladas
-PYTHON_VER=$(run_as_user mise exec python@latest -- python --version 2>/dev/null || echo "Python instalado")
+PYTHON_VER=$(python3 --version 2>/dev/null || echo "Python nativo del sistema")
 UV_VER=$(run_as_user mise exec uv@latest -- uv --version 2>/dev/null || echo "uv instalado")
-PIP_VER=$(run_as_user mise exec python@latest -- pip --version 2>/dev/null | awk '{print $2}' || echo "pip instalado")
+PIP_VER=$(python3 -m pip --version 2>/dev/null | awk '{print $2}' || echo "pip del sistema")
 
 echo "================================================================="
 echo "✅ Python & uv configurados con éxito para CachyOS y GNOME:"
