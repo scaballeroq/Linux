@@ -270,13 +270,10 @@ run_as_user dconf write /org/gnome/desktop/interface/gtk-theme '"adw-gtk3-dark"'
     run_as_user gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' 2>/dev/null || \
     run_as_user gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark' 2>/dev/null || true
 
-# Variable de entorno en environment.d para sesiones Wayland
-run_as_user mkdir -p "$USER_HOME/.config/environment.d"
-cat << 'EOF' | run_as_user tee "$USER_HOME/.config/environment.d/10-gtk-dark.conf" > /dev/null
-GTK_THEME=adw-gtk3-dark
-EOF
+# Asegurar que no exista GTK_THEME en environment.d (rompe el modo oscuro en apps GTK4 como Shelly)
+run_as_user rm -f "$USER_HOME/.config/environment.d/10-gtk-dark.conf"
 
-# Configuración settings.ini para GTK 3.0
+# Configuración settings.ini para GTK 3.0 (compatibilidad con adw-gtk3-dark)
 run_as_user mkdir -p "$USER_HOME/.config/gtk-3.0"
 cat << 'EOF' | run_as_user tee "$USER_HOME/.config/gtk-3.0/settings.ini" > /dev/null
 [Settings]
@@ -284,11 +281,10 @@ gtk-theme-name=adw-gtk3-dark
 gtk-application-prefer-dark-theme=1
 EOF
 
-# Configuración settings.ini para GTK 4.0
+# Configuración settings.ini para GTK 4.0 (forzar preferencia oscura nativa)
 run_as_user mkdir -p "$USER_HOME/.config/gtk-4.0"
 cat << 'EOF' | run_as_user tee "$USER_HOME/.config/gtk-4.0/settings.ini" > /dev/null
 [Settings]
-gtk-theme-name=adw-gtk3-dark
 gtk-application-prefer-dark-theme=1
 EOF
 
