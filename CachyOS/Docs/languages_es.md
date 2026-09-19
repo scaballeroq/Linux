@@ -49,14 +49,11 @@ Una vez instalado Mise, se despliegan de forma global los siguientes lenguajes o
   ```
 * **Optimizaciones**: Desactiva las preguntas interactivas de telemetría (`ng config -g cli.analytics false`) y genera autocompletados para Zsh y Bash.
 
-### Python & uv (`python.sh`)
-* **Dependencias**: Comprueba e instala librerías del sistema para compilar extensiones nativas (`openssl`, `zlib`, `bzip2`, `readline`, `sqlite`, `libffi`, etc.) con optimizaciones PGO + LTO.
-* **Instalación**: Instala la última versión estable de Python y el gestor ultrarrápido **uv** vía Mise:
-  ```bash
-  mise use --global python@latest
-  mise use --global uv@latest
-  mise exec python@latest -- python -m pip install --upgrade pip setuptools wheel
-  ```
+### Python & uv (`python.sh` & `python-uv-init.sh`)
+* **Dependencias**: Asegura `base-devel`, `python`, `python-pip` y `python-gobject` vía Pacman para máxima integración con GNOME.
+* **Instalación**: Instala el gestor ultrarrápido **uv** vía Mise (`mise use --global uv@latest`) y mantiene el Python nativo para no alterar herramientas de sistema como *Retoques*.
+* **Generador de Proyectos**: Se incluye la utilidad `py-project` (`ProgrammingLanguages/python-uv-init.sh`) para crear proyectos aislados con plantillas (FastAPI, CLI, Data Science).
+* **Guía Completa**: Consulta [python_uv_es.md](file:///home/caballero/Workspace/Repositorios/Linux/CachyOS/Docs/python_uv_es.md) para ver instrucciones detalladas de flujo de trabajo.
 * **GNOME & Shells**: Genera `~/.config/environment.d/10-python.conf`, `~/.bashrc.d/python.sh` (y `~/.zshrc.d/python.zsh` si existe `~/.zshrc`) y autocompletados nativos para Bash y Zsh (`_uv`, `_uvx`, `_pip`).
 
 ### .NET SDK (`dotnet.sh`)
