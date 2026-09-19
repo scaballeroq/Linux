@@ -40,6 +40,9 @@ EGO_EXTENSIONS=(
     "https://extensions.gnome.org/extension/19/user-themes/"
     "https://extensions.gnome.org/extension/615/appindicator-support/"
     "https://extensions.gnome.org/extension/8/places-status-indicator/"
+    "https://extensions.gnome.org/extension/779/clipboard-indicator/"
+    "https://extensions.gnome.org/extension/36/lock-keys/"
+    "https://extensions.gnome.org/extension/7065/tiling-shell/"
 )
 
 # ------------------------------------------------------------------------------
@@ -55,6 +58,9 @@ EXTENSION_UUIDS=(
     "logomenu@aryan_k"
     "user-theme@gnome-shell-extensions.gcampax.github.com"
     "places-menu@gnome-shell-extensions.gcampax.github.com"
+    "clipboard-indicator@tudmotu.com"
+    "lockkeys@vaina.lt"
+    "tilingshell@ferrarodomenico.com"
 )
 
 # ------------------------------------------------------------------------------
