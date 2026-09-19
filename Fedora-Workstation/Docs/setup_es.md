@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # Configuración del Sistema en Fedora 44 Workstation
 
-Esta guía detalla el proceso de configuración base, optimización de la terminal, instalación de herramientas esenciales, soporte multimedia y personalización del entorno de usuario aplicados a un sistema **Fedora 44 Workstation** (Arch Linux, optimizado para x86-64-v3/v4) con **GNOME** (Modo Oscuro).
+Esta guía detalla el proceso de configuración base, optimización de la terminal, instalación de herramientas esenciales, soporte multimedia y personalización del entorno de usuario aplicados a un sistema **Fedora 44 Workstation** (con gestión de paquetes DNF5) y **GNOME** (Modo Oscuro).
 
 Las configuraciones están automatizadas a través de los scripts ubicados en la carpeta `Setup`.
 
@@ -12,7 +12,7 @@ Las configuraciones están automatizadas a través de los scripts ubicados en la
 
 ## 1. Post-Instalación Base (`post-install.sh`)
 
-Prepara el sistema base optimizando espejos, instalando software esencial y configurando la aceleración por hardware. El script detecta automáticamente el procesador (AMD Ryzen vs Intel Core) y ejecuta la configuración correspondiente.
+Prepara el sistema base optimizando repositorios, instalando software esencial y configurando la aceleración por hardware. El script detecta automáticamente el procesador (AMD Ryzen vs Intel Core) y ejecuta la configuración correspondiente.
 
 1. **Auto-detección de CPU**:
    ```bash
@@ -21,28 +21,28 @@ Prepara el sistema base optimizando espejos, instalando software esencial y conf
    - `AuthenticAMD` → Ejecuta `post-install-amd.sh`
    - `GenuineIntel` → Ejecuta `post-install-intel.sh`
 
-2. **Optimización de Pacman**:
-   - ParallelDownloads = 10
-   - Color habilitado
-   - Espejos optimizados con `fastestmirror`
+2. **Optimización de DNF5**:
+   - `max_parallel_downloads=10`
+   - `fastestmirror=True`
+   - `clean_requirements_on_remove=True`
 
 3. **Software Esencial**:
    Instala utilidades de compilación, monitorización de sistema y compatibilidad:
-   - Compilación: `base-devel`, `cmake`
+   - Compilación: `@development-tools`, `cmake`, `gcc-c++`
    - Monitorización: `btop`, `htop`, `inxi`
-   - Utilidades: `curl`, `fuse2`, `fuse3`, `exfatprogs`, `7zip`, `unrar`, `zip`, `unzip`, `bzip2`, `xz`
+   - Utilidades: `curl`, `fuse`, `fuse3`, `exfatprogs`, `p7zip`, `p7zip-plugins`, `unrar`, `zip`, `unzip`, `bzip2`, `xz`
    - Gráficos y Multimedia: `vlc`, `gimp`, `gparted`
-   - Paquetes universales: `flatpak`
+   - Paquetes universales: `flatpak` (con repositorio Flathub activado)
 
 4. **Codecs Multimedia y Aceleración HW**:
    ```bash
    # AMD
-   sudo dnf5 install -y mesa libva-mesa-driver vulkan-radeon
+   sudo dnf5 install -y mesa-va-drivers mesa-vdpau-drivers vulkan-loader mesa-vulkan-drivers
    # Intel
-   sudo dnf5 install -y mesa libva-intel-driver intel-media-driver vulkan-intel
+   sudo dnf5 install -y libva-intel-driver intel-media-driver libvdpau-va-gl vulkan-loader mesa-vulkan-drivers
    ```
 
-5. **ZRAM**: Configurado con algoritmo ZSTD al 50% de RAM.
+5. **ZRAM**: Configurado con algoritmo ZSTD integrado nativamente en Fedora.
 
 ---
 
@@ -157,7 +157,7 @@ Configura las herramientas para descargas de video y procesamiento de audio digi
 
 ## 7. Extensiones de GNOME Shell (`gnome-extensions.sh`)
 
-Instala y gestiona las extensiones oficiales desde los repositorios de Fedora 44 Workstation / Arch Linux (`dnf5`):
+Instala y gestiona las extensiones oficiales desde los repositorios de Fedora 44 Workstation (`dnf5`):
 
 1. **Herramientas y Extensiones incluidas**:
    - `extension-manager`: Aplicación gráfica nativa para buscar, explorar y administrar extensiones de GNOME Shell.
@@ -184,6 +184,65 @@ Instala y gestiona las extensiones oficiales desde los repositorios de Fedora 44
 
 ---
 
+## 8. Multimedia Completo y RPM Fusion (`multimedia.sh`)
+
+Configura todos los repositorios multimedia privativos de **RPM Fusion** (Free, Nonfree y Tainted) y sustituye la versión recortada de FFmpeg por la completa con todos los codecs y aceleración por hardware:
+
+1. **Repositorios habilitados**:
+   - `rpmfusion-free-release` y `rpmfusion-nonfree-release`
+   - `rpmfusion-free-release-tainted` y `rpmfusion-nonfree-release-tainted`
+   - Repositorio OpenH264 de Cisco
+
+2. **Stack de Codecs y Aceleración HW**:
+   - **FFmpeg Full**: `dnf5 swap -y ffmpeg-free ffmpeg --allowerasing`
+   - **GStreamer**: `gstreamer1-plugins-bad-freeworld`, `gstreamer1-plugins-ugly`, `gstreamer1-libav`, `gstreamer1-vaapi`
+   - **Drivers VA-API / VDPAU freeworld**: `mesa-va-drivers-freeworld`, `mesa-vdpau-drivers-freeworld`
+   - **Codecs y formatos**: `libdvdcss`, `lame`, `faac`, `faad2`, `x264`, `x265`, `libde265`
+
+3. **Uso**:
+   ```bash
+   ./Setup/multimedia.sh          # Instalación y swap completo
+   ./Setup/multimedia.sh --status # Comprueba repositorios y codecs instalados
+   ```
+
+---
+
+## 9. Navegador Google Chrome (`chrome.sh`)
+
+Activa el repositorio oficial de Google para Fedora e instala la versión nativa estable de Google Chrome:
+
+1. **Configuración de repositorio**:
+   - Descarga e importa la clave pública oficial de Google (`RPM-GPG-KEY-google-chrome`).
+   - Configura el repositorio `/etc/yum.repos.d/google-chrome.repo`.
+
+2. **Instalación de paquete**:
+   - Instala `google-chrome-stable`.
+
+3. **Uso**:
+   ```bash
+   ./Setup/chrome.sh          # Instala repositorio y navegador
+   ./Setup/chrome.sh --status # Verifica estado del repositorio y binario
+   ```
+
+---
+
+## 10. Steam y Juegos (`steam.sh`)
+
+Prepara el sistema para videojuegos nativos de PC y Proton/Wine mediante Steam:
+
+1. **Repositorios y componentes**:
+   - Repositorio `rpmfusion-nonfree-steam` activado.
+   - Paquetes de ejecución: `steam`, `gamemode`, `mangohud`.
+   - **Librerías Vulkan de 32 bits**: `mesa-vulkan-drivers.i686` y `mesa-dri-drivers.i686` para garantizar compatibilidad con títulos x86 de 32 bits.
+
+2. **Uso**:
+   ```bash
+   ./Setup/steam.sh          # Instala Steam y componentes 32-bit
+   ./Setup/steam.sh --status # Verifica estado de instalación
+   ```
+
+---
+
 ## Verificación
 
 Para comprobar que los componentes principales se instalaron y configuraron correctamente:
@@ -193,3 +252,7 @@ Para comprobar que los componentes principales se instalaron y configuraron corr
 - **Kitty**: Ejecuta `kitty --version`. Debería abrirse con opacidad y tema Catppuccin.
 - **Cockpit**: Abre tu navegador e ingresa a [https://localhost:9090](https://localhost:9090). Inicia sesión con tus credenciales de usuario del sistema.
 - **Firewalld**: Verifica con `sudo firewall-cmd --state`.
+- **Multimedia y Codecs**: Ejecuta `./Setup/multimedia.sh --status` y prueba `ffmpeg -codecs | grep -E "hevc|h264"`.
+- **Google Chrome**: Ejecuta `./Setup/chrome.sh --status` o `google-chrome --version`.
+- **Steam**: Ejecuta `./Setup/steam.sh --status` o `steam`.
+

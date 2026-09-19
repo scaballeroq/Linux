@@ -49,6 +49,9 @@ Operating system provisioning, performance tuning, and hardening scripts:
 - **`shell.sh`**: Modern CLI utilities (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd-find`, `btop`, `jq`).
 - **`starship.sh` & `starship.toml`**: Starship prompt manager and configuration.
 - **`yt-dlp-setup.sh`**: Full multimedia stack (yt-dlp, FFmpeg, AtomicParsley, aria2, Deno JS runtime).
+- **`multimedia.sh`**: Complete multimedia codecs stack, unrestricted FFmpeg swap, GStreamer plugins, and decrypted DVD support (`libdvdcss`) via RPM Fusion (Free, Nonfree, and Tainted).
+- **`chrome.sh`**: Official Google Chrome repository activation and `google-chrome-stable` installation.
+- **`steam.sh`**: Native Steam from RPM Fusion Nonfree with GameMode, MangoHud, and 32-bit Vulkan drivers (`mesa-vulkan-drivers.i686`).
 
 ### 💻 [IDE](./IDE/)
 - **`antigravity.sh`**: Google Antigravity Desktop installer with sandbox and Nautilus context menu.
@@ -92,6 +95,9 @@ just laptop              # Laptop optimization (Touchpad, Bluetooth, 95% brightn
 just tuning              # Apply sysctl, limits, systemd, and Tracker 3 exclusions
 just kitty               # Configure Kitty terminal with blur and opacity
 just virtualization      # Setup KVM/QEMU and libvirt
+just multimedia         # Install complete codecs, FFmpeg, and proprietary drivers
+just chrome             # Install official Google Chrome
+just steam              # Install native Steam and 32-bit Vulkan drivers
 just languages           # Install Node, Python, Rust, .NET, and Java
 just podman-setup        # Configure rootless Podman and Quadlets
 ```

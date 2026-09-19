@@ -50,6 +50,9 @@ Scripts de configuración del sistema operativo, personalización y endurecimien
 - **`shell.sh`**: Herramientas modernas de terminal (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd-find`, `btop`, `jq`).
 - **`starship.sh` & `starship.toml`**: Prompt Starship moderno con configuración temática Fedora.
 - **`yt-dlp-setup.sh`**: Dependencias para manejo multimedia (yt-dlp, FFmpeg, AtomicParsley, aria2, motor JS Deno).
+- **`multimedia.sh`**: Colección completa de codecs multimedia, FFmpeg sin restricciones, plugins GStreamer y soporte DVD descifrado (`libdvdcss`) vía RPM Fusion (Free, Nonfree y Tainted).
+- **`chrome.sh`**: Activación del repositorio oficial de Google Chrome e instalación de `google-chrome-stable`.
+- **`steam.sh`**: Instalación de Steam nativo desde RPM Fusion Nonfree con GameMode, MangoHud y drivers Vulkan de 32-bit (`mesa-vulkan-drivers.i686`).
 
 ### 💻 [IDE](./IDE/)
 - **`antigravity.sh`**: Google Antigravity Desktop setup (con sandbox y script contextual para Nautilus).
@@ -93,6 +96,9 @@ just laptop              # Optimización para portátiles (Touchpad, Bluetooth, 
 just tuning              # Aplica sysctl, límites, systemd y exclusiones Tracker 3
 just kitty               # Configura terminal Kitty con opacidad y desenfoque
 just virtualization      # Configura KVM/QEMU y libvirt
+just multimedia         # Instala codecs completos, FFmpeg y drivers privativos
+just chrome             # Instala Google Chrome oficial
+just steam              # Instala Steam nativo y drivers Vulkan 32-bit
 just languages           # Instala Node, Python, Rust, .NET y Java
 just podman-setup        # Configura Podman rootless y Quadlets
 ```

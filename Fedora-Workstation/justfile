@@ -2,15 +2,15 @@
 # (Fedora 44 Workstation + GNOME)
 
 # Instala todo el entorno por defecto (Auto-detección de CPU / Portátil AMD)
-setup-all: post-install laptop tuning gnome-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+setup-all: post-install multimedia chrome steam laptop tuning gnome-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
     @echo "🚀 Entorno completo de Fedora 44 Workstation (GNOME) configurado. Por favor, reinicia el sistema."
 
 # Perfil completo para Portátil de desarrollo (AMD Ryzen + Virtualización + Contenedores)
-setup-laptop-amd: post-install-amd laptop tuning gnome-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+setup-laptop-amd: post-install-amd multimedia chrome steam laptop tuning gnome-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
     @echo "🚀 Entorno Portátil AMD Ryzen (GNOME) configurado con éxito. Por favor, reinicia el sistema."
 
 # Perfil para Sobremesa (Intel Core - Sin virtualización ni batería)
-setup-media-desktop: post-install-intel tuning gnome-setup shell security fonts fastfetch kitty yt-dlp
+setup-media-desktop: post-install-intel multimedia chrome tuning gnome-setup shell security fonts fastfetch kitty yt-dlp
     @echo "🚀 Entorno Sobremesa Intel (GNOME) configurado con éxito. Por favor, reinicia el sistema."
 
 # =============================================================================
@@ -84,6 +84,18 @@ kitty:
 # Multimedia (yt-dlp stack, FFmpeg, AtomicParsley, aria2, motor JS Deno)
 yt-dlp:
     ./Setup/yt-dlp-setup.sh
+
+# Codecs multimedia completos, FFmpeg completo y drivers privativos (RPM Fusion Free/Nonfree/Tainted)
+multimedia:
+    ./Setup/multimedia.sh
+
+# Navegador Google Chrome oficial
+chrome:
+    ./Setup/chrome.sh
+
+# Steam nativo, GameMode, MangoHud y drivers Vulkan 32-bit (RPM Fusion Non-Free)
+steam:
+    ./Setup/steam.sh
 
 # =============================================================================
 # CONFIGURACIÓN DE RED Y VIRTUALIZACIÓN

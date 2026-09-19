@@ -22,13 +22,17 @@ if [ -f "$DNF5_CONF" ]; then
     fi
 fi
 
-# 2. Habilitar Repositorios RPM Fusion (Free y Non-Free)
-echo "Habilitando repositorios oficiales RPM Fusion Free y Non-Free..."
+# 2. Habilitar Repositorios RPM Fusion (Free, Non-Free y Tainted)
+echo "Habilitando repositorios oficiales RPM Fusion Free, Non-Free y Tainted..."
 sudo dnf5 install -y \
     https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
     https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm 2>/dev/null || true
 
-sudo dnf5 install -y rpmfusion-free-appstream-data rpmfusion-nonfree-appstream-data 2>/dev/null || true
+sudo dnf5 install -y \
+    rpmfusion-free-release-tainted \
+    rpmfusion-nonfree-release-tainted \
+    rpmfusion-free-appstream-data \
+    rpmfusion-nonfree-appstream-data 2>/dev/null || true
 
 # Actualizar metadatos y sistema
 echo "Actualizando base del sistema..."
@@ -95,6 +99,14 @@ sudo dnf5 install -y \
     gstreamer1-plugins-ugly \
     gstreamer1-plugin-openh264 \
     gstreamer1-vaapi \
+    gstreamer1-libav \
+    lame \
+    faac \
+    faad2 \
+    x264 \
+    x265 \
+    libde265 \
+    libdvdcss \
     libbluray \
     libdvdread \
     libdvdnav \
