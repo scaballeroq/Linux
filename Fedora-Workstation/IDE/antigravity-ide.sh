@@ -65,6 +65,7 @@ install_root="/opt/antigravity-ide"
 command_link="/usr/local/bin/antigravity-ide"
 desktop_file="/usr/share/applications/antigravity-ide.desktop"
 icon_file="/usr/share/icons/hicolor/512x512/apps/antigravity-ide.png"
+pixmap_file="/usr/share/pixmaps/antigravity-ide.png"
 archive_top_dir="Antigravity IDE"
 install_dir="Antigravity-IDE"
 managed_id="linuxcapable-antigravity-ide-v1"
@@ -162,7 +163,7 @@ cleanup() {
 		if [ "$icon_preexisting" = yes ] && [ -f "$icon_backup" ]; then
 			cp -a -- "$icon_backup" "$icon_file"
 		elif [ "$icon_preexisting" = no ] && [ -f "$icon_file" ]; then
-			rm -f -- "$icon_file"
+			rm -f -- "$icon_file" "$pixmap_file"
 		fi
 		if [ -f "$root_marker" ] && [ "$(cat "$root_marker")" = "$managed_id" ]; then
 			rm -rf -- "$install_root"
@@ -171,7 +172,7 @@ cleanup() {
 			update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
 		fi
 		if command -v gtk-update-icon-cache >/dev/null 2>&1; then
-			gtk-update-icon-cache -q /usr/share/icons/hicolor 2>/dev/null || true
+			gtk-update-icon-cache -f -t -q /usr/share/icons/hicolor 2>/dev/null || true
 		fi
 	fi
 	if [ "$committed" != yes ] && [ -n "$backup_root" ] && [ -d "$backup_root" ]; then
@@ -318,6 +319,15 @@ if [ "$installed_version" = "$version" ] &&
 		if [ "$desktop_legacy_owned" = yes ]; then
 			printf 'X-LinuxCapable-Managed=%s\n' "$managed_id" >>"$desktop_file"
 		fi
+		mkdir -p "$(dirname "$pixmap_file")"
+		ln -sf "$icon_file" "$pixmap_file"
+		if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+			gtk-update-icon-cache -f -t -q /usr/share/icons/hicolor 2>/dev/null || true
+		fi
+		if command -v update-desktop-database >/dev/null 2>&1; then
+			update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
+		fi
+		touch "$desktop_file"
 		printf 'Antigravity IDE %s is already installed at %s\n' "$version" "$install_root/$install_dir"
 		exit 0
 	fi
@@ -418,6 +428,8 @@ ln -sfn "$install_root/$install_dir/antigravity-ide" "$command_link"
 
 mkdir -p "$(dirname "$icon_file")"
 install -m 0644 "$icon_source" "$icon_file"
+mkdir -p "$(dirname "$pixmap_file")"
+ln -sf "$icon_file" "$pixmap_file"
 install -m 0644 "$desktop_staged" "$desktop_file"
 
 # Menú contextual para Nautilus en GNOME
@@ -437,7 +449,7 @@ if command -v update-desktop-database >/dev/null 2>&1; then
 fi
 
 if command -v gtk-update-icon-cache >/dev/null 2>&1; then
-	gtk-update-icon-cache -q /usr/share/icons/hicolor 2>/dev/null || true
+	gtk-update-icon-cache -f -t -q /usr/share/icons/hicolor 2>/dev/null || true
 fi
 
 payload_permissions_ok=no
