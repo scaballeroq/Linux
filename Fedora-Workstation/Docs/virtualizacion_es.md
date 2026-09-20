@@ -4,81 +4,136 @@ sidebar_position: 7
 
 # Entorno de Virtualización de Alto Rendimiento (KVM/QEMU) en Fedora 44
 
-Esta guía detalla la instalación, configuración y optimización del entorno de virtualización de alto rendimiento implementado en [`Virtualizacion/virtualization.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora/Virtualizacion/virtualization.sh) y documentado en [`Virtualizacion/Notas_Virtualizacion_Fedora.md`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora/Virtualizacion/Notas_Virtualizacion_Fedora.md).
+Esta guía detalla la instalación, configuración y optimización del entorno de virtualización de alto rendimiento implementado en [`Virtualizacion/virtualization.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora-Workstation/Virtualizacion/virtualization.sh) y documentado en [`Virtualizacion/notas_virtualizacion_fedora.md`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora-Workstation/Virtualizacion/notas_virtualizacion_fedora.md).
 
-El esquema utiliza el hipervisor **KVM** y el emulador **QEMU**, con pasarela de audio nativa **PipeWire**, filtrado de red **nftables**, aceleración por sockets **`vhost_vsock`**, demonios modulares de Libvirt y virtualización anidada.
+El esquema utiliza el hipervisor **KVM** y el emulador **QEMU**, con pasarela de audio nativa **PipeWire**, filtrado de red **nftables**, aceleración 3D **VirGL**, compartición de carpetas ultrarrápida **VirtioFS**, aceleración de memoria por sockets **`vhost_vsock`**, almacenamiento **Btrfs NoCoW**, demonios modulares de Libvirt 12+ y virtualización anidada.
 
 ---
 
-## 1. Instalación de Paquetes (`virtualization.sh`)
+## 1. Instalación y Diagnóstico (`virtualization.sh`)
 
-Instala el hipervisor KVM, QEMU, Virt-Manager, firmware UEFI (OVMF) con soporte TPM 2.0 (`swtpm`) y controladores VirtIO para Windows:
+Puedes comprobar el estado de los componentes o ejecutar la instalación y optimización automática:
 
 ```bash
+# Diagnóstico completo sin realizar modificaciones
+just virtualization-status
+# o ./Virtualizacion/virtualization.sh --status
+
+# Instalación y aprovisionamiento completo
 just virtualization
 # o ./Virtualizacion/virtualization.sh
 ```
 
-Paquetes instalados:
-- `qemu-kvm`, `libvirt-daemon-kvm`, `libvirt-client`, `virt-manager`, `virt-viewer`, `virt-top`, `virt-install`.
-- `virtio-win`: Controladores paravirtualizados oficiales de Fedora para Windows.
-- `swtpm`, `swtpm-tools`: Emulación de módulo TPM 2.0 para Windows 11.
-- `libguestfs-tools`, `tuned`, `acl`.
+Paquetes incluidos:
+- `qemu-kvm`, `libvirt-daemon-kvm`, `libvirt-client`, `virt-manager`, `virt-viewer`, `gnome-boxes`, `virt-top`, `virt-install`.
+- `virglrenderer`, `virtiofsd`: Aceleración 3D por GPU y carpetas compartidas de alto rendimiento.
+- `spice-vdagent`, `spice-gtk3`, `usbredir`: Integración fluida de portapapeles, resolución dinámica y redirección USB.
+- `swtpm`, `swtpm-tools`: Emulación de módulo TPM 2.0 para compatibilidad con Windows 11 y Linux UEFI SecureBoot.
+- `edk2-ovmf`: Firmware UEFI.
+- `libosinfo`, `osinfo-db`, `osinfo-db-tools`: Detección automática de distribuciones y perfiles óptimos de hardware.
+- `tuned`, `tuned-ppd`, `acl`, `dnsmasq`, `nftables`, `iptables-nft`.
 
 ---
 
-## 2. Aceleración del Kernel, Nested KVM y `vhost_vsock`
+## 2. Aceleración del Procesador y Virtualización Anidada (Nested KVM)
 
-1. **Virtualización Anidada (Nested KVM)**:
-   - Configura `nested=1` en `/etc/modprobe.d/kvm_intel.conf` o `kvm_amd.conf` para permitir ejecutar Docker, Podman o hipervisores secundarios dentro de máquinas virtuales.
-2. **Aceleración de Red y Sockets**:
-   - Carga los módulos de kernel `vhost_net` y `vhost_vsock` en `/etc/modules-load.d/kvm-vhost.conf` para comunicación ultra-rápida a nivel de memoria entre el anfitrión y las MVs.
+1. **Virtualización Anidada y Aceleración por Hardware**:
+   - **AMD Ryzen**: `/etc/modprobe.d/kvm_amd.conf` -> `options kvm_amd nested=1 avic=1 npt=1`
+     - Habilita AMD AVIC (*Advanced Virtual Interrupt Controller*) y NPT (*Nested Page Tables*).
+   - **Intel Core**: `/etc/modprobe.d/kvm_intel.conf` -> `options kvm_intel nested=1 ept=1 vpid=1 pml=1`
+     - Habilita Intel EPT (*Extended Page Tables*), VPID y PML.
+2. **Aceleración de Red y Sockets de Kernel**:
+   - Carga `vhost_net`, `vhost_vsock` y `tun` en `/etc/modules-load.d/kvm-vhost.conf` para comunicación host-guest con cero copias.
 
 ---
 
-## 3. Pasarela de Audio Nativa PipeWire (`/etc/libvirt/qemu.conf`)
+## 3. Integración de Sonido Nativo PipeWire (`/etc/libvirt/qemu.conf`)
 
-Permite a las MVs de QEMU reproducir audio directamente por el servidor PipeWire de tu usuario de escritorio sin retrasos ni necesidad de parches adicionales:
+Permite a las MVs de QEMU interactuar directamente con el servidor de sonido PipeWire del usuario de escritorio sin latencia ni distorsión:
 
 ```ini
-user = "caballero"
+user = "tu_usuario"
 group = "kvm"
+dynamic_ownership = 1
 ```
 
 ---
 
-## 4. Backend de Firewall Nftables (`/etc/libvirt/network.conf`)
+## 4. Backend de Firewall Nftables y Firewalld
 
-Configura `firewall_backend = "nftables"` para alinearse con el framework nativo de filtrado de paquetes de Fedora 44.
+- En `/etc/libvirt/network.conf`:
+  ```ini
+  firewall_backend = "nftables"
+  ```
+- En Firewalld:
+  La interfaz virtual `virbr0` se ubica en la zona `libvirt` con reenvío habilitado (`--add-forward`), y se activa `masquerade` en la zona de trabajo predeterminada (`FedoraWorkstation`).
 
 ---
 
-## 5. Sockets Modulares y Perfil Tuned (`virtual-host`)
+## 5. Regla Polkit para GNOME Wayland
 
-Activa los servicios y sockets por demanda para optimizar memoria RAM y rendimiento del procesador:
+Para evitar la solicitud constante de contraseñas de administrador en Virt-Manager y GNOME Boxes:
 
-```bash
-sudo systemctl enable --now virtqemud.socket virtnetworkd.socket virtstoraged.socket
-sudo systemctl enable --now tuned.service
-sudo tuned-adm profile virtual-host
+```javascript
+/* /etc/polkit-1/rules.d/50-libvirt.rules */
+polkit.addRule(function(action, subject) {
+    if (action.id.indexOf("org.libvirt") === 0 && subject.isInGroup("libvirt")) {
+        return polkit.Result.YES;
+    }
+});
 ```
 
 ---
 
-## 6. Permisos de Usuario y Directorio de Imágenes (ACL)
+## 6. Sockets Modulares de Libvirt 12+
 
-Asigna los grupos `libvirt` y `kvm` al usuario actual y configura listas de control de acceso (ACL) para que puedas crear y gestionar discos de máquinas virtuales sin necesidad de permisos de root:
+Libvirt 12+ en Fedora funciona mediante activación por socket bajo demanda:
 
 ```bash
-sudo usermod -aG libvirt,kvm $USER
+sudo systemctl enable --now \
+    virtqemud.socket \
+    virtnetworkd.socket \
+    virtstoraged.socket \
+    virtnodedevd.socket \
+    virtnwfilterd.socket \
+    virtsecretd.socket \
+    virtproxyd.socket
+```
+
+---
+
+## 7. Almacenamiento con Btrfs NoCoW (+C)
+
+Si `/var/lib/libvirt/images` reside en un sistema de archivos Btrfs (predeterminado en Fedora), se aplica el atributo `+C` para desactivar Copy-on-Write y evitar la fragmentación en discos virtuales:
+
+```bash
+sudo mkdir -p /var/lib/libvirt/images
+sudo chattr +C /var/lib/libvirt/images
+```
+
+---
+
+## 8. Permisos de Usuario y Grupos (`libvirt`, `kvm`, `render`)
+
+Se configuran los grupos y permisos ACL necesarios para operar máquinas virtuales sin elevación continua de privilegios y con aceleración 3D directa sobre `/dev/dri/renderD128`:
+
+```bash
+sudo usermod -aG libvirt,kvm,render $USER
 sudo setfacl -R -m u:$USER:rwX /var/lib/libvirt/images
 sudo setfacl -d -m u:$USER:rwX /var/lib/libvirt/images
 ```
 
+Variable de entorno configurada automáticamente en `~/.config/environment.d/10-libvirt.conf` y `~/.bashrc.d/virtualization.sh`:
+```bash
+export LIBVIRT_DEFAULT_URI="qemu:///system"
+```
+
 ---
 
-## Verificación
+## 9. Verificación y Mejores Prácticas para VMs Invitadas
 
-- **Estado de KVM**: Ejecuta `lsmod | grep kvm` para verificar la carga del módulo de tu procesador (`kvm_amd` o `kvm_intel`).
-- **Daemon Libvirt**: Ejecuta `virsh list --all` para verificar la conexión al hipervisor local.
-- **Virt-Manager**: Abre la aplicación gráfica **Gestor de máquinas virtuales** desde el menú de GNOME.
+- **Diagnóstico rápido**: `just virtualization-status`
+- **CPU**: Selecciona modelo `host-passthrough` en Virt-Manager.
+- **Gráficos**: SPICE local (sin escucha TCP) + OpenGL + Video `VirtIO` con aceleración 3D habilitada (VirGL).
+- **Disco**: VirtIO SCSI con caché `writeback`, motor `io_uring` y descarte `unmap`.
+- **Carpetas compartidas**: `virtiofs` gestionado por `virtiofsd`.

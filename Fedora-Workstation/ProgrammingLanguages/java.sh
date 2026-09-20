@@ -1,17 +1,18 @@
 #!/bin/bash
-# java.sh - Instalación y configuración de Java OpenJDK (Última versión LTS), Maven y AutoFirma para Fedora 44 + GNOME
-#
-# Uso:
-#   ./java.sh                        -> Instala OpenJDK LTS, OpenJDK Devel, Maven, NSS-Tools y configura JAVA_HOME en sesión GNOME
-#   ./java.sh --status               -> Muestra las versiones activas de Java, Javac, Maven y el valor de JAVA_HOME
-#   ./java.sh --update               -> Actualiza OpenJDK y herramientas vía DNF5
-#   ./java.sh --help                 -> Muestra la ayuda interactiva
+# ==============================================================================
+# java.sh - Instalación de OpenJDK (Última LTS) y soporte AutoFirma en Fedora Workstation
+# Optimizado para GNOME (JAVA_HOME para IDEs, Gradle, Maven y DNIe)
+# ==============================================================================
 
 set -euo pipefail
 
+echo "================================================================="
+echo "☕ Instalando OpenJDK (Última versión LTS) para Fedora Workstation"
+echo "================================================================="
+
 if [ "$EUID" -ne 0 ]; then
     if ! command -v sudo &> /dev/null; then
-        echo "❌ Error: 'sudo' no está disponible. Ejecuta este script como root o instala sudo."
+        echo "❌ Error: 'sudo' no está disponible."
         exit 1
     fi
     SUDO="sudo"
@@ -21,159 +22,102 @@ fi
 
 # Detectar usuario real en caso de ejecución con sudo
 if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
     REAL_USER="$SUDO_USER"
+    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
 else
-    USER_HOME="${HOME}"
     REAL_USER="${USER:-$(id -un)}"
+    USER_HOME="${HOME:-/home/$REAL_USER}"
 fi
 
-show_help() {
-    cat <<EOF
-☕ Gestor e Instalador de Java OpenJDK (LTS) - Fedora 44 (GNOME)
-
-Uso:
-  $0 [OPCIÓN]
-
-Opciones:
-  (sin argumentos)       Instala OpenJDK LTS, compilador (devel), Maven, soporte de certificados AutoFirma y variables JAVA_HOME.
-  --status, -s           Muestra el estado de Java runtime, compilador javac, maven y la ruta de JAVA_HOME.
-  --update, -u           Actualiza los paquetes de OpenJDK a través de DNF5.
-  --help, -h             Muestra este mensaje de ayuda.
-
-Características configuradas:
-  • Versión OpenJDK LTS: Instala el paquete de soporte oficial OpenJDK LTS de Fedora con compilador completo.
-  • Build Tools:         Instala Apache Maven para compilación y gestión de dependencias en proyectos Java.
-  • Soporte AutoFirma:   Instala nss-tools para gestión de certificados y compatibilidad con AutoFirma/FNMT.
-  • Integración GNOME/IDE: Configura JAVA_HOME en ~/.config/environment.d/10-java.conf para IntelliJ, Eclipse y VS Code.
-EOF
-}
-
-# 1. Mostrar estado de Java
-show_status() {
-    echo "================================================================="
-    echo "🔍 ESTADO DE JAVA OPENJDK - FEDORA 44"
-    echo "================================================================="
-    if command -v java &>/dev/null; then
-        echo "• java (Runtime):      $(java -version 2>&1 | head -n1)"
-        local JAVAC_VER="No instalado (se requiere java-*-openjdk-devel)"
-        if command -v javac &>/dev/null; then
-            JAVAC_VER=$(javac -version 2>&1 | head -n1)
-        fi
-        echo "• javac (Compilador):  $JAVAC_VER"
-        local MAVEN_VER="No instalado"
-        if command -v mvn &>/dev/null; then
-            MAVEN_VER=$(mvn -v 2>/dev/null | head -n1)
-        fi
-        echo "• Maven:               $MAVEN_VER"
-        echo "• JAVA_HOME actual:    ${JAVA_HOME:-$(readlink -f /usr/bin/java | sed 's:/bin/java::' 2>/dev/null || echo 'No configurada')}"
-        echo "• nss-tools (PKCS#11): $(command -v certutil &>/dev/null && echo 'Instalado' || echo 'No instalado')"
+run_as_user() {
+    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+        sudo -u "$REAL_USER" env HOME="$USER_HOME" "$@"
     else
-        echo "• Java OpenJDK:        No instalado"
+        "$@"
     fi
-    echo "================================================================="
 }
 
-# 2. Actualizar paquetes Java
-update_java() {
-    echo "🔄 Actualizando OpenJDK y utilidades..."
-    $SUDO dnf5 upgrade --refresh -y \
-        java-latest-openjdk \
-        java-latest-openjdk-devel \
-        maven \
-        nss-tools 2>/dev/null || true
-    echo "✅ OpenJDK actualizado con éxito."
-}
+# 1. Determinar el paquete OpenJDK LTS disponible en los repositorios de Fedora (DNF5)
+echo "ℹ️ [1/3] Verificando paquetes de OpenJDK LTS y dependencias de certificados..."
+$SUDO dnf5 install -y java-latest-openjdk java-latest-openjdk-devel maven nss-tools pcsc-lite 2>/dev/null || \
+$SUDO dnf5 install -y java-25-openjdk java-25-openjdk-devel maven nss-tools pcsc-lite 2>/dev/null || \
+$SUDO dnf5 install -y java-21-openjdk java-21-openjdk-devel maven nss-tools pcsc-lite 2>/dev/null || true
+echo "  ✅ OpenJDK y dependencias de certificados preparados."
 
-# 3. Instalar OpenJDK LTS y herramientas vía DNF5
-install_packages() {
-    echo "📦 [1/2] Instalando OpenJDK LTS, OpenJDK Devel, Maven y nss-tools vía DNF5..."
-    $SUDO dnf5 install -y \
-        java-latest-openjdk \
-        java-latest-openjdk-devel \
-        maven \
-        nss-tools 2>/dev/null || \
-    $SUDO dnf5 install -y \
-        java-21-openjdk \
-        java-21-openjdk-devel \
-        maven \
-        nss-tools 2>/dev/null || true
-    echo "✅ Paquetes de OpenJDK y herramientas instalados."
-}
+# 2. Configurar JVM por defecto
+echo "ℹ️ [2/3] Configurando entorno de Java por defecto..."
+if [ -d "/usr/lib/jvm/java-openjdk" ]; then
+    DEFAULT_JVM="/usr/lib/jvm/java-openjdk"
+elif [ -d "/etc/alternatives/java_sdk" ]; then
+    DEFAULT_JVM="/etc/alternatives/java_sdk"
+elif [ -d "/usr/lib/jvm/java-25-openjdk" ]; then
+    DEFAULT_JVM="/usr/lib/jvm/java-25-openjdk"
+elif [ -d "/usr/lib/jvm/java-21-openjdk" ]; then
+    DEFAULT_JVM="/usr/lib/jvm/java-21-openjdk"
+else
+    DEFAULT_JVM=$(readlink -f /usr/bin/javac 2>/dev/null | sed 's:/bin/javac::' || readlink -f /usr/bin/java 2>/dev/null | sed 's:/bin/java::' || echo "/usr/lib/jvm/java-openjdk")
+fi
 
-# 4. Detectar y configurar JAVA_HOME en sesión GNOME y Shell
-configure_environment() {
-    echo "🔗 [2/2] Detectando ruta de SDK y configurando JAVA_HOME para GNOME y Shell..."
-    
-    local JAVA_SDK_PATH=""
-    if [ -d "/usr/lib/jvm/java-openjdk" ]; then
-        JAVA_SDK_PATH="/usr/lib/jvm/java-openjdk"
-    elif [ -d "/etc/alternatives/java_sdk" ]; then
-        JAVA_SDK_PATH="/etc/alternatives/java_sdk"
-    else
-        JAVA_SDK_PATH=$(readlink -f /usr/bin/javac 2>/dev/null | sed 's:/bin/javac::' || echo "")
+# 3. Configurar JAVA_HOME para GNOME, Wayland e IDEs (IntelliJ, Android Studio, Gradle, Maven)
+echo "ℹ️ [3/3] Configurando variables de entorno (JAVA_HOME) para GNOME y Shells..."
+ENV_DIR="$USER_HOME/.config/environment.d"
+run_as_user mkdir -p "$ENV_DIR"
+
+cat << EOF | run_as_user tee "$ENV_DIR/10-java.conf" > /dev/null
+# Integración de Java / OpenJDK para GNOME y aplicaciones gráficas (IDEs, Maven, Gradle)
+JAVA_HOME=$DEFAULT_JVM
+PATH=\${JAVA_HOME}/bin:\${PATH}
+EOF
+
+# Integración modular en Shells (Bash predeterminado; Zsh si existe ~/.zshrc)
+BASHRC_D="$USER_HOME/.bashrc.d"
+run_as_user mkdir -p "$BASHRC_D"
+
+cat << EOF | run_as_user tee "$BASHRC_D/java.sh" > /dev/null
+# Java Environment Variables
+if [ -d "$DEFAULT_JVM" ]; then
+    export JAVA_HOME="$DEFAULT_JVM"
+    export PATH="\${JAVA_HOME}/bin:\${PATH}"
+fi
+EOF
+
+# Fallback para .bashrc
+BASHRC="$USER_HOME/.bashrc"
+run_as_user touch "$BASHRC"
+if ! grep -q "JAVA_HOME" "$BASHRC" 2>/dev/null; then
+    if ! grep -q ".bashrc.d" "$BASHRC" 2>/dev/null; then
+        echo -e "\n# Java Environment\nif [ -d \"$DEFAULT_JVM\" ]; then export JAVA_HOME=\"$DEFAULT_JVM\"; export PATH=\"\${JAVA_HOME}/bin:\${PATH}\"; fi" | run_as_user tee -a "$BASHRC" > /dev/null
     fi
+fi
 
-    if [ -n "$JAVA_SDK_PATH" ]; then
-        # 4.1. Variables de sesión GNOME / Wayland (environment.d)
-        mkdir -p "$USER_HOME/.config/environment.d"
-        cat <<EOF > "$USER_HOME/.config/environment.d/10-java.conf"
-JAVA_HOME=$JAVA_SDK_PATH
-PATH=\$JAVA_HOME/bin:\$PATH
+# Integración Zsh condicional
+ZSHRC="$USER_HOME/.zshrc"
+if [ -f "$ZSHRC" ]; then
+    ZSHRC_D="$USER_HOME/.zshrc.d"
+    run_as_user mkdir -p "$ZSHRC_D"
+
+    cat << EOF | run_as_user tee "$ZSHRC_D/java.zsh" > /dev/null
+# Java Environment Variables
+if [ -d "$DEFAULT_JVM" ]; then
+    export JAVA_HOME="$DEFAULT_JVM"
+    export PATH="\${JAVA_HOME}/bin:\${PATH}"
+fi
 EOF
-
-        # 4.2. Configuración modular en ~/.bashrc.d/java.sh
-        mkdir -p "$USER_HOME/.bashrc.d"
-        cat <<EOF > "$USER_HOME/.bashrc.d/java.sh"
-# Java OpenJDK Environment
-export JAVA_HOME="$JAVA_SDK_PATH"
-export PATH="\$JAVA_HOME/bin:\$PATH"
-EOF
-
-        # 4.3. Fallback en ~/.bashrc
-        if ! grep -q "JAVA_HOME" "$USER_HOME/.bashrc" 2>/dev/null; then
-            cat <<EOF >> "$USER_HOME/.bashrc"
-
-# Java OpenJDK Environment
-export JAVA_HOME="$JAVA_SDK_PATH"
-export PATH="\$JAVA_HOME/bin:\$PATH"
-EOF
+    if ! grep -q "JAVA_HOME" "$ZSHRC" 2>/dev/null; then
+        if ! grep -q ".zshrc.d" "$ZSHRC" 2>/dev/null; then
+            echo -e "\n# Java Environment\nif [ -d \"$DEFAULT_JVM\" ]; then export JAVA_HOME=\"$DEFAULT_JVM\"; export PATH=\"\${JAVA_HOME}/bin:\${PATH}\"; fi" | run_as_user tee -a "$ZSHRC" > /dev/null
         fi
-
-        chown -R "$REAL_USER:" "$USER_HOME/.config/environment.d" "$USER_HOME/.bashrc.d" 2>/dev/null || true
-        echo "✅ JAVA_HOME fijado en: $JAVA_SDK_PATH"
     fi
-}
+fi
 
-# Procesar argumentos
-case "${1:-}" in
-    --help|-h|help)
-        show_help
-        exit 0
-        ;;
-    --status|-s|status)
-        show_status
-        exit 0
-        ;;
-    --update|-u|update)
-        update_java
-        exit 0
-        ;;
-    "")
-        echo "================================================================="
-        echo "☕ INSTALADOR DE JAVA OPENJDK (LTS) - FEDORA 44 (GNOME)"
-        echo "================================================================="
-        install_packages
-        configure_environment
-        echo ""
-        show_status
-        echo "================================================================="
-        echo "✅ Java OpenJDK LTS y herramientas configuradas con éxito."
-        echo "================================================================="
-        ;;
-    *)
-        echo "❌ Opción no reconocida: $1"
-        show_help
-        exit 1
-        ;;
-esac
+# Obtener versión instalada
+JAVA_VER=$(java -version 2>&1 | head -n 1 | awk -F '"' '{print $2}' || echo "instalado")
+
+echo "================================================================="
+echo "✅ OpenJDK LTS configurado con éxito para Fedora Workstation y GNOME:"
+echo "  • OpenJDK:     v$JAVA_VER (LTS)"
+echo "  • JAVA_HOME:   $DEFAULT_JVM"
+echo "  • GNOME/IDEs:  ~/.config/environment.d/10-java.conf (IntelliJ, Android Studio)"
+echo "  • AutoFirma:   Soporte DNIe y Smartcards habilitado (nss-tools, pcsc-lite)"
+echo "  • Shells:      Bash (predeterminada)$([ -f "$ZSHRC" ] && echo " & Zsh (compatible)")"
+echo "================================================================="

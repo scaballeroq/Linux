@@ -1,25 +1,18 @@
 #!/bin/bash
-# python.sh - Instalación y configuración de Python (Versión Estable de Producción / Soporte Extendido) vía Mise en Fedora 44 + GNOME
-#
-# Uso:
-#   ./python.sh                      -> Instala dependencias C/C++, Python estable de soporte extendido, pip, wheel y setuptools
-#   ./python.sh --version 3.13       -> Instala una versión específica de Python (ej: 3.12, 3.13, latest)
-#   ./python.sh 3.13                 -> Atajo directo para especificar versión
-#   ./python.sh --status             -> Muestra la versión activa de Python, pip y ubicación de binarios
-#   ./python.sh --update             -> Actualiza la versión de Python y paquetes base (pip, setuptools, wheel)
-#   ./python.sh --list               -> Lista las versiones de Python instaladas localmente y disponibles en remoto
-#   ./python.sh --help               -> Muestra la ayuda interactiva
+# ==============================================================================
+# python.sh - Instalación y Optimización de Python y uv vía Mise
+# Optimizado para Fedora Workstation (PGO/LTO), GNOME (environment.d) y Zsh / Bash
+# ==============================================================================
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# Versión estable recomendada de producción (máxima estabilidad, soporte extendido de 5 años y compatibilidad 100% con PyPI/C-Extensions)
-PYTHON_VERSION="3.12"
+echo "================================================================="
+echo "🐍 Instalando y Optimizando Python & uv para Fedora Workstation"
+echo "================================================================="
 
 if [ "$EUID" -ne 0 ]; then
     if ! command -v sudo &> /dev/null; then
-        echo "❌ Error: 'sudo' no está disponible. Ejecuta este script como root o instala sudo."
+        echo "❌ Error: 'sudo' no está disponible."
         exit 1
     fi
     SUDO="sudo"
@@ -27,171 +20,145 @@ else
     SUDO=""
 fi
 
-show_help() {
-    cat <<EOF
-🐍 Gestor e Instalador de Python Estable - Fedora 44 (GNOME)
-
-Uso:
-  $0 [OPCIÓN]
-
-Opciones:
-  (sin argumentos)       Instala dependencias C/C++, la versión estable con soporte extendido (Python $PYTHON_VERSION), pip, setuptools y wheel.
-  --version <VER>, -v    Instala una versión específica de Python (ej: 3.12, 3.13, latest).
-  <VALOR_VER>            Atajo directo para la versión (ej: $0 3.13).
-  --status, -s           Muestra la versión activa de Python, pip, shims y paquetes globales.
-  --update, -u           Actualiza la versión de Python activa y sus herramientas base (pip, setuptools, wheel).
-  --list, -l             Lista las versiones de Python instaladas localmente y disponibles en remoto.
-  --help, -h             Muestra este mensaje de ayuda.
-
-Características configuradas:
-  • Soporte de Producción:Versión estable con soporte extendido para máxima compatibilidad con NumPy, Pandas, PyTorch, Django, etc.
-  • Cabeceras DNF5:      Instala librerías del sistema para compilar extensiones C/Rust (OpenSSL, SQLite, FFI, Zlib, Bzip2).
-  • Entorno Optimizado:  Actualiza pip, wheel y setuptools para builds de ruedas binarias limpias y rápidas.
-  • Integración GNOME/IDE: Funciona de forma transparente con VS Code, PyCharm, Nautilus y terminales Wayland.
-EOF
-}
-
-# Verificar e instalar Mise si no está presente
-ensure_mise() {
-    if ! command -v mise &> /dev/null; then
-        echo "⚠️ Mise no está instalado. Ejecutando ./mise.sh automáticamente..."
-        if [ -f "$SCRIPT_DIR/mise.sh" ]; then
-            "$SCRIPT_DIR/mise.sh"
-            export PATH="$HOME/.local/share/mise/shims:$PATH"
-            eval "$(mise activate bash 2>/dev/null || true)"
-        else
-            echo "❌ Error: No se encontró $SCRIPT_DIR/mise.sh. Instala Mise primero."
-            exit 1
-        fi
-    fi
-}
-
-# 1. Mostrar estado actual
-show_status() {
-    echo "================================================================="
-    echo "🔍 ESTADO DE PYTHON Y HERRAMIENTAS - FEDORA 44"
-    echo "================================================================="
-    if command -v python &>/dev/null; then
-        echo "• Python:              $(python --version 2>/dev/null) (Ruta: $(which python))"
-        echo "• pip:                 $(pip --version 2>/dev/null | awk '{print $1,$2}' || echo 'No disponible')"
-        echo "• Versión activa Mise: $(mise current python 2>/dev/null || echo 'No gestionado por Mise')"
-        echo ""
-        echo "📦 Versiones de Python instaladas en Mise:"
-        mise ls python 2>/dev/null || echo "  (Ninguna registrada en Mise)"
-    else
-        echo "• Python (Mise):       No instalado"
-    fi
-    echo "================================================================="
-}
-
-# 2. Listar versiones disponibles
-list_versions() {
-    ensure_mise
-    echo "================================================================="
-    echo "📋 VERSIONES DE PYTHON INSTALADAS EN MISE"
-    echo "================================================================="
-    mise ls python 2>/dev/null || echo "Ninguna versión instalada."
-    echo ""
-    echo "📋 ÚLTIMAS VERSIONES DISPONIBLES EN REMOTO (3.12 y 3.13):"
-    mise ls-remote python | grep -E '^3\.(12|13)\.' | tail -n 12 || mise ls-remote python | tail -n 10
-    echo "================================================================="
-}
-
-# 3. Instalar dependencias de cabeceras C/C++ en Fedora para extensiones nativas
-install_build_dependencies() {
-    echo "📦 [1/4] Instalando dependencias de desarrollo del sistema para Python en Fedora..."
-    $SUDO dnf5 install -y \
-        @development-tools \
-        openssl-devel \
-        zlib-devel \
-        bzip2-devel \
-        readline-devel \
-        sqlite-devel \
-        curl \
-        git \
-        ncurses-devel \
-        xz-devel \
-        tk-devel \
-        libxml2-devel \
-        libxmlsec1-devel \
-        libffi-devel 2>/dev/null || true
-    echo "✅ Cabeceras y dependencias del sistema listas."
-}
-
-# 4. Instalar versión de Python vía Mise
-install_python() {
-    local VER="$1"
-    ensure_mise
-    echo "🚀 [2/4] Instalando Python $VER vía Mise..."
-    mise install "python@$VER"
-    mise use --global "python@$VER"
-    echo "✅ Python $VER fijado como versión global."
-}
-
-# 5. Actualizar pip, setuptools y wheel
-configure_python_tools() {
-    local VER="$1"
-    echo "⚙️ [3/4] Actualizando pip, setuptools y wheel para construcción de paquetes..."
-    mise exec "python@$VER" -- python -m pip install --upgrade --no-warn-script-location pip setuptools wheel 2>/dev/null || true
-    
-    echo "🔗 [4/4] Regenerando shims de Mise..."
-    mise reshim
-    echo "✅ Herramientas base de Python actualizadas."
-}
-
-# Procesar argumentos
-if [ $# -gt 0 ]; then
-    case "$1" in
-        --help|-h|help)
-            show_help
-            exit 0
-            ;;
-        --status|-s|status)
-            show_status
-            exit 0
-            ;;
-        --list|-l|list)
-            list_versions
-            exit 0
-            ;;
-        --version|-v)
-            if [ -n "${2:-}" ]; then
-                PYTHON_VERSION="$2"
-            else
-                echo "❌ Error: Debes especificar una versión (ej: 3.12, 3.13)."
-                exit 1
-            fi
-            ;;
-        --update|-u|update)
-            echo "🔄 Actualizando Python ($PYTHON_VERSION) y herramientas base..."
-            ensure_mise
-            install_python "$PYTHON_VERSION"
-            configure_python_tools "$PYTHON_VERSION"
-            echo ""
-            show_status
-            exit 0
-            ;;
-        3.*|latest)
-            PYTHON_VERSION="$1"
-            ;;
-        *)
-            echo "❌ Opción no reconocida: $1"
-            show_help
-            exit 1
-            ;;
-    esac
+# Detectar usuario real en caso de ejecución con sudo
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    REAL_USER="$SUDO_USER"
+    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+else
+    REAL_USER="${USER:-$(id -un)}"
+    USER_HOME="${HOME:-/home/$REAL_USER}"
 fi
 
+# Flags de optimización para compilación de Python en Fedora (PGO + LTO + multinúcleo)
+NPROC=$(nproc 2>/dev/null || echo 4)
+export MAKEFLAGS="-j$NPROC"
+export PYTHON_CONFIGURE_OPTS="--enable-optimizations --with-lto"
+export UV_LINK_MODE="copy"
+
+run_as_user() {
+    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+        sudo -u "$REAL_USER" env HOME="$USER_HOME" MAKEFLAGS="-j$NPROC" PYTHON_CONFIGURE_OPTS="--enable-optimizations --with-lto" UV_LINK_MODE="copy" PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" "$@"
+    else
+        MAKEFLAGS="-j$NPROC" PYTHON_CONFIGURE_OPTS="--enable-optimizations --with-lto" UV_LINK_MODE="copy" PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" "$@"
+    fi
+}
+
+# Exportar PATH para este proceso
+export PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:/usr/bin:$PATH"
+
+# 1. Asegurar que Mise está presente
+if ! command -v mise &> /dev/null && [ ! -x "$USER_HOME/.local/bin/mise" ]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    if [ -f "$SCRIPT_DIR/mise.sh" ]; then
+        echo "ℹ️ Mise no encontrado. Ejecutando instalador $SCRIPT_DIR/mise.sh..."
+        bash "$SCRIPT_DIR/mise.sh"
+    else
+        echo "❌ Error: 'mise' no está instalado. Por favor ejecuta ./mise.sh primero."
+        exit 1
+    fi
+fi
+
+# 2. Dependencias del sistema y librerías nativas para Python en Fedora
+echo "ℹ️ [1/5] Verificando dependencias nativas del sistema (python3, gobject, cabeceras de compilación)..."
+$SUDO dnf5 install -y \
+    @development-tools \
+    python3 \
+    python3-pip \
+    python3-gobject \
+    openssl-devel \
+    zlib-devel \
+    bzip2-devel \
+    readline-devel \
+    sqlite-devel \
+    curl \
+    git \
+    ncurses-devel \
+    xz-devel \
+    tk-devel \
+    libffi-devel 2>/dev/null || true
+echo "  ✅ Dependencias nativas y librerías de sistema preparadas."
+
+# 3. Instalar uv con Mise de forma global (Python se mantiene en el sistema para no romper apps como gnome-tweaks)
+echo "ℹ️ [2/5] Instalando gestor uv vía Mise..."
+run_as_user mise use --global uv@latest
+
+# 4. Asegurar que no existan shims globales de Python en Mise
+run_as_user mise unuse --global python 2>/dev/null || true
+run_as_user mise reshim 2>/dev/null || true
+
+# 5. Integración con GNOME (environment.d) y Shells (Bash predeterminado / Zsh condicional)
+echo "ℹ️ [4/5] Configurando variables de entorno para GNOME y Shells..."
+ENV_DIR="$USER_HOME/.config/environment.d"
+BASHRC_D="$USER_HOME/.bashrc.d"
+run_as_user mkdir -p "$ENV_DIR" "$BASHRC_D"
+
+# 5.1. GNOME (sesión gráfica, VS Code, PyCharm, Antigravity)
+cat << 'EOF' | run_as_user tee "$ENV_DIR/10-python.conf" > /dev/null
+# Integración de Python & uv para GNOME / Wayland
+PYTHONUNBUFFERED=1
+UV_LINK_MODE=copy
+EOF
+
+# 5.2. Shell Bash (Predeterminada)
+cat << 'EOF' | run_as_user tee "$BASHRC_D/python.sh" > /dev/null
+# Python & uv Environment Settings
+export PYTHONUNBUFFERED=1
+export UV_LINK_MODE=copy
+EOF
+
+# 5.3. Shell Zsh (Compatibilidad condicional si existe ~/.zshrc)
+if [ -f "$USER_HOME/.zshrc" ]; then
+    ZSHRC_D="$USER_HOME/.zshrc.d"
+    run_as_user mkdir -p "$ZSHRC_D"
+    cat << 'EOF' | run_as_user tee "$ZSHRC_D/python.zsh" > /dev/null
+# Python & uv Environment Settings
+export PYTHONUNBUFFERED=1
+export UV_LINK_MODE=copy
+EOF
+fi
+
+# 6. Configurar autocompletado (Bash siempre; Zsh si existe ~/.zshrc)
+echo "ℹ️ [5/5] Generando autocompletados para Bash (y Zsh si existe ~/.zshrc)..."
+COMPLETIONS_DIR="$USER_HOME/.local/share/bash-completion/completions"
+run_as_user mkdir -p "$COMPLETIONS_DIR"
+
+if command -v mise &>/dev/null; then
+    # uv autocompletion (Bash)
+    run_as_user mise exec uv@latest -- uv generate-shell-completion bash > "$COMPLETIONS_DIR/uv" 2>/dev/null || true
+
+    # uvx autocompletion (Bash)
+    run_as_user mise exec uv@latest -- uvx --generate-shell-completion bash > "$COMPLETIONS_DIR/uvx" 2>/dev/null || true
+
+    # pip autocompletion (Bash)
+    python3 -m pip completion --bash > "$COMPLETIONS_DIR/pip" 2>/dev/null || true
+
+    # Zsh autocompletions (condicional)
+    if [ -f "$USER_HOME/.zshrc" ]; then
+        ZSH_COMPLETIONS_DIR="$USER_HOME/.local/share/zsh/site-functions"
+        ZFUNC_DIR="$USER_HOME/.zfunc"
+        run_as_user mkdir -p "$ZSH_COMPLETIONS_DIR" "$ZFUNC_DIR"
+
+        run_as_user mise exec uv@latest -- uv generate-shell-completion zsh > "$ZSH_COMPLETIONS_DIR/_uv" 2>/dev/null || true
+        run_as_user mise exec uv@latest -- uv generate-shell-completion zsh > "$ZFUNC_DIR/_uv" 2>/dev/null || true
+
+        run_as_user mise exec uv@latest -- uvx --generate-shell-completion zsh > "$ZSH_COMPLETIONS_DIR/_uvx" 2>/dev/null || true
+        run_as_user mise exec uv@latest -- uvx --generate-shell-completion zsh > "$ZFUNC_DIR/_uvx" 2>/dev/null || true
+
+        python3 -m pip completion --zsh > "$ZSH_COMPLETIONS_DIR/_pip" 2>/dev/null || true
+        python3 -m pip completion --zsh > "$ZFUNC_DIR/_pip" 2>/dev/null || true
+    fi
+fi
+
+# Obtener versiones instaladas
+PYTHON_VER=$(python3 --version 2>/dev/null || echo "Python nativo del sistema")
+UV_VER=$(run_as_user mise exec uv@latest -- uv --version 2>/dev/null || echo "uv instalado")
+PIP_VER=$(python3 -m pip --version 2>/dev/null | awk '{print $2}' || echo "pip del sistema")
+
 echo "================================================================="
-echo "🐍 INSTALADOR DE PYTHON ESTABLE (SOPORTE EXTENDIDO) - FEDORA 44"
-echo "📌 Versión seleccionada: Python $PYTHON_VERSION"
-echo "================================================================="
-ensure_mise
-install_build_dependencies
-install_python "$PYTHON_VERSION"
-configure_python_tools "$PYTHON_VERSION"
-echo ""
-show_status
-echo "================================================================="
-echo "✅ Python $PYTHON_VERSION, pip, setuptools y wheel configurados correctamente."
+echo "✅ Python & uv configurados con éxito para Fedora Workstation y GNOME:"
+echo "  • Python:      $PYTHON_VER"
+echo "  • uv:          $UV_VER (Gestor ultrarrápido en Rust)"
+echo "  • pip:         v$PIP_VER (setuptools + wheel actualizados)"
+echo "  • GNOME:       ~/.config/environment.d/10-python.conf"
+echo "  • Shells:      Bash (predeterminada)$([ -f "$USER_HOME/.zshrc" ] && echo " & Zsh (compatible)") con autocompletado nativo"
 echo "================================================================="

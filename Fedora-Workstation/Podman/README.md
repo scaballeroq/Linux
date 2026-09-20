@@ -46,10 +46,12 @@ just podman-setup
 ```
 
 Esto automatiza:
-- Instalación de complementos (`podman-compose`, `podman-docker`, `passt`).
+- Instalación de complementos (`podman-compose`, `podman-docker`, `passt`, `netavark`, `fuse-overlayfs`).
 - Persistencia de contenedores (`loginctl enable-linger $USER`).
 - Activación del socket de Podman en systemd user (`/run/user/$UID/podman/podman.sock`).
-- Inyección de `DOCKER_HOST` en `~/.config/environment.d/10-podman.conf` para IDEs (VS Code, JetBrains, DevContainers) en la sesión gráfica de GNOME.
+- Inyección de `DOCKER_HOST` en `~/.config/environment.d/10-podman.conf` para IDEs (VS Code, JetBrains, DevContainers, Antigravity) en la sesión gráfica de GNOME.
+- Integración en shells: configuración modular en `~/.bashrc.d/podman.sh` (y `~/.zshrc.d/podman.zsh` si existe Zsh) y adición de `~/.local/bin` al `PATH`.
+- Autocompletado de comandos para Podman y `podman-utils` en Bash y Zsh (condicional).
 - Despliegue de la estructura de Quadlets (`~/.config/containers/systemd/`).
 - Creación del symlink global `~/.local/bin/podman-utils`.
 
@@ -177,6 +179,10 @@ Servicios compartidos entre multiples proyectos.
 ### Instalar
 
 ```bash
+# Instalar todos los servicios compartidos a la vez:
+./install/quadlets-setup.sh --install-shared
+
+# O instalar servicios individualmente bajo demanda:
 # Proxy inverso global (un solo Traefik para todos los proyectos)
 podman-utils install-global traefik
 

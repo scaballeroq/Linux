@@ -6,7 +6,7 @@ set -euo pipefail
 echo "ℹ️ Verificando instalación de Podman en Fedora 44..."
 if ! command -v podman &> /dev/null; then
     echo "ℹ️ Instalando Podman y sus dependencias vía DNF5..."
-    sudo dnf5 install -y podman podman-compose podman-docker shadow-utils netavark passt
+    sudo dnf5 install -y podman podman-compose podman-docker shadow-utils netavark passt fuse-overlayfs
 else
     echo "✅ Podman ya está instalado."
 fi

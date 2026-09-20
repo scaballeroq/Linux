@@ -1,17 +1,18 @@
 #!/bin/bash
-# mise.sh - Instalador y configurador de Mise (Polyglot Tool & Runtime Version Manager) para Fedora 44 + GNOME
-#
-# Uso:
-#   ./mise.sh                        -> Instala Mise vía RPM oficial DNF5, configura autocompletado, sesión GNOME y shell
-#   ./mise.sh --status               -> Muestra el estado de instalación, herramientas activas y variables de entorno
-#   ./mise.sh --update               -> Actualiza Mise y todos los runtimes/herramientas instaladas
-#   ./mise.sh --help                 -> Muestra la ayuda interactiva
+# ==============================================================================
+# mise.sh - Instalador y Optimizador de Mise (Language Runtime Manager)
+# Adaptado para Fedora Workstation + GNOME (Wayland / Systemd User Environment)
+# ==============================================================================
 
 set -euo pipefail
 
+echo "================================================================="
+echo "⚡ Configurando Mise (Gestor de Runtimes) para Fedora Workstation + GNOME"
+echo "================================================================="
+
 if [ "$EUID" -ne 0 ]; then
     if ! command -v sudo &> /dev/null; then
-        echo "❌ Error: 'sudo' no está disponible. Ejecuta este script como root o instala sudo."
+        echo "❌ Error: 'sudo' no está disponible."
         exit 1
     fi
     SUDO="sudo"
@@ -21,73 +22,27 @@ fi
 
 # Detectar usuario real en caso de ejecución con sudo
 if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
     REAL_USER="$SUDO_USER"
+    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
 else
-    USER_HOME="${HOME}"
     REAL_USER="${USER:-$(id -un)}"
+    USER_HOME="${HOME:-/home/$REAL_USER}"
 fi
 
-show_help() {
-    cat <<EOF
-🚀 Instalador y Gestor de Mise - Fedora 44 (GNOME)
-
-Uso:
-  $0 [OPCIÓN]
-
-Opciones:
-  (sin argumentos)       Instala Mise vía DNF5, configura autocompletado, soporte modular bashrc y variables de sesión GNOME/Wayland.
-  --status, -s           Muestra el estado de Mise, herramientas instaladas y rutas de shims.
-  --update, -u           Actualiza Mise y todos los runtimes/lenguajes instalados.
-  --help, -h             Muestra este mensaje de ayuda.
-
-Características configuradas:
-  • Repositorio oficial RPM firmado con GPG para Fedora/DNF5.
-  • Integración modular en ~/.bashrc.d/mise.sh y ~/.bashrc.
-  • Autocompletado nativo en Bash para comandos de mise (mise use, ls, install, etc.).
-  • Variables de sesión Wayland/GNOME vía ~/.config/environment.d/10-mise.conf para que los IDEs (VSCode, JetBrains) reconozcan Node/Python/Rust automáticamente.
-  • Configuración predeterminada (~/.config/mise/config.toml) con soporte para archivos heredados (.nvmrc, .node-version, etc.).
-EOF
-}
-
-# 1. Mostrar estado de Mise
-show_status() {
-    echo "================================================================="
-    echo "🔍 ESTADO DE MISE (VERSION MANAGER) - FEDORA 44"
-    echo "================================================================="
-    if command -v mise &>/dev/null; then
-        echo "• Mise instalado:     $(mise --version 2>/dev/null || which mise)"
-        echo "• Ruta del binario:   $(which mise)"
-        echo "• Ruta de shims:      $USER_HOME/.local/share/mise/shims"
-        echo "• Configuración:      $USER_HOME/.config/mise/config.toml"
-        echo ""
-        echo "📦 Herramientas y versiones instaladas:"
-        mise ls 2>/dev/null || echo "  (Sin herramientas instaladas aún. Ejecuta ./nodejs.sh, ./python.sh, etc.)"
+run_as_user() {
+    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+        sudo -u "$REAL_USER" env HOME="$USER_HOME" "$@"
     else
-        echo "• Mise instalado:     No"
-    fi
-    echo "================================================================="
-}
-
-# 2. Actualizar Mise y runtimes
-update_mise() {
-    echo "🔄 Actualizando Mise y herramientas instaladas..."
-    if command -v dnf5 &>/dev/null && [ -f /etc/yum.repos.d/mise.repo ]; then
-        $SUDO dnf5 upgrade --refresh -y mise 2>/dev/null || true
-    fi
-    if command -v mise &>/dev/null; then
-        mise upgrade 2>/dev/null || true
-        mise reshim 2>/dev/null || true
-        echo "✅ Mise y todos sus runtimes han sido actualizados con éxito."
+        "$@"
     fi
 }
 
-# 3. Instalación de Mise mediante repositorio oficial RPM
-install_mise() {
-    if ! command -v mise &> /dev/null; then
-        echo "📦 [1/4] Configurando repositorio RPM oficial de Mise para DNF5..."
-        $SUDO rpm --import https://mise.jdx.dev/gpg-key.pub 2>/dev/null || true
-        $SUDO tee /etc/yum.repos.d/mise.repo > /dev/null << 'EOF'
+# 1. Instalación del binario Mise vía repositorio RPM oficial DNF5
+echo "ℹ️ [1/4] Verificando e instalando Mise..."
+if ! command -v mise &> /dev/null && [ ! -x "$USER_HOME/.local/bin/mise" ]; then
+    echo "⬇️ Configurando repositorio RPM oficial de Mise para DNF5..."
+    $SUDO rpm --import https://mise.jdx.dev/gpg-key.pub 2>/dev/null || true
+    $SUDO tee /etc/yum.repos.d/mise.repo > /dev/null << 'EOF'
 [mise]
 name=Mise
 baseurl=https://mise.jdx.dev/rpm
@@ -95,109 +50,101 @@ enabled=1
 gpgcheck=1
 gpgkey=https://mise.jdx.dev/gpg-key.pub
 EOF
+    echo "⬇️ Instalando Mise vía DNF5..."
+    $SUDO dnf5 install -y mise 2>/dev/null || {
+        echo "⚠️ Fallback: Descargando Mise standalone..."
+        run_as_user curl -fsSL https://mise.run | run_as_user sh
+    }
+else
+    echo "✅ Mise ya está instalado en el sistema."
+fi
 
-        echo "📦 [2/4] Instalando Mise vía DNF5..."
-        $SUDO dnf5 check-update --refresh || true
-        $SUDO dnf5 install -y mise 2>/dev/null || {
-            echo "⚠️ Falló la instalación por DNF5. Instalando vía script standalone oficial..."
-            curl -fsSL https://mise.run | sh
-        }
-    else
-        echo "📦 [1/4] Mise ya se encuentra instalado en el sistema ($(mise --version 2>/dev/null || echo 'OK'))."
-    fi
-}
+# Exportar PATH para la ejecución de este script
+export PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:/usr/bin:$PATH"
 
-# 4. Configuración global de Mise (~/.config/mise/config.toml)
-configure_mise_settings() {
-    echo "⚙️ [3/4] Generando configuración global de Mise..."
-    mkdir -p "$USER_HOME/.config/mise"
-    cat <<'EOF' > "$USER_HOME/.config/mise/config.toml"
-[settings]
-# Soporte para archivos de versiones heredados (.nvmrc, .node-version, .python-version, .tool-versions)
-legacy_version_file = true
+# 2. Integración con el entorno gráfico de GNOME (Systemd Environment Generators)
+# Permite que IDEs (Antigravity, VS Code, JetBrains) y el entorno GNOME hereden los runtimes de Mise
+echo "ℹ️ [2/4] Configurando variables de entorno para GNOME (environment.d)..."
+ENV_DIR="$USER_HOME/.config/environment.d"
+run_as_user mkdir -p "$ENV_DIR"
 
-# Instalación asistida si no encuentra una versión
-not_found_auto_install = true
-
-# Características avanzadas
-experimental = true
-EOF
-    chown -R "$REAL_USER:" "$USER_HOME/.config/mise" 2>/dev/null || true
-}
-
-# 5. Integración con Shell (Bash), Autocompletado y Sesión GNOME
-configure_shell_and_gnome() {
-    echo "🔗 [4/4] Configurando integración con Shell, autocompletado y sesión de GNOME..."
-    
-    # 5.1. Variables de entorno de sesión GNOME / Wayland (environment.d)
-    # Permite que VS Code, PyCharm, GNOME Shell y Nautilus hereden el PATH de shims de Mise
-    mkdir -p "$USER_HOME/.config/environment.d"
-    cat <<'EOF' > "$USER_HOME/.config/environment.d/10-mise.conf"
-PATH=$HOME/.local/share/mise/shims:$PATH
+cat << 'EOF' | run_as_user tee "$ENV_DIR/10-mise.conf" > /dev/null
+# Integración de Mise con la sesión gráfica de GNOME / Wayland
+PATH=${HOME}/.local/share/mise/shims:${HOME}/.local/bin:${PATH}
+MISE_SHELL=bash
+COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 EOF
 
-    # 5.2. Configuración modular en ~/.bashrc.d/mise.sh (estándar Fedora)
-    mkdir -p "$USER_HOME/.bashrc.d"
-    cat <<'EOF' > "$USER_HOME/.bashrc.d/mise.sh"
-# Mise (Language & Tool Version Manager)
-export PATH="$HOME/.local/share/mise/shims:$PATH"
+# 3. Integración en Shells (Bash y Zsh)
+echo "ℹ️ [3/4] Configurando integración en terminales (Bash & Zsh)..."
+
+# 3.1. Bash
+BASHRC_D="$USER_HOME/.bashrc.d"
+run_as_user mkdir -p "$BASHRC_D"
+cat << 'EOF' | run_as_user tee "$BASHRC_D/mise.sh" > /dev/null
+# =============================================================================
+# MISE VERSION MANAGER (Bash Shell Activation)
+# =============================================================================
 if command -v mise &>/dev/null; then
     eval "$(mise activate bash)"
 fi
 EOF
 
-    # 5.3. Fallback directo en ~/.bashrc si .bashrc.d no es cargado automáticamente
-    if ! grep -q "mise activate bash" "$USER_HOME/.bashrc" 2>/dev/null; then
-        cat <<'EOF' >> "$USER_HOME/.bashrc"
+# Fallback si no se lee .bashrc.d
+BASHRC="$USER_HOME/.bashrc"
+run_as_user touch "$BASHRC"
+if ! grep -q "mise activate" "$BASHRC" 2>/dev/null; then
+    if ! grep -q ".bashrc.d" "$BASHRC" 2>/dev/null; then
+        echo -e '\n# Mise (Language Version Manager)\nif command -v mise &>/dev/null; then eval "$(mise activate bash)"; fi' | run_as_user tee -a "$BASHRC" > /dev/null
+    fi
+fi
 
-# Mise (Language & Tool Version Manager)
-export PATH="$HOME/.local/share/mise/shims:$PATH"
+# 3.2. Zsh (Compatibilidad condicional si existe ~/.zshrc)
+ZSHRC="$USER_HOME/.zshrc"
+ZSHRC_D="$USER_HOME/.zshrc.d"
+if [ -f "$ZSHRC" ]; then
+    run_as_user mkdir -p "$ZSHRC_D"
+    cat << 'EOF' | run_as_user tee "$ZSHRC_D/mise.zsh" > /dev/null
+# =============================================================================
+# MISE VERSION MANAGER (Zsh Shell Activation)
+# =============================================================================
 if command -v mise &>/dev/null; then
-    eval "$(mise activate bash)"
+    eval "$(mise activate zsh)"
 fi
 EOF
+    if ! grep -q "mise activate zsh" "$ZSHRC" 2>/dev/null; then
+        echo -e '\n# Mise (Language Version Manager)\nif command -v mise &>/dev/null; then eval "$(mise activate zsh)"; fi' | run_as_user tee -a "$ZSHRC" > /dev/null
+        echo "  ✅ Activación de Mise añadida a ~/.zshrc"
     fi
+fi
 
-    # 5.4. Autocompletado nativo de Bash para comandos Mise
-    mkdir -p "$USER_HOME/.local/share/bash-completion/completions"
-    if command -v mise &>/dev/null; then
-        mise completion bash > "$USER_HOME/.local/share/bash-completion/completions/mise" 2>/dev/null || true
+# 3.3. Autocompletados (Bash siempre; Zsh condicional)
+COMPLETIONS_DIR="$USER_HOME/.local/share/bash-completion/completions"
+run_as_user mkdir -p "$COMPLETIONS_DIR"
+
+if command -v mise &>/dev/null; then
+    run_as_user mise completion bash > "$COMPLETIONS_DIR/mise" 2>/dev/null || true
+    if [ -f "$ZSHRC" ]; then
+        ZSH_COMPLETIONS_DIR="$USER_HOME/.local/share/zsh/site-functions"
+        ZFUNC_DIR="$USER_HOME/.zfunc"
+        run_as_user mkdir -p "$ZSH_COMPLETIONS_DIR" "$ZFUNC_DIR"
+        run_as_user mise completion zsh > "$ZSH_COMPLETIONS_DIR/_mise" 2>/dev/null || true
+        run_as_user mise completion zsh > "$ZFUNC_DIR/_mise" 2>/dev/null || true
     fi
+fi
 
-    chown -R "$REAL_USER:" "$USER_HOME/.config" "$USER_HOME/.bashrc.d" "$USER_HOME/.local" 2>/dev/null || true
-}
+# 4. Generar Shims iniciales
+echo "ℹ️ [4/4] Inicializando y regenerando shims de Mise..."
+if command -v mise &>/dev/null; then
+    run_as_user mise reshim 2>/dev/null || true
+fi
 
-# Procesar argumentos
-case "${1:-}" in
-    --help|-h|help)
-        show_help
-        exit 0
-        ;;
-    --status|-s|status)
-        show_status
-        exit 0
-        ;;
-    --update|-u|update)
-        update_mise
-        exit 0
-        ;;
-    "")
-        echo "================================================================="
-        echo "🚀 CONFIGURADOR DE MISE - FEDORA 44 (GNOME)"
-        echo "================================================================="
-        install_mise
-        configure_mise_settings
-        configure_shell_and_gnome
-        echo ""
-        echo "================================================================="
-        echo "✅ Mise configurado correctamente para Fedora 44 y GNOME."
-        echo "💡 Para cargar el entorno en la sesión actual ejecuta:"
-        echo "   source ~/.bashrc"
-        echo "================================================================="
-        ;;
-    *)
-        echo "❌ Opción no reconocida: $1"
-        show_help
-        exit 1
-        ;;
-esac
+echo "================================================================="
+echo "✅ Mise configurado con éxito para Fedora Workstation y GNOME:"
+echo "  • CLI & Shims:  ~/.local/share/mise/shims y /usr/bin/mise"
+echo "  • GNOME:        ~/.config/environment.d/10-mise.conf (sesión gráfica e IDEs)"
+echo "  • Shell Bash:   ~/.bashrc.d/mise.sh + autocompletado (Predeterminada)"
+if [ -f "$ZSHRC" ]; then
+    echo "  • Shell Zsh:    ~/.zshrc + autocompletado (_mise)"
+fi
+echo "================================================================="

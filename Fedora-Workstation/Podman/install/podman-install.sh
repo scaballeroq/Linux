@@ -46,10 +46,10 @@ Características configuradas:
   • Base Fedora 44:      Verifica e instala complementos opcionales (podman-compose, podman-docker, cockpit-podman, passt).
   • Persistencia Linger: Habilita loginctl linger para que contenedores y Quadlets sigan corriendo sin sesión de terminal abierta.
   • Docker Socket API:   Activa podman.socket en systemd user (/run/user/\$UID/podman/podman.sock).
-  • Sesión GNOME:   Inyecta DOCKER_HOST en ~/.config/environment.d/10-podman.conf para VS Code, DevContainers y KRunner.
+  • Sesión GNOME / GUI:  Inyecta DOCKER_HOST en ~/.config/environment.d/10-podman.conf para VS Code, DevContainers y Antigravity.
   • Almacenamiento:      Configura driver overlay nativo de Fedora en ~/.config/containers/storage.conf.
   • Registries:          Configura docker.io, quay.io, ghcr.io y registry.fedoraproject.org.
-  • CLI podman-utils:    Crea symlink en ~/.local/bin/podman-utils y autocompletado en Bash.
+  • CLI podman-utils:    Crea symlink en ~/.local/bin/podman-utils y autocompletado en Bash (y Zsh condicional).
 EOF
 }
 
@@ -90,6 +90,7 @@ install_packages() {
             podman-compose \
             podman-docker \
             passt \
+            netavark \
             fuse-overlayfs \
             shadow-utils 2>/dev/null || true
     fi
@@ -169,9 +170,9 @@ enable_podman_socket() {
     log_ok "Socket de Podman activo en /run/user/$(id -u)/podman/podman.sock."
 }
 
-# 8. Exportar DOCKER_HOST en sesión GNOME y Shell
+# 8. Exportar DOCKER_HOST en sesión GNOME y Shells (Bash predeterminado / Zsh condicional)
 configure_docker_host() {
-    log_info "Configurando DOCKER_HOST para GNOME / Wayland y Shell..."
+    log_info "Configurando DOCKER_HOST para GNOME / Wayland y Shells (Bash / Zsh)..."
     local socket_path="/run/user/$(id -u)/podman/podman.sock"
     local export_line="export DOCKER_HOST=\"unix://$socket_path\""
 
@@ -181,14 +182,20 @@ configure_docker_host() {
 DOCKER_HOST=unix://$socket_path
 EOF
 
-    # 8.2. Shell modular ~/.bashrc.d/podman.sh
+    # 8.2. Integración modular Bash (~/.bashrc.d/podman.sh) - PREDETERMINADO
     mkdir -p "$HOME/.bashrc.d"
     cat <<EOF > "$HOME/.bashrc.d/podman.sh"
 # Podman Docker API Integration
 $export_line
+
+# PATH para utilidades de usuario
+if [ -d "\$HOME/.local/bin" ] && [[ ":\$PATH:" != *":\$HOME/.local/bin:"* ]]; then
+    export PATH="\$HOME/.local/bin:\$PATH"
+fi
 EOF
 
     # 8.3. Fallback directo en ~/.bashrc
+    touch "$HOME/.bashrc"
     if ! grep -q "DOCKER_HOST=" "$HOME/.bashrc" 2>/dev/null; then
         cat <<EOF >> "$HOME/.bashrc"
 
@@ -197,7 +204,28 @@ $export_line
 EOF
     fi
 
-    log_ok "DOCKER_HOST integrado en sesión de GNOME y shell."
+    # 8.4. Integración modular Zsh (~/.zshrc.d/podman.zsh) - CONDICIONAL SI EXISTE ~/.zshrc
+    if [ -f "$HOME/.zshrc" ]; then
+        mkdir -p "$HOME/.zshrc.d"
+        cat <<EOF > "$HOME/.zshrc.d/podman.zsh"
+# Podman Docker API Integration
+$export_line
+
+# PATH para utilidades de usuario
+if [ -d "\$HOME/.local/bin" ] && [[ ":\$PATH:" != *":\$HOME/.local/bin:"* ]]; then
+    export PATH="\$HOME/.local/bin:\$PATH"
+fi
+EOF
+        if ! grep -q "DOCKER_HOST=" "$HOME/.zshrc" 2>/dev/null; then
+            cat <<EOF >> "$HOME/.zshrc"
+
+# Podman Docker API Integration
+$export_line
+EOF
+        fi
+    fi
+
+    log_ok "DOCKER_HOST integrado en GNOME, Bash (~/.bashrc.d/podman.sh) y Zsh (si ~/.zshrc existe)."
 }
 
 # 9. Enlazar podman-utils al PATH del usuario
@@ -211,7 +239,51 @@ setup_podman_utils_cli() {
     fi
 }
 
-# 10. Desplegar estructura de Quadlets
+# 10. Configurar autocompletado en Bash y Zsh (condicional)
+setup_completions() {
+    log_info "Configurando autocompletado para Bash (y Zsh si existe ~/.zshrc)..."
+    local bash_comp_dir="$HOME/.local/share/bash-completion/completions"
+    mkdir -p "$bash_comp_dir"
+
+    # Autocompletado oficial de Podman CLI (Bash)
+    if command -v podman &>/dev/null; then
+        podman completion bash > "$bash_comp_dir/podman" 2>/dev/null || true
+    fi
+
+    # Autocompletado de podman-utils CLI (Bash)
+    if [ -f "$PODMAN_ROOT/lib/podman-utils-completion.bash" ]; then
+        cp "$PODMAN_ROOT/lib/podman-utils-completion.bash" "$bash_comp_dir/podman-utils"
+    fi
+
+    # Autocompletados para Zsh (condicional)
+    if [ -f "$HOME/.zshrc" ]; then
+        local zsh_site_dir="$HOME/.local/share/zsh/site-functions"
+        local zfunc_dir="$HOME/.zfunc"
+        mkdir -p "$zsh_site_dir" "$zfunc_dir"
+
+        if command -v podman &>/dev/null; then
+            podman completion zsh > "$zsh_site_dir/_podman" 2>/dev/null || true
+            podman completion zsh > "$zfunc_dir/_podman" 2>/dev/null || true
+        fi
+
+        if [ -f "$PODMAN_ROOT/lib/podman-utils-completion.zsh" ]; then
+            cp "$PODMAN_ROOT/lib/podman-utils-completion.zsh" "$zsh_site_dir/_podman-utils"
+            cp "$PODMAN_ROOT/lib/podman-utils-completion.zsh" "$zfunc_dir/_podman-utils"
+        fi
+
+        if ! grep -q "site-functions" "$HOME/.zshrc" 2>/dev/null; then
+            cat <<'EOF' >> "$HOME/.zshrc"
+
+# Completions fpath
+fpath=($HOME/.local/share/zsh/site-functions $HOME/.zfunc $fpath)
+EOF
+        fi
+    fi
+
+    log_ok "Autocompletado configurado para Bash (y Zsh si existe ~/.zshrc)."
+}
+
+# 11. Desplegar estructura de Quadlets
 setup_quadlets() {
     log_info "Configurando estructura de directorios para Quadlets..."
     if [ -f "$SCRIPT_DIR/quadlets-setup.sh" ]; then
@@ -243,11 +315,12 @@ case "${1:-}" in
         enable_podman_socket
         configure_docker_host
         setup_podman_utils_cli
+        setup_completions
         setup_quadlets
         echo ""
         show_status
         echo "================================================================="
-        echo "✅ Podman Rootless y Quadlets configurados con éxito."
+        echo "✅ Podman Rootless y Quadlets configurados con éxito para Bash/Zsh y GNOME."
         echo "💡 Comandos útiles: podman-utils create <template> <nombre> | podman ps"
         echo "================================================================="
         ;;

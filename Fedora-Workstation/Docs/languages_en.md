@@ -2,11 +2,11 @@
 sidebar_position: 6
 ---
 
-# Programming Languages Management on Fedora 44
+# Programming Languages Management on Fedora 44 Workstation
 
 This guide details the installation, control, and maintenance of programming languages and their development environments managed in the `ProgrammingLanguages` folder.
 
-Environment management is centralized through **Mise** (runtimes and SDKs) and **Rustup** (Rust toolchain), supplemented by automated tasks configured via a `justfile`.
+Environment management is centralized through **Mise** (runtimes and SDKs) and **Rustup** (Rust toolchain), supplemented by automated tasks configured via a `justfile` and integrated natively with **GNOME (Wayland / systemd user session)** and terminal shells **Bash** (default) and **Zsh** (conditional compatibility).
 
 ---
 
@@ -29,62 +29,49 @@ Mise is a high-performance polyglot runtime and version manager written in Rust 
    ```
 
 2. **Shell and GNOME / Wayland Session Integration**:
-   - **GNOME / Wayland (`~/.config/environment.d/10-mise.conf`)**: Registers shims path `~/.local/share/mise/shims` in the desktop session so GUI IDEs (VS Code, JetBrains), GNOME Shell, and Nautilus detect Node/Python/Rust automatically.
-   - **Shell (`~/.bashrc.d/mise.sh`)**: Loads `eval "$(mise activate bash)"` modularly.
-   - **Shell Completions**: Generates native bash completion at `~/.local/share/bash-completion/completions/mise`.
-
-```bash
-# Execute via just or script:
-./ProgrammingLanguages/mise.sh
-
-# Check tool version status:
-./ProgrammingLanguages/mise.sh --status
-```
+   - For GNOME & Graphical Environments: `~/.config/environment.d/10-mise.conf`
+   - For Bash (default): `~/.bashrc.d/mise.sh` and native bash completions
+   - For Zsh (compatible if `~/.zshrc` exists): `~/.zshrc.d/mise.zsh` (`eval "$(mise activate zsh)"`) and `_mise` completions
 
 ---
 
-## 2. Language Runtimes and SDKs
+## 2. Language Runtimes and SDKs (Latest LTS Versions)
 
-Once Mise is installed, the following development environments are deployed globally:
+Once Mise is installed, the following optimized development environments are deployed globally:
 
-### Node.js (`nodejs.sh` and `angular.sh`)
-* **Dependencies**: Installs `@development-tools`, `gcc-c++`, `make`, `curl`, and `python3` via DNF5, which are required to build native C++ npm dependencies (`node-gyp`).
-* **Dynamic LTS Installation**: Configures the latest active Node.js LTS release globally and prepares Corepack (`pnpm` / `yarn`):
+### Node.js (`nodejs.sh`)
+* **Dependencies**: Checks and installs `@development-tools`, `gcc-c++`, `make`, `curl`, `python3`, and `libstdc++-devel` via DNF5, required to compile native npm dependencies (`node-gyp`).
+* **Dynamic LTS Installation**: Automatically installs and sets the **latest active LTS release** of Node.js:
   ```bash
-  ./ProgrammingLanguages/nodejs.sh
-  # or manually with mise:
   mise use --global node@lts
   ```
-* **Corepack**: Natively enables `pnpm` and `yarn` without global package conflicts:
+* **Corepack (pnpm / yarn)**: Enables Corepack unattended (`COREPACK_ENABLE_DOWNLOAD_PROMPT=0`) to make `pnpm` and `yarn` immediately available natively:
   ```bash
-  corepack enable
+  mise exec node@lts -- corepack enable
+  mise reshim
   ```
-* **Angular CLI**: Installs the official Angular CLI globally via Mise:
+
+### Angular CLI (`angular.sh`)
+* **Installation**: Installs the latest official Angular CLI globally using npm managed by Mise:
   ```bash
   mise use --global npm:@angular/cli@latest
   ```
+* **Optimizations**: Disables interactive telemetry prompts (`ng config -g cli.analytics false`) and generates completions for Bash (and Zsh if present).
 
-### Python (`python.sh`)
-* **Dependencies**: Installs system headers and libraries required to build native C/Rust extensions (`openssl-devel`, `zlib-devel`, `libffi-devel`, `sqlite-devel`, `bzip2-devel`, `readline-devel`).
-* **Stable Production Installation (Extended Support)**: Installs the recommended production release with extended bugfix support (3.12/3.13) and updates build tools (`pip`, `setuptools`, `wheel`):
-  ```bash
-  ./ProgrammingLanguages/python.sh
-  # or for a specific release (e.g., 3.13):
-  ./ProgrammingLanguages/python.sh --version 3.13
-  ```
+### Python & uv (`python.sh` & `python-uv-init.sh`)
+* **Dependencies**: Ensures `python3`, `python3-pip`, and `python3-gobject` along with system development headers via DNF5 for full GNOME integration.
+* **Installation**: Installs the high-performance **uv** package manager via Mise (`mise use --global uv@latest`) and preserves system Python intact to avoid breaking core utilities like *GNOME Tweaks* (`gnome-tweaks`).
+* **Project Generator**: Includes the scaffolding tool `python-uv-init.sh` to generate isolated projects with templates (FastAPI, CLI, Data Science).
+* **Complete Guide**: Refer to [python_uv_es.md](file:///home/caballero/Workspace/Repositorios/Linux/Fedora-Workstation/Docs/python_uv_es.md) for workflow details.
+* **GNOME & Shells**: Generates `~/.config/environment.d/10-python.conf`, `~/.bashrc.d/python.sh` (and `~/.zshrc.d/python.zsh` if `~/.zshrc` exists) and native completions for Bash and Zsh (`uv`, `uvx`, `pip`).
 
 ### .NET SDK (`dotnet.sh`)
-* **Dependencies**: Installs `libicu`, `openssl-devel`, `krb5-devel`, and `zlib-devel` for CoreCLR runtime support.
-* **LTS Installation**: Installs the official .NET SDK LTS release via Mise (`dotnet@lts` / `dotnet@8`) and disables telemetry:
+* **Dependencies**: Native CoreCLR runtime libraries (`libicu`, `openssl-devel`, `krb5-devel`, `zlib-devel`, `libunwind`).
+* **Installation**: Automatically installs and configures the Long Term Support **LTS** version of .NET:
   ```bash
-  ./ProgrammingLanguages/dotnet.sh
+  mise use --global dotnet@lts
   ```
-
-### Gemini CLI (`gemini.sh`)
-* **Installation**: Installs the Google Gemini command-line helper interface:
-  ```bash
-  mise use --global npm:@google/gemini-cli@latest
-  ```
+* **GNOME & IDEs**: Configures `DOTNET_ROOT` in `~/.config/environment.d/10-dotnet.conf` for JetBrains Rider, VS Code, and Antigravity, disabling telemetry.
 
 ---
 
@@ -94,29 +81,37 @@ Rust is managed through its official standard toolchain installer **Rustup** tra
 
 1. **System Build Dependencies**:
    ```bash
-   sudo dnf5 install -y @development-tools cmake openssl-devel pkgconf-pkg-config curl lld clang-devel
+   sudo dnf5 install -y @development-tools cmake openssl-devel pkgconf-pkg-config curl git lld clang-devel
    ```
 
-2. **Rustup Installer & IDE Components**:
-   Downloads the Stable toolchain and adds `rust-analyzer` (LSP), `clippy`, `rustfmt`, and `rust-src`:
+2. **Rustup Installer & Stable Channel**:
+   Downloads the installer and locks to the `stable` profile:
    ```bash
-   ./ProgrammingLanguages/rust.sh
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile default --no-modify-path
    ```
 
-3. **GNOME & Shell Session Integration**:
-   Registers `~/.cargo/bin` inside `~/.config/environment.d/10-rust.conf` (GNOME Wayland session) and `~/.bashrc.d/rust.sh`.
+3. **IDE Development Components**:
+   Installs `rust-analyzer`, `clippy`, `rustfmt`, and `rust-src` for full IDE support:
+   ```bash
+   rustup component add rust-src rust-analyzer clippy rustfmt
+   ```
 
-4. **Fast Binary Installer (`cargo-binstall`)**:
-   Downloads and integrates `cargo-binstall`, which installs Rust-written CLI tools directly from GitHub pre-compiled binaries instead of compiling them from source locally.
+4. **GNOME & Shell Session Integration**:
+   - GNOME / Systemd: `~/.config/environment.d/10-rust.conf`
+   - Bash & Zsh: `~/.bashrc.d/rust.sh` (and `~/.zshrc.d/rust.zsh` if `~/.zshrc` exists)
+   - Completions: `cargo` and `rustup` for Bash (and `_cargo` / `_rustup` for Zsh).
+
+5. **Fast Binary Installer (`cargo-binstall`)**:
+   Downloads and integrates `cargo-binstall`, which installs Rust CLI binaries directly from GitHub release assets without compiling from source locally.
 
 ---
 
-## 4. OpenJDK Java (LTS) compatible with AutoFirma (`java.sh`)
+## 4. OpenJDK Java (`java.sh`)
 
-Installs Fedora's official OpenJDK LTS package with full compiler support, Apache Maven, NSS tools for AutoFirma/FNMT, and configures the `JAVA_HOME` environment variable across GNOME sessions:
-```bash
-./ProgrammingLanguages/java.sh
-```
+Installs Fedora's OpenJDK LTS package via DNF5:
+* **Packages**: `java-latest-openjdk`, `java-latest-openjdk-devel` (with support for OpenJDK 25 / 21 LTS), along with `pcsc-lite`, `nss-tools`, and `maven` (smartcard, AutoFirma, FNMT, and DNIe support).
+* **JVM Management**: Auto-detects and sets the default Java environment in `/usr/lib/jvm/java-openjdk`.
+* **GNOME Integration**: Sets `JAVA_HOME` in `~/.config/environment.d/10-java.conf` for Android Studio, IntelliJ IDEA, Gradle, and Maven.
 
 ---
 
@@ -129,7 +124,7 @@ A `justfile` is included to trigger individual runtime installations using simpl
 mise:
     ./mise.sh
 
-# Installs Node
+# Installs Node.js LTS
 node:
     ./nodejs.sh
 
@@ -141,9 +136,20 @@ python:
 rust:
     ./rust.sh
 
-# Installs Gemini CLI
-gemini:
-    ./gemini.sh
+# Installs .NET SDK LTS
+dotnet:
+    ./dotnet.sh
+
+# Installs Java OpenJDK LTS
+java:
+    ./java.sh
+
+# Installs Angular CLI
+angular:
+    ./angular.sh
+
+# Installs all languages
+all: mise node python rust dotnet java angular
 ```
 
 You can execute any recipe with `just <recipe>` inside the `ProgrammingLanguages` folder.
