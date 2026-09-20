@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "=== Google Antigravity CLI Installer ==="
+echo "=== Google Antigravity CLI Installer for Fedora 44 ==="
 
 # --- Dependencies ---
-echo "[1/3] Installing dependencies..."
+echo "[1/3] Installing dependencies (Fedora 44)..."
 sudo dnf5 install -y curl
 
 # --- Initial CLI install ---
@@ -193,4 +193,4 @@ command -v agy
 agy --version
 
 echo ""
-echo "=== Antigravity CLI installed successfully ==="
+echo "=== Antigravity CLI installed successfully on Fedora 44 ==="

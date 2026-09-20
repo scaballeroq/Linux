@@ -2,21 +2,23 @@
 sidebar_position: 4
 ---
 
-# Git & Version Control Setup on Fedora 44
+# Git & Version Control Configuration on Fedora 44
 
-This guide details the version control environment and tools located in [`IDE/git.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora/IDE/git.sh) and [`IDE/github-cli.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora/IDE/github-cli.sh).
+This guide details the version control environment and optimized toolchain configured in [IDE/git.sh](../IDE/git.sh).
 
-The toolchain includes **Git**, **Git-Delta** visual diff pager, **Lazygit** interactive TUI, and the official **GitHub CLI (gh)**.
+The environment includes the standard **Git** client, the **Git-Delta** visual diff tool, the **Lazygit** terminal UI, and the official **GitHub CLI (gh)** unified into a single setup script.
 
 ---
 
-## 1. Automated Git, Delta & Lazygit Setup (`IDE/git.sh`)
+## 1. Unified Automation (`git.sh`)
 
-Automates installation and best-practice configurations:
+The main script automates installation via DNF5 and establishes modern version control best practices:
 
-1. **Git & Git-Delta Installation**:
+1. **Package Installation**:
    ```bash
-   sudo dnf5 install -y git git-delta
+   sudo dnf5 install -y git git-delta gh
+   # Lazygit via COPR or official release binary:
+   sudo dnf5 copr enable -y dejan/lazygit && sudo dnf5 install -y lazygit
    ```
 
 2. **Global User Configuration**:
@@ -26,12 +28,16 @@ Automates installation and best-practice configurations:
    ```
 
 3. **Modern Best Practices**:
-   - Default initial branch: `develop` (`init.defaultBranch develop`).
-   - Clean syncing: Default pull rebase (`pull.rebase true`).
-   - Default core editor: `nvim` (`core.editor nvim`).
+   - Default branch: `main` (`init.defaultBranch main`).
+   - Clean synchronization: Default to rebase on pull (`pull.rebase true`).
+   - Safe rebase: Automatic stash before rebase (`rebase.autoStash true`).
+   - Seamless push: Automatically set upstream on push (`push.autoSetupRemote true`).
+   - Clean stale remotes: `fetch.prune true`.
+   - Default editor: Smart detection (`nvim` -> `micro` -> `vim` -> `nano`).
+   - Branch ordering: Sorted by most recent commit date (`branch.sort -committerdate`).
 
-4. **Enhanced Visual Highlighting (Git-Delta)**:
-   Replaces the native diff pager with semantic syntax highlighting, side-by-side view, line numbers, and 3-way conflict styling (`zdiff3`):
+4. **Visual Highlighting (Git-Delta)**:
+   Enhances terminal diff readability by replacing the default pager with semantic coloring, side-by-side view, line numbers, hyperlinks, and improved conflict display (`zdiff3`):
    ```bash
    git config --global core.pager "delta"
    git config --global interactive.diffFilter "delta --color-only"
@@ -39,46 +45,33 @@ Automates installation and best-practice configurations:
    git config --global delta.light false
    git config --global delta.side-by-side true
    git config --global delta.line-numbers true
+   git config --global delta.hyperlinks true
    git config --global merge.conflictstyle zdiff3
    ```
 
-5. **Lazygit TUI Installation**:
-   Installs Lazygit via Fedora COPR or precompiled GitHub releases:
+5. **GitHub CLI (`gh`)**:
+   Sets SSH as default git protocol and configures the preferred editor:
    ```bash
-   sudo dnf5 copr enable -y dejan/lazygit
-   sudo dnf5 install -y lazygit
+   gh config set editor "$DEFAULT_EDITOR"
+   gh config set git_protocol ssh
    ```
 
 ---
 
-## 2. GitHub Command-Line Interface (`IDE/github-cli.sh`)
+## 2. Automation with Just
 
-Installs the official GitHub CLI (`gh`) via DNF5 to manage repositories, Pull Requests, Issues, and secrets from the terminal:
-
-```bash
-sudo dnf5 install -y gh
-```
-
-To authenticate with your GitHub account:
-```bash
-gh auth login
-```
-
----
-
-## 3. Automation with Just
-
-To deploy the entire Git setup in a single step:
+To deploy the entire version control toolchain with a single command:
 
 ```bash
 just git-setup
-# or ./IDE/git.sh && ./IDE/github-cli.sh
 ```
 
 ---
 
 ## Verification
 
-- **Git-Delta**: Run `git diff` on any repository with unstaged changes to verify the side-by-side visual diff.
-- **Lazygit**: Run `lazygit` inside a repository to open the terminal GUI.
-- **GitHub CLI**: Run `gh status` or `gh repo list` to check your authenticated session.
+To verify that the Git environment and its associated tools are properly configured:
+
+- **Git-Delta**: Run `git diff` in any repository with local changes to see side-by-side formatted diffs.
+- **Lazygit**: Run `lazygit` inside any Git repository to launch the terminal UI.
+- **GitHub CLI**: Run `gh auth status` or `gh auth login` to authenticate with your GitHub account.

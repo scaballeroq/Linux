@@ -58,7 +58,7 @@ Scripts de configuración del sistema operativo, personalización y endurecimien
 - **`antigravity.sh`**: Google Antigravity Desktop setup (con sandbox y script contextual para Nautilus).
 - **`antigravity-cli.sh`**: Google Antigravity CLI setup.
 - **`antigravity-ide.sh`**: Google Antigravity IDE Engine setup.
-- **`git.sh`**: Git, Delta, Lazygit y GitHub CLI setup con rama predeterminada `develop`.
+- **`git.sh`**: Git, Delta, Lazygit y GitHub CLI setup.
 - **`opencode.sh`**: OpenCode AI CLI setup.
 
 ### ⚡ [ProgrammingLanguages](./ProgrammingLanguages/)

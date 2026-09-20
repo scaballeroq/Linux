@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "=== Google Antigravity Desktop Installer ==="
+echo "=== Google Antigravity Desktop Installer for Fedora 44 ==="
 
 # --- Dependencies ---
-echo "[1/4] Installing dependencies..."
+echo "[1/4] Installing dependencies (Fedora 44)..."
 sudo dnf5 install -y ca-certificates curl tar desktop-file-utils python3
 
 # --- Helper script ---
@@ -161,8 +161,8 @@ cleanup() {
 		if command -v update-desktop-database >/dev/null 2>&1; then
 			update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
 		fi
-		if command -v kbuildsycoca6 >/dev/null 2>&1; then
-			kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
+		if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+			gtk-update-icon-cache -q /usr/share/icons/hicolor 2>/dev/null || true
 		fi
 	fi
 	if [ "$committed" != yes ] && [ -n "$backup_root" ] && [ -d "$backup_root" ]; then
@@ -399,6 +399,7 @@ Type=Application
 Categories=Development;IDE;
 StartupNotify=true
 StartupWMClass=Antigravity
+MimeType=text/plain;inode/directory;
 X-LinuxCapable-Managed=$managed_id
 DESKTOP
 desktop-file-validate "$desktop_staged"
@@ -451,6 +452,10 @@ NAUTILUS_SCRIPT
 	chown "$SUDO_USER:" "$USER_HOME/.local/share/nautilus/scripts/Abrir con Antigravity" 2>/dev/null || true
 fi
 
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+	gtk-update-icon-cache -q /usr/share/icons/hicolor 2>/dev/null || true
+fi
+
 payload_permissions_ok=no
 if ! find "$install_root/$top_dir" -xdev \
 	\( -type d ! -perm -0005 -o -type f ! -perm -0004 \) \
@@ -485,7 +490,7 @@ echo "Helper installed at $helper_path"
 
 # --- Install / Update Antigravity ---
 echo "[3/4] Installing Antigravity..."
-sudo /usr/local/bin/update-antigravity
+sudo update-antigravity
 
 # --- Verification ---
 echo "[4/4] Verifying installation..."
@@ -513,4 +518,4 @@ echo "Sandbox permissions:"
 stat -c '%U %G %a %n' /opt/antigravity/Antigravity-*/chrome-sandbox
 
 echo ""
-echo "=== Antigravity installed successfully ==="
+echo "=== Antigravity installed successfully on Fedora 44 ==="

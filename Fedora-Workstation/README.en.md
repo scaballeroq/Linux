@@ -57,7 +57,7 @@ Operating system provisioning, performance tuning, and hardening scripts:
 - **`antigravity.sh`**: Google Antigravity Desktop installer with sandbox and Nautilus context menu.
 - **`antigravity-cli.sh`**: Google Antigravity CLI suite.
 - **`antigravity-ide.sh`**: Google Antigravity IDE Engine installer.
-- **`git.sh`**: Git, Delta, Lazygit, and GitHub CLI setup with default branch `develop`.
+- **`git.sh`**: Git, Delta, Lazygit, and GitHub CLI setup.
 - **`opencode.sh`**: OpenCode AI CLI installer.
 
 ### ⚡ [ProgrammingLanguages](./ProgrammingLanguages/)
