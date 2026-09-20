@@ -83,18 +83,13 @@ show_status() {
 
 # 2. Verificar e instalar complementos opcionales con DNF5
 install_packages() {
-    log_info "Verificando paquetes y complementos de Podman en Fedora 44..."
+    log_info "Verificando complementos de Podman en Fedora (podman-compose, podman-docker)..."
     if command -v sudo &>/dev/null; then
         sudo dnf5 install -y \
-            podman \
             podman-compose \
-            podman-docker \
-            passt \
-            netavark \
-            fuse-overlayfs \
-            shadow-utils 2>/dev/null || true
+            podman-docker 2>/dev/null || true
     fi
-    log_ok "Paquetes de Podman verificados."
+    log_ok "Paquetes complementarios de Podman verificados."
 }
 
 # 3. Configurar almacenamiento overlay nativo
@@ -194,14 +189,15 @@ if [ -d "\$HOME/.local/bin" ] && [[ ":\$PATH:" != *":\$HOME/.local/bin:"* ]]; th
 fi
 EOF
 
-    # 8.3. Fallback directo en ~/.bashrc
-    touch "$HOME/.bashrc"
-    if ! grep -q "DOCKER_HOST=" "$HOME/.bashrc" 2>/dev/null; then
-        cat <<EOF >> "$HOME/.bashrc"
+    # 8.3. Fallback directo en ~/.bashrc solo si no procesa ~/.bashrc.d
+    if [ -f "$HOME/.bashrc" ] && ! grep -q "bashrc.d" "$HOME/.bashrc" 2>/dev/null; then
+        if ! grep -q "DOCKER_HOST=" "$HOME/.bashrc" 2>/dev/null; then
+            cat <<EOF >> "$HOME/.bashrc"
 
 # Podman Docker API Integration
 $export_line
 EOF
+        fi
     fi
 
     # 8.4. Integración modular Zsh (~/.zshrc.d/podman.zsh) - CONDICIONAL SI EXISTE ~/.zshrc
@@ -239,32 +235,22 @@ setup_podman_utils_cli() {
     fi
 }
 
-# 10. Configurar autocompletado en Bash y Zsh (condicional)
+# 10. Configurar autocompletado de podman-utils en Bash y Zsh (condicional)
 setup_completions() {
-    log_info "Configurando autocompletado para Bash (y Zsh si existe ~/.zshrc)..."
+    log_info "Configurando autocompletado para podman-utils en Bash (y Zsh si existe ~/.zshrc)..."
     local bash_comp_dir="$HOME/.local/share/bash-completion/completions"
     mkdir -p "$bash_comp_dir"
-
-    # Autocompletado oficial de Podman CLI (Bash)
-    if command -v podman &>/dev/null; then
-        podman completion bash > "$bash_comp_dir/podman" 2>/dev/null || true
-    fi
 
     # Autocompletado de podman-utils CLI (Bash)
     if [ -f "$PODMAN_ROOT/lib/podman-utils-completion.bash" ]; then
         cp "$PODMAN_ROOT/lib/podman-utils-completion.bash" "$bash_comp_dir/podman-utils"
     fi
 
-    # Autocompletados para Zsh (condicional)
+    # Autocompletado para Zsh (condicional)
     if [ -f "$HOME/.zshrc" ]; then
         local zsh_site_dir="$HOME/.local/share/zsh/site-functions"
         local zfunc_dir="$HOME/.zfunc"
         mkdir -p "$zsh_site_dir" "$zfunc_dir"
-
-        if command -v podman &>/dev/null; then
-            podman completion zsh > "$zsh_site_dir/_podman" 2>/dev/null || true
-            podman completion zsh > "$zfunc_dir/_podman" 2>/dev/null || true
-        fi
 
         if [ -f "$PODMAN_ROOT/lib/podman-utils-completion.zsh" ]; then
             cp "$PODMAN_ROOT/lib/podman-utils-completion.zsh" "$zsh_site_dir/_podman-utils"
@@ -280,7 +266,7 @@ EOF
         fi
     fi
 
-    log_ok "Autocompletado configurado para Bash (y Zsh si existe ~/.zshrc)."
+    log_ok "Autocompletado de podman-utils configurado."
 }
 
 # 11. Desplegar estructura de Quadlets

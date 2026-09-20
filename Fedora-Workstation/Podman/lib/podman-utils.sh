@@ -13,6 +13,7 @@ PROJECTS_DIR="$PODMAN_DIR/projects"
 SERVICES_SHARED="$PODMAN_DIR/services-shared"
 SYSTEMD_DIR="$HOME/.config/containers/systemd"
 SYSTEMD_GLOBAL="$SYSTEMD_DIR/global"
+SYSTEMD_USER_DIR="$HOME/.config/systemd/user"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -215,8 +216,9 @@ cmd_destroy() {
     log_step "Deteniendo servicios asociados a '$project'..."
     cmd_stop "$project" 2>/dev/null || true
 
-    log_step "Eliminando symlinks de systemd en ~/.config/containers/systemd/..."
+    log_step "Eliminando symlinks de systemd en ~/.config/containers/systemd/ y ~/.config/systemd/user/..."
     rm -f "$SYSTEMD_DIR/${project}"* 2>/dev/null || true
+    rm -f "$SYSTEMD_USER_DIR/${project}"*.target 2>/dev/null || true
 
     log_step "Eliminando contenedores de Podman..."
     local c_ids
@@ -253,9 +255,9 @@ link_project_to_systemd() {
     [ -z "$project" ] && return 1
     [ ! -d "$project_dir" ] && return 1
 
-    mkdir -p "$SYSTEMD_DIR"
+    mkdir -p "$SYSTEMD_DIR" "$SYSTEMD_USER_DIR"
 
-    for file in "$project_dir"/*.container "$project_dir"/*.network "$project_dir"/*.target "$project_dir"/*.volume; do
+    for file in "$project_dir"/*.container "$project_dir"/*.network "$project_dir"/*.volume; do
         [ -f "$file" ] || continue
         local basename
         basename="$(basename "$file")"
@@ -265,6 +267,12 @@ link_project_to_systemd() {
             ln -sf "$file" "$SYSTEMD_DIR/$basename"
         fi
     done
+
+    # Los archivos .target son unidades nativas de systemd (systemd user search path)
+    for file in "$project_dir"/*.target; do
+        [ -f "$file" ] || continue
+        ln -sf "$file" "$SYSTEMD_USER_DIR/$(basename "$file")"
+    done
 }
 
 cmd_link() {
@@ -273,7 +281,7 @@ cmd_link() {
 
     link_project_to_systemd "$project"
     systemctl --user daemon-reload
-    log_ok "Proyecto '$project' enlazado a ~/.config/containers/systemd/."
+    log_ok "Proyecto '$project' enlazado a ~/.config/containers/systemd/ y ~/.config/systemd/user/."
 }
 
 cmd_unlink() {
@@ -281,6 +289,7 @@ cmd_unlink() {
     [ -z "$project" ] && { log_error "Uso: podman-utils unlink <proyecto>"; exit 1; }
 
     rm -f "$SYSTEMD_DIR/${project}"* 2>/dev/null || true
+    rm -f "$SYSTEMD_USER_DIR/${project}"*.target 2>/dev/null || true
     systemctl --user daemon-reload
     log_ok "Proyecto '$project' desenlazado de systemd."
 }

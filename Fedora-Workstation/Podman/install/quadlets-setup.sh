@@ -65,13 +65,15 @@ show_status() {
 }
 
 setup_systemd_dirs() {
-    log_info "Creando directorios de systemd para Quadlets..."
+    log_info "Creando directorios de systemd para Quadlets y unidades de usuario..."
     mkdir -p "$HOME/.config/containers/systemd"
     mkdir -p "$HOME/.config/containers/systemd/global"
+    mkdir -p "$HOME/.config/systemd/user"
 
     log_ok "Directorios creados:"
-    echo "  ~/.config/containers/systemd/        -> Proyectos activos"
+    echo "  ~/.config/containers/systemd/        -> Proyectos activos (Quadlets)"
     echo "  ~/.config/containers/systemd/global/ -> Servicios compartidos globales"
+    echo "  ~/.config/systemd/user/              -> Targets y unidades nativas systemd"
 }
 
 setup_podman_dirs() {

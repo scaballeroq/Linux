@@ -8,7 +8,6 @@ ContainerName=redis-global
 Image=docker.io/library/redis:7-alpine
 Volume=redis-global-data:/data
 PublishPort=6379:6379
-Network=host
 
 [Service]
 Restart=on-failure

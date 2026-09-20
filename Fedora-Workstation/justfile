@@ -192,7 +192,6 @@ opencode:
 # Configuración completa de Podman Rootless y Quadlets
 podman-setup:
     ./Podman/install/podman-install.sh
-    ./Podman/install/quadlets-setup.sh
 
 # Configuración base de Podman Rootless
 podman-base:

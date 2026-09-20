@@ -26,6 +26,8 @@ Podman/
 │   ├── postgres-global.container  # PostgreSQL compartido
 │   └── redis-global.container     # Redis compartido
 │
+├── scripts-standalone/       # Scripts individuales auxiliares (podman run directo)
+│
 └── projects/                 # Tus proyectos (gitignored)
 ```
 
