@@ -28,6 +28,20 @@ else
     REAL_USER="${USER:-$(id -un)}"
 fi
 
+REAL_UID=$(id -u "$REAL_USER" 2>/dev/null || echo "1000")
+
+run_as_user() {
+    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+        sudo -u "$REAL_USER" env \
+            HOME="$USER_HOME" \
+            USER="$REAL_USER" \
+            PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" \
+            "$@"
+    else
+        "$@"
+    fi
+}
+
 show_help() {
     cat <<EOF
 🎬 Optimizador y Gestor de yt-dlp - Fedora 44 (GNOME)
@@ -112,9 +126,9 @@ install_packages() {
 # 4. Configurar motor JavaScript (Deno) para yt-dlp
 configure_js_engine() {
     echo "⚡ [2/3] Configurando motor JavaScript (Deno) para retos de descifrado de YouTube..."
-    if command -v mise &> /dev/null; then
-        mise use --global deno@latest 2>/dev/null || true
-        mise reshim 2>/dev/null || true
+    if run_as_user command -v mise &> /dev/null || [ -x "$USER_HOME/.local/bin/mise" ]; then
+        run_as_user mise use --global deno@latest 2>/dev/null || true
+        run_as_user mise reshim 2>/dev/null || true
         echo "✅ Deno configurado globalmente con Mise."
     elif ! command -v deno &>/dev/null && ! command -v node &>/dev/null; then
         echo "ℹ️ Instalando NodeJS como motor JS de respaldo..."
@@ -125,9 +139,9 @@ configure_js_engine() {
 # 5. Generar configuración optimizada (~/.config/yt-dlp/config)
 generate_config() {
     echo "⚙️ [3/3] Generando configuración optimizada en $USER_HOME/.config/yt-dlp/config..."
-    mkdir -p "$USER_HOME/.config/yt-dlp"
+    run_as_user mkdir -p "$USER_HOME/.config/yt-dlp"
     
-    cat <<'EOF' > "$USER_HOME/.config/yt-dlp/config"
+    cat <<'EOF' | run_as_user tee "$USER_HOME/.config/yt-dlp/config" > /dev/null
 # =============================================================================
 # CONFIGURACIÓN GLOBAL DE YT-DLP - FEDORA 44 (GNOME)
 # =============================================================================
@@ -151,7 +165,6 @@ generate_config() {
 --embed-subs
 EOF
 
-    chown -R "$REAL_USER:" "$USER_HOME/.config/yt-dlp" 2>/dev/null || true
     echo "✅ Configuración ~/.config/yt-dlp/config lista."
 }
 

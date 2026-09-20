@@ -36,9 +36,16 @@ else
     USER_HOME="${HOME:-/home/$REAL_USER}"
 fi
 
+REAL_UID=$(id -u "$REAL_USER" 2>/dev/null || echo "1000")
+
 run_as_user() {
     if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-        sudo -u "$REAL_USER" env HOME="$USER_HOME" "$@"
+        sudo -u "$REAL_USER" env \
+            HOME="$USER_HOME" \
+            USER="$REAL_USER" \
+            XDG_RUNTIME_DIR="/run/user/$REAL_UID" \
+            DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$REAL_UID/bus}" \
+            "$@"
     else
         "$@"
     fi
@@ -142,6 +149,11 @@ net.ipv4.tcp_notsent_lowat = 16384
 net.core.somaxconn = 8192
 net.ipv4.tcp_max_syn_backlog = 8192
 EOF
+
+    # Asegurar que el módulo tcp_bbr se cargue en el arranque para sysctl
+    $SUDO mkdir -p /etc/modules-load.d
+    echo "tcp_bbr" | $SUDO tee /etc/modules-load.d/bbr.conf > /dev/null
+    $SUDO modprobe tcp_bbr 2>/dev/null || true
 
     $SUDO sysctl --system > /dev/null || true
     echo "✅ Parámetros de Kernel Sysctl aplicados correctamente."

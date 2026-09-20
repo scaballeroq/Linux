@@ -29,9 +29,16 @@ else
     USER_HOME="${HOME:-/home/$REAL_USER}"
 fi
 
+REAL_UID=$(id -u "$REAL_USER" 2>/dev/null || echo "1000")
+
 run_as_user() {
     if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-        sudo -u "$REAL_USER" env HOME="$USER_HOME" "$@"
+        sudo -u "$REAL_USER" env \
+            HOME="$USER_HOME" \
+            USER="$REAL_USER" \
+            XDG_RUNTIME_DIR="/run/user/$REAL_UID" \
+            DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$REAL_UID/bus}" \
+            "$@"
     else
         "$@"
     fi
@@ -110,11 +117,11 @@ fi
 
 # 2. Crear directorio de configuracion
 echo "⚙️ [2/4] Creando directorios de configuracion en $USER_HOME/.config/kitty..."
-mkdir -p "$USER_HOME/.config/kitty"
+run_as_user mkdir -p "$USER_HOME/.config/kitty"
 
 # 3. Generar kitty.conf con tema oscuro, opacidad translucida y efectos
 echo "🎨 [3/4] Generando configuracion (Opacidad ${OPACITY}, Blur ${BLUR_RADIUS})..."
-cat <<EOF > "$USER_HOME/.config/kitty/kitty.conf"
+cat <<EOF | run_as_user tee "$USER_HOME/.config/kitty/kitty.conf" > /dev/null
 # =============================================================================
 # KITTY CONFIGURATION - FEDORA 44 + GNOME
 # =============================================================================
@@ -270,7 +277,19 @@ run_as_user mkdir -p "$NAUTILUS_SCRIPTS_DIR"
 
 cat <<'EOF' | run_as_user tee "$NAUTILUS_SCRIPTS_DIR/Abrir en Kitty" > /dev/null
 #!/bin/sh
-kitty --directory "${1:-.}" &
+target=""
+if [ -n "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" ]; then
+    first=$(echo "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" | head -n1)
+    if [ -d "$first" ]; then
+        target="$first"
+    elif [ -f "$first" ]; then
+        target="$(dirname "$first")"
+    fi
+fi
+if [ -z "$target" ] && [ -n "$NAUTILUS_SCRIPT_CURRENT_URI" ]; then
+    target=$(echo "$NAUTILUS_SCRIPT_CURRENT_URI" | sed 's|^file://||' | python3 -c "import sys, urllib.parse; print(urllib.parse.unquote(sys.stdin.read().strip()))" 2>/dev/null || true)
+fi
+exec kitty --directory "${target:-${1:-.}}" &
 EOF
 run_as_user chmod +x "$NAUTILUS_SCRIPTS_DIR/Abrir en Kitty" 2>/dev/null || true
 

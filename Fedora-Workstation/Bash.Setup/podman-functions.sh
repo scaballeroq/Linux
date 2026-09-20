@@ -2,6 +2,9 @@
 # FUNCIONES PARA PODMAN (podman-functions.sh) - Adaptado para Zsh y Bash
 # =============================================================================
 
+# Evitar ejecución en subshells y sesiones no interactivas
+[[ $- != *i* ]] && return 0 2>/dev/null || true
+
 # -----------------------------------------------------------------------------
 # pexec: Ejecutar comandos en un contenedor
 # Uso: pexec <contenedor> [comando]
@@ -124,7 +127,21 @@ prmi-all() {
 
 # Quadlets de Podman (Systemd User Units)
 alias quadlet-reload='systemctl --user daemon-reload'
-alias quadlet-status='systemctl --user status "container-*"'
+quadlet-status() {
+    local -a units=()
+    if [ -d "$HOME/.config/containers/systemd" ]; then
+        while IFS= read -r -d '' f; do
+            local base
+            base="$(basename "$f" .container).service"
+            units+=("$base")
+        done < <(find "$HOME/.config/containers/systemd" -name "*.container" -print0 2>/dev/null)
+    fi
+    if [ ${#units[@]} -gt 0 ]; then
+        systemctl --user status "${units[@]}"
+    else
+        systemctl --user list-units "*podman*" 2>/dev/null || echo "ℹ️ No hay servicios Quadlets configurados."
+    fi
+}
 quadlet-logs() {
     local service="${1:-container}"
     journalctl --user -u "$service" -f -n 50

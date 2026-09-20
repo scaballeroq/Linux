@@ -70,9 +70,11 @@ echo "ℹ️ [3/3] Configurando variables de entorno e integración de IDEs..."
 ENV_DIR="$USER_HOME/.config/environment.d"
 run_as_user mkdir -p "$ENV_DIR"
 
-cat << 'EOF' | run_as_user tee "$ENV_DIR/10-dotnet.conf" > /dev/null
+DOTNET_DIR="$(run_as_user mise where dotnet 2>/dev/null || echo "$USER_HOME/.local/share/mise/installs/dotnet/lts")"
+
+cat << EOF | run_as_user tee "$ENV_DIR/10-dotnet.conf" > /dev/null
 # Integración de .NET SDK para GNOME, JetBrains Rider, VS Code y Antigravity
-DOTNET_ROOT=${HOME}/.local/share/mise/installs/dotnet/lts
+DOTNET_ROOT=$DOTNET_DIR
 DOTNET_CLI_TELEMETRY_OPTOUT=1
 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
 EOF
@@ -81,8 +83,11 @@ EOF
 BASHRC_D="$USER_HOME/.bashrc.d"
 run_as_user mkdir -p "$BASHRC_D"
 
-cat << 'EOF' | run_as_user tee "$BASHRC_D/dotnet.sh" > /dev/null
+cat << EOF | run_as_user tee "$BASHRC_D/dotnet.sh" > /dev/null
 # .NET Environment Variables
+if [ -d "$DOTNET_DIR" ]; then
+    export DOTNET_ROOT="$DOTNET_DIR"
+fi
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
 EOF

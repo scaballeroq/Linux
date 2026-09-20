@@ -110,7 +110,19 @@ run_as_user mkdir -p "$NAUTILUS_SCRIPTS_DIR"
 
 cat << 'EOF' | run_as_user tee "$NAUTILUS_SCRIPTS_DIR/Abrir en Kitty" > /dev/null
 #!/bin/sh
-kitty --directory "${1:-.}" &
+target=""
+if [ -n "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" ]; then
+    first=$(echo "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" | head -n1)
+    if [ -d "$first" ]; then
+        target="$first"
+    elif [ -f "$first" ]; then
+        target="$(dirname "$first")"
+    fi
+fi
+if [ -z "$target" ] && [ -n "$NAUTILUS_SCRIPT_CURRENT_URI" ]; then
+    target=$(echo "$NAUTILUS_SCRIPT_CURRENT_URI" | sed 's|^file://||' | python3 -c "import sys, urllib.parse; print(urllib.parse.unquote(sys.stdin.read().strip()))" 2>/dev/null || true)
+fi
+exec kitty --directory "${target:-${1:-.}}" &
 EOF
 run_as_user chmod +x "$NAUTILUS_SCRIPTS_DIR/Abrir en Kitty" 2>/dev/null || true
 

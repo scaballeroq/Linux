@@ -4,6 +4,9 @@
 # Este archivo contiene atajos (aliases) para comandos utilizados frecuentemente.
 # Optimizado para Fedora 44 Workstation con GNOME, Wayland y herramientas Rust.
 
+# Evitar ejecución en subshells y sesiones no interactivas (ej: scp, rsync)
+[[ $- != *i* ]] && return 0 2>/dev/null || true
+
 # 1. NAVEGACIÓN RÁPIDA
 alias ..='cd ..'
 alias ...='cd ../..'
@@ -119,7 +122,7 @@ check-kernel-update() {
     echo "================================================================="
     if [ "$latest_kernel" != "Desconocido" ] && [[ "$active_kernel" != *"$latest_kernel"* ]]; then
         echo "💡 Hay una versión más reciente disponible en el sistema/repositorios:"
-        echo "   sudo pacman -Syu"
+        echo "   sudo dnf5 upgrade --refresh"
     else
         echo "✅ Tu kernel está actualizado a la última versión estable."
     fi
@@ -136,5 +139,5 @@ alias vminfo='virsh dominfo'
 alias update-antigravity='sudo "$UPDATE_ANTIGRAVITY_PATH"'
 alias update-antigravity-ide='sudo "$UPDATE_ANTIGRAVITY_IDE_PATH"'
 
-echo "✅ Aliases modernizados cargados (Pacman/Paru, GNOME, Kernel-Check, Rust tools)"
+echo "✅ Aliases modernizados cargados (DNF5, GNOME, Kernel-Check, Rust tools)"
 

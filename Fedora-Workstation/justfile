@@ -134,7 +134,7 @@ mise:
 # =============================================================================
 
 # Todos los lenguajes
-languages: node python rust dotnet java angular
+languages: mise node python rust dotnet java angular
     @echo "✅ Lenguajes instalados."
 
 # Node.js LTS

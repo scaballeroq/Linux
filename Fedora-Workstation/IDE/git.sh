@@ -61,7 +61,7 @@ if ! command -v lazygit &> /dev/null; then
         esac
         LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": "v\K[^"]*' || echo "")
         if [ -n "$LAZYGIT_VERSION" ]; then
-            curl -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_ARCH}_Linux_${LAZYGIT_ARCH}.tar.gz"
+            curl -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_${LAZYGIT_ARCH}.tar.gz"
             tar xf /tmp/lazygit.tar.gz -C /tmp lazygit
             $SUDO install /tmp/lazygit /usr/local/bin
             rm -f /tmp/lazygit /tmp/lazygit.tar.gz

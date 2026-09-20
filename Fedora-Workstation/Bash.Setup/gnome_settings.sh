@@ -5,21 +5,14 @@
 # Configuración de sesión y atajos rápidos para GNOME en Zsh y Bash.
 # NOTA: Cero extensiones añadidas en esta fase.
 
+# Evitar ejecución en subshells y sesiones no interactivas
+[[ $- != *i* ]] && return 0 2>/dev/null || true
+
 # -----------------------------------------------------------------------------
 # 1. AJUSTES BASE DE GNOME (Sesión interactiva)
 # -----------------------------------------------------------------------------
-if [[ "${XDG_CURRENT_DESKTOP:-}" == *"GNOME"* ]] || [[ "${DESKTOP_SESSION:-}" == *"gnome"* ]]; then
-    # Forzar tema oscuro en la interfaz
-    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null || true
-    gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' 2>/dev/null || true
-
-    # Formato de reloj 24h y porcentaje de batería
-    gsettings set org.gnome.desktop.interface clock-format '24h' 2>/dev/null || true
-    gsettings set org.gnome.desktop.interface show-battery-percentage true 2>/dev/null || true
-
-    # Disposición de botones de ventana (minimizar, maximizar, cerrar a la derecha)
-    gsettings set org.gnome.desktop.wm.preferences button-layout 'appmenu:minimize,maximize,close' 2>/dev/null || true
-fi
+# Las preferencias globales de GNOME (tema oscuro, botones, reloj) se gestionan
+# de forma persistente a través del instalador Setup/gnome-settings.sh.
 
 # -----------------------------------------------------------------------------
 # 2. ACCESOS DIRECTOS A PANELES DE CONFIGURACIÓN (GNOME CONTROL CENTER)

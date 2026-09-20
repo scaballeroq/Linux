@@ -4,6 +4,9 @@
 # Este archivo contiene atajos para comandos de rclone, facilitando la
 # sincronización con servicios en la nube como Google Drive.
 
+# Evitar ejecución en subshells y sesiones no interactivas
+[[ $- != *i* ]] && return 0 2>/dev/null || true
+
 # 1. Asegurar que el directorio de logs existe
 RCLONE_LOG_DIR="$HOME/Workspace/rclone_logs"
 mkdir -p "$RCLONE_LOG_DIR"
@@ -26,7 +29,7 @@ alias gdrive-kdenlive="rclone sync \"\$HOME/Workspace/Kdenlive/\" \"GoogleDrive:
 alias gdrive-repos="rclone sync \"\$HOME/Workspace/Repositorios\" \"GoogleDrive:Workspace/Repositorios\" $RCLONE_OPTS --include \"*.zip\" --log-file \"$RCLONE_LOG_DIR/rclone_repos.log\""
 alias gdrive-repos-debian="rclone sync \"\$HOME/Workspace/Repositorios/Debian\" \"GoogleDrive:Workspace/Repositorios/Debian\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_debian.log\""
 alias gdrive-repos-fedora="rclone sync \"\$HOME/Workspace/Repositorios/Fedora\" \"GoogleDrive:Workspace/Repositorios/Fedora\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_fedora.log\""
-alias gdrive-repos-loladelacamara="rclone sync \"\$HOME/Workspace/Repositorios/loladelacamara.es\" \"GoogleDrive:Workspace/Repositorios/loladelacamara.es\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_fedora.log\""
+alias gdrive-repos-loladelacamara="rclone sync \"\$HOME/Workspace/Repositorios/loladelacamara.es\" \"GoogleDrive:Workspace/Repositorios/loladelacamara.es\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_loladelacamara.log\""
 
 # -----------------------------------------------------------------------------
 # 3.1. GOOGLE DRIVE (UPLOAD - DRY RUN) - SIMULACIONES DE SUBIDA
@@ -61,7 +64,7 @@ alias gdrive-musica-down-dry="rclone sync \"GoogleDrive:Música\" \"\$HOME/Músi
 # -----------------------------------------------------------------------------
 # 5. ONEDRIVE (DOWNLOAD) - BAJAR DE LA NUBE
 # -----------------------------------------------------------------------------
-alias lola-onedrive-documentos-down="rclone sync \"OneDrive:Documentos\" \"/home/caballero/Workspace/loladelacamara/Documentos\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_lola_onedrive_documentos_down.log\""
+alias lola-onedrive-documentos-down="rclone sync \"OneDrive:Documentos\" \"\$HOME/Workspace/loladelacamara/Documentos\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_lola_onedrive_documentos_down.log\""
 
 # 6. Limpieza de variables temporales para evitar contaminar la shell
 unset RCLONE_LOG_DIR

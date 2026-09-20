@@ -12,15 +12,16 @@ echo "================================================================="
 
 # 1. Optimizacion DNF5
 echo "Configurando optimizaciones en DNF5..."
-DNF5_CONF="/etc/dnf5/dnf5.conf"
-if [ -f "$DNF5_CONF" ]; then
-    if ! grep -q "max_parallel_downloads" "$DNF5_CONF"; then
-        echo "max_parallel_downloads=10" | sudo tee -a "$DNF5_CONF" > /dev/null
+for conf in "/etc/dnf/dnf.conf" "/etc/dnf5/dnf5.conf"; do
+    if [ -f "$conf" ]; then
+        if ! grep -q "^max_parallel_downloads=" "$conf"; then
+            echo "max_parallel_downloads=10" | sudo tee -a "$conf" > /dev/null
+        fi
+        if ! grep -q "^defaultyes=" "$conf"; then
+            echo "defaultyes=True" | sudo tee -a "$conf" > /dev/null
+        fi
     fi
-    if ! grep -q "defaultyes" "$DNF5_CONF"; then
-        echo "defaultyes=True" | sudo tee -a "$DNF5_CONF" > /dev/null
-    fi
-fi
+done
 
 # 2. Habilitar Repositorios RPM Fusion (Free, Non-Free y Tainted)
 echo "Habilitando repositorios oficiales RPM Fusion Free, Non-Free y Tainted..."
@@ -164,7 +165,6 @@ sudo dnf5 install -y \
 echo "Configurando Flatpak y Flathub..."
 sudo dnf5 install -y flatpak 2>/dev/null || true
 sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
-flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
 
 # 11. Limpieza de Paquetes Antiguos
 echo "Limpiando paquetes obsoletos..."

@@ -59,7 +59,7 @@ if ! command -v mise &> /dev/null && [ ! -x "$USER_HOME/.local/bin/mise" ]; then
 fi
 
 # 2. Dependencias del sistema y librerías nativas para Python en Fedora
-echo "ℹ️ [1/5] Verificando dependencias nativas del sistema (python3, gobject, cabeceras de compilación)..."
+echo "ℹ️ [1/4] Verificando dependencias nativas del sistema (python3, gobject, cabeceras de compilación)..."
 $SUDO dnf5 install -y \
     @development-tools \
     python3 \
@@ -79,7 +79,7 @@ $SUDO dnf5 install -y \
 echo "  ✅ Dependencias nativas y librerías de sistema preparadas."
 
 # 3. Instalar uv con Mise de forma global (Python se mantiene en el sistema para no romper apps como gnome-tweaks)
-echo "ℹ️ [2/5] Instalando gestor uv vía Mise..."
+echo "ℹ️ [2/4] Instalando gestor uv vía Mise..."
 run_as_user mise use --global uv@latest
 
 # 4. Asegurar que no existan shims globales de Python en Mise
@@ -87,7 +87,7 @@ run_as_user mise unuse --global python 2>/dev/null || true
 run_as_user mise reshim 2>/dev/null || true
 
 # 5. Integración con GNOME (environment.d) y Shells (Bash predeterminado / Zsh condicional)
-echo "ℹ️ [4/5] Configurando variables de entorno para GNOME y Shells..."
+echo "ℹ️ [3/4] Configurando variables de entorno para GNOME y Shells..."
 ENV_DIR="$USER_HOME/.config/environment.d"
 BASHRC_D="$USER_HOME/.bashrc.d"
 run_as_user mkdir -p "$ENV_DIR" "$BASHRC_D"
@@ -118,7 +118,7 @@ EOF
 fi
 
 # 6. Configurar autocompletado (Bash siempre; Zsh si existe ~/.zshrc)
-echo "ℹ️ [5/5] Generando autocompletados para Bash (y Zsh si existe ~/.zshrc)..."
+echo "ℹ️ [4/4] Generando autocompletados para Bash (y Zsh si existe ~/.zshrc)..."
 COMPLETIONS_DIR="$USER_HOME/.local/share/bash-completion/completions"
 run_as_user mkdir -p "$COMPLETIONS_DIR"
 
