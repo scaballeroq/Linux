@@ -1,15 +1,45 @@
 #!/bin/bash
-# shell.sh - Instalación de herramientas modernas de terminal y prompt Starship para Fedora 44 (GNOME / Wayland)
+# ==============================================================================
+# shell.sh - Instalación de herramientas modernas de terminal para Fedora 44
+# (eza, bat, fzf, zoxide, ripgrep, fd, duf, dust, procs, btop, jq)
+# ==============================================================================
 
 set -euo pipefail
 
 echo "================================================================="
-echo "🐚 Configurando herramientas modernas de terminal y Starship"
+echo "🐚 Configurando utilidades modernas de terminal para Fedora 44"
 echo "================================================================="
 
+if [ "$EUID" -ne 0 ]; then
+    if ! command -v sudo &> /dev/null; then
+        echo "❌ Error: 'sudo' no esta disponible."
+        exit 1
+    fi
+    SUDO="sudo"
+else
+    SUDO=""
+fi
+
+# Detectar usuario real en caso de ejecucion con sudo
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    REAL_USER="$SUDO_USER"
+    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+else
+    REAL_USER="${USER:-$(id -un)}"
+    USER_HOME="${HOME:-/home/$REAL_USER}"
+fi
+
+run_as_user() {
+    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+        sudo -u "$REAL_USER" env HOME="$USER_HOME" "$@"
+    else
+        "$@"
+    fi
+}
+
 # 1. Instalación de utilidades modernas de terminal vía DNF5
-echo "ℹ️ [1/5] Instalando utilidades de terminal modernas vía DNF5..."
-sudo dnf5 install -y \
+echo "ℹ️ [1/4] Instalando utilidades CLI modernas vía DNF5..."
+$SUDO dnf5 install -y \
     eza \
     bat \
     fzf \
@@ -22,49 +52,120 @@ sudo dnf5 install -y \
     btop \
     curl \
     git \
-    jq 2>/dev/null || sudo dnf5 install -y eza bat fzf zoxide ripgrep fd-find duf procs curl git jq 2>/dev/null || true
+    jq 2>/dev/null || $SUDO dnf5 install -y eza bat fzf zoxide ripgrep fd-find duf procs curl git jq 2>/dev/null || true
 
-# 2. Instalación de Starship Prompt
-echo "ℹ️ [2/5] Verificando Starship Prompt..."
-if ! command -v starship &> /dev/null; then
-    echo "⬇️ Instalando Starship Prompt..."
-    curl -sS https://starship.rs/install.sh | sudo sh -s -- -y -b /usr/local/bin
+# 2. Integración de Zoxide y Carga Modular en Bash (Shell Predeterminada)
+echo "⚙️ [2/4] Configurando integración en Bash (~/.bashrc y ~/.bashrc.d)..."
+BASHRC="$USER_HOME/.bashrc"
+BASHRC_D="$USER_HOME/.bashrc.d"
+run_as_user touch "$BASHRC"
+run_as_user mkdir -p "$BASHRC_D"
+
+# 2.1. Zoxide en Bash
+if ! grep -q "zoxide init bash" "$BASHRC" 2>/dev/null; then
+    echo -e '\n# Zoxide (Smart cd)\nif command -v zoxide &>/dev/null; then eval "$(zoxide init bash)"; fi' | run_as_user tee -a "$BASHRC" > /dev/null
+    echo "  ✅ Zoxide integrado en ~/.bashrc"
 else
-    echo "✅ Starship Prompt ya está instalado ($(starship --version | head -n1))."
+    echo "  ℹ️ Zoxide ya estaba presente en ~/.bashrc"
 fi
 
-# 3. Configuración de Starship
-echo "🎨 [3/5] Configurando Starship..."
-mkdir -p "$HOME/.config"
+# 2.2. Cargador modular en ~/.bashrc
+if ! grep -q "\.bashrc\.d" "$BASHRC" 2>/dev/null; then
+    cat << 'EOF' | run_as_user tee -a "$BASHRC" > /dev/null
+
+# Carga modular de configuraciones y aliases (~/.bashrc.d)
+if [ -d "$HOME/.bashrc.d" ]; then
+    for script in "$HOME/.bashrc.d"/*.sh; do
+        [ -r "$script" ] && source "$script"
+    done
+    unset script
+fi
+EOF
+    echo "  ✅ Cargador modular añadido a ~/.bashrc"
+else
+    echo "  ℹ️ Cargador modular ya presente en ~/.bashrc"
+fi
+
+# 3. Integración en Zsh (Compatibilidad si existe ~/.zshrc)
+ZSHRC="$USER_HOME/.zshrc"
+ZSHRC_D="$USER_HOME/.zshrc.d"
+
+if [ -f "$ZSHRC" ]; then
+    echo "⚙️ [3/4] Detectado ~/.zshrc. Configurando compatibilidad con Zsh..."
+    run_as_user mkdir -p "$ZSHRC_D"
+
+    # 3.1. Zoxide en Zsh
+    if ! grep -q "zoxide init zsh" "$ZSHRC" 2>/dev/null; then
+        echo -e '\n# Zoxide (Smart cd)\nif command -v zoxide &>/dev/null; then eval "$(zoxide init zsh)"; fi' | run_as_user tee -a "$ZSHRC" > /dev/null
+        echo "  ✅ Zoxide integrado en ~/.zshrc"
+    else
+        echo "  ℹ️ Zoxide ya estaba presente en ~/.zshrc"
+    fi
+
+    # 3.2. Cargador modular en ~/.zshrc
+    if ! grep -q "\.zshrc\.d" "$ZSHRC" 2>/dev/null; then
+        cat << 'EOF' | run_as_user tee -a "$ZSHRC" > /dev/null
+
+# Carga modular de configuraciones y aliases (~/.zshrc.d)
+if [ -d "$HOME/.zshrc.d" ]; then
+    for script in "$HOME/.zshrc.d"/*.{sh,zsh}(N); do
+        [ -r "$script" ] && source "$script"
+    done
+    unset script
+fi
+EOF
+        echo "  ✅ Cargador modular añadido a ~/.zshrc"
+    else
+        echo "  ℹ️ Cargador modular ya presente en ~/.zshrc"
+    fi
+else
+    echo "ℹ️ [3/4] No se detectó ~/.zshrc. Se omite la configuración de Zsh (manteniendo entorno exclusivo Bash)."
+fi
+
+# 4. Enlazar scripts de Bash.Setup a ~/.bashrc.d (y ~/.zshrc.d si existe ~/.zshrc)
+echo "🔗 [4/4] Enlazando scripts modulares de Bash.Setup..."
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [ -f "$SCRIPT_DIR/starship.toml" ]; then
-    cp "$SCRIPT_DIR/starship.toml" "$HOME/.config/starship.toml"
-    echo "✅ Configuración starship.toml copiada a ~/.config/starship.toml"
+WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+BASH_SETUP_DIR="$WORKSPACE_ROOT/Bash.Setup"
+
+if [ -d "$BASH_SETUP_DIR" ]; then
+    # Limpiar symlinks obsoletos de KDE si existieran
+    run_as_user rm -f "$BASHRC_D/kde_settings.sh" 2>/dev/null || true
+    [ -d "$ZSHRC_D" ] && run_as_user rm -f "$ZSHRC_D/kde_settings.sh" 2>/dev/null || true
+
+    for sh_file in "$BASH_SETUP_DIR"/*.sh; do
+        if [ -f "$sh_file" ]; then
+            base_name="$(basename "$sh_file")"
+            run_as_user ln -sf "$sh_file" "$BASHRC_D/$base_name"
+            if [ -f "$ZSHRC" ] && [ -d "$ZSHRC_D" ]; then
+                run_as_user ln -sf "$sh_file" "$ZSHRC_D/$base_name"
+            fi
+        fi
+    done
+    if [ -f "$ZSHRC" ]; then
+        echo "  ✅ Scripts de Bash.Setup enlazados en ~/.bashrc.d/ y ~/.zshrc.d/"
+    else
+        echo "  ✅ Scripts de Bash.Setup enlazados en ~/.bashrc.d/"
+    fi
 fi
 
-# 4. Integración en .bashrc
-echo "⚙️ [4/5] Configurando integración en ~/.bashrc..."
-mkdir -p "$HOME/.bashrc.d"
+run_as_user mkdir -p "$USER_HOME/.local/bin"
 
-if ! grep -q "starship init bash" "$HOME/.bashrc" 2>/dev/null; then
-    echo 'eval "$(starship init bash)"' >> "$HOME/.bashrc"
-    echo "✅ Starship integrado en ~/.bashrc"
-fi
-
-if ! grep -q "zoxide init bash" "$HOME/.bashrc" 2>/dev/null; then
-    echo 'eval "$(zoxide init bash)"' >> "$HOME/.bashrc"
-    echo "✅ Zoxide integrado en ~/.bashrc"
-fi
-
-# 5. Symlink para fd si es necesario (Fedora usa fd-find)
-echo "🔗 [5/5] Verificando compatibilidad de comandos..."
-mkdir -p "$HOME/.local/bin"
-if [ -f /usr/bin/fdfind ] && [ ! -f "$HOME/.local/bin/fd" ]; then
-    ln -sf /usr/bin/fdfind "$HOME/.local/bin/fd"
-    echo "✅ Symlink fd -> fdfind creado en ~/.local/bin/"
+# Symlink para fd si es necesario (Fedora usa fd-find y binario fdfind)
+if [ -f /usr/bin/fdfind ] && [ ! -f "$USER_HOME/.local/bin/fd" ]; then
+    run_as_user ln -sf /usr/bin/fdfind "$USER_HOME/.local/bin/fd"
+    echo "  ✅ Symlink fd -> fdfind creado en ~/.local/bin/"
 fi
 
 echo "================================================================="
-echo "✅ Entorno de terminal moderno configurado con éxito para Fedora 44."
-echo "💡 Recuerda ejecutar 'source ~/.bashrc' o abrir una nueva terminal."
+echo "✅ Utilidades modernas de terminal y configuraciones listas para Fedora 44:"
+echo "  • Herramientas: eza, bat, fzf, zoxide, ripgrep, fd, duf, dust, btop, jq"
+echo "  • Shell predeterminada: Bash (~/.bashrc y ~/.bashrc.d/)"
+if [ -f "$ZSHRC" ]; then
+    echo "  • Shell compatible:     Zsh (~/.zshrc y ~/.zshrc.d/)"
+fi
+echo "💡 Ejecuta 'source ~/.bashrc' o abre una nueva terminal para disfrutar de tu entorno."
+if [ -f "$ZSHRC" ]; then
+    echo "💡 (Si utilizas una sesión en Zsh, ejecuta: 'source ~/.zshrc')"
+fi
 echo "================================================================="

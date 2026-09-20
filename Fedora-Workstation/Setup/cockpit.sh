@@ -23,6 +23,13 @@ else
     SUDO=""
 fi
 
+# Detectar usuario real en caso de ejecucion con sudo
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    REAL_USER="$SUDO_USER"
+else
+    REAL_USER="${USER:-$(id -un)}"
+fi
+
 show_help() {
     cat <<EOF
 🌐 Administrador de Consola Web Cockpit - Fedora 44 (GNOME)
@@ -207,7 +214,7 @@ case "${1:-}" in
         echo "================================================================="
         echo "✅ Cockpit instalado y configurado correctamente."
         echo "🌐 Accede desde tu navegador en: https://localhost:9090"
-        echo "💡 Inicia sesión con tu usuario de Fedora ($USER) y contraseña."
+        echo "💡 Inicia sesión con tu usuario de Fedora ($REAL_USER) y contraseña."
         echo "================================================================="
         ;;
     *)
