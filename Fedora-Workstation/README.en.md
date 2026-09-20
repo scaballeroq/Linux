@@ -96,6 +96,7 @@ just tuning              # Apply sysctl, limits, systemd, and Tracker 3 exclusio
 just kitty               # Configure Kitty terminal with blur and opacity
 just virtualization      # Setup KVM/QEMU and libvirt
 just multimedia         # Install complete codecs, FFmpeg, and proprietary drivers
+just mpv                # Install and optimize MPV with VA-API hardware acceleration and Wayland
 just chrome             # Install official Google Chrome
 just steam              # Install native Steam and 32-bit Vulkan drivers
 just languages           # Install Node, Python, Rust, .NET, and Java

@@ -2,15 +2,15 @@
 # (Fedora 44 Workstation + GNOME)
 
 # Instala todo el entorno por defecto (Auto-detección de CPU / Portátil AMD)
-setup-all: post-install multimedia chrome steam laptop tuning gnome-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+setup-all: post-install multimedia mpv chrome steam laptop tuning gnome-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
     @echo "🚀 Entorno completo de Fedora 44 Workstation (GNOME) configurado. Por favor, reinicia el sistema."
 
 # Perfil completo para Portátil de desarrollo (AMD Ryzen + Virtualización + Contenedores)
-setup-laptop-amd: post-install-amd multimedia chrome steam laptop tuning gnome-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+setup-laptop-amd: post-install-amd multimedia mpv chrome steam laptop tuning gnome-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
     @echo "🚀 Entorno Portátil AMD Ryzen (GNOME) configurado con éxito. Por favor, reinicia el sistema."
 
 # Perfil para Sobremesa (Intel Core - Sin virtualización ni batería)
-setup-media-desktop: post-install-intel multimedia chrome tuning gnome-setup shell security fonts fastfetch kitty yt-dlp
+setup-media-desktop: post-install-intel multimedia mpv chrome tuning gnome-setup shell security fonts fastfetch kitty yt-dlp
     @echo "🚀 Entorno Sobremesa Intel (GNOME) configurado con éxito. Por favor, reinicia el sistema."
 
 # =============================================================================
@@ -88,6 +88,14 @@ yt-dlp:
 # Codecs multimedia completos, FFmpeg completo y drivers privativos (RPM Fusion Free/Nonfree/Tainted)
 multimedia:
     ./Setup/multimedia.sh
+
+# Reproductor MPV con aceleración gráfica por hardware (VA-API), Wayland y mapeo de tonos HDR
+mpv:
+    ./Setup/mpv.sh
+
+# Diagnóstico y estado del reproductor MPV y aceleración VA-API
+mpv-status:
+    ./Setup/mpv.sh --status
 
 # Navegador Google Chrome oficial
 chrome:

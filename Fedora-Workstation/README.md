@@ -97,6 +97,7 @@ just tuning              # Aplica sysctl, límites, systemd y exclusiones Tracke
 just kitty               # Configura terminal Kitty con opacidad y desenfoque
 just virtualization      # Configura KVM/QEMU y libvirt
 just multimedia         # Instala codecs completos, FFmpeg y drivers privativos
+just mpv                # Instala y optimiza MPV con aceleración VA-API y Wayland
 just chrome             # Instala Google Chrome oficial
 just steam              # Instala Steam nativo y drivers Vulkan 32-bit
 just languages           # Instala Node, Python, Rust, .NET y Java
