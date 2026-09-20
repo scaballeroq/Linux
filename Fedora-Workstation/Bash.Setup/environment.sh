@@ -32,7 +32,8 @@ export LESS_TERMCAP_ue=$'\E[0m'
 # 2. INTEGRACIÓN WAYLAND, GNOME, QT Y APLICACIONES ELECTRON
 # -----------------------------------------------------------------------------
 # Backend gráfico Wayland prioritario
-export GDK_BACKEND="wayland,x11,*"
+# Desactivado: forzar GDK_BACKEND en GNOME rompe el portal de diálogos de archivos (xdg-desktop-portal-gnome)
+# export GDK_BACKEND="wayland,x11,*"
 
 # Compatibilidad Qt/Wayland con integración de tema GNOME
 export QT_QPA_PLATFORM="wayland;xcb"
