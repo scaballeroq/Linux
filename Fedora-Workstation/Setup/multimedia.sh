@@ -135,10 +135,16 @@ $SUDO dnf5 install -y \
     libdvdcss \
     libdvdread \
     libdvdnav \
+    libheif-ffmpeg \
     lsdvd 2>/dev/null || true
 
-# Actualizar el grupo multimedia sin dependencias débiles innecesarias
-$SUDO dnf5 update @multimedia --setopt="install_weak_deps=False" --exclude=PackageKit-gstreamer-plugin -y 2>/dev/null || true
+# Resolver conflicto de versión entre libheif (updates) y libheif-freeworld (RPM Fusion)
+if rpm -q libheif-freeworld &>/dev/null; then
+    $SUDO dnf5 swap -y libheif-freeworld libheif-ffmpeg --allowerasing 2>/dev/null || true
+fi
+
+# Actualizar el grupo multimedia sin dependencias débiles innecesarias ni libheif-freeworld
+$SUDO dnf5 update @multimedia --setopt="install_weak_deps=False" --exclude=PackageKit-gstreamer-plugin,libheif-freeworld -y 2>/dev/null || true
 
 echo "================================================================="
 echo "✅ Colección multimedia, RPM Fusion y drivers privativos instalados con éxito."

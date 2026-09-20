@@ -90,7 +90,7 @@ fi
 echo "Instalando FFmpeg completo y codecs multimedia para streaming y video..."
 sudo dnf5 config-manager setopt fedora-cisco-openh264.enabled=1 2>/dev/null || true
 sudo dnf5 swap -y ffmpeg-free ffmpeg --allowerasing 2>/dev/null || sudo dnf5 install -y ffmpeg 2>/dev/null || true
-sudo dnf5 update @multimedia --setopt="install_weak_deps=False" --exclude=PackageKit-gstreamer-plugin -y 2>/dev/null || true
+sudo dnf5 update @multimedia --setopt="install_weak_deps=False" --exclude=PackageKit-gstreamer-plugin,libheif-freeworld -y 2>/dev/null || true
 sudo dnf5 install -y \
     gstreamer1-plugins-base \
     gstreamer1-plugins-good \
@@ -110,7 +110,13 @@ sudo dnf5 install -y \
     libbluray \
     libdvdread \
     libdvdnav \
+    libheif-ffmpeg \
     lsdvd 2>/dev/null || true
+
+# Resolver conflicto de versión con libheif-freeworld si estuviera presente
+if rpm -q libheif-freeworld &>/dev/null; then
+    sudo dnf5 swap -y libheif-freeworld libheif-ffmpeg --allowerasing 2>/dev/null || true
+fi
 
 # 7. Centro Multimedia (Kodi y complementos de streaming)
 echo "Instalando centro multimedia Kodi y complementos para streaming adaptativo..."
