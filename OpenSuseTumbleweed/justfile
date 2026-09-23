@@ -202,9 +202,13 @@ git-setup:
 # GESTORES DE RUNTIMES
 # =============================================================================
 
-# Gestor de versiones Mise
-mise:
-    ./ProgrammingLanguages/mise.sh
+# Gestor de versiones Mise (Instalación, actualización u opciones)
+mise *args:
+    ./ProgrammingLanguages/mise.sh {{args}}
+
+# Diagnóstico y estado de Mise y runtimes de desarrollo
+mise-status:
+    ./ProgrammingLanguages/mise.sh --status
 
 # =============================================================================
 # LENGUAJES DE PROGRAMACIÓN

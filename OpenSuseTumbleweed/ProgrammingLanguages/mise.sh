@@ -1,26 +1,42 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ==============================================================================
-# mise.sh - Instalador y Optimizador de Mise (Language Runtime Manager)
-# openSUSE Tumbleweed (KDE Plasma 6 + Wayland / Systemd User Environment)
+# mise.sh - Instalador, Optimizador y Diagnóstico de Mise (Runtime Manager)
+# Sistema: openSUSE Tumbleweed | Escritorio: KDE Plasma 6 (Wayland)
+# ==============================================================================
+# Características:
+# - Despliegue idempotente y soporte rootless en espacio de usuario (~/.local/bin).
+# - Soporte tanto para instalación Standalone (recomendada) como paquete RPM oficial.
+# - Integración nativa con la sesión gráfica KDE Plasma 6 vía systemd environment.d.
+# - Propagación en caliente de variables PATH a la sesión activa (systemctl / dbus).
+# - Activación modular para terminales Bash (~/.bashrc.d) y Zsh (~/.zshrc.d).
+# - Generación automática de autocompletados nativos.
+# - Diagnóstico integral del estado de Mise y runtimes globales (--status).
+# - Actualización centralizada del gestor y sus runtimes (--update).
 # ==============================================================================
 
 set -euo pipefail
 
-echo "================================================================="
-echo "⚡ Configurando Mise (Gestor de Runtimes) para openSUSE Tumbleweed"
-echo "================================================================="
+# ------------------------------------------------------------------------------
+# 1. CONSTANTES Y CONFIGURACIÓN
+# ------------------------------------------------------------------------------
+REPO_ALIAS="mise"
+REPO_NAME="Mise CLI"
+REPO_URL="https://mise.jdx.dev/rpm"
+GPG_KEY_URL="https://mise.jdx.dev/gpg-key.pub"
+STANDALONE_INSTALL_URL="https://mise.run"
 
-if [ "$EUID" -ne 0 ]; then
-    if ! command -v sudo &> /dev/null; then
-        echo "❌ Error: 'sudo' no está disponible."
-        exit 1
-    fi
-    SUDO="sudo"
-else
-    SUDO=""
-fi
+# Colores ANSI para terminal
+BOLD='\033[1m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+CYAN='\033[0;36m'
+NC='\033[0m'
 
-# Detectar usuario real en caso de ejecución con sudo
+# ------------------------------------------------------------------------------
+# 2. DETECCIÓN DE USUARIO Y ELEVACIÓN DE PRIVILEGIOS
+# ------------------------------------------------------------------------------
 if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
     REAL_USER="$SUDO_USER"
     USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
@@ -29,107 +45,520 @@ else
     USER_HOME="${HOME:-/home/$REAL_USER}"
 fi
 
+USER_BIN="$USER_HOME/.local/bin"
+USER_BIN_MISE="$USER_BIN/mise"
+MISE_DATA_DIR="$USER_HOME/.local/share/mise"
+MISE_SHIMS_DIR="$MISE_DATA_DIR/shims"
+ENV_CONF_DIR="$USER_HOME/.config/environment.d"
+ENV_CONF_FILE="$ENV_CONF_DIR/10-mise.conf"
+
+if [ "$EUID" -ne 0 ]; then
+    SUDO="sudo"
+else
+    SUDO=""
+fi
+
+require_root() {
+    if [ "$EUID" -ne 0 ]; then
+        if ! command -v sudo &>/dev/null; then
+            echo -e "${RED}❌ Error:${NC} Esta operación requiere privilegios de administrador ('sudo')." >&2
+            exit 1
+        fi
+    fi
+}
+
 run_as_user() {
     if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-        sudo -u "$REAL_USER" env HOME="$USER_HOME" "$@"
+        sudo -u "$REAL_USER" env HOME="$USER_HOME" USER="$REAL_USER" "$@"
     else
         "$@"
     fi
 }
 
-# 1. Instalación del binario Mise vía repositorio RPM o instalador oficial
-echo "ℹ️ [1/4] Verificando e instalando Mise..."
-if ! command -v mise &> /dev/null && [ ! -x "$USER_HOME/.local/bin/mise" ]; then
-    echo "⬇️ Configurando repositorio RPM oficial de Mise para openSUSE..."
-    $SUDO rpm --import https://mise.jdx.dev/gpg-key.pub 2>/dev/null || true
-    if ! zypper lr 2>/dev/null | grep -qi "mise"; then
-        $SUDO zypper --non-interactive ar -f https://mise.jdx.dev/rpm mise 2>/dev/null || true
+# ------------------------------------------------------------------------------
+# 3. FUNCIONES DE DETECCIÓN Y UTILIDAD
+# ------------------------------------------------------------------------------
+get_mise_bin() {
+    if [ -x "$USER_BIN_MISE" ]; then
+        echo "$USER_BIN_MISE"
+    elif command -v mise &>/dev/null; then
+        command -v mise
+    elif [ -x "/usr/bin/mise" ]; then
+        echo "/usr/bin/mise"
+    else
+        echo ""
     fi
-    $SUDO zypper --gpg-auto-import-keys refresh mise 2>/dev/null || true
-    $SUDO zypper --non-interactive install -y mise 2>/dev/null || {
-        echo "⚠️ Fallback: Descargando e instalando Mise standalone..."
-        run_as_user curl -fsSL https://mise.run | run_as_user sh
-    }
-else
-    echo "✅ Mise ya está instalado en el sistema."
-fi
+}
 
-# Exportar PATH para la ejecución de este script
-export PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:/usr/bin:$PATH"
+is_mise_installed() {
+    local bin
+    bin=$(get_mise_bin)
+    [ -n "$bin" ] && [ -x "$bin" ]
+}
 
-# 2. Integración con el entorno gráfico de KDE Plasma (Systemd Environment Generators)
-# Permite que IDEs (Antigravity, Kate, VS Code) y la sesión hereden los runtimes de Mise
-echo "ℹ️ [2/4] Configurando variables de entorno para la sesión gráfica (environment.d)..."
-ENV_DIR="$USER_HOME/.config/environment.d"
-run_as_user mkdir -p "$ENV_DIR"
+get_mise_version() {
+    local bin
+    bin=$(get_mise_bin)
+    if [ -n "$bin" ] && [ -x "$bin" ]; then
+        run_as_user "$bin" --version 2>/dev/null || echo "Desconocida"
+    else
+        echo "No instalado"
+    fi
+}
 
-cat << 'EOF' | run_as_user tee "$ENV_DIR/10-mise.conf" > /dev/null
-# Integración de Mise con la sesión gráfica / Wayland
+get_install_type() {
+    local bin
+    bin=$(get_mise_bin)
+    if [ "$bin" = "$USER_BIN_MISE" ]; then
+        echo "Standalone de usuario ($USER_BIN_MISE)"
+    elif [ "$bin" = "/usr/bin/mise" ] || rpm -q mise &>/dev/null; then
+        echo "Paquete RPM de sistema (/usr/bin/mise)"
+    elif [ -n "$bin" ]; then
+        echo "Personalizada ($bin)"
+    else
+        echo "Ninguna"
+    fi
+}
+
+is_repo_configured() {
+    zypper lr -u 2>/dev/null | grep -qE "${REPO_URL}|${REPO_ALIAS}"
+}
+
+is_repo_enabled() {
+    local repo_info
+    repo_info=$(zypper lr -u 2>/dev/null | grep -E "${REPO_ALIAS}" || true)
+    if [ -n "$repo_info" ]; then
+        echo "$repo_info" | grep -qiE "\b(sí|yes|1)\b"
+    else
+        return 1
+    fi
+}
+
+is_gpg_imported() {
+    rpm -qa "gpg-pubkey*" --qf '%{SUMMARY}\n' 2>/dev/null | grep -qi "jdx" || \
+    rpm -qa "gpg-pubkey*" --qf '%{SUMMARY}\n' 2>/dev/null | grep -qi "mise"
+}
+
+# ------------------------------------------------------------------------------
+# 4. DIAGNÓSTICO Y AYUDA
+# ------------------------------------------------------------------------------
+show_help() {
+    echo -e "${BOLD}⚡ Gestor de Runtimes Mise - openSUSE Tumbleweed${NC}
+
+${BOLD}Uso:${NC}
+  $0 [OPCIÓN]
+
+${BOLD}Opciones:${NC}
+  (sin argumentos)    Instala y configura Mise de forma idempotente con integración KDE y Shells.
+  -i, --install       Fuerza la comprobación e instalación de Mise.
+  -s, --status        Muestra diagnóstico completo del entorno de Mise, shims y runtimes activos.
+  -u, --update        Actualiza el binario de Mise y todos los runtimes gestionados.
+      --standalone    Instala Mise en espacio de usuario (~/.local/bin/mise) sin requerir root.
+      --rpm           Instala Mise mediante repositorio oficial RPM y Zypper (requiere root).
+  -r, --uninstall     Desinstala Mise, shims y configuraciones de shell del sistema.
+  -h, --help          Muestra este mensaje de ayuda.
+
+${BOLD}Ejemplos:${NC}
+  $0                 # Configuración estándar idempotente
+  $0 --status        # Diagnóstico y estado de herramientas
+  $0 --update        # Actualiza Mise y los SDKs instalados"
+}
+
+show_status() {
+    echo -e "${CYAN}=================================================================${NC}"
+    echo -e "${BOLD}🔍 DIAGNÓSTICO DE MISE (RUNTIME MANAGER) - OPENSUSE TUMBLEWEED${NC}"
+    echo -e "${CYAN}=================================================================${NC}"
+
+    local bin
+    bin=$(get_mise_bin)
+
+    # 1. Estado del binario
+    if [ -n "$bin" ] && [ -x "$bin" ]; then
+        echo -e "• ${BOLD}Estado de Mise:${NC}        ${GREEN}✅ Instalado y disponible${NC}"
+        echo -e "  - Binario:             $bin"
+        echo -e "  - Versión:             $(get_mise_version)"
+        echo -e "  - Tipo de instalación: $(get_install_type)"
+    else
+        echo -e "• ${BOLD}Estado de Mise:${NC}        ${RED}❌ No instalado en el sistema${NC}"
+    fi
+
+    # 2. Repositorio Zypper (si aplica)
+    if is_repo_configured; then
+        if is_repo_enabled; then
+            echo -e "• ${BOLD}Repositorio Zypper:${NC}    ${GREEN}✅ Activo${NC} ($REPO_ALIAS)"
+        else
+            echo -e "• ${BOLD}Repositorio Zypper:${NC}    ${YELLOW}⚠️ Deshabilitado${NC} ($REPO_ALIAS)"
+        fi
+    else
+        echo -e "• ${BOLD}Repositorio Zypper:${NC}    ${CYAN}ℹ️ No registrado (Modo Standalone preferente)${NC}"
+    fi
+
+    # 3. Integración con KDE Plasma 6 (systemd environment.d)
+    if [ -f "$ENV_CONF_FILE" ]; then
+        echo -e "• ${BOLD}Sesión Gráfica KDE:${NC}    ${GREEN}✅ Configurada${NC} ($ENV_CONF_FILE)"
+    else
+        echo -e "• ${BOLD}Sesión Gráfica KDE:${NC}    ${YELLOW}⚠️ No configurada en environment.d${NC}"
+    fi
+
+    # 4. Integración en Shells
+    local bash_ok=false
+    local zsh_ok=false
+
+    if [ -f "$USER_HOME/.bashrc.d/mise.sh" ] || grep -q "mise activate" "$USER_HOME/.bashrc" 2>/dev/null; then
+        bash_ok=true
+    fi
+    if [ -f "$USER_HOME/.zshrc" ]; then
+        if [ -f "$USER_HOME/.zshrc.d/mise.zsh" ] || grep -q "mise activate" "$USER_HOME/.zshrc" 2>/dev/null; then
+            zsh_ok=true
+        fi
+    fi
+
+    echo -e "• ${BOLD}Integración en Bash:${NC}   $([ "$bash_ok" = true ] && echo -e "${GREEN}✅ Activa (~/.bashrc.d/mise.sh)${NC}" || echo -e "${YELLOW}❌ Inactiva${NC}")"
+    if [ -f "$USER_HOME/.zshrc" ]; then
+        echo -e "• ${BOLD}Integración en Zsh:${NC}    $([ "$zsh_ok" = true ] && echo -e "${GREEN}✅ Activa (~/.zshrc.d/mise.zsh)${NC}" || echo -e "${YELLOW}❌ Inactiva${NC}")"
+    fi
+
+    # 5. Shims y PATH actual
+    if [ -d "$MISE_SHIMS_DIR" ]; then
+        local num_shims
+        num_shims=$(find "$MISE_SHIMS_DIR" -maxdepth 1 -type f -o -type l 2>/dev/null | wc -l)
+        echo -e "• ${BOLD}Shims de Runtimes:${NC}     ${GREEN}✅ Presentes${NC} ($MISE_SHIMS_DIR, $num_shims shims registrados)"
+    else
+        echo -e "• ${BOLD}Shims de Runtimes:${NC}     ${CYAN}ℹ️ Directorio de shims vacío o pendiente${NC}"
+    fi
+
+    # 6. Runtimes globales gestionados actualmente
+    if [ -n "$bin" ] && [ -x "$bin" ]; then
+        echo -e "-----------------------------------------------------------------"
+        echo -e "📦 ${BOLD}Herramientas y Runtimes Globales (mise ls):${NC}"
+        local runtimes
+        runtimes=$(run_as_user "$bin" ls 2>/dev/null || echo "")
+        if [ -n "$runtimes" ]; then
+            echo "$runtimes" | sed 's/^/   /'
+        else
+            echo "   (Ningún runtime instalado todavía. Ejemplos: 'just node', 'just python')"
+        fi
+    fi
+
+    echo -e "${CYAN}=================================================================${NC}"
+}
+
+# ------------------------------------------------------------------------------
+# 5. MÉTODOS DE INSTALACIÓN
+# ------------------------------------------------------------------------------
+install_standalone() {
+    echo -e "${BLUE}⬇️ Instalando Mise en espacio de usuario (~/.local/bin/mise)...${NC}"
+    run_as_user mkdir -p "$USER_BIN"
+
+    local temp_script
+    temp_script=$(mktemp /tmp/mise-install-XXXXXX.sh)
+
+    if curl -fsSL "$STANDALONE_INSTALL_URL" -o "$temp_script"; then
+        run_as_user sh "$temp_script"
+        rm -f "$temp_script"
+        echo -e "${GREEN}✔${NC} Binario standalone de Mise instalado exitosamente en $USER_BIN_MISE."
+    else
+        rm -f "$temp_script"
+        echo -e "${RED}❌ Error:${NC} No se pudo descargar el instalador standalone de Mise."
+        exit 1
+    fi
+}
+
+install_rpm() {
+    require_root
+    echo -e "${BLUE}📦 Configurando repositorio oficial RPM de Mise para openSUSE...${NC}"
+
+    # Importar clave GPG si no está
+    if ! is_gpg_imported; then
+        local temp_key
+        temp_key=$(mktemp /tmp/mise-key-XXXXXX.pub)
+        if curl -fsSL "$GPG_KEY_URL" -o "$temp_key"; then
+            $SUDO rpm --import "$temp_key"
+            rm -f "$temp_key"
+            echo -e "${GREEN}✔${NC} Clave GPG de Mise importada."
+        else
+            rm -f "$temp_key"
+            echo -e "${YELLOW}⚠️ Aviso:${NC} No se pudo descargar la clave GPG directamente."
+        fi
+    fi
+
+    # Registrar repositorio
+    if ! is_repo_configured; then
+        $SUDO zypper --non-interactive addrepo \
+            --check \
+            --refresh \
+            --name "$REPO_NAME" \
+            "$REPO_URL" \
+            "$REPO_ALIAS"
+        echo -e "${GREEN}✔${NC} Repositorio '$REPO_ALIAS' registrado en Zypper."
+    elif ! is_repo_enabled; then
+        $SUDO zypper --non-interactive mr -e -r "$REPO_ALIAS"
+    fi
+
+    $SUDO zypper --gpg-auto-import-keys refresh "$REPO_ALIAS" || true
+
+    echo -e "${BLUE}⬇️ Instalando paquete RPM de Mise...${NC}"
+    $SUDO zypper --non-interactive install -y mise
+    echo -e "${GREEN}✔${NC} Paquete RPM de Mise instalado exitosamente."
+}
+
+# ------------------------------------------------------------------------------
+# 6. CONFIGURACIÓN DEL ENTORNO Y SHELLS
+# ------------------------------------------------------------------------------
+configure_environment() {
+    echo -e "${BLUE}⚙️ Configurando variables de entorno para la sesión gráfica de KDE Plasma...${NC}"
+    run_as_user mkdir -p "$ENV_CONF_DIR"
+
+    cat << 'EOF' | run_as_user tee "$ENV_CONF_FILE" > /dev/null
+# Integración de Mise con la sesión gráfica / Wayland (KDE Plasma 6)
 PATH=${HOME}/.local/share/mise/shims:${HOME}/.local/bin:${PATH}
 MISE_SHELL=bash
 COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 EOF
 
-# 3. Integración en Shells (Bash y Zsh)
-echo "ℹ️ [3/4] Configurando integración en terminales (Bash & Zsh)..."
+    # Propagar variables en caliente a la sesión activa de systemd y DBus
+    if command -v systemctl &>/dev/null; then
+        run_as_user systemctl --user import-environment PATH 2>/dev/null || true
+    fi
+    if command -v dbus-update-activation-environment &>/dev/null; then
+        run_as_user dbus-update-activation-environment --systemd PATH 2>/dev/null || true
+    fi
 
-# 3.1. Bash
-BASHRC_D="$USER_HOME/.bashrc.d"
-run_as_user mkdir -p "$BASHRC_D"
-cat << 'EOF' | run_as_user tee "$BASHRC_D/mise.sh" > /dev/null
+    echo -e "${GREEN}✔${NC} Archivo de sesión configurado: $ENV_CONF_FILE"
+}
+
+configure_shells() {
+    echo -e "${BLUE}⚙️ Configurando integración en terminales (Bash y Zsh)...${NC}"
+
+    # 1. Bash
+    local bashrc_d="$USER_HOME/.bashrc.d"
+    run_as_user mkdir -p "$bashrc_d"
+
+    cat << 'EOF' | run_as_user tee "$bashrc_d/mise.sh" > /dev/null
 # =============================================================================
 # MISE VERSION MANAGER (Bash Shell Activation)
 # =============================================================================
-if command -v mise &>/dev/null; then
+if [ -x "$HOME/.local/bin/mise" ] || command -v mise &>/dev/null; then
     eval "$(mise activate bash)"
 fi
 EOF
 
-# Fallback si no se lee .bashrc.d
-BASHRC="$USER_HOME/.bashrc"
-run_as_user touch "$BASHRC"
-if ! grep -q "mise activate" "$BASHRC" 2>/dev/null; then
-    if ! grep -q ".bashrc.d" "$BASHRC" 2>/dev/null; then
-        echo -e '\n# Mise (Language Version Manager)\nif command -v mise &>/dev/null; then eval "$(mise activate bash)"; fi' | run_as_user tee -a "$BASHRC" > /dev/null
+    # Respaldo en .bashrc si .bashrc.d no se lee
+    local bashrc="$USER_HOME/.bashrc"
+    if [ -f "$bashrc" ] && ! grep -q "mise activate" "$bashrc" 2>/dev/null; then
+        if ! grep -q "\.bashrc\.d" "$bashrc" 2>/dev/null; then
+            echo -e '\n# Mise (Language Version Manager)\nif command -v mise &>/dev/null || [ -x "$HOME/.local/bin/mise" ]; then eval "$(mise activate bash)"; fi' | run_as_user tee -a "$bashrc" > /dev/null
+        fi
     fi
-fi
 
-# 3.2. Zsh (condicional)
-if [ -f "$USER_HOME/.zshrc" ]; then
-    ZSHRC_D="$USER_HOME/.zshrc.d"
-    run_as_user mkdir -p "$ZSHRC_D"
-    cat << 'EOF' | run_as_user tee "$ZSHRC_D/mise.zsh" > /dev/null
+    # 2. Zsh (condicional)
+    if [ -f "$USER_HOME/.zshrc" ]; then
+        local zshrc_d="$USER_HOME/.zshrc.d"
+        run_as_user mkdir -p "$zshrc_d"
+
+        cat << 'EOF' | run_as_user tee "$zshrc_d/mise.zsh" > /dev/null
 # =============================================================================
 # MISE VERSION MANAGER (Zsh Shell Activation)
 # =============================================================================
-if command -v mise &>/dev/null; then
+if [ -x "$HOME/.local/bin/mise" ] || command -v mise &>/dev/null; then
     eval "$(mise activate zsh)"
 fi
 EOF
-    if ! grep -q "mise activate" "$USER_HOME/.zshrc" 2>/dev/null; then
-        if ! grep -q ".zshrc.d" "$USER_HOME/.zshrc" 2>/dev/null; then
-            echo -e '\n# Mise (Language Version Manager)\nif command -v mise &>/dev/null; then eval "$(mise activate zsh)"; fi' | run_as_user tee -a "$USER_HOME/.zshrc" > /dev/null
+
+        if ! grep -q "mise activate" "$USER_HOME/.zshrc" 2>/dev/null; then
+            if ! grep -q "\.zshrc\.d" "$USER_HOME/.zshrc" 2>/dev/null; then
+                echo -e '\n# Mise (Language Version Manager)\nif command -v mise &>/dev/null || [ -x "$HOME/.local/bin/mise" ]; then eval "$(mise activate zsh)"; fi' | run_as_user tee -a "$USER_HOME/.zshrc" > /dev/null
+            fi
         fi
     fi
-fi
 
-# 4. Generar autocompletado nativo
-echo "ℹ️ [4/4] Generando autocompletado para Bash (y Zsh)..."
-COMPLETIONS_DIR="$USER_HOME/.local/share/bash-completion/completions"
-run_as_user mkdir -p "$COMPLETIONS_DIR"
-if command -v mise &>/dev/null; then
-    run_as_user mise completion bash > "$COMPLETIONS_DIR/mise" 2>/dev/null || true
-    if [ -f "$USER_HOME/.zshrc" ]; then
-        ZSH_COMPLETIONS_DIR="$USER_HOME/.local/share/zsh/site-functions"
-        run_as_user mkdir -p "$ZSH_COMPLETIONS_DIR"
-        run_as_user mise completion zsh > "$ZSH_COMPLETIONS_DIR/_mise" 2>/dev/null || true
+    echo -e "${GREEN}✔${NC} Integración en shells configurada con éxito."
+}
+
+configure_completions() {
+    local bin
+    bin=$(get_mise_bin)
+    if [ -z "$bin" ] || [ ! -x "$bin" ]; then
+        return 0
     fi
-fi
 
-echo "================================================================="
-echo "✅ Mise configurado con éxito para openSUSE Tumbleweed y KDE Plasma 6:"
-echo "  • Binario:   $(which mise 2>/dev/null || echo "$USER_HOME/.local/bin/mise")"
-echo "  • Versión:   $(run_as_user mise --version 2>/dev/null || echo 'instalado')"
-echo "  • Entorno:   ~/.config/environment.d/10-mise.conf"
-echo "  • Shells:    Bash (~/.bashrc.d/mise.sh)$([ -f "$USER_HOME/.zshrc" ] && echo " & Zsh (~/.zshrc.d/mise.zsh)")"
-echo "================================================================="
+    echo -e "${BLUE}⚙️ Generando autocompletado nativo para Bash y Zsh...${NC}"
+
+    local bash_comp_dir="$USER_HOME/.local/share/bash-completion/completions"
+    run_as_user mkdir -p "$bash_comp_dir"
+    run_as_user "$bin" completion bash > "$bash_comp_dir/mise" 2>/dev/null || true
+
+    if [ -f "$USER_HOME/.zshrc" ]; then
+        local zsh_comp_dir="$USER_HOME/.local/share/zsh/site-functions"
+        run_as_user mkdir -p "$zsh_comp_dir"
+        run_as_user "$bin" completion zsh > "$zsh_comp_dir/_mise" 2>/dev/null || true
+    fi
+
+    echo -e "${GREEN}✔${NC} Autocompletados actualizados."
+}
+
+# ------------------------------------------------------------------------------
+# 7. INSTALACIÓN PRINCIPAL Y ACTUALIZACIONES
+# ------------------------------------------------------------------------------
+install_mise() {
+    local force="${1:-false}"
+
+    echo -e "${CYAN}=================================================================${NC}"
+    echo -e "${BOLD}⚡ CONFIGURACIÓN DE MISE (RUNTIME MANAGER) - OPENSUSE${NC}"
+    echo -e "${CYAN}=================================================================${NC}"
+
+    # Añadir rutas temporales para la ejecución de este script
+    export PATH="$USER_BIN:$MISE_SHIMS_DIR:/usr/bin:$PATH"
+
+    if is_mise_installed && [ "$force" != "true" ]; then
+        echo -e "${GREEN}✔${NC} Mise ya está instalado ($(get_mise_version)) - $(get_install_type)."
+        echo -e "   Para actualizar Mise y sus runtimes, ejecuta: ${BOLD}$0 --update${NC} (o 'just mise -u')"
+    else
+        # Si el usuario ejecuta sin sudo o prefiere espacio de usuario: standalone
+        if [ "$EUID" -ne 0 ] && [ -z "${SUDO_USER:-}" ]; then
+            install_standalone
+        else
+            # Intentar RPM si se ejecuta con sudo, o recurrir a standalone
+            install_rpm || {
+                echo -e "${YELLOW}⚠️ Fallo en instalación RPM. Recurriendo a instalación standalone...${NC}"
+                install_standalone
+            }
+        fi
+    fi
+
+    # Asegurar que el PATH del script reconozca el nuevo binario
+    export PATH="$USER_BIN:$MISE_SHIMS_DIR:/usr/bin:$PATH"
+
+    configure_environment
+    configure_shells
+    configure_completions
+
+    show_final_summary
+}
+
+update_mise() {
+    echo -e "${CYAN}=================================================================${NC}"
+    echo -e "${BOLD}🔄 ACTUALIZACIÓN DE MISE Y RUNTIMES${NC}"
+    echo -e "${CYAN}=================================================================${NC}"
+
+    local bin
+    bin=$(get_mise_bin)
+
+    if [ -z "$bin" ] || [ ! -x "$bin" ]; then
+        echo -e "${YELLOW}⚠️ Mise no está instalado. Instalándolo primero...${NC}"
+        install_mise "false"
+        return 0
+    fi
+
+    # 1. Actualizar el binario de Mise
+    echo -e "${BLUE}⬇️ Comprobando actualizaciones del ejecutable de Mise...${NC}"
+    if [ "$bin" = "$USER_BIN_MISE" ]; then
+        run_as_user "$bin" self-update || true
+    elif rpm -q mise &>/dev/null; then
+        require_root
+        $SUDO zypper --non-interactive update -y mise || true
+    else
+        run_as_user "$bin" self-update 2>/dev/null || true
+    fi
+
+    # 2. Actualizar los runtimes instalados globalmente
+    echo -e "${BLUE}📦 Actualizando runtimes gestionados por Mise (mise upgrade)...${NC}"
+    run_as_user "$bin" upgrade || true
+
+    # 3. Regenerar shims y autocompletados
+    run_as_user "$bin" reshim 2>/dev/null || true
+    configure_completions
+
+    echo -e "${GREEN}✅ Mise y runtimes actualizados con éxito.${NC}"
+    echo -e "   Versión actual: $(get_mise_version)"
+}
+
+uninstall_mise() {
+    echo -e "${CYAN}=================================================================${NC}"
+    echo -e "${BOLD}🗑️ DESINSTALACIÓN DE MISE${NC}"
+    echo -e "${CYAN}=================================================================${NC}"
+
+    # 1. Eliminar binario standalone
+    if [ -f "$USER_BIN_MISE" ]; then
+        echo -e "${BLUE}🗑️ Eliminando binario standalone ($USER_BIN_MISE)...${NC}"
+        rm -f "$USER_BIN_MISE"
+    fi
+
+    # 2. Eliminar paquete RPM si existe
+    if rpm -q mise &>/dev/null; then
+        require_root
+        echo -e "${BLUE}📦 Eliminando paquete RPM mise vía Zypper...${NC}"
+        $SUDO zypper --non-interactive remove -y mise
+    fi
+
+    # 3. Eliminar configuraciones de entorno y shells
+    rm -f "$ENV_CONF_FILE" 2>/dev/null || true
+    rm -f "$USER_HOME/.bashrc.d/mise.sh" 2>/dev/null || true
+    rm -f "$USER_HOME/.zshrc.d/mise.zsh" 2>/dev/null || true
+    rm -f "$USER_HOME/.local/share/bash-completion/completions/mise" 2>/dev/null || true
+    rm -f "$USER_HOME/.local/share/zsh/site-functions/_mise" 2>/dev/null || true
+
+    echo -e "${GREEN}✅ Mise y sus integraciones han sido desinstalados.${NC}"
+    echo -e "   (Nota: Si deseas eliminar los SDKs descargados en caché, borra: $MISE_DATA_DIR)"
+}
+
+show_final_summary() {
+    echo -e "${CYAN}=================================================================${NC}"
+    echo -e "${GREEN}✅ Mise configurado correctamente para openSUSE Tumbleweed y KDE Plasma 6:${NC}"
+    echo -e "   - Binario:   $(get_mise_bin)"
+    echo -e "   - Versión:   $(get_mise_version)"
+    echo -e "   - Entorno:   $ENV_CONF_FILE"
+    echo -e "   - Terminal:  Bash (~/.bashrc.d/mise.sh)$([ -f "$USER_HOME/.zshrc" ] && echo " & Zsh (~/.zshrc.d/mise.zsh)")"
+    echo -e "${CYAN}=================================================================${NC}"
+}
+
+# ------------------------------------------------------------------------------
+# 8. PARSER DE ARGUMENTOS CLI
+# ------------------------------------------------------------------------------
+case "${1:-}" in
+    --status|-s|status)
+        show_status
+        exit 0
+        ;;
+    --help|-h|help)
+        show_help
+        exit 0
+        ;;
+    --update|-u|update)
+        update_mise
+        exit 0
+        ;;
+    --standalone)
+        install_standalone
+        configure_environment
+        configure_shells
+        configure_completions
+        show_final_summary
+        exit 0
+        ;;
+    --rpm)
+        install_rpm
+        configure_environment
+        configure_shells
+        configure_completions
+        show_final_summary
+        exit 0
+        ;;
+    --install|-i|install)
+        install_mise "true"
+        exit 0
+        ;;
+    --uninstall|-r|remove|uninstall)
+        uninstall_mise
+        exit 0
+        ;;
+    "")
+        install_mise "false"
+        exit 0
+        ;;
+    *)
+        echo -e "${RED}❌ Opción desconocida:${NC} ${1}"
+        echo "Ejecuta '$0 --help' para ver las opciones disponibles."
+        exit 1
+        ;;
+esac
