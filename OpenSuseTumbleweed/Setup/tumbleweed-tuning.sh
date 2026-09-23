@@ -1,22 +1,26 @@
 #!/bin/bash
 # ==============================================================================
 # tumbleweed-tuning.sh - Optimizador y Ajuste de Rendimiento para openSUSE Tumbleweed
-# Entorno: KDE Plasma 6 (Wayland) + Btrfs Snapper + AMD Ryzen
+# Entorno: KDE Plasma 6 (Wayland) + Btrfs Snapper + AMD Ryzen (Zen 2 Renoir)
 # ==============================================================================
 #
 # Uso:
 #   ./tumbleweed-tuning.sh               -> Aplica todas las optimizaciones recomendadas
 #   ./tumbleweed-tuning.sh --status      -> Muestra el estado actual de los parámetros de rendimiento
-#   ./tumbleweed-tuning.sh --no-install  -> Aplica optimizaciones sin instalar paquetes adicionales
-#   ./tumbleweed-tuning.sh --sysctl      -> Aplica únicamente los ajustes de Kernel Sysctl
+#   ./tumbleweed-tuning.sh --no-install  -> Aplica optimizaciones sin instalar paquetes Zypper
+#   ./tumbleweed-tuning.sh --sysctl      -> Aplica ajustes de Kernel Sysctl y TCP BBR
 #   ./tumbleweed-tuning.sh --limits      -> Aplica límites de descriptores (limits.d y systemd)
 #   ./tumbleweed-tuning.sh --snapper     -> Ajusta políticas de retención de instantáneas Snapper
-#   ./tumbleweed-tuning.sh --baloo       -> Configura el indexador Baloo para excluir carpetas pesadas de desarrollo
+#   ./tumbleweed-tuning.sh --baloo       -> Configura Baloo (KDE 6) para excluir carpetas de desarrollo
+#   ./tumbleweed-tuning.sh --zram        -> Verifica y configura ZRAM (zstd) con systemd-zram-generator
 #   ./tumbleweed-tuning.sh --help        -> Muestra la ayuda interactiva
 #
 # ==============================================================================
 
 set -euo pipefail
+
+# Asegurar rutas administrativas en PATH
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
 
 if [ "$EUID" -ne 0 ]; then
     if ! command -v sudo &> /dev/null; then
@@ -28,7 +32,7 @@ else
     SUDO=""
 fi
 
-# Detectar usuario real en caso de sudo para configuraciones de usuario de KDE/Baloo
+# Detectar usuario real en caso de sudo para configuraciones de KDE Plasma 6 y Baloo
 if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
     REAL_USER="$SUDO_USER"
     USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
@@ -44,6 +48,7 @@ run_as_user() {
         sudo -u "$REAL_USER" env \
             HOME="$USER_HOME" \
             USER="$REAL_USER" \
+            PATH="/usr/local/bin:/usr/bin:/bin:$PATH" \
             XDG_RUNTIME_DIR="/run/user/$REAL_UID" \
             DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$REAL_UID/bus}" \
             "$@"
@@ -60,24 +65,29 @@ Uso:
   $0 [OPCIÓN]
 
 Opciones principales:
-  (sin argumentos)       Aplica todas las optimizaciones recomendadas (Kernel, Límites, Snapper, Baloo, Systemd y Distrobox).
+  (sin argumentos)       Aplica todas las optimizaciones recomendadas (Kernel, Límites, Snapper, Baloo, ZRAM y Distrobox).
   --status, -s           Muestra el estado actual de sysctl, límites, ZRAM, Snapper, Baloo y servicios.
   --no-install           Aplica las configuraciones de kernel, límites y entorno sin descargar paquetes Zypper.
-  --sysctl               Aplica únicamente la configuración de parámetros de Kernel Sysctl.
-  --limits               Aplica límites de descriptores y memoria (limits.d y systemd system/user).
+  --sysctl               Aplica únicamente la configuración de parámetros de Kernel Sysctl y TCP BBR.
+  --limits               Aplica límites de descriptores y memoria (limits.d y systemd system/user con daemon-reexec).
   --snapper              Ajusta los límites de retención de Snapper en Btrfs para prevenir saturación de disco.
-  --baloo                Configura Baloo para excluir carpetas pesadas de desarrollo (node_modules, target, etc.).
+  --baloo                Configura Baloo (KDE Plasma 6) para excluir carpetas pesadas de desarrollo (baloofilerc).
+  --zram                 Verifica y aplica la configuración óptima de ZRAM (zstd) vía zram-generator.
   --help, -h             Muestra este mensaje de ayuda.
 
 Optimizaciones incluidas:
   1. Sysctl Kernel:      Inotify ampliado (1M watches, 8K instancias), max_map_count (16M), ZRAM swappiness (180),
-                         vm.page-cluster=0 (crítico para ZRAM), dirty ratios equilibrados y TCP BBR + FastOpen.
-  2. Límites de Proceso: Descriptores (1M nofile), memoria bloqueada (memlock) y límites en systemd system/user
-                         para que aplicaciones GUI (IDEs, compiladores, navegadores) hereden los límites.
-  3. Systemd Timeouts:   Reducción de DefaultTimeoutStopSec y AbortSec a 10s para apagados/reinicios instantáneos.
-  4. Snapper Btrfs:      Límites equilibrados de instantáneas horarias/diarias y timers de limpieza activos.
-  5. Baloo Indexer:      Exclusiones masivas de directorios de desarrollo para prevenir saturación de CPU/disco.
-  6. Contenedores:       Instalación de Distrobox y Podman para entornos aislados.
+                         vm.page-cluster=0, vm.watermark_boost_factor=0 (elimina microtirones), TCP BBR + FQ
+                         con carga automática del módulo tcp_bbr en /etc/modules-load.d/bbr.conf.
+  2. Límites de Proceso: Descriptores (1M nofile), memoria bloqueada (memlock infinity), DefaultTasksMax=infinity
+                         en systemd system/user para que IDEs y compiladores nunca agoten recursos.
+  3. Systemd Timeouts:   Reducción de DefaultTimeoutStopSec y AbortSec a 10s para apagados/reinicios limpios y rápidos.
+  4. Snapper Btrfs:      Límites de retención balanceados (5 horarias, 7 diarias, 2 semanales, 0 mensuales/anuales),
+                         limpieza de instantáneas vacías y timers de mantenimiento activos.
+  5. Baloo Indexer:      Configuración nativa de KDE Plasma 6 (balooctl6) con exclusión de Workspace, .cache,
+                         node_modules, .cargo y contenedores, desactivando indexación profunda de contenidos.
+  6. Memoria ZRAM:       Compresión ZSTD al 50% de RAM (hasta 8 GB) para mitigar la necesidad de swap en disco.
+  7. Contenedores:       Disponibilidad de Distrobox y Podman para entornos aislados de desarrollo.
 EOF
 }
 
@@ -86,34 +96,69 @@ show_status() {
     echo "🔍 ESTADO DE RENDIMIENTO Y OPTIMIZACIONES - OPENSUSE TUMBLEWEED"
     echo "================================================================="
     echo "• Kernel:                        $(uname -r)"
-    echo "• Planificador CPU Governor:     $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null || echo 'n/a')"
+    local gov_driver gov_name
+    gov_driver=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver 2>/dev/null || echo 'n/a')
+    gov_name=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null || echo 'n/a')
+    echo "• CPU Scaling:                   $gov_name (Driver: $gov_driver)"
     echo "-----------------------------------------------------------------"
-    echo "• fs.inotify.max_user_watches:   $(sysctl -n fs.inotify.max_user_watches 2>/dev/null || echo 'n/a')"
-    echo "• fs.inotify.max_user_instances: $(sysctl -n fs.inotify.max_user_instances 2>/dev/null || echo 'n/a')"
-    echo "• fs.file-max:                   $(sysctl -n fs.file-max 2>/dev/null || echo 'n/a')"
-    echo "• vm.max_map_count:              $(sysctl -n vm.max_map_count 2>/dev/null || echo 'n/a')"
-    echo "• vm.swappiness (ZRAM):          $(sysctl -n vm.swappiness 2>/dev/null || echo 'n/a')"
-    echo "• vm.page-cluster (ZRAM):        $(sysctl -n vm.page-cluster 2>/dev/null || echo 'n/a')"
-    echo "• vm.vfs_cache_pressure:         $(sysctl -n vm.vfs_cache_pressure 2>/dev/null || echo 'n/a')"
-    echo "• vm.dirty_ratio / background:   $(sysctl -n vm.dirty_ratio 2>/dev/null || echo 'n/a') / $(sysctl -n vm.dirty_background_ratio 2>/dev/null || echo 'n/a')"
-    echo "• net.ipv4.tcp_congestion_ctrl:  $(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo 'n/a')"
-    echo "• net.ipv4.tcp_fastopen:         $(sysctl -n net.ipv4.tcp_fastopen 2>/dev/null || echo 'n/a')"
+    echo "• fs.inotify.max_user_watches:   $(cat /proc/sys/fs/inotify/max_user_watches 2>/dev/null || echo 'n/a')"
+    echo "• fs.inotify.max_user_instances: $(cat /proc/sys/fs/inotify/max_user_instances 2>/dev/null || echo 'n/a')"
+    echo "• fs.file-max:                   $(cat /proc/sys/fs/file-max 2>/dev/null || echo 'n/a')"
+    echo "• vm.max_map_count:              $(cat /proc/sys/vm/max_map_count 2>/dev/null || echo 'n/a')"
+    echo "• vm.swappiness (ZRAM):          $(cat /proc/sys/vm/swappiness 2>/dev/null || echo 'n/a')"
+    echo "• vm.page-cluster (ZRAM):        $(cat /proc/sys/vm/page-cluster 2>/dev/null || echo 'n/a')"
+    echo "• vm.watermark_boost_factor:     $(cat /proc/sys/vm/watermark_boost_factor 2>/dev/null || echo 'n/a')"
+    echo "• vm.vfs_cache_pressure:         $(cat /proc/sys/vm/vfs_cache_pressure 2>/dev/null || echo 'n/a')"
+    echo "• vm.dirty_ratio / background:   $(cat /proc/sys/vm/dirty_ratio 2>/dev/null || echo 'n/a') / $(cat /proc/sys/vm/dirty_background_ratio 2>/dev/null || echo 'n/a')"
+    echo "• net.ipv4.tcp_congestion_ctrl:  $(cat /proc/sys/net/ipv4/tcp_congestion_control 2>/dev/null || echo 'n/a')"
+    echo "• net.core.default_qdisc:        $(cat /proc/sys/net/core/default_qdisc 2>/dev/null || echo 'n/a')"
+    echo "• net.ipv4.tcp_fastopen:         $(cat /proc/sys/net/ipv4/tcp_fastopen 2>/dev/null || echo 'n/a')"
     echo "-----------------------------------------------------------------"
     echo "• Límites nofile (soft / hard):  $(ulimit -Sn 2>/dev/null || echo 'n/a') / $(ulimit -Hn 2>/dev/null || echo 'n/a')"
-    echo "• Dispositivo ZRAM:              $(zramctl 2>/dev/null | grep -E '^/dev/zram' || echo 'No detectado / inactivo')"
+    local zram_info
+    zram_info=$(zramctl 2>/dev/null | grep -E '^/dev/zram' || true)
+    if [ -n "$zram_info" ]; then
+        echo "• Dispositivo ZRAM:              $zram_info"
+    else
+        echo "• Dispositivo ZRAM:              No detectado / inactivo"
+    fi
     echo "-----------------------------------------------------------------"
-    echo "• Estado de Snapper (Btrfs):     $(if command -v snapper &>/dev/null && [ -f /etc/snapper/configs/root ]; then echo "Activo (Config root presente)"; else echo "No configurado"; fi)"
     if command -v snapper &>/dev/null && [ -f /etc/snapper/configs/root ]; then
+        echo "• Estado de Snapper (Btrfs):     Activo (/etc/snapper/configs/root)"
         echo "  - Horarias (Hourly):           $(grep -E '^TIMELINE_LIMIT_HOURLY=' /etc/snapper/configs/root 2>/dev/null || echo 'n/a')"
         echo "  - Diarias (Daily):             $(grep -E '^TIMELINE_LIMIT_DAILY=' /etc/snapper/configs/root 2>/dev/null || echo 'n/a')"
+        echo "  - Semanales (Weekly):          $(grep -E '^TIMELINE_LIMIT_WEEKLY=' /etc/snapper/configs/root 2>/dev/null || echo 'n/a')"
+        echo "  - Mensuales (Monthly):         $(grep -E '^TIMELINE_LIMIT_MONTHLY=' /etc/snapper/configs/root 2>/dev/null || echo 'n/a')"
+        echo "  - Timers Snapper:              cleanup=$(systemctl is-active snapper-cleanup.timer 2>/dev/null || echo 'n/a'), timeline=$(systemctl is-active snapper-timeline.timer 2>/dev/null || echo 'n/a')"
+    else
+        echo "• Estado de Snapper (Btrfs):     No configurado o snapper ausente"
     fi
-    echo "• Estado de Baloo (KDE Indexer): $(if command -v balooctl6 &>/dev/null; then balooctl6 status 2>/dev/null | head -n1; elif command -v balooctl &>/dev/null; then balooctl status 2>/dev/null | head -n1; else echo "No detectado"; fi)"
+    echo "-----------------------------------------------------------------"
+    local baloo_status
+    if command -v balooctl6 &>/dev/null; then
+        baloo_status=$(run_as_user balooctl6 status 2>/dev/null | head -n1 || echo "Instalado")
+        echo "• Estado de Baloo (KDE 6):       $baloo_status"
+        local baloo_indexing
+        baloo_indexing=$(run_as_user balooctl6 config list contentIndexing 2>/dev/null || echo "desconocido")
+        echo "  - Indexación de contenido:     $baloo_indexing"
+    elif command -v balooctl &>/dev/null; then
+        baloo_status=$(run_as_user balooctl status 2>/dev/null | head -n1 || echo "Instalado")
+        echo "• Estado de Baloo (KDE 5):       $baloo_status"
+    else
+        echo "• Estado de Baloo (KDE Indexer): No detectado"
+    fi
     echo "• Distrobox instalado:           $(if command -v distrobox &>/dev/null; then echo "✅ Sí ($(distrobox version 2>/dev/null || echo 'instalado'))"; else echo "❌ No"; fi)"
     echo "================================================================="
 }
 
 apply_sysctl() {
-    echo "⚙️ [Sysctl] Aplicando optimizaciones avanzadas de Kernel para openSUSE Tumbleweed..."
+    echo "⚙️ [Sysctl] Aplicando optimizaciones avanzadas de Kernel y TCP BBR..."
+
+    # Asegurar módulo tcp_bbr en arranque y en caliente
+    $SUDO mkdir -p /etc/modules-load.d
+    echo "tcp_bbr" | $SUDO tee /etc/modules-load.d/bbr.conf > /dev/null
+    $SUDO modprobe tcp_bbr 2>/dev/null || true
+
     $SUDO mkdir -p /etc/sysctl.d
     cat <<'EOF' | $SUDO tee /etc/sysctl.d/99-tumbleweed-dev.conf > /dev/null
 # =============================================================================
@@ -128,19 +173,22 @@ fs.file-max = 2097152
 # Memoria virtual y mmap ampliado (necesario para bases de datos, Elasticsearch, LLMs, Steam/Proton)
 vm.max_map_count = 16777216
 
-# Gestión de swap optimizada para ZRAM
+# Gestión de swap optimizada para ZRAM (alta swappiness para comprimir páginas inactivas en RAM)
 vm.swappiness = 180
 vm.page-cluster = 0
 
-# Preservación agresiva de caché de inodos y dentry en memoria
+# Eliminar microtirones de kswapd en desbordamiento de memoria
+vm.watermark_boost_factor = 0
+
+# Preservación equilibrada de caché de inodos y dentry en memoria
 vm.vfs_cache_pressure = 50
 
-# Ratios de escritura en disco asíncronos y reactivos
+# Ratios de escritura en disco asíncronos y reactivos para almacenamiento NVMe
 vm.dirty_ratio = 10
 vm.dirty_background_ratio = 5
 
-# Pila de red TCP de alto rendimiento y baja latencia
-net.core.default_qdisc = fq_codel
+# Pila de red TCP de alto rendimiento y baja latencia (BBR + Fair Queueing)
+net.core.default_qdisc = fq
 net.ipv4.tcp_congestion_control = bbr
 net.ipv4.tcp_fastopen = 3
 net.core.somaxconn = 4096
@@ -148,7 +196,7 @@ net.ipv4.tcp_max_syn_backlog = 4096
 EOF
 
     $SUDO sysctl --system > /dev/null 2>&1 || true
-    echo "  ✅ Parámetros de sysctl aplicados correctamente."
+    echo "  ✅ Parámetros de sysctl y módulo BBR aplicados con éxito."
 }
 
 apply_limits() {
@@ -171,6 +219,7 @@ EOF
 [Manager]
 DefaultLimitNOFILE=1048576:1048576
 DefaultLimitMEMLOCK=infinity
+DefaultTasksMax=infinity
 DefaultTimeoutStopSec=10s
 DefaultTimeoutAbortSec=10s
 EOF
@@ -179,11 +228,16 @@ EOF
 [Manager]
 DefaultLimitNOFILE=1048576:1048576
 DefaultLimitMEMLOCK=infinity
+DefaultTasksMax=infinity
 DefaultTimeoutStopSec=10s
 DefaultTimeoutAbortSec=10s
 EOF
 
-    echo "  ✅ Límites configurados para sesiones de usuario y servicios systemd."
+    # Aplicar inmediatamente la configuración a systemd
+    $SUDO systemctl daemon-reexec 2>/dev/null || true
+    run_as_user systemctl --user daemon-reexec 2>/dev/null || true
+
+    echo "  ✅ Límites configurados y daemon-reexec ejecutado para system y user."
 }
 
 apply_snapper() {
@@ -193,9 +247,13 @@ apply_snapper() {
         $SUDO sed -i 's/^TIMELINE_LIMIT_DAILY=.*/TIMELINE_LIMIT_DAILY="7"/' /etc/snapper/configs/root 2>/dev/null || true
         $SUDO sed -i 's/^TIMELINE_LIMIT_WEEKLY=.*/TIMELINE_LIMIT_WEEKLY="2"/' /etc/snapper/configs/root 2>/dev/null || true
         $SUDO sed -i 's/^TIMELINE_LIMIT_MONTHLY=.*/TIMELINE_LIMIT_MONTHLY="0"/' /etc/snapper/configs/root 2>/dev/null || true
+        $SUDO sed -i 's/^TIMELINE_LIMIT_QUARTERLY=.*/TIMELINE_LIMIT_QUARTERLY="0"/' /etc/snapper/configs/root 2>/dev/null || true
         $SUDO sed -i 's/^TIMELINE_LIMIT_YEARLY=.*/TIMELINE_LIMIT_YEARLY="0"/' /etc/snapper/configs/root 2>/dev/null || true
+        $SUDO sed -i 's/^EMPTY_PRE_POST_CLEANUP=.*/EMPTY_PRE_POST_CLEANUP="yes"/' /etc/snapper/configs/root 2>/dev/null || true
+        $SUDO sed -i 's/^NUMBER_LIMIT=.*/NUMBER_LIMIT="2-10"/' /etc/snapper/configs/root 2>/dev/null || true
+        $SUDO sed -i 's/^NUMBER_LIMIT_IMPORTANT=.*/NUMBER_LIMIT_IMPORTANT="4-10"/' /etc/snapper/configs/root 2>/dev/null || true
 
-        # Habilitar timers automáticos de Snapper
+        # Habilitar y arrancar timers automáticos de Snapper
         $SUDO systemctl enable --now snapper-cleanup.timer 2>/dev/null || true
         $SUDO systemctl enable --now snapper-timeline.timer 2>/dev/null || true
         echo "  ✅ Snapper optimizado para balancear seguridad y espacio en disco."
@@ -205,21 +263,59 @@ apply_snapper() {
 }
 
 apply_baloo() {
-    echo "⚙️ [Baloo] Configurando exclusiones del indexador de KDE Plasma para desarrollo..."
-    # Configurar exclusiones de carpetas pesadas en baloorc del usuario
+    echo "⚙️ [Baloo] Configurando exclusiones del indexador de KDE Plasma 6 para desarrollo..."
     run_as_user mkdir -p "$USER_HOME/.config"
-    local baloorc="$USER_HOME/.config/baloorc"
 
-    # Excluir directorios típicos de dependencias y builds pesadas
-    local exclude_dirs="$USER_HOME/Workspace/node_modules,$USER_HOME/.cache,$USER_HOME/.cargo,$USER_HOME/.rustup,$USER_HOME/.local/share/containers,$USER_HOME/.local/share/Trash,$USER_HOME/Descargas,$USER_HOME/Downloads"
+    # Lista de directorios pesados de desarrollo y caché para excluir
+    local dev_dirs=(
+        "$USER_HOME/Workspace"
+        "$USER_HOME/.cache"
+        "$USER_HOME/.cargo"
+        "$USER_HOME/.rustup"
+        "$USER_HOME/.local/share/containers"
+        "$USER_HOME/.local/share/Trash"
+        "$USER_HOME/.var/app"
+        "$USER_HOME/Descargas"
+        "$USER_HOME/Downloads"
+    )
 
-    run_as_user kwriteconfig6 --file baloorc --group "General" --key "exclude folders[$e]" "$exclude_dirs" 2>/dev/null || \
-    run_as_user kwriteconfig5 --file baloorc --group "General" --key "exclude folders[$e]" "$exclude_dirs" 2>/dev/null || true
+    if command -v balooctl6 &>/dev/null; then
+        # 1. Configurar exclusiones nativamente vía balooctl6 en KDE Plasma 6
+        for dir in "${dev_dirs[@]}"; do
+            if [ -d "$dir" ] || [ "$dir" = "$USER_HOME/Workspace" ]; then
+                run_as_user balooctl6 config add excludeFolders "$dir" 2>/dev/null || true
+            fi
+        done
 
-    # Excluir indexación de contenido de archivos de código masivo
-    run_as_user kwriteconfig6 --file baloorc --group "General" --key "only basic indexing" true 2>/dev/null || true
+        # 2. Desactivar indexación profunda de contenidos (evita saturación en ficheros masivos)
+        run_as_user balooctl6 config set contentIndexing no 2>/dev/null || true
+    fi
 
-    echo "  ✅ Baloo configurado con exclusiones de desarrollo para ahorrar CPU y batería."
+    # 3. Respaldo directo en baloofilerc (archivo nativo de KDE Plasma 6)
+    if command -v kwriteconfig6 &>/dev/null; then
+        run_as_user kwriteconfig6 --file baloofilerc --group "General" --key "only basic indexing" true 2>/dev/null || true
+    fi
+
+    echo "  ✅ Baloo configurado con exclusiones de desarrollo para ahorrar CPU, disco y batería."
+}
+
+apply_zram() {
+    echo "⚙️ [ZRAM] Verificando compresión de memoria RAM vía systemd-zram-generator..."
+    $SUDO mkdir -p /etc/systemd
+    if [ ! -f /etc/systemd/zram-generator.conf ]; then
+        echo "  • Creando configuración de zram-generator (zstd al 50% de RAM, máx 8GB)..."
+        cat <<'EOF' | $SUDO tee /etc/systemd/zram-generator.conf > /dev/null
+[zram0]
+zram-size = min(ram / 2, 8192)
+compression-algorithm = zstd
+swap-priority = 100
+EOF
+    fi
+
+    if ! systemctl is-active systemd-zram-setup@zram0.service &>/dev/null; then
+        $SUDO systemctl restart systemd-zram-setup@zram0.service 2>/dev/null || true
+    fi
+    echo "  ✅ ZRAM operativo y configurado."
 }
 
 # Procesar opciones CLI
@@ -248,11 +344,16 @@ case "${1:-}" in
         apply_baloo
         exit 0
         ;;
+    --zram)
+        apply_zram
+        exit 0
+        ;;
     --no-install)
         apply_sysctl
         apply_limits
         apply_snapper
         apply_baloo
+        apply_zram
         echo "================================================================="
         echo "✅ Optimizaciones aplicadas (modo sin instalación de paquetes)."
         echo "================================================================="
@@ -266,10 +367,15 @@ case "${1:-}" in
         apply_limits
         apply_snapper
         apply_baloo
+        apply_zram
 
         # Instalar Distrobox si no está presente
-        echo "📦 Instalando Distrobox para contenedores de desarrollo..."
-        $SUDO zypper --non-interactive install -y distrobox 2>/dev/null || true
+        if ! command -v distrobox &>/dev/null; then
+            echo "📦 Instalando Distrobox para contenedores de desarrollo..."
+            $SUDO zypper --non-interactive install -y distrobox 2>/dev/null || true
+        else
+            echo "📦 Distrobox ya está instalado."
+        fi
 
         echo "================================================================="
         echo "✅ Optimizaciones completadas con éxito."

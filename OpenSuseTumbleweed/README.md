@@ -40,7 +40,7 @@ Scripts de configuración del sistema operativo, personalización de KDE Plasma 
 - **`post-install-intel.sh`**: Post-instalación optimizada para Intel Core / Media Center (VA-API Intel i965 / media-driver, PipeWire, codecs OpenH264, Kodi).
 - **`kde-settings.sh`**: Configuración y personalización de KDE Plasma 6 (Breeze Dark, KWin botones, Dolphin KIO servicemenus para Kitty y Antigravity, Night Color a 4000K, atajo Ctrl+Alt+T).
 - **`laptop-setup.sh`**: Optimización para portátiles de desarrollo (KDE Touchpad `kcminputrc`, PowerDevil `powermanagementprofilesrc`, Bluetooth FastConnectable, logind lid switch, persistencia de brillo al 95%).
-- **`tumbleweed-tuning.sh`**: Ajustes de Kernel (`sysctl` ZRAM/BBR/Inotify), límites de sistema (`limits.d`), políticas de retención Snapper en Btrfs y exclusiones para Baloo en directorios de desarrollo (`--status`, `--sysctl`, `--limits`, `--snapper`, `--baloo`).
+- **`tumbleweed-tuning.sh`**: Ajustes de Kernel (`sysctl` ZRAM/BBR/Inotify), límites de sistema (`limits.d`), políticas de retención Snapper en Btrfs, exclusiones de Baloo en KDE Plasma 6 y compresión ZRAM (`--status`, `--sysctl`, `--limits`, `--snapper`, `--baloo`, `--zram`).
 - **`cockpit.sh`**: Consola web de administración Cockpit con módulos para Podman, MVs KVM, almacenamiento y Snapper snapshots (`--status`, `--open`, `--start`, `--stop`, `--disable`).
 - **`fastfetch.sh`**: Resumen estético del sistema con soporte para openSUSE y KDE Plasma.
 - **`fonts.sh`**: Instalación automatizada de fuentes de desarrollo (JetBrainsMono, FiraCode, CascadiaCode Nerd Fonts).
