@@ -192,15 +192,19 @@ just steam
 
 ---
 
-## 10. Web Management with Cockpit (`cockpit.sh`)
+## 10. Web Management with Cockpit & Desktop Client (`cockpit.sh`)
 
-Web administration console at [https://localhost:9090](https://localhost:9090):
+System management available via web and openSUSE native desktop client launcher:
 
-- Modules included: `cockpit-podman`, `cockpit-machines` (KVM), `cockpit-snapshots` (Snapper Btrfs).
-- CLI control:
+- **Web access**: [https://localhost:9090](https://localhost:9090)
+- **Desktop client**: Native `Cockpit Client Launcher` (`cockpit-client-launcher`).
+- **Modules included**: `cockpit-podman`, `cockpit-machines` (KVM), `cockpit-snapshots` (Snapper Btrfs), `cockpit-storaged`, `cockpit-networkmanager`, `cockpit-firewalld`, `cockpit-packages`, `cockpit-repos`, `cockpit-bootloader`.
+- **CLI control**:
   ```bash
-  just cockpit         # Start and enable
-  just cockpit-status  # Check status
+  just cockpit         # Check components and status (idempotent)
+  just cockpit-status  # Detailed status of socket, port, and modules
+  just cockpit-open    # Open in web browser
+  just cockpit-client  # Launch native desktop client
   ```
 
 ---

@@ -192,15 +192,19 @@ just steam
 
 ---
 
-## 10. Panel Web Cockpit (`cockpit.sh`)
+## 10. Panel Web Cockpit y Cliente de Escritorio (`cockpit.sh`)
 
-Administración web del sistema disponible en [https://localhost:9090](https://localhost:9090):
+Administración del sistema disponible vía web y a través del cliente de escritorio nativo de openSUSE:
 
-- Módulos incluidos: `cockpit-podman`, `cockpit-machines` (KVM), `cockpit-snapshots` (Snapper Btrfs).
-- Gestión por CLI:
+- **Acceso web**: [https://localhost:9090](https://localhost:9090)
+- **Acceso de escritorio**: Aplicación nativa `Cockpit Client Launcher` (`cockpit-client-launcher`).
+- **Módulos incluidos**: `cockpit-podman`, `cockpit-machines` (KVM), `cockpit-snapshots` (Snapper Btrfs), `cockpit-storaged`, `cockpit-networkmanager`, `cockpit-firewalld`, `cockpit-packages`, `cockpit-repos`, `cockpit-bootloader`.
+- **Gestión por CLI**:
   ```bash
-  just cockpit         # Iniciar y habilitar
-  just cockpit-status  # Diagnóstico del servicio
+  just cockpit         # Verificación y estado general (idempotente)
+  just cockpit-status  # Diagnóstico detallado del socket, puerto y módulos
+  just cockpit-open    # Abrir en el navegador web
+  just cockpit-client  # Lanzar cliente de escritorio nativo
   ```
 
 ---

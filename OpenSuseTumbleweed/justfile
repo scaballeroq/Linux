@@ -169,13 +169,21 @@ virtualization:
 virtualization-status:
     ./Virtualizacion/virtualization.sh --status
 
-# Administración Web (Cockpit + Cockpit Podman + Cockpit Snapper)
-cockpit:
-    ./Setup/cockpit.sh
+# Administración Web (Cockpit + Podman + Snapper + Máquinas Virtuales)
+cockpit *args:
+    ./Setup/cockpit.sh {{args}}
 
-# Estado del servicio Cockpit
+# Estado del servicio y módulos de Cockpit
 cockpit-status:
     ./Setup/cockpit.sh --status
+
+# Abrir Cockpit en el navegador web (https://localhost:9090)
+cockpit-open:
+    ./Setup/cockpit.sh --open
+
+# Lanzar Cockpit Client Launcher (aplicación nativa de escritorio openSUSE)
+cockpit-client:
+    ./Setup/cockpit.sh --client
 
 # =============================================================================
 # CONTROL DE VERSIONES

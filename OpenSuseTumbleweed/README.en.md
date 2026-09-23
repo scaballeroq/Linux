@@ -42,7 +42,7 @@ Operating system configuration, KDE Plasma 6 customization, and hardening script
 - **`laptop-setup.sh`**: Optimization for development laptops (power-profiles-daemon, Bluetooth FastConnectable/battery reporting, smart lid switch with multi-monitor, Wayland touchpad, and native Plasma 6 PowerDevil profiles, `--status`).
 - **`fingerprint-setup.sh`**: Fingerprint authentication and unlock (fprintd + PAM in KDE Plasma 6, Synaptics sensor, `--status`, `--enroll`, `--verify`, `--disable`).
 - **`tumbleweed-tuning.sh`**: Kernel tuning (`sysctl` ZRAM/BBR/Inotify), system limits (`limits.d`), Snapper Btrfs retention policies, Baloo file indexing exclusions in KDE Plasma 6, and ZRAM compression (`--status`, `--sysctl`, `--limits`, `--snapper`, `--baloo`, `--zram`).
-- **`cockpit.sh`**: Cockpit web administration console with modules for Podman, KVM machines, storage, and Snapper snapshots (`--status`, `--open`, `--start`, `--stop`, `--disable`).
+- **`cockpit.sh`**: Cockpit web console and desktop client launcher (Podman, KVM, storage, Snapper, `--status`, `--open`, `--client`, `--start`, `--stop`, `--disable`).
 - **`fastfetch.sh`**: Aesthetic system summary with custom FastCat card configuration (`--status`, `--run`, `--diff`, `--force`).
 - **`fonts.sh`**: Automated installation and diagnostics for developer fonts (JetBrainsMono, FiraCode, CascadiaCode, Meslo, and Hack Nerd Fonts, `--status`, `--list`, `--clean`).
 - **`kitty.sh`**: GPU-accelerated Kitty terminal with Catppuccin Mocha theme, opacity, blur, Ctrl+Alt+T shortcut, and Dolphin servicemenu (`--status`).

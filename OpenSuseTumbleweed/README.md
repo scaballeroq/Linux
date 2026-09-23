@@ -42,7 +42,7 @@ Scripts de configuración del sistema operativo, personalización de KDE Plasma 
 - **`laptop-setup.sh`**: Optimización para portátiles de desarrollo (power-profiles-daemon, Bluetooth FastConnectable/batería, cierre de tapa inteligente con multimonitor, Touchpad Wayland y perfiles PowerDevil en Plasma 6, `--status`).
 - **`fingerprint-setup.sh`**: Autenticación y desbloqueo por huella dactilar (fprintd + PAM en KDE Plasma 6, sensor Synaptics, `--status`, `--enroll`, `--verify`, `--disable`).
 - **`tumbleweed-tuning.sh`**: Ajustes de Kernel (`sysctl` ZRAM/BBR/Inotify), límites de sistema (`limits.d`), políticas de retención Snapper en Btrfs, exclusiones de Baloo en KDE Plasma 6 y compresión ZRAM (`--status`, `--sysctl`, `--limits`, `--snapper`, `--baloo`, `--zram`).
-- **`cockpit.sh`**: Consola web de administración Cockpit con módulos para Podman, MVs KVM, almacenamiento y Snapper snapshots (`--status`, `--open`, `--start`, `--stop`, `--disable`).
+- **`cockpit.sh`**: Consola web Cockpit y cliente de escritorio (Podman, KVM, almacenamiento, Snapper, `--status`, `--open`, `--client`, `--start`, `--stop`, `--disable`).
 - **`fastfetch.sh`**: Resumen estético del sistema con configuración personalizada FastCat (`--status`, `--run`, `--diff`, `--force`).
 - **`fonts.sh`**: Instalación automatizada y diagnóstico de fuentes de desarrollo (JetBrainsMono, FiraCode, CascadiaCode, Meslo y Hack Nerd Fonts, `--status`, `--list`, `--clean`).
 - **`kitty.sh`**: Terminal Kitty acelerada por GPU con opacidad/blur, tema Catppuccin Mocha, atajo Ctrl+Alt+T y servicemenu en Dolphin (`--status`).
