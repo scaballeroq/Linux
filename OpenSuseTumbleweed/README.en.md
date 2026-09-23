@@ -39,7 +39,7 @@ Operating system configuration, KDE Plasma 6 customization, and hardening script
 - **`post-install-amd.sh`**: Post-installation optimized for AMD Ryzen (ZRAM, RADV, Mesa, PipeWire, Packman priority 90, KDE Plasma 6 patterns, KDE Gear suite).
 - **`post-install-intel.sh`**: Post-installation optimized for Intel Core / Media Center (Intel i965 / media-driver VA-API, PipeWire, codecs, Kodi).
 - **`kde-settings.sh`**: KDE Plasma 6 customization (Breeze Dark, KWin buttons on the right, Dolphin KIO servicemenus for Kitty and Antigravity, Night Color at 4000K, Ctrl+Alt+T shortcut).
-- **`laptop-setup.sh`**: Optimization for development laptops (KDE Touchpad `kcminputrc`, PowerDevil `powermanagementprofilesrc`, Bluetooth FastConnectable, logind lid switch, 95% brightness persistence).
+- **`laptop-setup.sh`**: Optimization for development laptops (power-profiles-daemon, Bluetooth FastConnectable/battery reporting, smart lid switch with multi-monitor, Wayland touchpad, and native Plasma 6 PowerDevil profiles, `--status`).
 - **`tumbleweed-tuning.sh`**: Kernel tuning (`sysctl` ZRAM/BBR/Inotify), system limits (`limits.d`), Snapper Btrfs retention policies, Baloo file indexing exclusions in KDE Plasma 6, and ZRAM compression (`--status`, `--sysctl`, `--limits`, `--snapper`, `--baloo`, `--zram`).
 - **`cockpit.sh`**: Cockpit web administration console with modules for Podman, KVM machines, storage, and Snapper snapshots (`--status`, `--open`, `--start`, `--stop`, `--disable`).
 - **`fastfetch.sh`**: Aesthetic system summary with openSUSE and KDE Plasma branding.

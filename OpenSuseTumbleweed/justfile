@@ -29,7 +29,7 @@ post-install-amd:
 post-install-intel:
     ./Setup/post-install-intel.sh
 
-# Optimización para portátiles de desarrollo (KDE Touchpad, PowerDevil, Bluetooth FastConnectable, persistencia de brillo al 95%)
+# Optimización para portátiles de desarrollo (power-profiles-daemon, Bluetooth FastConnectable, cierre de tapa con multimonitor, Touchpad Wayland y PowerDevil Plasma 6)
 laptop:
     ./Setup/laptop-setup.sh
 

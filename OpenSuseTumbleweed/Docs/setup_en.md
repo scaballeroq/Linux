@@ -78,15 +78,16 @@ just kde-status
 
 ---
 
-## 3. Laptop & Display Optimization (`laptop-setup.sh`)
+## 3. Laptop Optimization (`laptop-setup.sh`)
 
 Tailored for the **HP EliteBook 855 G7** laptop (AMD Ryzen 7 PRO 4750U):
 
-- **KDE Touchpad (`kcminputrc`)**: Tap-to-click enabled, natural scrolling, and smooth acceleration.
-- **PowerDevil (`powermanagementprofilesrc`)**: Auto-sleep timeouts adjusted for battery and AC power.
-- **Bluetooth**: `FastConnectable = true` in `/etc/bluetooth/main.conf`.
-- **Systemd logind**: Suspend on lid close.
-- **Automatic 95% Brightness**: `set-screen-brightness.service` systemd unit restoring optimal screen brightness after boot.
+- **Power Profiles Daemon**: Native integration with KDE Plasma 6 battery applet (Performance, Balanced, and Power-saver profiles).
+- **KDE Touchpad (Wayland)**: Native tap-to-click by default on Plasma 6, with natural scrolling dynamically configured via KWin D-Bus and `kcminputrc`.
+- **PowerDevil (`powerdevilrc`)**: Native sleep timeouts tailored for AC (disabled) and battery (30 min).
+- **Smart Lid Close**: Inhibits suspension when external displays are connected (docking station) in both `logind` and `powerdevilrc`.
+- **Bluetooth (BlueZ)**: `Experimental = true` for peripheral battery percentage reporting in BlueDevil and `FastConnectable = true` for quick reconnection.
+- **Native Brightness**: Managed 100% natively by `systemd-backlight` and PowerDevil (no arbitrary percentage forcing or external tools).
 
 ```bash
 just laptop

@@ -78,15 +78,16 @@ just kde-status
 
 ---
 
-## 3. Optimización para Portátiles y Brillo (`laptop-setup.sh`)
+## 3. Optimización para Portátiles (`laptop-setup.sh`)
 
 Diseñado específicamente para el portátil **HP EliteBook 855 G7** (AMD Ryzen 7 PRO 4750U):
 
-- **KDE Touchpad (`kcminputrc`)**: Tap-to-click activado, desplazamiento natural y aceleración suave.
-- **PowerDevil (`powermanagementprofilesrc`)**: Suspensión automática ajustada en batería y corriente.
-- **Bluetooth**: `FastConnectable = true` en `/etc/bluetooth/main.conf`.
-- **Systemd logind**: Acción `suspend` al cerrar la tapa.
-- **Brillo automático al 95%**: Servicio systemd `set-screen-brightness.service` que restaura el brillo de la pantalla tras el arranque.
+- **Power Profiles Daemon**: Integración nativa con el applet de batería de KDE Plasma 6 (perfiles Rendimiento, Equilibrado y Ahorro).
+- **KDE Touchpad (Wayland)**: Tap-to-click nativo por defecto en Plasma 6 y desplazamiento natural configurado dinámicamente vía KWin D-Bus y `kcminputrc`.
+- **PowerDevil (`powerdevilrc`)**: Suspensión automática ajustada para corriente (AC deshabilitada) y batería (30 min).
+- **Cierre de Tapa Inteligente**: Inhibe la suspensión si hay monitores externos conectados (docking station) tanto en `logind` como en `powerdevilrc`.
+- **Bluetooth (BlueZ)**: `Experimental = true` para reporte de batería de dispositivos en BlueDevil y `FastConnectable = true` para reconexión rápida.
+- **Brillo Nativo**: Gestionado de forma 100% nativa por `systemd-backlight` y PowerDevil (sin forzar porcentajes arbitrarios ni herramientas externas).
 
 ```bash
 just laptop
