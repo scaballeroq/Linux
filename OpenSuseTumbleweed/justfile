@@ -109,9 +109,6 @@ fonts:
 fonts-status:
     ./Setup/fonts.sh --status
 
-# Apariencia e iconos (Papirus-Dark, Breeze-Dark e integración GTK 3/4 y Qt)
-apariencia:
-    ./Setup/apariencia.sh
 
 # Información estética del sistema (Fastfetch)
 fastfetch *args:

@@ -53,7 +53,6 @@ Scripts de configuración del sistema operativo, personalización de KDE Plasma 
 - **`multimedia.sh`**: Configuración de codecs multimedia oficiales (OpenH264 Cisco), FFmpeg oficial, plugins GStreamer y reproductores multimedia desacoplados vía Flatpak sin Packman (`--status`).
 - **`chrome.sh`**: Activación del repositorio oficial de Google Chrome e instalación de `google-chrome-stable` (`--status`).
 - **`steam.sh`**: Instalación de Steam nativo con GameMode, MangoHud, Proton-GE y drivers Vulkan de 32-bit (`--status`).
-- **`apariencia.sh`**: Iconos Papirus-Dark, Breeze-Dark e integración GTK 3/4 y Qt.
 - **`hp-printer-setup.sh`**: Pila de impresión para impresoras HP (CUPS, HPLIP, plugin propietario para LaserJet M15w, Firewalld USB/Wi-Fi, `--status`).
 
 ### 💻 [IDE](./IDE/)
