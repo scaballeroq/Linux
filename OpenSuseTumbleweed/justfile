@@ -114,8 +114,12 @@ apariencia:
     ./Setup/apariencia.sh
 
 # Información estética del sistema (Fastfetch)
-fastfetch:
-    ./Setup/fastfetch.sh
+fastfetch *args:
+    ./Setup/fastfetch.sh {{args}}
+
+# Estado y diagnóstico de la configuración de Fastfetch
+fastfetch-status:
+    ./Setup/fastfetch.sh --status
 
 # Terminal Kitty acelerada por GPU con tema Catppuccin Mocha, opacidad/blur y atajo Ctrl+Alt+T
 kitty:

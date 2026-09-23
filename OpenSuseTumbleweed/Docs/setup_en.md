@@ -133,7 +133,7 @@ Installs modern Rust/Go CLI utilities and loads modular configs from `~/.bashrc.
   just starship-status   # Check status
   ```
 - **Nerd Fonts (`fonts.sh`)**: Optimized installation and management of `JetBrainsMono`, `FiraCode`, `CascadiaCode`, `Meslo`, and `Hack` in `~/.local/share/fonts/`. Supports diagnostics (`just fonts-status` or `--status`), listing (`--list`), cleanup (`--clean`), or individual installation (`./Setup/fonts.sh CascadiaCode`).
-- **Fastfetch (`fastfetch.sh`)**: Aesthetic system overview for openSUSE and KDE Plasma.
+- **Fastfetch (`fastfetch.sh`)**: Aesthetic system summary with custom FastCat template (`config.jsonc`). Supports diagnostics (`just fastfetch-status` or `--status`), execution (`--run`), and diff comparison (`--diff`).
 
 ---
 
