@@ -198,13 +198,15 @@ Administración del sistema disponible vía web y a través del cliente de escri
 
 - **Acceso web**: [https://localhost:9090](https://localhost:9090)
 - **Acceso de escritorio**: Aplicación nativa `Cockpit Client Launcher` (`cockpit-client-launcher`).
-- **Módulos incluidos**: `cockpit-podman`, `cockpit-machines` (KVM), `cockpit-snapshots` (Snapper Btrfs), `cockpit-storaged`, `cockpit-networkmanager`, `cockpit-firewalld`, `cockpit-packages`, `cockpit-repos`, `cockpit-bootloader`.
+- **Módulos incluidos**: `cockpit-podman`, `cockpit-machines` (KVM), `cockpit-snapshots` (Snapper Btrfs), `cockpit-storaged`, `cockpit-networkmanager`, `cockpit-firewalld`, `cockpit-packages`, `cockpit-repos`, `cockpit-files` (opcional).
+- **Nota sobre gestor de arranque**: Si el sistema utiliza `systemd-boot`, el módulo `cockpit-bootloader` (diseñado exclusivamente para GRUB2) no es funcional y puede desinstalarse y bloquearse.
 - **Gestión por CLI**:
   ```bash
-  just cockpit         # Verificación y estado general (idempotente)
-  just cockpit-status  # Diagnóstico detallado del socket, puerto y módulos
-  just cockpit-open    # Abrir en el navegador web
-  just cockpit-client  # Lanzar cliente de escritorio nativo
+  just cockpit                   # Verificación y estado general (idempotente)
+  just cockpit-status            # Diagnóstico detallado del socket, puerto y módulos
+  just cockpit-open              # Abrir en el navegador web
+  just cockpit-client            # Lanzar cliente de escritorio nativo
+  just cockpit-remove-bootloader # Desinstalar y bloquear cockpit-bootloader (para systemd-boot)
   ```
 
 ---

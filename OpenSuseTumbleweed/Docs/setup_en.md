@@ -198,13 +198,15 @@ System management available via web and openSUSE native desktop client launcher:
 
 - **Web access**: [https://localhost:9090](https://localhost:9090)
 - **Desktop client**: Native `Cockpit Client Launcher` (`cockpit-client-launcher`).
-- **Modules included**: `cockpit-podman`, `cockpit-machines` (KVM), `cockpit-snapshots` (Snapper Btrfs), `cockpit-storaged`, `cockpit-networkmanager`, `cockpit-firewalld`, `cockpit-packages`, `cockpit-repos`, `cockpit-bootloader`.
+- **Modules included**: `cockpit-podman`, `cockpit-machines` (KVM), `cockpit-snapshots` (Snapper Btrfs), `cockpit-storaged`, `cockpit-networkmanager`, `cockpit-firewalld`, `cockpit-packages`, `cockpit-repos`, `cockpit-files` (optional).
+- **Bootloader Note**: If your system runs `systemd-boot`, the `cockpit-bootloader` module (designed strictly for GRUB2) is non-functional and can be safely uninstalled and locked.
 - **CLI control**:
   ```bash
-  just cockpit         # Check components and status (idempotent)
-  just cockpit-status  # Detailed status of socket, port, and modules
-  just cockpit-open    # Open in web browser
-  just cockpit-client  # Launch native desktop client
+  just cockpit                   # Check components and status (idempotent)
+  just cockpit-status            # Detailed status of socket, port, and modules
+  just cockpit-open              # Open in web browser
+  just cockpit-client            # Launch native desktop client
+  just cockpit-remove-bootloader # Uninstall and lock cockpit-bootloader (for systemd-boot)
   ```
 
 ---

@@ -185,6 +185,10 @@ cockpit-open:
 cockpit-client:
     ./Setup/cockpit.sh --client
 
+# Desinstalar y bloquear módulo de bootloader (GRUB2) en sistemas con systemd-boot
+cockpit-remove-bootloader:
+    ./Setup/cockpit.sh --remove-bootloader
+
 # =============================================================================
 # CONTROL DE VERSIONES
 # =============================================================================
