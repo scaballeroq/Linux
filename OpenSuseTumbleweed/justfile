@@ -89,7 +89,11 @@ starship-status:
 security:
     ./Setup/seguridad.sh
 
-# Seguridad avanzada (DNS-over-TLS con systemd-resolved)
+# Estado y diagnóstico de seguridad, cortafuegos y sysctl
+security-status:
+    ./Setup/seguridad.sh --status
+
+# Seguridad opcional (DNS-over-TLS con systemd-resolved)
 security-dot:
     ./Setup/seguridad-dot.sh
 
