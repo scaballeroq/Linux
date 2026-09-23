@@ -53,6 +53,7 @@ Operating system configuration, KDE Plasma 6 customization, and hardening script
 - **`chrome.sh`**: Official Google Chrome RPM repository activation and `google-chrome-stable` installation (`--status`).
 - **`steam.sh`**: Native Steam with GameMode, MangoHud, Proton-GE, and 32-bit Vulkan/Mesa drivers (`--status`).
 - **`apariencia.sh`**: Papirus-Dark icons, Breeze-Dark, and GTK 3/4 / Qt integration.
+- **`hp-printer-setup.sh`**: HP printer stack (CUPS, HPLIP, proprietary plugin for LaserJet M15w, Firewalld USB/Wi-Fi, `--status`).
 
 ### 💻 [IDE](./IDE/)
 - **`antigravity.sh`**: Google Antigravity Desktop setup (Chromium sandbox permissions, pixmap icons, Dolphin KIO servicemenu).

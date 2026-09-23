@@ -37,6 +37,14 @@ laptop:
 fingerprint:
     ./Setup/fingerprint-setup.sh
 
+# Configuración de impresoras HP (CUPS, HPLIP, plugin propietario para LaserJet M15w)
+printer:
+    ./Setup/hp-printer-setup.sh
+
+# Estado del sistema de impresión HP
+printer-status:
+    ./Setup/hp-printer-setup.sh --status
+
 # Personalización y configuración de KDE Plasma 6 (Breeze Dark, KWin botones, Dolphin KIO servicemenu, atajos)
 kde-setup:
     ./Setup/kde-settings.sh
