@@ -43,7 +43,7 @@ Operating system configuration, KDE Plasma 6 customization, and hardening script
 - **`tumbleweed-tuning.sh`**: Kernel tuning (`sysctl` ZRAM/BBR/Inotify), system limits (`limits.d`), Snapper Btrfs retention policies, Baloo file indexing exclusions in KDE Plasma 6, and ZRAM compression (`--status`, `--sysctl`, `--limits`, `--snapper`, `--baloo`, `--zram`).
 - **`cockpit.sh`**: Cockpit web administration console with modules for Podman, KVM machines, storage, and Snapper snapshots (`--status`, `--open`, `--start`, `--stop`, `--disable`).
 - **`fastfetch.sh`**: Aesthetic system summary with openSUSE and KDE Plasma branding.
-- **`fonts.sh`**: Automated developer fonts installation (JetBrainsMono, FiraCode, CascadiaCode Nerd Fonts).
+- **`fonts.sh`**: Automated installation and diagnostics for developer fonts (JetBrainsMono, FiraCode, CascadiaCode, Meslo, and Hack Nerd Fonts, `--status`, `--list`, `--clean`).
 - **`kitty.sh`**: GPU-accelerated Kitty terminal with Catppuccin Mocha theme, opacity, blur, Ctrl+Alt+T shortcut, and Dolphin servicemenu (`--status`).
 - **`seguridad.sh`**: System hardening with Firewalld (`kdeconnect`, `mdns`, `ssh` services, `libvirt` zone for virbr0, `trusted` zone for `podman+`), and unprivileged port binding for development.
 - **`shell.sh`**: Modern CLI utilities (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`, `dust`, `btop`, `jq`).

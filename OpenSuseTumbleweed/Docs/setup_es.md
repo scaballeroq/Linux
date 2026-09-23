@@ -121,7 +121,7 @@ Instala utilidades modernas de consola escritas en Rust/Go y activa la integraci
   just starship-disable  # Desactivar y restaurar prompt nativo
   just starship-status   # Ver estado actual
   ```
-- **Nerd Fonts (`fonts.sh`)**: Descarga e instala `JetBrainsMono`, `FiraCode`, `CascadiaCode`, `Meslo` y `Hack` en `~/.local/share/fonts/`.
+- **Nerd Fonts (`fonts.sh`)**: Gestión e instalación optimizada de `JetBrainsMono`, `FiraCode`, `CascadiaCode`, `Meslo` y `Hack` en `~/.local/share/fonts/`. Admite diagnóstico (`just fonts-status` o `--status`), listado (`--list`), limpieza (`--clean`) o instalación por fuente (`./Setup/fonts.sh CascadiaCode`).
 - **Fastfetch (`fastfetch.sh`)**: Resumen estético del sistema con soporte para openSUSE y KDE Plasma.
 
 ---
