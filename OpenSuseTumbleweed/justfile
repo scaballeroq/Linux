@@ -137,9 +137,13 @@ multimedia:
 multimedia-status:
     ./Setup/multimedia.sh --status
 
-# Navegador Google Chrome oficial
-chrome:
-    ./Setup/chrome.sh
+# Navegador Google Chrome oficial (Instalación, actualización u opciones)
+chrome *args:
+    ./Setup/chrome.sh {{args}}
+
+# Diagnóstico y estado de Google Chrome, repositorio oficial y Wayland
+chrome-status:
+    ./Setup/chrome.sh --status
 
 # Steam nativo, GameMode, MangoHud y drivers Vulkan 32-bit
 steam:
