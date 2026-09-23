@@ -1,5 +1,5 @@
 #!/bin/bash
-# post-install.sh - Despachador y selector inteligente de post-instalación para OpenSUSE Tumbleweed + GNOME
+# post-install.sh - Despachador y selector inteligente de post-instalación para OpenSUSE Tumbleweed + KDE Plasma 6
 # Detecta automáticamente la arquitectura de CPU (AMD Ryzen vs Intel Core) o permite selección manual
 
 set -euo pipefail
@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 show_help() {
     cat <<EOF
-🚀 Despachador de Post-Instalación para OpenSUSE Tumbleweed + GNOME
+🚀 Despachador de Post-Instalación para OpenSUSE Tumbleweed + KDE Plasma 6
 
 Uso:
   $0 [OPCIÓN]

@@ -1,6 +1,6 @@
 #!/bin/bash
 # post-install-intel.sh - Script de post-instalación para OpenSUSE Tumbleweed en Intel Core (Haswell i7-4790 / HD Graphics 4600)
-# (Configurado para Centro Multimedia / Media Center: Microcódigo Intel, VA-API i965, Codecs Packman, Kodi, GNOME)
+# (Configurado para Centro Multimedia / Media Center: Microcódigo Intel, VA-API i965, Codecs Packman, Kodi, KDE Plasma 6)
 
 set -euo pipefail
 
@@ -86,20 +86,25 @@ sudo zypper --non-interactive install -y \
 
 systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
 
-# 9. Entorno de Escritorio GNOME y Aplicaciones Base
-echo "ℹ️ Instalando componentes de GNOME..."
-sudo zypper --non-interactive install -y -t pattern gnome_basis gnome 2>/dev/null || true
+# 9. Entorno de Escritorio KDE Plasma 6 y Aplicaciones Base
+echo "ℹ️ Instalando componentes base de KDE Plasma 6..."
+sudo zypper --non-interactive install -y -t pattern kde_plasma kde 2>/dev/null || true
 sudo zypper --non-interactive install -y \
-    gnome-tweaks \
-    ptyxis \
-    nautilus \
-    gnome-text-editor \
-    gnome-calculator \
-    gnome-disk-utility \
-    gnome-system-monitor \
+    dolphin \
+    kate \
+    spectacle \
+    kcalc \
+    ark \
+    gwenview \
+    okular \
+    plasma-systemmonitor \
+    partitionmanager \
+    kinfocenter \
+    konsole \
     ffmpegthumbnailer \
-    evince \
-    seahorse 2>/dev/null || true
+    kio-extras \
+    papirus-icon-theme \
+    wl-clipboard 2>/dev/null || true
 
 # 10. Centro Multimedia: Kodi y Complementos de Streaming
 echo "ℹ️ Instalando Kodi y plugins oficiales de streaming..."
@@ -110,8 +115,8 @@ sudo zypper --non-interactive install -y \
     kodi-pvr-iptvsimple 2>/dev/null || true
 
 # 11. Integración de Flatpak & Flathub
-echo "ℹ️ Configurando Flatpak y Flathub..."
-sudo zypper --non-interactive install -y flatpak gnome-software 2>/dev/null || true
+echo "ℹ️ Configurando Flatpak y Flathub para KDE Discover..."
+sudo zypper --non-interactive install -y flatpak discover plasma-discover-backend-flatpak 2>/dev/null || true
 sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
 flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
 

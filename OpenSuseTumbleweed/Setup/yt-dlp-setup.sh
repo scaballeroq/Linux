@@ -1,19 +1,193 @@
 #!/bin/bash
-# yt-dlp-setup.sh - Instalación de dependencias para yt-dlp y multimedia para OpenSUSE Tumbleweed
+# ==============================================================================
+# yt-dlp-setup.sh - Instalación y optimización de yt-dlp, FFmpeg, AtomicParsley y Motor JS
+# openSUSE Tumbleweed (KDE Plasma 6)
+# ==============================================================================
+#
+# Uso:
+#   ./yt-dlp-setup.sh                -> Instala yt-dlp, FFmpeg, aceleradores, motor JS y genera config
+#   ./yt-dlp-setup.sh --status       -> Muestra el estado de yt-dlp, FFmpeg, AtomicParsley, motor JS
+#   ./yt-dlp-setup.sh --update       -> Actualiza yt-dlp y el motor JS (Deno) a la última versión
+#   ./yt-dlp-setup.sh --help         -> Muestra la ayuda interactiva
+# ==============================================================================
 
 set -euo pipefail
 
-echo "ℹ️ Instalando yt-dlp y FFMPEG vía Zypper en OpenSUSE Tumbleweed..."
-sudo zypper --non-interactive install -y yt-dlp ffmpeg 2>/dev/null || true
-
-echo "ℹ️ Configurando motor JavaScript (Deno) vía Mise..."
-if command -v mise &> /dev/null; then
-    echo "✅ Instalando Deno vía mise..."
-    mise use --global deno@latest
+if [ "$EUID" -ne 0 ]; then
+    if ! command -v sudo &> /dev/null; then
+        echo "❌ Error: 'sudo' no está disponible. Ejecuta este script como root o instala sudo."
+        exit 1
+    fi
+    SUDO="sudo"
 else
-    echo "⚠️ 'mise' no detectado. Instalando NodeJS a nivel de sistema como respaldo..."
-    sudo zypper --non-interactive install -y nodejs22 2>/dev/null || sudo zypper --non-interactive install -y nodejs || true
+    SUDO=""
 fi
 
-echo "✅ Entorno multimedia preparado."
-echo "💡 Usa los comandos: ytvideo, ytaudio, ytlista para descargar."
+# Detectar usuario real en caso de ejecución con sudo
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+    REAL_USER="$SUDO_USER"
+else
+    USER_HOME="${HOME}"
+    REAL_USER="${USER:-$(id -un)}"
+fi
+
+run_as_user() {
+    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+        sudo -u "$REAL_USER" env \
+            HOME="$USER_HOME" \
+            USER="$REAL_USER" \
+            PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" \
+            "$@"
+    else
+        "$@"
+    fi
+}
+
+show_help() {
+    cat <<EOF
+🎬 Optimizador y Gestor de yt-dlp - openSUSE Tumbleweed (KDE Plasma 6)
+
+Uso:
+  $0 [OPCIÓN]
+
+Opciones:
+  (sin argumentos)       Instala yt-dlp, FFmpeg, AtomicParsley, aria2 y motor JS (Deno).
+  --status, -s           Muestra el estado de herramientas multimedia, versiones activas y soporte de cookies.
+  --update, -u           Actualiza yt-dlp y el motor JavaScript (Deno) a la última versión disponible.
+  --help, -h             Muestra este mensaje de ayuda.
+
+Características configuradas:
+  • Stack Multimedia:   yt-dlp + FFmpeg completo de Packman para muxing y conversión de alta fidelidad.
+  • Metadatos y Carátulas: AtomicParsley y Mutagen para incrustar portadas y tags en MP4/M4A/MP3.
+  • Aceleración de red: aria2 para descargas concurrentes de fragmentos a máxima velocidad.
+  • Motor JavaScript:   Deno vía Mise para resolver retos de JavaScript (n-token challenges de YouTube).
+  • Configuración base: Genera ~/.config/yt-dlp/config con opciones óptimas de descarga y calidad.
+EOF
+}
+
+show_status() {
+    echo "================================================================="
+    echo "🔍 ESTADO MULTIMEDIA YT-DLP - OPENSUSE TUMBLEWEED"
+    echo "================================================================="
+    echo "• yt-dlp:              $(yt-dlp --version 2>/dev/null || echo 'No instalado')"
+    echo "• FFmpeg:              $(ffmpeg -version 2>/dev/null | head -n1 | awk '{print $3}' || echo 'No instalado')"
+    echo "• AtomicParsley:       $(AtomicParsley -v 2>/dev/null | head -n1 || (command -v AtomicParsley &>/dev/null && echo 'Instalado') || echo 'No instalado')"
+    echo "• aria2 (multi-hilo):  $(aria2c --version 2>/dev/null | head -n1 | awk '{print $3}' || echo 'No instalado')"
+    
+    # Motor JavaScript
+    local JS_ENGINE="No detectado"
+    if command -v deno &>/dev/null; then
+        JS_ENGINE="Deno ($(deno --version 2>/dev/null | head -n1 | awk '{print $2}'))"
+    elif command -v node &>/dev/null; then
+        JS_ENGINE="Node.js ($(node --version 2>/dev/null))"
+    elif command -v mise &>/dev/null && mise where deno &>/dev/null; then
+        JS_ENGINE="Deno vía Mise ($(mise where deno))"
+    fi
+    echo "• Motor JavaScript:    $JS_ENGINE"
+
+    echo "• Archivo de config:   $USER_HOME/.config/yt-dlp/config ($(if [ -f "$USER_HOME/.config/yt-dlp/config" ]; then echo 'Presente'; else echo 'No configurado'; fi))"
+    echo "================================================================="
+}
+
+update_components() {
+    echo "🔄 Actualizando yt-dlp y componentes multimedia..."
+    $SUDO zypper --non-interactive update -y yt-dlp ffmpeg aria2 2>/dev/null || true
+    
+    if command -v mise &>/dev/null; then
+        echo "ℹ️ Actualizando motor JavaScript Deno vía Mise..."
+        run_as_user mise use --global deno@latest 2>/dev/null || true
+    fi
+    echo "✅ Componentes multimedia actualizados con éxito."
+}
+
+install_packages() {
+    echo "📦 [1/3] Instalando yt-dlp, FFmpeg, AtomicParsley y aria2 vía Zypper..."
+    $SUDO zypper --non-interactive install -y \
+        yt-dlp \
+        ffmpeg \
+        aria2 \
+        python3-mutagen 2>/dev/null || $SUDO zypper --non-interactive install -y yt-dlp ffmpeg 2>/dev/null || true
+
+    # AtomicParsley
+    if ! command -v AtomicParsley &>/dev/null; then
+        $SUDO zypper --non-interactive install -y AtomicParsley 2>/dev/null || true
+    fi
+    echo "✅ Paquetes multimedia instalados."
+}
+
+configure_js_engine() {
+    echo "⚡ [2/3] Configurando motor JavaScript (Deno) para retos de descifrado de YouTube..."
+    if run_as_user command -v mise &> /dev/null || [ -x "$USER_HOME/.local/bin/mise" ]; then
+        run_as_user mise use --global deno@latest 2>/dev/null || true
+        run_as_user mise reshim 2>/dev/null || true
+        echo "✅ Deno configurado globalmente con Mise."
+    elif ! command -v deno &>/dev/null && ! command -v node &>/dev/null; then
+        echo "ℹ️ Instalando NodeJS como motor JS de respaldo..."
+        $SUDO zypper --non-interactive install -y nodejs 2>/dev/null || true
+    fi
+}
+
+generate_config() {
+    echo "⚙️ [3/3] Generando configuración optimizada en $USER_HOME/.config/yt-dlp/config..."
+    run_as_user mkdir -p "$USER_HOME/.config/yt-dlp"
+    
+    cat <<'EOF' | run_as_user tee "$USER_HOME/.config/yt-dlp/config" > /dev/null
+# =============================================================================
+# CONFIGURACIÓN GLOBAL DE YT-DLP - OPENSUSE TUMBLEWEED (KDE PLASMA 6)
+# =============================================================================
+
+# --- Metadatos y Miniaturas ---
+--embed-metadata
+--embed-thumbnail
+--embed-chapters
+
+# --- Descargas y Rendimiento ---
+--concurrent-fragments 5
+--no-overwrites
+--continue
+
+# --- Integración y Compatibilidad ---
+--prefer-free-formats
+--compat-options no-youtube-prefer-utc-upload-date
+
+# --- Subtítulos ---
+--sub-langs "es.*,en.*"
+--embed-subs
+EOF
+
+    echo "✅ Configuración ~/.config/yt-dlp/config lista."
+}
+
+case "${1:-}" in
+    --help|-h|help)
+        show_help
+        exit 0
+        ;;
+    --status|-s|status)
+        show_status
+        exit 0
+        ;;
+    --update|-u|update)
+        update_components
+        exit 0
+        ;;
+    "")
+        echo "================================================================="
+        echo "🎬 CONFIGURADOR MULTIMEDIA YT-DLP - OPENSUSE TUMBLEWEED"
+        echo "================================================================="
+        install_packages
+        configure_js_engine
+        generate_config
+        echo ""
+        echo "================================================================="
+        echo "✅ yt-dlp y stack multimedia configurados con éxito."
+        echo "💡 Aliases disponibles en terminal: ytvideo, ytaudio, ytlista, ytdl-subs"
+        echo "================================================================="
+        ;;
+    *)
+        echo "❌ Opción no reconocida: $1"
+        show_help
+        exit 1
+        ;;
+esac

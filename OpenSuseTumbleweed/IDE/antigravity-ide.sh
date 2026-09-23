@@ -346,7 +346,35 @@ mkdir -p "$(dirname "$icon_file")"
 if [ -n "$icon_source" ]; then
 	install -m 0644 "$icon_source" "$icon_file"
 fi
+pixmap_file="/usr/share/pixmaps/antigravity-ide.png"
+mkdir -p "$(dirname "$pixmap_file")"
+if [ -f "$icon_file" ]; then
+	ln -sf "$icon_file" "$pixmap_file"
+fi
 install -m 0644 "$desktop_staged" "$desktop_file"
+
+# Menú contextual para Dolphin en KDE Plasma
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+	USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+	KIO_DIR="$USER_HOME/.local/share/kio/servicemenus"
+	mkdir -p "$KIO_DIR"
+	cat <<'KIO_SCRIPT' > "$KIO_DIR/open-in-antigravity-ide.desktop"
+[Desktop Entry]
+Type=Service
+ServiceTypes=KonqPopupMenu/Plugin
+MimeType=inode/directory;
+Actions=openInAntigravityIde;
+X-KDE-Priority=TopLevel
+
+[Desktop Action openInAntigravityIde]
+Name=Abrir con Antigravity IDE
+Name[es]=Abrir con Antigravity IDE
+Icon=antigravity-ide
+Exec=antigravity-ide "%f"
+KIO_SCRIPT
+	chmod +x "$KIO_DIR/open-in-antigravity-ide.desktop" 2>/dev/null || true
+	chown "$SUDO_USER:" "$KIO_DIR/open-in-antigravity-ide.desktop" 2>/dev/null || true
+fi
 
 if [ -d "$install_root" ]; then
 	backup_root=$(mktemp -d "${install_root}.previous.XXXXXX")
@@ -363,7 +391,7 @@ if command -v update-desktop-database >/dev/null 2>&1; then
 	update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
 fi
 if command -v gtk-update-icon-cache >/dev/null 2>&1; then
-	gtk-update-icon-cache -q /usr/share/icons/hicolor 2>/dev/null || true
+	gtk-update-icon-cache -f -t -q /usr/share/icons/hicolor 2>/dev/null || true
 fi
 
 committed=yes

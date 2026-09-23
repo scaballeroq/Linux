@@ -1,17 +1,17 @@
-# OpenSUSE Tumbleweed Environment Configuration Justfile
-# (OpenSUSE Tumbleweed + GNOME)
+# openSUSE Tumbleweed Environment Configuration Justfile
+# (openSUSE Tumbleweed + KDE Plasma 6)
 
 # Instala todo el entorno por defecto (Auto-detección de CPU / Portátil AMD)
-setup-all: post-install workspace laptop fingerprint tuning extensions screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
-    echo "🚀 Entorno completo de OpenSUSE Tumbleweed + GNOME configurado. Por favor, reinicia el sistema."
+setup-all: post-install multimedia chrome steam laptop tuning kde-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+    @echo "🚀 Entorno completo de openSUSE Tumbleweed (KDE Plasma 6) configurado. Por favor, reinicia el sistema."
 
-# Perfil completo para Portátil de desarrollo (AMD Ryzen + Huella + Virtualización)
-setup-laptop-amd: post-install-amd workspace laptop fingerprint tuning extensions screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
-    echo "🚀 Entorno Portátil AMD Ryzen configurado con éxito. Por favor, reinicia el sistema."
+# Perfil completo para Portátil de desarrollo (AMD Ryzen + Virtualización + Contenedores)
+setup-laptop-amd: post-install-amd multimedia chrome steam laptop tuning kde-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+    @echo "🚀 Entorno Portátil AMD Ryzen (KDE Plasma 6) configurado con éxito. Por favor, reinicia el sistema."
 
-# Perfil para Sobremesa Centro Multimedia (Intel Haswell / Media Center - Sin virtualización ni batería)
-setup-media-desktop: post-install-intel workspace tuning extensions screensaver plymouth shell security fonts gnome apariencia fastfetch ptyxis firefox kodi
-    echo "🚀 Entorno Sobremesa Intel Media Center configurado con éxito. Por favor, reinicia el sistema."
+# Perfil para Sobremesa Centro Multimedia (Intel Core / Media Center - Sin virtualización ni batería)
+setup-media-desktop: post-install-intel multimedia chrome tuning kde-setup shell security fonts fastfetch kitty yt-dlp kodi
+    @echo "🚀 Entorno Sobremesa Intel (KDE Plasma 6) configurado con éxito. Por favor, reinicia el sistema."
 
 # =============================================================================
 # CONFIGURACIÓN BASE DEL SISTEMA
@@ -21,11 +21,11 @@ setup-media-desktop: post-install-intel workspace tuning extensions screensaver 
 post-install:
     ./Setup/post-install.sh
 
-# Configuración post-instalación para AMD Ryzen (Packman, RADV, Mesa, PipeWire, GNOME, OPI, ZRAM)
+# Configuración post-instalación para AMD Ryzen (Kernel, Packman, RADV, Mesa, PipeWire, KDE Plasma 6, ZRAM)
 post-install-amd:
     ./Setup/post-install-amd.sh
 
-# Configuración post-instalación para Intel Haswell/Core (Microcódigo Intel, i965 VA-API, Kodi, PipeWire, GNOME)
+# Configuración post-instalación para Intel Haswell/Core (Microcódigo Intel, i965/iHD VA-API, Kodi, PipeWire, KDE Plasma 6)
 post-install-intel:
     ./Setup/post-install-intel.sh
 
@@ -33,43 +33,55 @@ post-install-intel:
 workspace:
     ./Setup/mount-workspace.sh
 
-# Compilador de Kernel Linux optimizado para x86_64-v3 y ajustado a tu hardware
-build-kernel:
-    ./Setup/build-custom-kernel.sh
-
-# Optimización para portátiles de desarrollo (Touchpad, Batería, Bluetooth, HiDPI, VRR)
+# Optimización para portátiles de desarrollo (KDE Touchpad, PowerDevil, Bluetooth FastConnectable, persistencia de brillo al 95%)
 laptop:
     ./Setup/laptop-setup.sh
 
-# Autenticación y desbloqueo por huella dactilar (fprintd, PAM con pam-config, GNOME)
+# Autenticación y desbloqueo por huella dactilar (fprintd, PAM con pam-config)
 fingerprint:
     ./Setup/fingerprint-setup.sh
 
-# Configuración e instalación de impresora HP LaserJet Pro M15w (USB)
-printer:
-    ./Setup/hp-printer-setup.sh
+# Personalización y configuración de KDE Plasma 6 (Breeze Dark, KWin botones, Dolphin KIO servicemenu, atajos)
+kde-setup:
+    ./Setup/kde-settings.sh
 
-# Optimizaciones avanzadas de OpenSUSE Tumbleweed (Sysctl, Snapper Btrfs, Distrobox)
+# Aplicar tema oscuro completo en KDE Plasma 6 (Breeze Dark + GTK Breeze-Dark)
+kde-theme-dark:
+    ./Setup/kde-settings.sh --dark
+
+# Aplicar tema claro completo en KDE Plasma 6 (Breeze Light)
+kde-theme-light:
+    ./Setup/kde-settings.sh --light
+
+# Diagnóstico y estado de la configuración de KDE Plasma 6
+kde-status:
+    ./Setup/kde-settings.sh --status
+
+# Optimizaciones avanzadas de rendimiento (Sysctl, límites, Snapper retention, Baloo exclusions, Distrobox)
 tuning:
     ./Setup/tumbleweed-tuning.sh
 
-# Instalación automatizada de conectores y extensiones de GNOME Shell
-extensions:
-    ./Setup/gnome-extensions.sh
+# Estado actual de las optimizaciones y métricas de rendimiento
+tuning-status:
+    ./Setup/tumbleweed-tuning.sh --status
 
-# Configuración de salvapantallas 3D/Matrix al bloquear la pantalla
-screensaver:
-    ./Setup/screensaver-setup.sh
-
-# Configuración y activación de Splash Screen visual de arranque (Plymouth)
-plymouth:
-    ./Setup/plymouth-setup.sh
-
-# Utilidades de terminal y prompt (eza, bat, fzf, starship)
+# Utilidades de terminal modernas (eza, bat, fzf, zoxide, ripgrep, fd, duf, dust, btop)
 shell:
     ./Setup/shell.sh
 
-# Seguridad básica (Firewalld con compatibilidad KVM/Podman)
+# Starship Prompt moderno (Instalar / Activar)
+starship:
+    ./Setup/starship.sh --enable
+
+# Desactivar Starship y restaurar prompt nativo
+starship-disable:
+    ./Setup/starship.sh --disable
+
+# Estado de Starship prompt
+starship-status:
+    ./Setup/starship.sh --status
+
+# Seguridad y cortafuegos (Firewalld con servicios kdeconnect, mdns, ssh, KVM virbr0, Podman rootless, Sysctl)
 security:
     ./Setup/seguridad.sh
 
@@ -81,11 +93,7 @@ security-dot:
 fonts:
     ./Setup/fonts.sh
 
-# Personalización de GNOME (gsettings, luz nocturna, 24h, temas)
-gnome:
-    ./Setup/gnome-settings.sh
-
-# Apariencia (Temas Adwaita Dark, iconos Papirus e integración GTK/Qt)
+# Apariencia e iconos (Papirus-Dark, Breeze-Dark e integración GTK 3/4 y Qt)
 apariencia:
     ./Setup/apariencia.sh
 
@@ -93,27 +101,39 @@ apariencia:
 fastfetch:
     ./Setup/fastfetch.sh
 
-# Terminal Ptyxis + integración Nautilus
-ptyxis:
-    ./Setup/ptyxis.sh
-
-# Terminal Kitty acelerada por GPU con tema oscuro y opacidad/blur
+# Terminal Kitty acelerada por GPU con tema Catppuccin Mocha, opacidad/blur y atajo Ctrl+Alt+T
 kitty:
     ./Setup/kitty.sh
 
-# Multimedia (yt-dlp, ffmpeg Packman)
+# Multimedia (yt-dlp stack, FFmpeg, AtomicParsley, aria2, motor JS Deno)
 yt-dlp:
     ./Setup/yt-dlp-setup.sh
+
+# Codecs multimedia completos desde repositorio Packman con prioridad 90
+multimedia:
+    ./Setup/multimedia.sh
+
+# Estado del repositorio Packman y codecs instalados
+multimedia-status:
+    ./Setup/multimedia.sh --status
+
+# Navegador Google Chrome oficial
+chrome:
+    ./Setup/chrome.sh
+
+# Steam nativo, GameMode, MangoHud y drivers Vulkan 32-bit
+steam:
+    ./Setup/steam.sh
 
 # Centro Multimedia (Kodi + complementos de streaming)
 kodi:
     sudo zypper --non-interactive install -y kodi kodi-inputstream-adaptive kodi-inputstream-rtmp kodi-pvr-iptvsimple
 
-# Actualización continua del sistema Tumbleweed
+# Actualización continua del sistema Tumbleweed (zypper dup)
 dup:
     sudo zypper dup
 
-# Listar instantáneas de Snapper
+# Listar instantáneas de Snapper en Btrfs
 snapshots:
     snapper list
 
@@ -121,13 +141,21 @@ snapshots:
 # CONFIGURACIÓN DE RED Y VIRTUALIZACIÓN
 # =============================================================================
 
-# Configuración de KVM/QEMU y Libvirt
+# Configuración de KVM/QEMU y Libvirt (Optimizado para distribuciones Linux, KDE Wayland y virt-manager)
 virtualization:
     ./Virtualizacion/virtualization.sh
 
-# Administración Web (Cockpit)
+# Diagnóstico y estado de la virtualización KVM/QEMU
+virtualization-status:
+    ./Virtualizacion/virtualization.sh --status
+
+# Administración Web (Cockpit + Cockpit Podman + Cockpit Snapper)
 cockpit:
     ./Setup/cockpit.sh
+
+# Estado del servicio Cockpit
+cockpit-status:
+    ./Setup/cockpit.sh --status
 
 # =============================================================================
 # CONTROL DE VERSIONES
@@ -135,8 +163,7 @@ cockpit:
 
 # Git, Delta, Lazygit, GH CLI
 git-setup:
-    ./Git/git.sh
-    ./Git/github-cli.sh
+    ./IDE/git.sh
 
 # =============================================================================
 # GESTORES DE RUNTIMES
@@ -151,16 +178,20 @@ mise:
 # =============================================================================
 
 # Todos los lenguajes
-languages: node python rust dotnet java
-    echo "✅ Lenguajes instalados."
+languages: mise node python rust dotnet java angular
+    @echo "✅ Lenguajes instalados."
 
 # Node.js LTS
 node:
     ./ProgrammingLanguages/nodejs.sh
 
-# Python
+# Python con UV package manager
 python:
     ./ProgrammingLanguages/python.sh
+
+# Inicializador de proyectos Python con UV
+python-uv:
+    ./ProgrammingLanguages/python-uv-init.sh
 
 # Rust
 rust:
@@ -174,14 +205,6 @@ dotnet:
 java:
     ./ProgrammingLanguages/java.sh
 
-# =============================================================================
-# HERRAMIENTAS DE IA
-# =============================================================================
-
-# Gemini CLI
-gemini:
-    ./ProgrammingLanguages/gemini.sh
-
 # Angular CLI
 angular:
     ./ProgrammingLanguages/angular.sh
@@ -191,16 +214,8 @@ angular:
 # =============================================================================
 
 # Todos los IDEs
-ides: nvim vscode antigravity opencode
-    echo "✅ IDEs instalados."
-
-# Neovim + LazyVim
-nvim:
-    ./IDE/neovim.sh
-
-# Visual Studio Code
-vscode:
-    ./IDE/vscode.sh
+ides: antigravity antigravity-cli antigravity-ide opencode
+    @echo "✅ IDEs instalados."
 
 # Google Antigravity Desktop 2.0 (Completo)
 antigravity:
@@ -219,29 +234,22 @@ opencode:
     ./IDE/opencode.sh
 
 # =============================================================================
-# NAVEGADORES Y JUEGOS
+# PODMAN Y CONTENEDORES QUADLETS
 # =============================================================================
 
-# Firefox nativo de openSUSE
-firefox:
-    ./Setup/firefox.sh
+# Configuración completa de Podman Rootless y Quadlets
+podman-setup:
+    ./Podman/install/podman-install.sh
 
-# Steam y herramientas de juegos
-steam:
-    ./Juegos/steam.sh
-
-# =============================================================================
-# PODMAN - BASE
-# =============================================================================
-
-# Podman base (instalación y configuración rootless)
+# Configuración base de Podman Rootless
 podman-base:
     ./Podman/install/podman-install.sh
 
-# =============================================================================
-# PODMAN - SERVICIOS Y TEMPLATES
-# =============================================================================
-
-# Configuración Quadlets de Podman
+# Configuración de servicios Quadlets de Podman
 podman-quadlets:
     ./Podman/install/quadlets-setup.sh
+
+# Estado y diagnóstico de Podman y Quadlets
+podman-status:
+    ./Podman/install/podman-install.sh --status
+    ./Podman/lib/podman-utils.sh doctor

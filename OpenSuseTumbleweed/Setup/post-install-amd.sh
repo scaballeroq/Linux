@@ -1,6 +1,6 @@
 #!/bin/bash
 # post-install-amd.sh - Script de post-instalación para OpenSUSE Tumbleweed con AMD Ryzen y AMD Graphics
-# (Configurado con ZRAM, Zypper optimizado, Repositorio Packman, Microcódigo AMD, Mesa Vulkan/RADV/VA-API, PipeWire, OPI y Suite GNOME)
+# (Configurado con ZRAM, Zypper optimizado, Repositorio Packman, Microcódigo AMD, Mesa Vulkan/RADV/VA-API, PipeWire, OPI y KDE Plasma 6)
 
 set -euo pipefail
 
@@ -88,26 +88,33 @@ sudo zypper --non-interactive install -y \
 
 systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
 
-# 9. Entorno de Escritorio GNOME y Aplicaciones Base
-echo "ℹ️ Instalando componentes y utilidades base de GNOME..."
-sudo zypper --non-interactive install -y -t pattern gnome_basis gnome 2>/dev/null || true
+# 9. Entorno de Escritorio KDE Plasma 6 y Aplicaciones Base
+echo "ℹ️ Instalando componentes y utilidades base de KDE Plasma 6..."
+sudo zypper --non-interactive install -y -t pattern kde_plasma kde 2>/dev/null || true
 sudo zypper --non-interactive install -y \
-    gnome-tweaks \
-    ptyxis \
-    nautilus \
-    gnome-text-editor \
-    gnome-calculator \
-    gnome-disk-utility \
-    gnome-system-monitor \
+    dolphin \
+    kate \
+    kwrite \
+    spectacle \
+    kcalc \
+    ark \
+    gwenview \
+    okular \
+    plasma-systemmonitor \
+    partitionmanager \
+    kinfocenter \
+    konsole \
     power-profiles-daemon \
     switcheroo-control \
     ffmpegthumbnailer \
-    evince \
-    seahorse 2>/dev/null || true
+    kio-extras \
+    kio-gdrive \
+    papirus-icon-theme \
+    wl-clipboard 2>/dev/null || true
 
-# 10. Integración de Flatpak & Flathub en GNOME Software
-echo "ℹ️ Configurando Flatpak y Flathub para GNOME Software..."
-sudo zypper --non-interactive install -y flatpak gnome-software 2>/dev/null || true
+# 10. Integración de Flatpak & Flathub en KDE Discover
+echo "ℹ️ Configurando Flatpak y Flathub para KDE Discover..."
+sudo zypper --non-interactive install -y flatpak discover plasma-discover-backend-flatpak 2>/dev/null || true
 sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
 flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
 
@@ -139,6 +146,6 @@ echo "ℹ️ Limpiando paquetes huérfanos y caché de Zypper..."
 sudo zypper --non-interactive clean -a
 
 echo "================================================================="
-echo "✅ OpenSUSE Tumbleweed + GNOME (AMD Ryzen) configurado con éxito."
+echo "✅ OpenSUSE Tumbleweed + KDE Plasma 6 (AMD Ryzen) configurado con éxito."
 echo "💡 Se recomienda reiniciar el equipo para arrancar con el nuevo Kernel Linux, drivers AMD y ZRAM."
 echo "================================================================="

@@ -2,17 +2,17 @@
 sidebar_position: 2
 ---
 
-# Configuración del Sistema en OpenSUSE Tumbleweed
+# Configuración del Sistema en openSUSE Tumbleweed
 
-Esta guía detalla el proceso de configuración base, repositorios Packman y OPI, instantáneas Snapper/Btrfs, automontaje de partición de trabajo, compilación de kernel nativo `x86_64-v3`, personalización de GNOME, terminales Ptyxis/Kitty, extensiones GNOME Shell y panel de administración web aplicados a un sistema **OpenSUSE Tumbleweed** con **GNOME**.
+Esta guía detalla el proceso de configuración base, repositorios Packman y OPI, instantáneas Snapper/Btrfs, optimización del kernel y sysctl, personalización de **KDE Plasma 6 (Wayland)**, terminal Kitty, utilidades modernas de consola y panel de administración web aplicados a un sistema **openSUSE Tumbleweed**.
 
-Las configuraciones están automatizadas a través de los scripts ubicados en la carpeta `Setup` y el recetario `justfile`.
+Las configuraciones están automatizadas a través de los scripts ubicados en la carpeta `Setup` y el recetario [`justfile`](file:///home/caballero/Workspace/Repositorios/Linux/OpenSuseTumbleweed/justfile).
 
 ---
 
 ## 1. Post-Instalación Base (`post-install.sh`, `post-install-amd.sh`, `post-install-intel.sh`)
 
-Prepara el sistema base configurando el repositorio oficial Packman (prioridad 90), codecs multimedia completos, ZRAM, PipeWire, la suite GNOME y la pila gráfica optimizada según el procesador.
+Prepara el sistema base configurando el repositorio oficial Packman (prioridad 90), codecs multimedia completos, ZRAM, PipeWire, los patrones de KDE Plasma 6 (`kde_plasma`, `kde`) y la pila gráfica optimizada según el procesador.
 
 ### Scripts disponibles:
 
@@ -28,8 +28,9 @@ Prepara el sistema base configurando el repositorio oficial Packman (prioridad 9
   Optimizado para procesadores AMD Ryzen y gráficos Radeon:
   - Repositorio Packman con prioridad 90 (`zypper ar -cfp 90 ...`).
   - Instalador OPI (Open Build Service Package Installer).
-  - Microcódigo: `ucode-amd`, `kernel-firmware-amdgpu`, `kernel-firmware-radeon`.
+  - Microcódigo y firmware: `ucode-amd`, `kernel-firmware-amdgpu`, `kernel-firmware-radeon`.
   - Pila Gráfica: `Mesa`, `libvulkan_radeon`, `libva-vdpau-driver`, `radeontop`.
+  - Aplicaciones KDE Plasma 6: Dolphin, Kate, Spectacle, Gwenview, Ark, Okular, Discover (con backend Flatpak).
   ```bash
   ./Setup/post-install-amd.sh
   # O usando just:
@@ -49,51 +50,43 @@ Prepara el sistema base configurando el repositorio oficial Packman (prioridad 9
 
 ---
 
-## 2. Automontaje de Partición Workspace (`mount-workspace.sh`)
+## 2. Personalización de KDE Plasma 6 (`kde-settings.sh`)
 
-Monta automáticamente la partición de datos `/home/caballero/Workspace` mediante `/etc/fstab` usando su UUID con opciones `defaults,noatime,nofail`.
+Configura la experiencia de escritorio en **KDE Plasma 6** bajo Wayland:
+
+- **Tema y colores**: Breeze Dark completo (`plasma-apply-lookandfeel -a org.kde.breezedark.desktop`) e integración GTK 3/4 Breeze-Dark.
+- **KWin**: Botones de ventana a la derecha (`kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnRight "IAX"`).
+- **Luz Nocturna (Night Color)**: Activada a 4000K para comodidad visual.
+- **Dolphin**: Vista detallada por defecto, paneles ocultos innecesarios, e instalación de KIO Servicemenus para acciones rápidas en clic derecho:
+  - "Abrir en Kitty" (`~/.local/share/kio/servicemenus/open-in-kitty.desktop`).
+  - "Abrir en Antigravity" (`~/.local/share/kio/servicemenus/open-in-antigravity.desktop`).
+  - "Abrir en Antigravity IDE" (`~/.local/share/kio/servicemenus/open-in-antigravity-ide.desktop`).
+- **Atajos**: `Ctrl+Alt+T` configurado globalmente para abrir Kitty.
 
 ```bash
-just workspace
+# Aplicar configuración completa de KDE Plasma 6
+just kde-setup
+# o ./Setup/kde-settings.sh
+
+# Alternar a tema oscuro o claro
+just kde-theme-dark
+just kde-theme-light
+
+# Diagnóstico de configuración
+just kde-status
 ```
 
 ---
 
-## 3. Optimizaciones de Sistema y Snapper (`tumbleweed-tuning.sh`)
+## 3. Optimización para Portátiles y Brillo (`laptop-setup.sh`)
 
-Ajusta parámetros de kernel sysctl (`inotify`, `max_map_count`) y configura las políticas de retención de instantáneas en Snapper (Btrfs) para evitar saturación de almacenamiento.
+Diseñado específicamente para el portátil **HP EliteBook 855 G7** (AMD Ryzen 7 PRO 4750U):
 
-```bash
-just tuning
-```
-
----
-
-## 4. Compilador de Kernel Linux NATIVO x86_64-v3 (`build-custom-kernel.sh`)
-
-Descarga la última versión estable oficial del Kernel Linux desde kernel.org y compila un kernel optimizado para arquitectura `x86_64-v3`, latencia a **1000Hz** y **Preemption Dinámica**.
-
-```bash
-just build-kernel
-```
-
----
-
-## 5. Instalación Limpia de Extensiones GNOME (`gnome-extensions.sh`)
-
-Descarga e instala las extensiones de GNOME Shell mediante DBus y compila automáticamente los esquemas GSettings (`glib-compile-schemas`).
-
-```bash
-just extensions
-```
-
----
-
-## 6. Optimización para Portátiles y Brillo al 95% (`laptop-setup.sh`)
-
-- **Brillo automático al 95%**: Servicio systemd `set-screen-brightness.service` + autostart de GNOME.
-- **Gestión de energía**: `power-profiles-daemon`, `switcheroo-control`.
-- **Touchpad y pantalla**: Tap-to-click, scroll natural, VRR en Wayland.
+- **KDE Touchpad (`kcminputrc`)**: Tap-to-click activado, desplazamiento natural y aceleración suave.
+- **PowerDevil (`powermanagementprofilesrc`)**: Suspensión automática ajustada en batería y corriente.
+- **Bluetooth**: `FastConnectable = true` en `/etc/bluetooth/main.conf`.
+- **Systemd logind**: Acción `suspend` al cerrar la tapa.
+- **Brillo automático al 95%**: Servicio systemd `set-screen-brightness.service` que restaura el brillo de la pantalla tras el arranque.
 
 ```bash
 just laptop
@@ -101,45 +94,110 @@ just laptop
 
 ---
 
-## 7. Personalización de GNOME vía GSettings (`gnome-settings.sh`)
+## 4. Optimizaciones de Rendimiento y Btrfs/Snapper (`tumbleweed-tuning.sh`)
 
-- Luz Nocturna a 3500K.
-- Reloj 24h y porcentaje de batería.
-- Botones de minimizar, maximizar y cerrar a la derecha.
-- Tema oscuro preferido (`prefer-dark`).
+Ajusta parámetros avanzados del sistema operativo con CLI completa (`--status`, `--sysctl`, `--limits`, `--snapper`, `--baloo`):
+
+- **Sysctl**: ZRAM (`vm.swappiness=150`, `vm.watermark_boost_factor=0`), Inotify aumentado para IDEs (`fs.inotify.max_user_watches=524288`), BBR para TCP.
+- **Snapper en Btrfs**: Políticas de retención optimizadas (máximo 10 snapshots de timeline, 3 por hora, 3 diarios) para prevenir que la partición raíz se llene.
+- **Baloo (Indexador de KDE)**: Exclusiones automáticas en `~/.config/baloofilerc` para directorios de desarrollo pesados (`node_modules`, `target`, `.git`, `.venv`, `dist`, `build`).
 
 ```bash
-just gnome
+just tuning
+just tuning-status
 ```
 
 ---
 
-## 8. Terminales Modernas (Ptyxis y Kitty)
+## 5. Entorno de Terminal y Shell (`shell.sh`, `starship.sh`, `fastfetch.sh`, `fonts.sh`)
 
-- **Ptyxis (`ptyxis.sh`)**: Perfil translúcido al 85%, atajo `Ctrl + Alt + T` e integración en Nautilus.
-- **Kitty (`kitty.sh`)**: Perfil Tokyo Night / Catppuccin Mocha acelerado por GPU, opacidad al 85%, blur y Nerd Fonts.
+Instala utilidades modernas de consola escritas en Rust/Go y activa la integración modular en `~/.bashrc.d/`:
+
+- **Herramientas**: `eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`, `dust`, `btop`, `jq`.
+- **Starship Prompt (`starship.sh`)**:
+  ```bash
+  just starship          # Instalar y activar
+  just starship-disable  # Desactivar y restaurar prompt nativo
+  just starship-status   # Ver estado actual
+  ```
+- **Nerd Fonts (`fonts.sh`)**: Descarga e instala `JetBrainsMono`, `FiraCode`, `CascadiaCode`, `Meslo` y `Hack` en `~/.local/share/fonts/`.
+- **Fastfetch (`fastfetch.sh`)**: Resumen estético del sistema con soporte para openSUSE y KDE Plasma.
+
+---
+
+## 6. Terminal Kitty (`kitty.sh`)
+
+Instala y optimiza **Kitty**, emulador acelerado por GPU con tema Catppuccin Mocha:
+
+- Opacidad al 75% con desenfoque (`blur 32`).
+- Fuente JetBrainsMono Nerd Font.
+- Atajo global en KDE `Ctrl+Alt+T`.
+- KIO Servicemenu en Dolphin para abrir directorios directamente en Kitty.
 
 ```bash
-just ptyxis
 just kitty
 ```
 
 ---
 
-## 9. Salvapantallas 3D y Bloqueo (`screensaver-setup.sh`)
+## 7. Seguridad y Cortafuegos (`seguridad.sh`)
 
-Suite XScreenSaver 3D OpenGL vinculada al atajo `Super + L`.
+Endurecimiento del sistema con Firewalld, DNS-over-TLS y reglas para KDE Connect:
+
+- **Firewalld**: Servicios permitidos: `kdeconnect` (descubrimiento y sincronización con móvil), `mdns`, `ssh`.
+- **Contenedores y VMs**: Interfaces `podman+` y `virbr0` en zona de confianza (`trusted` / `libvirt`).
+- **DNS-over-TLS**: Activado oportunistamente en `systemd-resolved`.
+- **Sysctl**: Puertos sin privilegios a partir del 80 (`net.ipv4.ip_unprivileged_port_start=80`).
 
 ```bash
-just screensaver
+just security
 ```
 
 ---
 
-## 10. Panel de Administración Web Cockpit (`cockpit.sh`)
+## 8. Multimedia Completo y Packman (`multimedia.sh`, `yt-dlp-setup.sh`)
 
-Panel web de administración en [https://localhost:9090](https://localhost:9090) con soporte para Podman, máquinas virtuales KVM y almacenamiento.
+- **Packman (`multimedia.sh`)**: Repositorio con prioridad 90, `zypper dup --from packman --allow-vendor-change`, stack completo de GStreamer y FFmpeg con aceleración por hardware VA-API.
+- **yt-dlp (`yt-dlp-setup.sh`)**: Stack de descarga con AtomicParsley, aria2 y motor JavaScript Deno instalado vía Mise.
 
 ```bash
-just cockpit
+just multimedia
+just multimedia-status
+just yt-dlp
 ```
+
+---
+
+## 9. Navegador Google Chrome (`chrome.sh`) y Steam (`steam.sh`)
+
+- **Google Chrome**: Repositorio RPM oficial de Google e instalación de `google-chrome-stable`.
+- **Steam**: Steam nativo, GameMode, MangoHud, Proton-GE y librerías Mesa/Vulkan de 32 bits.
+
+```bash
+just chrome
+just steam
+```
+
+---
+
+## 10. Panel Web Cockpit (`cockpit.sh`)
+
+Administración web del sistema disponible en [https://localhost:9090](https://localhost:9090):
+
+- Módulos incluidos: `cockpit-podman`, `cockpit-machines` (KVM), `cockpit-snapshots` (Snapper Btrfs).
+- Gestión por CLI:
+  ```bash
+  just cockpit         # Iniciar y habilitar
+  just cockpit-status  # Diagnóstico del servicio
+  ```
+
+---
+
+## Verificación
+
+- **KDE Plasma 6**: Comprueba con `just kde-status` o en `systemsettings`.
+- **Terminal y Utilidades**: Abre Kitty (`Ctrl+Alt+T`), verifica Starship y Fastfetch.
+- **Rendimiento**: Ejecuta `just tuning-status`.
+- **Virtualización**: Ejecuta `just virtualization-status`.
+- **Contenedores**: Ejecuta `just podman-status`.
+- **Multimedia**: Ejecuta `just multimedia-status`.

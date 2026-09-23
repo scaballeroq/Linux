@@ -1,7 +1,7 @@
 # ProgrammingLanguages Sub-Justfile - OpenSUSE Tumbleweed
 
-# Instalar todos los lenguajes
-languages: node python rust dotnet java
+# Instalar todos los lenguajes y runtimes
+languages: mise node python rust dotnet java angular
     @echo "✅ Todos los lenguajes han sido instalados correctamente."
 
 # Mise version manager
@@ -12,26 +12,26 @@ mise:
 node:
     ./nodejs.sh
 
-# Python 3.13
+# Python & uv
 python:
     ./python.sh
 
-# Rust toolchain
+# Creador de proyectos Python aislados con uv
+python-uv:
+    ./python-uv-init.sh
+
+# Rust toolchain & cargo-binstall
 rust:
     ./rust.sh
 
-# .NET SDK
+# .NET SDK LTS
 dotnet:
     ./dotnet.sh
 
-# OpenJDK Java
+# OpenJDK Java LTS
 java:
     ./java.sh
 
 # Angular CLI
 angular:
     ./angular.sh
-
-# Gemini CLI
-gemini:
-    ./gemini.sh

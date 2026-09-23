@@ -1,34 +1,69 @@
 #!/bin/bash
-# fonts.sh - Instalación de Fuentes de Desarrollo (Nerd Fonts) para OpenSUSE Tumbleweed
+# ==============================================================================
+# fonts.sh - Instalación de Fuentes de Desarrollo (Nerd Fonts) para openSUSE Tumbleweed
+# ==============================================================================
 
 set -euo pipefail
 
-FONT_DIR="$HOME/.local/share/fonts"
-mkdir -p "$FONT_DIR"
+if [ "$EUID" -ne 0 ]; then
+    if ! command -v sudo &> /dev/null; then
+        echo "❌ Error: 'sudo' no está disponible."
+        exit 1
+    fi
+    SUDO="sudo"
+else
+    SUDO=""
+fi
+
+# Detectar usuario real en caso de ejecución con sudo
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    REAL_USER="$SUDO_USER"
+    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+else
+    REAL_USER="${USER:-$(id -un)}"
+    USER_HOME="${HOME:-/home/$REAL_USER}"
+fi
+
+run_as_user() {
+    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+        sudo -u "$REAL_USER" env HOME="$USER_HOME" "$@"
+    else
+        "$@"
+    fi
+}
+
+# Asegurar dependencias (curl, unzip, fontconfig)
+$SUDO zypper --non-interactive install -y curl unzip fontconfig 2>/dev/null || true
+
+FONT_DIR="$USER_HOME/.local/share/fonts"
+run_as_user mkdir -p "$FONT_DIR"
 
 FONTS=("JetBrainsMono" "FiraCode" "CascadiaCode" "Meslo" "Hack")
 
-echo "ℹ️ Verificando e instalando Nerd Fonts..."
+echo "================================================================="
+echo "🔤 Verificando e instalando Nerd Fonts para $REAL_USER..."
+echo "================================================================="
 
 for font in "${FONTS[@]}"; do
-    if find "$FONT_DIR" -maxdepth 1 -name "${font}*.{ttf,otf}" -print -quit 2>/dev/null | grep -q .; then
-        echo "✅ $font ya está instalada. Saltando..."
+    if [ ! -d "$FONT_DIR/$font" ] && ! ls "$FONT_DIR/$font"* &>/dev/null; then
+        echo "⬇️ Descargando $font Nerd Font..."
+        run_as_user mkdir -p "$FONT_DIR/$font"
+        curl -fLo "/tmp/${font}.zip" "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${font}.zip"
+        run_as_user unzip -qo "/tmp/${font}.zip" -d "$FONT_DIR/$font"
+        rm -f "/tmp/${font}.zip"
+        echo "  ✅ $font instalada."
     else
-        echo "⬇️ Descargando $font..."
-        URL="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/$font.zip"
-        curl -L -o "/tmp/$font.zip" "$URL"
-        
-        echo "📦 Extrayendo $font..."
-        unzip -q -o "/tmp/$font.zip" -d "$FONT_DIR"
-        rm -f "/tmp/$font.zip"
+        echo "  ✅ $font ya está instalada."
     fi
 done
 
-# Eliminar archivos de texto innecesarios
-find "$FONT_DIR" -name "*.txt" -delete
-find "$FONT_DIR" -name "*.md" -delete
+# Eliminar archivos innecesarios de documentación dentro del directorio de fuentes
+run_as_user find "$FONT_DIR" -name "*.txt" -delete 2>/dev/null || true
+run_as_user find "$FONT_DIR" -name "*.md" -delete 2>/dev/null || true
 
-echo "ℹ️ Actualizando caché de fuentes..."
-fc-cache -f
+echo "ℹ️ Actualizando caché de fuentes del sistema..."
+run_as_user fc-cache -f "$FONT_DIR"
 
+echo "================================================================="
 echo "✅ Fuentes Nerd Fonts instaladas y actualizadas correctamente."
+echo "================================================================="
