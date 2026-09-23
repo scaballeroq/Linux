@@ -93,6 +93,17 @@ Tailored for the **HP EliteBook 855 G7** laptop (AMD Ryzen 7 PRO 4750U):
 just laptop
 ```
 
+### Fingerprint Authentication (`fingerprint-setup.sh`)
+
+Configures the Synaptics USB fingerprint reader (`06cb:00df`) using `fprintd` and the official `pam_fprintd.so` module via `pam-config`:
+
+```bash
+just fingerprint          # Enables the PAM module
+just fingerprint-status   # Diagnostics for sensor, PAM, and registered fingers
+just fingerprint --enroll # Enrolls a fingerprint in terminal (or via System Settings -> Users)
+just fingerprint --verify # Tests the biometric sensor
+```
+
 ---
 
 ## 4. System Tuning & Btrfs/Snapper Policies (`tumbleweed-tuning.sh`)

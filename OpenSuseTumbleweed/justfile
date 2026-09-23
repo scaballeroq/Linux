@@ -34,8 +34,12 @@ laptop:
     ./Setup/laptop-setup.sh
 
 # Autenticación y desbloqueo por huella dactilar (fprintd, PAM con pam-config)
-fingerprint:
-    ./Setup/fingerprint-setup.sh
+fingerprint *args:
+    ./Setup/fingerprint-setup.sh {{args}}
+
+# Estado y diagnóstico de la autenticación por huella dactilar
+fingerprint-status:
+    ./Setup/fingerprint-setup.sh --status
 
 # Configuración de impresoras HP (CUPS, HPLIP, plugin propietario para LaserJet M15w)
 printer:

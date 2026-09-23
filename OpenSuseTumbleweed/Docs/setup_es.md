@@ -93,6 +93,17 @@ Diseñado específicamente para el portátil **HP EliteBook 855 G7** (AMD Ryzen 
 just laptop
 ```
 
+### Autenticación por Huella Dactilar (`fingerprint-setup.sh`)
+
+Configura el lector biométrico USB Synaptics (`06cb:00df`) mediante `fprintd` y el módulo oficial `pam_fprintd.so` a través de `pam-config`:
+
+```bash
+just fingerprint          # Habilita el módulo en PAM
+just fingerprint-status   # Diagnóstico de sensor, PAM y huellas registradas
+just fingerprint --enroll # Registra una huella en terminal (o vía Preferencias del Sistema -> Usuarios)
+just fingerprint --verify # Prueba el sensor biométrico
+```
+
 ---
 
 ## 4. Optimizaciones de Rendimiento y Btrfs/Snapper (`tumbleweed-tuning.sh`)
