@@ -122,9 +122,13 @@ fastfetch-status:
 kitty:
     ./Setup/kitty.sh
 
-# Multimedia (yt-dlp stack, FFmpeg, AtomicParsley, aria2, motor JS Deno)
-yt-dlp:
-    ./Setup/yt-dlp-setup.sh
+# Multimedia (yt-dlp stack, FFmpeg, aria2, motor JS Deno vía Mise)
+yt-dlp *args:
+    ./Setup/yt-dlp-setup.sh {{args}}
+
+# Diagnóstico y estado de yt-dlp y herramientas multimedia
+yt-dlp-status:
+    ./Setup/yt-dlp-setup.sh --status
 
 # Códecs multimedia oficiales (OpenH264 Cisco) y entorno multimedia Flatpak (sin Packman)
 multimedia:
