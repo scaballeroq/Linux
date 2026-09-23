@@ -225,11 +225,33 @@ show_status() {
         printf "  - %-26s %-14s (%s)\n" "$mod_name:" "$mod_status" "$mod_desc"
     done
     echo "================================================================="
+    if rpm -q cockpit-bootloader &>/dev/null; then
+        if (bootctl status 2>&1 || true) | grep -qi "systemd-boot"; then
+            echo "⚠️  Aviso: 'cockpit-bootloader' está instalado pero tu sistema utiliza 'systemd-boot'."
+            echo "    cockpit-bootloader solo es compatible con GRUB2 (inútil con systemd-boot)."
+            echo "    Puedes desinstalarlo limpiamente con: just cockpit-remove-bootloader"
+            echo "-----------------------------------------------------------------"
+        fi
+    fi
     echo "🌐 Acceso web:       https://localhost:9090"
     if command -v cockpit-client-launcher &>/dev/null; then
         echo "🖥️  Acceso de escritorio: cockpit-client-launcher (o en el menú de aplicaciones de KDE)"
     fi
     echo "================================================================="
+}
+
+remove_bootloader() {
+    require_root
+    echo "🗑️ Desinstalando módulo 'cockpit-bootloader'..."
+    if ! rpm -q cockpit-bootloader &>/dev/null; then
+        echo "ℹ️ 'cockpit-bootloader' ya no está instalado en el sistema."
+        return 0
+    fi
+    echo "   (El sistema utiliza systemd-boot; cockpit-bootloader es específico para GRUB2)"
+    $SUDO zypper --non-interactive rm -u cockpit-bootloader 2>/dev/null || $SUDO zypper --non-interactive rm cockpit-bootloader
+    echo "🔒 Añadiendo bloqueo (lock) en Zypper para cockpit-bootloader..."
+    $SUDO zypper addlock cockpit-bootloader 2>/dev/null || true
+    echo "✅ 'cockpit-bootloader' desinstalado y bloqueado exitosamente en Zypper."
 }
 
 show_help() {
@@ -248,6 +270,7 @@ OPCIONES:
   --stop                 Detiene el socket y servicio de Cockpit.
   --disable              Deshabilita el socket y retira el servicio de Firewalld.
   --files                Instala el módulo opcional 'cockpit-files' (explorador web).
+  --remove-bootloader    Desinstala y bloquea 'cockpit-bootloader' en Zypper (para systemd-boot).
   -h, --help             Muestra esta ayuda.
 
 MÓDULOS INTEGRADOS POR OPENSUSE:
@@ -259,7 +282,7 @@ MÓDULOS INTEGRADOS POR OPENSUSE:
   • Cortafuegos (firewalld):          Inspección y gestión de zonas y reglas activas.
   • Actualizaciones (packages):       Inspección de parches y actualización con Zypper.
   • Repositorios (repos):             Gestión de repositorios oficiales de openSUSE.
-  • Arranque (bootloader):            Configuración de GRUB2 y opciones de kernel.
+  • Arranque (bootloader):            Configuración de GRUB2 (incompatible/innecesario con systemd-boot).
   • Escritorio (client-launcher):     Aplicación gráfica nativa para escritorio.
 EOF
 }
@@ -294,6 +317,10 @@ case "${1:-}" in
         ;;
     --files)
         install_files_module
+        exit 0
+        ;;
+    --remove-bootloader)
+        remove_bootloader
         exit 0
         ;;
     -h|--help|help)
