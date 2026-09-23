@@ -45,7 +45,7 @@ Operating system configuration, KDE Plasma 6 customization, and hardening script
 - **`fastfetch.sh`**: Aesthetic system summary with openSUSE and KDE Plasma branding.
 - **`fonts.sh`**: Automated developer fonts installation (JetBrainsMono, FiraCode, CascadiaCode Nerd Fonts).
 - **`kitty.sh`**: GPU-accelerated Kitty terminal with Catppuccin Mocha theme, opacity, blur, Ctrl+Alt+T shortcut, and Dolphin servicemenu.
-- **`seguridad.sh`**: System hardening with Firewalld (`kdeconnect`, `mdns`, `ssh` services, `libvirt` zone for virbr0, `trusted` zone for `podman+`), DNS-over-TLS, and unprivileged port binding.
+- **`seguridad.sh`**: System hardening with Firewalld (`kdeconnect`, `mdns`, `ssh` services, `libvirt` zone for virbr0, `trusted` zone for `podman+`), and unprivileged port binding for development.
 - **`shell.sh`**: Modern CLI utilities (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`, `dust`, `btop`, `jq`).
 - **`starship.sh` & `starship.toml`**: Starship prompt manager (`--enable`, `--disable`, `--status`).
 - **`yt-dlp-setup.sh`**: Multimedia dependencies (yt-dlp, FFmpeg, AtomicParsley, aria2, Deno JS engine via Mise).

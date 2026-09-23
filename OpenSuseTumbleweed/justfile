@@ -93,10 +93,6 @@ security:
 security-status:
     ./Setup/seguridad.sh --status
 
-# Seguridad opcional (DNS-over-TLS con systemd-resolved)
-security-dot:
-    ./Setup/seguridad-dot.sh
-
 # Fuentes de desarrollo (Nerd Fonts: JetBrainsMono, FiraCode, CascadiaCode...)
 fonts:
     ./Setup/fonts.sh

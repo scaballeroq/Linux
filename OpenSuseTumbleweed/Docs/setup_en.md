@@ -142,12 +142,12 @@ just kitty
 
 ## 7. Security & Firewall (`seguridad.sh`)
 
-Hardens system networking with Firewalld, DNS-over-TLS, and KDE Connect integration:
+Hardens system networking with Firewalld, development network tuning, and KDE Connect integration:
 
 - **Firewalld**: Allowed services: `kdeconnect` (mobile phone integration), `mdns`, `ssh`.
 - **Containers & Virtualization**: `podman+` and `virbr0` interfaces in trusted/libvirt zones.
-- **DNS-over-TLS**: Enabled opportunistically via `systemd-resolved`.
-- **Sysctl**: Unprivileged port binding enabled from port 80 upwards.
+- **Sysctl**: Unprivileged port binding enabled from port 80 upwards (`net.ipv4.ip_unprivileged_port_start=80`), IP forwarding, and user namespaces.
+- **Home Local Network**: No Fail2ban or MAC randomization to ensure stable router DHCP assignments.
 
 ```bash
 just security

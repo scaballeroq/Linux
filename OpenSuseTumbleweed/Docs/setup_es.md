@@ -142,12 +142,12 @@ just kitty
 
 ## 7. Seguridad y Cortafuegos (`seguridad.sh`)
 
-Endurecimiento del sistema con Firewalld, DNS-over-TLS y reglas para KDE Connect:
+Endurecimiento del sistema con Firewalld, optimización de red para desarrollo y reglas para KDE Connect:
 
 - **Firewalld**: Servicios permitidos: `kdeconnect` (descubrimiento y sincronización con móvil), `mdns`, `ssh`.
 - **Contenedores y VMs**: Interfaces `podman+` y `virbr0` en zona de confianza (`trusted` / `libvirt`).
-- **DNS-over-TLS**: Activado oportunistamente en `systemd-resolved`.
-- **Sysctl**: Puertos sin privilegios a partir del 80 (`net.ipv4.ip_unprivileged_port_start=80`).
+- **Sysctl**: Puertos sin privilegios a partir del 80 (`net.ipv4.ip_unprivileged_port_start=80`), IP forwarding y namespaces de usuario.
+- **Red local doméstica**: Sin Fail2ban ni MAC randomization para garantizar IPs estables en el router.
 
 ```bash
 just security
