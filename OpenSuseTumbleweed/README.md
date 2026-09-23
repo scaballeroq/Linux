@@ -53,7 +53,6 @@ Scripts de configuración del sistema operativo, personalización de KDE Plasma 
 - **`chrome.sh`**: Activación del repositorio oficial de Google Chrome e instalación de `google-chrome-stable` (`--status`).
 - **`steam.sh`**: Instalación de Steam nativo con GameMode, MangoHud, Proton-GE y drivers Vulkan de 32-bit (`--status`).
 - **`apariencia.sh`**: Iconos Papirus-Dark, Breeze-Dark e integración GTK 3/4 y Qt.
-- **`mount-workspace.sh`**: Automontaje seguro y permanente de `/home/caballero/Workspace` en `/etc/fstab`.
 
 ### 💻 [IDE](./IDE/)
 - **`antigravity.sh`**: Google Antigravity Desktop setup (con sandbox Chromium, iconos pixmap y KIO servicemenu para Dolphin).

@@ -29,10 +29,6 @@ post-install-amd:
 post-install-intel:
     ./Setup/post-install-intel.sh
 
-# Automontaje permanente de la partición Workspace (/home/caballero/Workspace) en /etc/fstab
-workspace:
-    ./Setup/mount-workspace.sh
-
 # Optimización para portátiles de desarrollo (KDE Touchpad, PowerDevil, Bluetooth FastConnectable, persistencia de brillo al 95%)
 laptop:
     ./Setup/laptop-setup.sh

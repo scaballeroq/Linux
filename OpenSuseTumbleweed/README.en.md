@@ -53,7 +53,6 @@ Operating system configuration, KDE Plasma 6 customization, and hardening script
 - **`chrome.sh`**: Official Google Chrome RPM repository activation and `google-chrome-stable` installation (`--status`).
 - **`steam.sh`**: Native Steam with GameMode, MangoHud, Proton-GE, and 32-bit Vulkan/Mesa drivers (`--status`).
 - **`apariencia.sh`**: Papirus-Dark icons, Breeze-Dark, and GTK 3/4 / Qt integration.
-- **`mount-workspace.sh`**: Permanent, safe auto-mounting of `/home/caballero/Workspace` in `/etc/fstab`.
 
 ### 💻 [IDE](./IDE/)
 - **`antigravity.sh`**: Google Antigravity Desktop setup (Chromium sandbox permissions, pixmap icons, Dolphin KIO servicemenu).
