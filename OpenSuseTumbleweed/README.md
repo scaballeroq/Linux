@@ -44,7 +44,7 @@ Scripts de configuración del sistema operativo, personalización de KDE Plasma 
 - **`cockpit.sh`**: Consola web de administración Cockpit con módulos para Podman, MVs KVM, almacenamiento y Snapper snapshots (`--status`, `--open`, `--start`, `--stop`, `--disable`).
 - **`fastfetch.sh`**: Resumen estético del sistema con soporte para openSUSE y KDE Plasma.
 - **`fonts.sh`**: Instalación automatizada de fuentes de desarrollo (JetBrainsMono, FiraCode, CascadiaCode Nerd Fonts).
-- **`kitty.sh`**: Terminal Kitty acelerada por GPU con opacidad/blur, tema Catppuccin Mocha, atajo Ctrl+Alt+T y servicemenu en Dolphin.
+- **`kitty.sh`**: Terminal Kitty acelerada por GPU con opacidad/blur, tema Catppuccin Mocha, atajo Ctrl+Alt+T y servicemenu en Dolphin (`--status`).
 - **`seguridad.sh`**: Endurecimiento con Firewalld (servicios `kdeconnect`, `mdns`, `ssh`, zona `libvirt` para virbr0, zona `trusted` para `podman+`) y sysctl unprivileged ports para desarrollo.
 - **`shell.sh`**: Herramientas modernas de terminal (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`, `dust`, `btop`, `jq`).
 - **`starship.sh` & `starship.toml`**: Prompt Starship moderno con configuración temática openSUSE (`--enable`, `--disable`, `--status`).

@@ -44,7 +44,7 @@ Operating system configuration, KDE Plasma 6 customization, and hardening script
 - **`cockpit.sh`**: Cockpit web administration console with modules for Podman, KVM machines, storage, and Snapper snapshots (`--status`, `--open`, `--start`, `--stop`, `--disable`).
 - **`fastfetch.sh`**: Aesthetic system summary with openSUSE and KDE Plasma branding.
 - **`fonts.sh`**: Automated developer fonts installation (JetBrainsMono, FiraCode, CascadiaCode Nerd Fonts).
-- **`kitty.sh`**: GPU-accelerated Kitty terminal with Catppuccin Mocha theme, opacity, blur, Ctrl+Alt+T shortcut, and Dolphin servicemenu.
+- **`kitty.sh`**: GPU-accelerated Kitty terminal with Catppuccin Mocha theme, opacity, blur, Ctrl+Alt+T shortcut, and Dolphin servicemenu (`--status`).
 - **`seguridad.sh`**: System hardening with Firewalld (`kdeconnect`, `mdns`, `ssh` services, `libvirt` zone for virbr0, `trusted` zone for `podman+`), and unprivileged port binding for development.
 - **`shell.sh`**: Modern CLI utilities (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`, `dust`, `btop`, `jq`).
 - **`starship.sh` & `starship.toml`**: Starship prompt manager (`--enable`, `--disable`, `--status`).
