@@ -58,7 +58,7 @@ Opciones:
   --help, -h             Muestra este mensaje de ayuda.
 
 Características configuradas:
-  • Stack Multimedia:   yt-dlp + FFmpeg completo de Packman para muxing y conversión de alta fidelidad.
+  • Stack Multimedia:   yt-dlp + FFmpeg oficial de openSUSE para muxing y conversión de alta fidelidad.
   • Metadatos y Carátulas: AtomicParsley y Mutagen para incrustar portadas y tags en MP4/M4A/MP3.
   • Aceleración de red: aria2 para descargas concurrentes de fragmentos a máxima velocidad.
   • Motor JavaScript:   Deno vía Mise para resolver retos de JavaScript (n-token challenges de YouTube).

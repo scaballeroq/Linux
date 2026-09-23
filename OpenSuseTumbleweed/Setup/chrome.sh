@@ -75,9 +75,11 @@ $SUDO zypper --gpg-auto-import-keys refresh google-chrome 2>/dev/null || true
 # 3. Instalar Google Chrome Stable
 echo "⬇️ [3/3] Instalando Google Chrome Stable vía Zypper..."
 $SUDO zypper --non-interactive install -y google-chrome-stable || {
-    if command -v opi &>/dev/null; then
-        echo "⚠️ Fallback: Instalando vía OPI..."
-        opi google-chrome || true
+    echo "⚠️ Zypper reportó un problema con el repositorio. Intentando descarga directa del RPM oficial..."
+    TEMP_RPM=$(mktemp /tmp/google-chrome-XXXXXX.rpm)
+    if curl -fsSL "https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm" -o "$TEMP_RPM"; then
+        $SUDO zypper --non-interactive install -y "$TEMP_RPM" || true
+        rm -f "$TEMP_RPM"
     fi
 }
 

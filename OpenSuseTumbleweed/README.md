@@ -36,8 +36,8 @@ Ecosistema de contenedores rootless con Quadlets nativos de systemd:
 ### ⚙️ [Setup](./Setup/)
 Scripts de configuración del sistema operativo, personalización de KDE Plasma 6 y endurecimiento:
 - **`post-install.sh`**: Despachador inteligente con auto-detección de CPU (AMD Ryzen vs Intel Core).
-- **`post-install-amd.sh`**: Post-instalación optimizada para AMD Ryzen (ZRAM, RADV, Mesa, PipeWire, Packman prioridad 90, patrones KDE Plasma 6, suite KDE Gear).
-- **`post-install-intel.sh`**: Post-instalación optimizada para Intel Core / Media Center (VA-API Intel i965 / media-driver, PipeWire, codecs, Kodi).
+- **`post-install-amd.sh`**: Post-instalación optimizada para AMD Ryzen (ZRAM, RADV, Mesa, PipeWire, repositorio oficial OpenH264 Cisco, Flatpak Flathub, patrones KDE Plasma 6, suite KDE Gear).
+- **`post-install-intel.sh`**: Post-instalación optimizada para Intel Core / Media Center (VA-API Intel i965 / media-driver, PipeWire, codecs OpenH264, Kodi).
 - **`kde-settings.sh`**: Configuración y personalización de KDE Plasma 6 (Breeze Dark, KWin botones, Dolphin KIO servicemenus para Kitty y Antigravity, Night Color a 4000K, atajo Ctrl+Alt+T).
 - **`laptop-setup.sh`**: Optimización para portátiles de desarrollo (KDE Touchpad `kcminputrc`, PowerDevil `powermanagementprofilesrc`, Bluetooth FastConnectable, logind lid switch, persistencia de brillo al 95%).
 - **`tumbleweed-tuning.sh`**: Ajustes de Kernel (`sysctl` ZRAM/BBR/Inotify), límites de sistema (`limits.d`), políticas de retención Snapper en Btrfs y exclusiones para Baloo en directorios de desarrollo (`--status`, `--sysctl`, `--limits`, `--snapper`, `--baloo`).
@@ -49,7 +49,7 @@ Scripts de configuración del sistema operativo, personalización de KDE Plasma 
 - **`shell.sh`**: Herramientas modernas de terminal (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`, `dust`, `btop`, `jq`).
 - **`starship.sh` & `starship.toml`**: Prompt Starship moderno con configuración temática openSUSE (`--enable`, `--disable`, `--status`).
 - **`yt-dlp-setup.sh`**: Dependencias para manejo multimedia (yt-dlp, FFmpeg, AtomicParsley, aria2, motor JS Deno vía Mise).
-- **`multimedia.sh`**: Colección completa de codecs multimedia, FFmpeg sin restricciones, plugins GStreamer y soporte DVD descifrado vía repositorio Packman con prioridad 90 (`--status`).
+- **`multimedia.sh`**: Configuración de codecs multimedia oficiales (OpenH264 Cisco), FFmpeg oficial, plugins GStreamer y reproductores multimedia desacoplados vía Flatpak sin Packman (`--status`).
 - **`chrome.sh`**: Activación del repositorio oficial de Google Chrome e instalación de `google-chrome-stable` (`--status`).
 - **`steam.sh`**: Instalación de Steam nativo con GameMode, MangoHud, Proton-GE y drivers Vulkan de 32-bit (`--status`).
 - **`apariencia.sh`**: Iconos Papirus-Dark, Breeze-Dark e integración GTK 3/4 y Qt.
@@ -104,7 +104,7 @@ just tuning-status       # Diagnóstico de optimizaciones del sistema
 just kitty               # Configura terminal Kitty con opacidad, blur y tema Catppuccin
 just virtualization      # Configura KVM/QEMU, Libvirt modular y Btrfs NoCoW
 just virtualization-status # Diagnóstico del hipervisor KVM
-just multimedia          # Instala Packman con prioridad 90, codecs completos y FFmpeg
+just multimedia          # Configura codecs OpenH264 oficiales y Flatpak multimedia
 just chrome              # Instala Google Chrome oficial
 just steam               # Instala Steam nativo y librerías 32-bit
 just languages           # Instala Node, Python (uv), Rust, .NET, Java y Angular

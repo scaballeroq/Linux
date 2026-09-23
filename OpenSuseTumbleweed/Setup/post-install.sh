@@ -20,8 +20,8 @@ Opciones:
   --help, -h         Muestra este mensaje de ayuda.
 
 Scripts independientes disponibles:
-  • Setup/post-install-amd.sh   -> Optimizado para AMD Ryzen (Packman, Mesa RADV, Vulkan, Zypper, OPI, ZRAM)
-  • Setup/post-install-intel.sh -> Optimizado para Intel Core / HD Graphics (microcódigo Intel, VA-API i965, Kodi, sin virtualización)
+  • Setup/post-install-amd.sh   -> Optimizado para AMD Ryzen (OpenH264, Mesa RADV, Vulkan, Zypper, Flatpak, ZRAM)
+  • Setup/post-install-intel.sh -> Optimizado para Intel Core / HD Graphics (microcódigo Intel, VA-API i965, Kodi, OpenH264)
 EOF
 }
 

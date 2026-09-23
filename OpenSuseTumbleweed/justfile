@@ -21,7 +21,7 @@ setup-media-desktop: post-install-intel multimedia chrome tuning kde-setup shell
 post-install:
     ./Setup/post-install.sh
 
-# Configuración post-instalación para AMD Ryzen (Kernel, Packman, RADV, Mesa, PipeWire, KDE Plasma 6, ZRAM)
+# Configuración post-instalación para AMD Ryzen (Kernel, OpenH264, RADV, Mesa, PipeWire, Flatpak, KDE Plasma 6, ZRAM)
 post-install-amd:
     ./Setup/post-install-amd.sh
 
@@ -109,11 +109,11 @@ kitty:
 yt-dlp:
     ./Setup/yt-dlp-setup.sh
 
-# Codecs multimedia completos desde repositorio Packman con prioridad 90
+# Códecs multimedia oficiales (OpenH264 Cisco) y entorno multimedia Flatpak (sin Packman)
 multimedia:
     ./Setup/multimedia.sh
 
-# Estado del repositorio Packman y codecs instalados
+# Estado de repositorios multimedia (OpenH264), códecs oficiales y Flatpak
 multimedia-status:
     ./Setup/multimedia.sh --status
 

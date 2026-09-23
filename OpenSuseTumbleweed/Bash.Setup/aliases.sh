@@ -55,7 +55,7 @@ alias chown='chown --preserve-root'
 alias chmod='chmod --preserve-root'
 alias chgrp='chgrp --preserve-root'
 
-# 5. GESTIÓN DE PAQUETES (ZYPPER / OPI / SNAPPER)
+# 5. GESTIÓN DE PAQUETES (ZYPPER / SNAPPER)
 alias dup='sudo zypper dup'
 alias update='sudo zypper refresh && sudo zypper dup'
 alias upgrade='sudo zypper refresh && sudo zypper dup'
@@ -66,7 +66,6 @@ alias clean='sudo zypper clean --all'
 alias list='zypper list-updates'
 alias installed='zypper search -i'
 alias pkg-info='zypper info'
-alias opi='opi'
 alias snapshots='snapper list'
 
 # 6. UTILIDADES MODERNAS (RUST-BASED)

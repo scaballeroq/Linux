@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # Configuración del Sistema en openSUSE Tumbleweed
 
-Esta guía detalla el proceso de configuración base, repositorios Packman y OPI, instantáneas Snapper/Btrfs, optimización del kernel y sysctl, personalización de **KDE Plasma 6 (Wayland)**, terminal Kitty, utilidades modernas de consola y panel de administración web aplicados a un sistema **openSUSE Tumbleweed**.
+Esta guía detalla el proceso de configuración base, repositorio oficial OpenH264, instantáneas Snapper/Btrfs, optimización del kernel y sysctl, personalización de **KDE Plasma 6 (Wayland)**, terminal Kitty, utilidades modernas de consola y panel de administración web aplicados a un sistema **openSUSE Tumbleweed**.
 
 Las configuraciones están automatizadas a través de los scripts ubicados en la carpeta `Setup` y el recetario [`justfile`](file:///home/caballero/Workspace/Repositorios/Linux/OpenSuseTumbleweed/justfile).
 
@@ -12,7 +12,7 @@ Las configuraciones están automatizadas a través de los scripts ubicados en la
 
 ## 1. Post-Instalación Base (`post-install.sh`, `post-install-amd.sh`, `post-install-intel.sh`)
 
-Prepara el sistema base configurando el repositorio oficial Packman (prioridad 90), codecs multimedia completos, ZRAM, PipeWire, los patrones de KDE Plasma 6 (`kde_plasma`, `kde`) y la pila gráfica optimizada según el procesador.
+Prepara el sistema base configurando el repositorio oficial OpenH264 (Cisco), codecs oficiales, ZRAM, PipeWire, Flatpak/Flathub, los patrones de KDE Plasma 6 (`kde_plasma`, `kde`) y la pila gráfica optimizada según el procesador.
 
 ### Scripts disponibles:
 
@@ -26,8 +26,8 @@ Prepara el sistema base configurando el repositorio oficial Packman (prioridad 9
 
 - **Perfil AMD Ryzen (`post-install-amd.sh`)**:
   Optimizado para procesadores AMD Ryzen y gráficos Radeon:
-  - Repositorio Packman con prioridad 90 (`zypper ar -cfp 90 ...`).
-  - Instalador OPI (Open Build Service Package Installer).
+  - Repositorio oficial OpenH264 (`openSUSE-repos-openh264`, `mozilla-openh264`, `gstreamer-plugin-openh264`).
+  - Integración de Flatpak & Flathub para software desacoplado (VLC, OBS).
   - Microcódigo y firmware: `ucode-amd`, `kernel-firmware-amdgpu`, `kernel-firmware-radeon`.
   - Pila Gráfica: `Mesa`, `libvulkan_radeon`, `libva-vdpau-driver`, `radeontop`.
   - Aplicaciones KDE Plasma 6: Dolphin, Kate, Spectacle, Gwenview, Ark, Okular, Discover (con backend Flatpak).
@@ -155,9 +155,9 @@ just security
 
 ---
 
-## 8. Multimedia Completo y Packman (`multimedia.sh`, `yt-dlp-setup.sh`)
+## 8. Multimedia Oficial y Desacoplada (`multimedia.sh`, `yt-dlp-setup.sh`)
 
-- **Packman (`multimedia.sh`)**: Repositorio con prioridad 90, `zypper dup --from packman --allow-vendor-change`, stack completo de GStreamer y FFmpeg con aceleración por hardware VA-API.
+- **Multimedia (`multimedia.sh`)**: Repositorio oficial OpenH264 de Cisco, stack oficial de GStreamer y FFmpeg con aceleración por hardware VA-API y reproductores completos vía Flatpak (sin Packman).
 - **yt-dlp (`yt-dlp-setup.sh`)**: Stack de descarga con AtomicParsley, aria2 y motor JavaScript Deno instalado vía Mise.
 
 ```bash

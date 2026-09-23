@@ -1,22 +1,22 @@
 ---
 name: opensuse-system-maintenance
 description: >-
-  Use this skill when performing system updates with Zypper dup, managing Snapper Btrfs snapshots/rollbacks, package management with Zypper/OPI, hardware telemetry (Ryzen 7 PRO 4750U, amdgpu Vega 7), Firewalld network rules, or checking systemd services on openSUSE Tumbleweed Linux.
+  Use this skill when performing system updates with Zypper dup, managing Snapper Btrfs snapshots/rollbacks, package management with Zypper & Flatpak, hardware telemetry (Ryzen 7 PRO 4750U, amdgpu Vega 7), Firewalld network rules, or checking systemd services on openSUSE Tumbleweed Linux.
 ---
 
 # openSUSE Tumbleweed Linux System Maintenance & Telemetry Skill
 
 Esta skill contiene los procedimientos y diagnósticos estándar para la estación de trabajo HP EliteBook 855 G7 con openSUSE Tumbleweed (Rolling Release), KDE Plasma 6 y AMD Ryzen.
 
-## 1. Mantenimiento y Gestión de Paquetes (Zypper & OPI)
+## 1. Mantenimiento y Gestión de Paquetes (Zypper & Flatpak)
 Operaciones estándar con `zypper` y Flatpak:
 
 ```bash
-# Refrescar repositorios oficiales y Packman
+# Refrescar repositorios oficiales y OpenH264
 sudo zypper --gpg-auto-import-keys refresh
 
 # Actualizar el sistema completo (Tumbleweed rolling release SIEMPRE con dup)
-sudo zypper --non-interactive dup --allow-vendor-change
+sudo zypper --non-interactive dup
 
 # Comprobar actualizaciones disponibles sin aplicar
 zypper list-updates
@@ -30,9 +30,6 @@ sudo zypper rm -u <paquete>
 
 # Limpiar caché de metadatos y paquetes descargados
 sudo zypper clean -a
-
-# Buscar e instalar paquetes de OBS vía OPI
-opi <nombre-paquete>
 ```
 
 ---

@@ -5,7 +5,7 @@
    - Para inspección de hardware AMD: utiliza `lscpu`, `radeontop`, `sensors` o `amdgpu_top`.
    - Para administración de servicios: prioriza `systemctl --user` para servicios de usuario (como PipeWire, pods de Podman, plasma-plasmashell).
    - Para audio: usa herramientas de PipeWire (`wpctl status`, `pw-cli`).
-   - Para gestión de paquetes: utiliza **`zypper`** para repositorios oficiales de openSUSE y Packman, u **`opi`** para paquetes de OBS.
+   - Para gestión de paquetes: utiliza **`zypper`** para repositorios oficiales de openSUSE y OpenH264, o **`flatpak`** para aplicaciones multimedia y de escritorio.
    - En Tumbleweed, la actualización de sistema es **siempre `zypper dup`**.
    - Para instantáneas de recuperación en Btrfs: usa **`snapper`** (`snapper list`, `snapper rollback`).
 
