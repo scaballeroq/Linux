@@ -69,6 +69,10 @@ tuning-status:
 shell:
     ./Setup/shell.sh
 
+# Diagnóstico y estado de utilidades CLI de terminal (eza, bat, fzf, zoxide, ripgrep...)
+shell-status:
+    ./Setup/shell.sh --status
+
 # Starship Prompt moderno (Instalar / Activar)
 starship:
     ./Setup/starship.sh --enable
