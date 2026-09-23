@@ -47,11 +47,15 @@ Packman **no está en desuso ni abandonado**, pero la naturaleza *rolling releas
 ## 4. Configuración recomendada paso a paso
 
 ### Paso 1: Habilitar el repositorio oficial de OpenH264
-Instala los paquetes provistos por Cisco a través de los repositorios de openSUSE:
+Habilita el repositorio de Cisco integrado en openSUSE e instala los códecs oficiales de OpenH264 (la suite oficial de openSUSE GStreamer/FFmpeg ya utiliza `libopenh264-8`):
 
 ```bash
-sudo zypper in openSUSE-repos-openh264
-sudo zypper in mozilla-openh264 gstreamer-plugin-openh264
+# Habilitar el repositorio oficial de Cisco (si no estuviera activo)
+sudo zypper mr -e repo-openh264
+sudo zypper refresh
+
+# Instalar códec OpenH264 oficial y plugin para Firefox
+sudo zypper in libopenh264-8 mozilla-openh264
 ```
 
 ### Paso 2: Habilitar Flathub

@@ -26,7 +26,7 @@ Prepares the base system by configuring the official OpenH264 repository (Cisco)
 
 - **AMD Ryzen Profile (`post-install-amd.sh`)**:
   Optimized for AMD Ryzen processors and Radeon graphics:
-  - Official OpenH264 repository (`openSUSE-repos-openh264`, `mozilla-openh264`, `gstreamer-plugin-openh264`).
+  - Official OpenH264 repository (`libopenh264-8`, `mozilla-openh264`).
   - Flatpak & Flathub integration for decoupled multimedia applications (VLC, OBS).
   - Microcode & firmware: `ucode-amd`, `kernel-firmware-amdgpu`, `kernel-firmware-radeon`.
   - Graphics stack: `Mesa`, `libvulkan_radeon`, `libva-vdpau-driver`, `radeontop`.

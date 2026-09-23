@@ -31,7 +31,7 @@ Opciones:
   --help, -h          Muestra este mensaje de ayuda.
 
 Componentes instalados:
-  • Repositorio OpenH264: Soporte oficial de Cisco/openSUSE (mozilla-openh264, gstreamer-plugin-openh264).
+  • Repositorio OpenH264: Soporte oficial de Cisco/openSUSE (libopenh264-8, mozilla-openh264).
   • Suite Oficial openSUSE: FFmpeg y GStreamer (base, good, bad, libav, vaapi).
   • Aceleración HW:         libva-utils (vainfo) y vulkan-tools.
   • Flatpak / Flathub:      Configuración de Flathub e instalación de reproductores (VLC) con códecs completos.
@@ -46,9 +46,10 @@ show_status() {
     echo "• Repositorio Packman:         $(if zypper lr 2>/dev/null | grep -qi "packman"; then echo "⚠️ Detectado (no recomendado)"; else echo "✅ No presente (recomendado)"; fi)"
     echo "-----------------------------------------------------------------"
     echo "• FFmpeg instalado:            $(if rpm -q ffmpeg &>/dev/null; then echo "✅ FFmpeg ($(rpm -q --qf '%{VERSION}' ffmpeg))"; else echo "❌ No instalado"; fi)"
-    echo "• GStreamer OpenH264:          $(if rpm -q gstreamer-plugin-openh264 &>/dev/null; then echo "✅ Instalado"; else echo "❌ No instalado"; fi)"
-    echo "• Mozilla OpenH264:            $(if rpm -q mozilla-openh264 &>/dev/null; then echo "✅ Instalado"; else echo "❌ No instalado"; fi)"
+    echo "• Librería OpenH264 (Cisco):   $(if rpm -q libopenh264-8 &>/dev/null; then echo "✅ libopenh264-8 ($(rpm -q --qf '%{VERSION}' libopenh264-8))"; else echo "❌ No instalado"; fi)"
+    echo "• Mozilla OpenH264 (Firefox):  $(if rpm -q mozilla-openh264 &>/dev/null; then echo "✅ Instalado"; else echo "❌ No instalado"; fi)"
     echo "• GStreamer Plugins Libav:     $(if rpm -q gstreamer-plugins-libav &>/dev/null; then echo "✅ Instalado"; else echo "No instalado"; fi)"
+    echo "• GStreamer Plugins VA-API:    $(if rpm -q gstreamer-plugins-vaapi &>/dev/null; then echo "✅ Instalado"; else echo "No instalado"; fi)"
     echo "• GStreamer Plugins Good:      $(if rpm -q gstreamer-plugins-good &>/dev/null; then echo "✅ Instalado"; else echo "No instalado"; fi)"
     echo "• GStreamer Plugins Bad:       $(if rpm -q gstreamer-plugins-bad &>/dev/null; then echo "✅ Instalado"; else echo "No instalado"; fi)"
     echo "• VA-API utils:                $(if rpm -q libva-utils &>/dev/null; then echo "✅ Instalado"; else echo "No instalado"; fi)"
@@ -74,10 +75,13 @@ echo "🎬 CONFIGURANDO CÓDECS MULTIMEDIA OFICIALES (SIN PACKMAN)"
 echo "================================================================="
 
 # 1. Habilitar Repositorio oficial OpenH264
-echo "📦 [1/4] Habilitando repositorio oficial OpenH264 e instalando plugins Cisco..."
-$SUDO zypper --non-interactive install -y openSUSE-repos-openh264 2>/dev/null || true
+echo "📦 [1/4] Habilitando repositorio oficial OpenH264 e instalando códecs de Cisco..."
+if ! zypper lr 2>/dev/null | grep -qi "openh264"; then
+    $SUDO zypper --non-interactive install -y openSUSE-repos-Tumbleweed 2>/dev/null || true
+fi
+$SUDO zypper mr -e repo-openh264 2>/dev/null || $SUDO zypper mr -e openSUSE:repo-openh264 2>/dev/null || true
 $SUDO zypper --gpg-auto-import-keys refresh 2>/dev/null || true
-$SUDO zypper --non-interactive install -y mozilla-openh264 gstreamer-plugin-openh264 2>/dev/null || true
+$SUDO zypper --non-interactive install -y libopenh264-8 mozilla-openh264 2>/dev/null || true
 
 # 2. Pila Oficial de openSUSE para FFmpeg, GStreamer y utilidades
 echo "🎵 [2/4] Instalando suite oficial de FFmpeg, plugins GStreamer y utilidades VA-API..."

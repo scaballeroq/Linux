@@ -49,7 +49,7 @@ Operating system configuration, KDE Plasma 6 customization, and hardening script
 - **`shell.sh`**: Modern CLI utilities (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`, `dust`, `btop`, `jq`).
 - **`starship.sh` & `starship.toml`**: Starship prompt manager (`--enable`, `--disable`, `--status`).
 - **`yt-dlp-setup.sh`**: Multimedia dependencies (yt-dlp, FFmpeg, AtomicParsley, aria2, Deno JS engine via Mise).
-- **`multimedia.sh`**: Complete multimedia codec stack, unrestricted FFmpeg, GStreamer plugins, and DVD descrambling via Packman repository at priority 90 (`--status`).
+- **`multimedia.sh`**: Official OpenH264 (Cisco) codecs, official FFmpeg, GStreamer plugins, and decoupled media players via Flatpak without Packman (`--status`).
 - **`chrome.sh`**: Official Google Chrome RPM repository activation and `google-chrome-stable` installation (`--status`).
 - **`steam.sh`**: Native Steam with GameMode, MangoHud, Proton-GE, and 32-bit Vulkan/Mesa drivers (`--status`).
 - **`apariencia.sh`**: Papirus-Dark icons, Breeze-Dark, and GTK 3/4 / Qt integration.

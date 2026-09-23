@@ -16,9 +16,12 @@ fi
 
 # 2. Habilitar Repositorio oficial OpenH264 (Cisco / openSUSE)
 echo "ℹ️ Habilitando repositorio oficial OpenH264 e instalando códecs..."
-sudo zypper --non-interactive install -y openSUSE-repos-openh264 2>/dev/null || true
+if ! zypper lr 2>/dev/null | grep -qi "openh264"; then
+    sudo zypper --non-interactive install -y openSUSE-repos-Tumbleweed 2>/dev/null || true
+fi
+sudo zypper mr -e repo-openh264 2>/dev/null || sudo zypper mr -e openSUSE:repo-openh264 2>/dev/null || true
 sudo zypper --gpg-auto-import-keys refresh 2>/dev/null || true
-sudo zypper --non-interactive install -y mozilla-openh264 gstreamer-plugin-openh264 2>/dev/null || true
+sudo zypper --non-interactive install -y libopenh264-8 mozilla-openh264 2>/dev/null || true
 
 # 3. Compresión de Memoria ZRAM
 echo "ℹ️ Configurando ZRAM al 50% de RAM..."
