@@ -97,9 +97,13 @@ security:
 security-status:
     ./Setup/seguridad.sh --status
 
-# Fuentes de desarrollo (Nerd Fonts: JetBrainsMono, FiraCode, CascadiaCode...)
+# Fuentes de desarrollo (Nerd Fonts: JetBrainsMono, FiraCode, CascadiaCode, Meslo, Hack)
 fonts:
     ./Setup/fonts.sh
+
+# Estado y diagnóstico de fuentes de desarrollo (Nerd Fonts)
+fonts-status:
+    ./Setup/fonts.sh --status
 
 # Apariencia e iconos (Papirus-Dark, Breeze-Dark e integración GTK 3/4 y Qt)
 apariencia:
