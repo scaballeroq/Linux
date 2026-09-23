@@ -1,4 +1,4 @@
-# 🚀 Starship Config: DevDebian (Optimized for Ubuntu + Nerd Fonts)
+# 🚀 Starship Config: openSUSE Tumbleweed (Optimizado con Nerd Fonts y KDE Plasma 6)
 
 # Formato general del prompt (Una sola línea, limpia y con alto contraste)
 format = """
@@ -23,14 +23,20 @@ add_newline = true
 success_symbol = "[❯](bold cyan)"
 error_symbol = "[✖](bold red)"
 
-# Icono del SO (Muestra el logo de Debian)
+# Icono del SO (openSUSE Chameleon Verde)
 [os]
 format = "[$symbol]($style) "
-style = "bold orange"
+style = "bold green"
 disabled = false
 
 [os.symbols]
+openSUSE = " "
+SUSE = " "
 Ubuntu = " "
+Debian = " "
+Arch = "󰣇 "
+Fedora = " "
+Linux = " "
 
 # Configuración del Directorio
 [directory]
