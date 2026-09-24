@@ -43,12 +43,22 @@ EOF
 }
 
 show_status() {
-    local cups_status hplip_installed plugin_status usb_printer
+    echo "================================================================="
+    echo "🔍 ESTADO DEL SISTEMA DE IMPRESIÓN - HP LASERJET (KDE 6)"
+    echo "================================================================="
+
+    local cups_status hplip_installed plugin_status usb_printer fw_status
 
     cups_status=$(if systemctl is-active --quiet cups.service 2>/dev/null; then echo "✅ Activo (running)"; else echo "❌ Inactivo"; fi)
     hplip_installed=$(if rpm -q hplip &>/dev/null; then echo "✅ HPLIP ($(rpm -q --qf '%{VERSION}' hplip))"; else echo "❌ No instalado"; fi)
 
-    if [ -f /var/lib/hp/hplip-install_plugin.stamp ] || (command -v hp-check &>/dev/null && hp-check -t 2>/dev/null | grep -qi "Plugin.*Installed"); then
+    local plugin_ver=""
+    if [ -f /var/lib/hp/hplip.state ] && grep -qiE "^\s*installed\s*=\s*1" /var/lib/hp/hplip.state 2>/dev/null; then
+        plugin_ver=$(grep -iE "^\s*version\s*=" /var/lib/hp/hplip.state 2>/dev/null | cut -d= -f2 | xargs)
+        plugin_status="✅ Instalado${plugin_ver:+ ($plugin_ver)}"
+    elif [ -f /usr/share/hplip/prnt/plugins/lj.so ] || [ -f /var/lib/hp/hplip-install_plugin.stamp ]; then
+        plugin_status="✅ Instalado"
+    elif command -v python3 &>/dev/null && python3 -c "import sys; sys.path.append('/usr/share/hplip'); from installer.pluginhandler import PluginHandle; sys.exit(0 if str(PluginHandle().getStatus()) in ('1', 'PLUGIN_INSTALLED') else 1)" 2>/dev/null; then
         plugin_status="✅ Instalado"
     else
         plugin_status="⚠️ No detectado (requerido para la serie LaserJet M15w)"
@@ -62,19 +72,35 @@ show_status() {
         usb_printer="ℹ️ No conectada por USB (o apagada)"
     fi
 
-    echo "================================================================="
-    echo "🔍 ESTADO DEL SISTEMA DE IMPRESIÓN - HP LASERJET (KDE 6)"
-    echo "================================================================="
+    fw_status="ℹ️ Firewalld no activo"
+    if systemctl is-active --quiet firewalld 2>/dev/null; then
+        local fw_services
+        fw_services=$(firewall-cmd --list-services 2>/dev/null || true)
+        if echo "$fw_services" | grep -qw "ipp" && echo "$fw_services" | grep -qw "mdns"; then
+            fw_status="✅ IPP y mDNS permitidos"
+        elif echo "$fw_services" | grep -qw "ipp"; then
+            fw_status="✅ IPP permitido (mDNS no activo)"
+        else
+            fw_status="ℹ️ No activo en zona predeterminada"
+        fi
+    fi
+
     echo "• Servicio CUPS:           $cups_status"
     echo "• Suite HPLIP:             $hplip_installed"
     echo "• KDE Print Manager:       $(if rpm -q plasma6-print-manager &>/dev/null; then echo "✅ Instalado (KCM)"; else echo "❌ No instalado"; fi)"
     echo "• Plugin propietario HP:   $plugin_status"
     echo "• Detección USB:           $usb_printer"
     echo "• Usuario en grupo lp:     $(if id -nG "$TARGET_USER" 2>/dev/null | grep -qw "lp"; then echo "✅ Sí ($TARGET_USER)"; else echo "❌ No"; fi)"
-    echo "• Reglas Firewalld (IPP):  $(if firewall-cmd --list-services 2>/dev/null | grep -qw "ipp"; then echo "✅ IPP permitido"; else echo "ℹ️ No activo en zona predeterminada"; fi)"
+    echo "• Reglas Firewalld:        $fw_status"
     echo "-----------------------------------------------------------------"
     echo "📋 Colas de impresión en CUPS:"
-    lpstat -p -d 2>/dev/null || echo "   (No hay impresoras configuradas aún en CUPS)"
+    local lp_printers
+    lp_printers=$(lpstat -p 2>/dev/null || true)
+    if [ -n "$lp_printers" ]; then
+        lpstat -p -d 2>/dev/null || true
+    else
+        echo "   ℹ️ No hay impresoras configuradas aún en CUPS."
+    fi
     echo "================================================================="
 }
 
