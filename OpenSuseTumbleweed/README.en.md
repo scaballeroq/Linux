@@ -81,7 +81,7 @@ To run the automated deployment according to your hardware profile:
 ```bash
 git clone https://github.com/scaballeroq/OpenSuseTumbleweed.git
 cd OpenSuseTumbleweed
-chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/install/*.sh Podman/lib/*.sh Git/*.sh Juegos/*.sh
+chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/install/*.sh Podman/lib/*.sh Juegos/*.sh
 
 # Development Laptop (AMD Ryzen + KDE Plasma 6 + Virtualization + Podman):
 just setup-laptop-amd

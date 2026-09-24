@@ -4,7 +4,7 @@ sidebar_position: 4
 
 # Git Configuration in OpenSUSE Tumbleweed
 
-This guide details version control tools in `Git/` including **Git**, **Git-Delta**, **Lazygit**, and **GitHub CLI (gh)**.
+This guide details version control tools configured via `IDE/git.sh` including **Git**, **Git-Delta**, **Lazygit**, and **GitHub CLI (gh)**.
 
 ---
 

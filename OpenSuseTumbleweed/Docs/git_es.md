@@ -4,7 +4,7 @@ sidebar_position: 4
 
 # Configuración de Git en OpenSUSE Tumbleweed
 
-Esta guía detalla el entorno de control de versiones y el conjunto de herramientas optimizadas en la carpeta `Git`.
+Esta guía detalla el entorno de control de versiones y el conjunto de herramientas optimizadas mediante `IDE/git.sh`.
 
 El entorno incluye el cliente **Git**, el formateador visual de diferencias **Git-Delta**, la interfaz de terminal **Lazygit** y la herramienta oficial **GitHub CLI (gh)**.
 
