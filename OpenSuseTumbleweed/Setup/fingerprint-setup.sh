@@ -69,8 +69,48 @@ ensure_dependencies() {
 }
 
 # ------------------------------------------------------------------------------
-# 3. GESTIÓN DE PAM (pam-config)
+# 3. GESTIÓN DE PAM (pam-config y SDDM)
 # ------------------------------------------------------------------------------
+SDDM_PAM_FILE="/etc/pam.d/sddm"
+
+configure_sddm_bypass() {
+    require_root
+    echo "🖥️  Configurando optimización para SDDM (login inmediato con contraseña)..."
+    cat <<'EOF' | $SUDO tee "$SDDM_PAM_FILE" >/dev/null
+#%PAM-1.0
+# Configuración optimizada de SDDM para openSUSE Tumbleweed + KDE Plasma 6
+# Evita el retardo de timeout de fprintd (30s) en el inicio de sesión inicial
+# y garantiza el desbloqueo automático de KWallet mediante la contraseña.
+# (La huella dactilar permanece activa para sudo, kscreenlocker y polkit).
+
+auth     requisite      pam_nologin.so
+auth     optional       pam_kwallet5.so
+auth     required       pam_unix.so      try_first_pass
+
+account  substack       common-account
+account  include        postlogin-account
+
+password substack       common-password
+password include        postlogin-password
+
+session  required       pam_loginuid.so
+session  optional       pam_keyinit.so   revoke force
+session  substack       common-session
+session  include        postlogin-session
+EOF
+    $SUDO chmod 644 "$SDDM_PAM_FILE"
+    echo "  ✅ SDDM configurado: Contraseña inmediata sin retardo y auto-desbloqueo de KWallet."
+}
+
+remove_sddm_bypass() {
+    require_root
+    if [ -f "$SDDM_PAM_FILE" ]; then
+        echo "🗑️  Restaurando configuración predeterminada de SDDM..."
+        $SUDO rm -f "$SDDM_PAM_FILE"
+        echo "  ✅ Archivo /etc/pam.d/sddm eliminado (SDDM volverá a usar la configuración global)."
+    fi
+}
+
 enable_pam() {
     require_root
     echo "🔐 Habilitando módulo de autenticación por huella (pam_fprintd.so) en PAM..."
@@ -83,6 +123,9 @@ enable_pam() {
     # Habilitar --fprintd de forma oficial
     $SUDO /usr/sbin/pam-config -a --fprintd
     echo "  ✅ Módulo pam_fprintd.so integrado exitosamente en /etc/pam.d/common-auth."
+
+    # Configurar bypass de SDDM para login rápido y KWallet automático
+    configure_sddm_bypass
 }
 
 disable_pam() {
@@ -90,6 +133,7 @@ disable_pam() {
     echo "🔓 Deshabilitando autenticación por huella dactilar en PAM..."
     $SUDO /usr/sbin/pam-config -d --fprintd 2>/dev/null || true
     $SUDO /usr/sbin/pam-config -d --fp 2>/dev/null || true
+    remove_sddm_bypass
     echo "  ✅ Autenticación biométrica desactivada de PAM."
 }
 
@@ -162,6 +206,16 @@ show_status() {
     fi
     echo "🛡️  Estado de PAM:          $pam_status"
 
+    local sddm_status="⚠️ Predeterminado (Hereda timeout de 30s de fprintd)"
+    if [ -f "$SDDM_PAM_FILE" ]; then
+        if grep -q "pam_unix.so" "$SDDM_PAM_FILE" && ! grep -q "pam_fprintd" "$SDDM_PAM_FILE"; then
+            sddm_status="✅ Optimizado (Contraseña inmediata + KWallet auto-unlock)"
+        else
+            sddm_status="ℹ️ Personalizado"
+        fi
+    fi
+    echo "🖥️  Login SDDM:            $sddm_status"
+
     # 5. Huellas registradas para el usuario
     echo "-----------------------------------------------------------------"
     echo "🖐️  Huellas registradas para $REAL_USER:"
@@ -203,13 +257,16 @@ OPCIONES:
   -e, --enroll [DEDO]  Registra una huella en la terminal (por defecto: right-index-finger).
   -v, --verify [DEDO]  Prueba la verificación en el sensor con las huellas registradas.
   -d, --disable        Deshabilita la autenticación por huella dactilar en PAM.
+      --sddm-bypass    Configura SDDM para contraseña inmediata (sin retardo) y desbloqueo de KWallet.
+      --sddm-reset     Restaura SDDM a la configuración predeterminada de PAM.
   -h, --help           Muestra esta ayuda.
 
 EJEMPLOS:
-  $(basename "$0")                  # Habilita dependencias y PAM en el sistema
-  $(basename "$0") --status         # Diagnóstico de sensor, PAM y huellas registradas
+  $(basename "$0")                  # Habilita dependencias, PAM y optimización SDDM
+  $(basename "$0") --status         # Diagnóstico de sensor, PAM, SDDM y huellas registradas
   $(basename "$0") --enroll         # Registra el índice derecho vía terminal
   $(basename "$0") --verify         # Prueba el lector biométrico
+  $(basename "$0") --sddm-bypass    # Aplica optimización de contraseña rápida para SDDM
   $(basename "$0") --disable        # Desactiva la huella de PAM (login/sudo/bloqueo)
 
 DEDOS ADMITIDOS POR fprintd:
@@ -253,6 +310,14 @@ while [ $# -gt 0 ]; do
             ACTION="disable"
             shift
             ;;
+        --sddm-bypass)
+            ACTION="sddm-bypass"
+            shift
+            ;;
+        --sddm-reset)
+            ACTION="sddm-reset"
+            shift
+            ;;
         -h|--help)
             show_help
             exit 0
@@ -282,6 +347,14 @@ case "$ACTION" in
         disable_pam
         exit 0
         ;;
+    sddm-bypass)
+        configure_sddm_bypass
+        exit 0
+        ;;
+    sddm-reset)
+        remove_sddm_bypass
+        exit 0
+        ;;
 esac
 
 # Flujo por defecto: Verificación e instalación de PAM
@@ -294,7 +367,7 @@ ensure_dependencies
 enable_pam
 
 echo "-----------------------------------------------------------------"
-echo "✅ Huella dactilar configurada y habilitada en el sistema (PAM)."
+echo "✅ Huella dactilar configurada y optimizada en el sistema (PAM + SDDM)."
 echo "💡 Siguiente paso (Registro de huellas para $REAL_USER):"
 echo "   1. Desde el entorno gráfico KDE Plasma 6:"
 echo "      Preferencias del Sistema -> Usuarios -> Configurar huella dactilar"

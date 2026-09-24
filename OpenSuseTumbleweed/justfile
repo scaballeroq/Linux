@@ -41,6 +41,10 @@ fingerprint *args:
 fingerprint-status:
     ./Setup/fingerprint-setup.sh --status
 
+# Optimizar SDDM para contraseña inmediata sin retardo y desbloqueo de KWallet
+fingerprint-sddm-bypass:
+    ./Setup/fingerprint-setup.sh --sddm-bypass
+
 # Configuración de impresoras HP (CUPS, HPLIP, plugin propietario para LaserJet M15w)
 printer:
     ./Setup/hp-printer-setup.sh
