@@ -1,13 +1,18 @@
 #!/bin/bash
 # ==============================================================================
-# podman-install.sh - Optimización y configuración de Podman Rootless + Socket + Quadlets
-# openSUSE Tumbleweed (KDE Plasma 6 + Wayland)
+# podman-install.sh - Instalación, Optimización y Configuración de Podman Rootless
+# openSUSE Tumbleweed (KDE Plasma 6 + Wayland / Systemd User Environment)
 # ==============================================================================
-#
-# Uso:
-#   ./podman-install.sh              -> Configura el entorno Podman rootless, socket, linger, registries y symlink de podman-utils
-#   ./podman-install.sh --status     -> Muestra el estado del socket, linger, DOCKER_HOST, storage y Quadlets
-#   ./podman-install.sh --help       -> Muestra la ayuda interactiva
+# Características:
+# - Soporta tanto la instalación desde cero (si Podman no está instalado)
+#   como la reconfiguración y optimización idempotente (sin llamadas innecesarias a sudo/zypper).
+# - Configura almacenamiento overlay nativo con fuse-overlayfs y registries recomendados.
+# - Activa loginctl linger para persistencia de contenedores tras cerrar la sesión.
+# - Habilita podman.socket en systemd user para compatibilidad total con Docker API.
+# - Inyecta DOCKER_HOST en KDE Plasma 6 (environment.d), Bash (~/.bashrc.d) y Zsh.
+# - Despliega podman-utils CLI en ~/.local/bin con autocompletados nativos.
+# - Inicializa la estructura modular de Quadlets de Systemd.
+# - Diagnóstico integral del motor y servicios (--status).
 # ==============================================================================
 
 set -euo pipefail
@@ -19,6 +24,8 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
 NC='\033[0m'
 
 log_info()  { echo -e "${YELLOW}[INFO]${NC} $1"; }
@@ -30,6 +37,7 @@ require_non_root() {
     if [ "$EUID" -eq 0 ]; then
         log_error "Este script NO debe ejecutarse directamente como root (con sudo)."
         log_error "Podman rootless se configura en el espacio de usuario normal."
+        log_error "El script solicitará 'sudo' de forma puntual solo si faltan paquetes del sistema."
         exit 1
     fi
 }
@@ -42,18 +50,22 @@ Uso:
   $0 [OPCIÓN]
 
 Opciones:
-  (sin argumentos)       Configura Podman rootless, socket compatible con Docker, linger, registries, environment.d y podman-utils CLI.
-  --status, -s           Muestra el estado del motor Podman, socket, linger, DOCKER_HOST y almacenamiento.
+  (sin argumentos)       Instala paquetes (si no están presentes), configura almacenamiento,
+                         registries, linger, socket Docker API, DOCKER_HOST, CLI podman-utils
+                         y la estructura de Quadlets.
+  --status, -s           Muestra el estado completo del motor Podman, socket, linger,
+                         DOCKER_HOST, almacenamiento y contenedores.
   --help, -h             Muestra este mensaje de ayuda.
 
 Características configuradas:
-  • Base openSUSE:       Verifica e instala complementos opcionales (podman, podman-compose, podman-docker, netavark, aardvark-dns).
-  • Persistencia Linger: Habilita loginctl linger para que contenedores y Quadlets sigan corriendo sin sesión de terminal abierta.
-  • Docker Socket API:   Activa podman.socket en systemd user (/run/user/\$UID/podman/podman.sock).
-  • Sesión KDE / GUI:    Inyecta DOCKER_HOST en ~/.config/environment.d/10-podman.conf para VS Code, DevContainers y Antigravity.
+  • Paquetes openSUSE:   Verifica podman, podman-docker, netavark, aardvark-dns y compose.
+  • Persistencia Linger: Habilita loginctl linger para ejecutar contenedores en segundo plano.
+  • Docker Socket API:   Activa podman.socket en /run/user/\$UID/podman/podman.sock.
+  • Sesión KDE / GUI:    Inyecta DOCKER_HOST en ~/.config/environment.d/10-podman.conf.
+  • Shells (Bash / Zsh): Configura variables de entorno en ~/.bashrc.d y autocompletados.
   • Almacenamiento:      Configura driver overlay nativo en ~/.config/containers/storage.conf.
-  • Registries:          Configura docker.io, quay.io, ghcr.io y registry.opensuse.org.
-  • CLI podman-utils:    Crea symlink en ~/.local/bin/podman-utils y autocompletado en Bash (y Zsh condicional).
+  • Registries:          docker.io, quay.io, ghcr.io y registry.opensuse.org.
+  • CLI podman-utils:    Enlaza podman-utils en ~/.local/bin con autocompletados.
 EOF
 }
 
@@ -62,42 +74,84 @@ show_status() {
     echo "================================================================="
     echo "🔍 ESTADO DE PODMAN ROOTLESS - OPENSUSE TUMBLEWEED (KDE 6)"
     echo "================================================================="
+
+    local linger_val socket_status docker_host_val utils_status storage_info subuid_status
+
+    linger_val=$(loginctl show-user "$USER" 2>/dev/null | grep -i "Linger=" | cut -d= -f2 || echo "no")
+    socket_status=$(systemctl --user is-active podman.socket 2>/dev/null || echo "inactivo")
+    docker_host_val="${DOCKER_HOST:-$(grep "DOCKER_HOST=" "$HOME/.config/environment.d/10-podman.conf" 2>/dev/null | cut -d= -f2- || echo "No configurado")}"
+    utils_status=$(command -v podman-utils &>/dev/null && echo "✅ Disponible en PATH (~/.local/bin/podman-utils)" || echo "ℹ️ No enlazado en PATH")
+
+    if grep -q "^$USER:" /etc/subuid 2>/dev/null && grep -q "^$USER:" /etc/subgid 2>/dev/null; then
+        subuid_status="✅ Asignados ($(grep "^$USER:" /etc/subuid | cut -d: -f2-))"
+    else
+        subuid_status="⚠️ No asignados en /etc/subuid o /etc/subgid"
+    fi
+
     if command -v podman &>/dev/null; then
-        echo "• Podman instalado:    $(podman --version 2>/dev/null)"
-        local socket_status
-        socket_status=$(systemctl --user is-active podman.socket 2>/dev/null || true)
-        echo "• Socket de Usuario:   ${socket_status:-inactivo}"
+        echo "• Motor Podman:        ✅ $(podman --version 2>/dev/null)"
+        echo "• Socket de Usuario:   $(if [ "$socket_status" = "active" ]; then echo "✅ Activo"; else echo "⚠️ $socket_status"; fi)"
         echo "• Socket Path:         /run/user/$(id -u)/podman/podman.sock"
-        local linger_val
-        linger_val=$(loginctl show-user "$USER" 2>/dev/null | grep -i "Linger=" | cut -d= -f2 || echo "no")
-        echo "• Linger de Usuario:   $linger_val"
-        echo "• Driver Storage:      $(podman info --format '{{.Store.GraphDriverName}}' 2>/dev/null || echo 'overlay')"
-        echo "• Podman Compose:      $(command -v podman-compose &>/dev/null && echo 'Instalado' || echo 'No instalado')"
-        echo "• Docker Emulation:    $(command -v docker &>/dev/null && echo 'Instalado (podman-docker)' || echo 'No instalado')"
-        echo "• DOCKER_HOST actual:  ${DOCKER_HOST:-No exportado en la sesión actual}"
-        echo "• CLI podman-utils:    $(command -v podman-utils &>/dev/null && echo 'Disponible en PATH' || echo 'No enlazado')"
-        echo ""
-        echo "📦 Contenedores activos:"
+        echo "• Persistencia Linger: $(if [ "$linger_val" = "yes" ]; then echo "✅ Habilitada"; else echo "ℹ️ Deshabilitada"; fi)"
+        echo "• Rangos SubUID/GID:   $subuid_status"
+        storage_info=$(podman info --format '{{.Store.GraphDriverName}} ({{.Store.GraphRoot}})' 2>/dev/null || echo "overlay")
+        echo "• Almacenamiento:      $storage_info"
+        echo "• Emulación Docker:    $(command -v docker &>/dev/null && echo "✅ Activa (podman-docker)" || echo "ℹ️ No instalada")"
+        echo "• Proveedor Compose:   $(command -v docker-compose &>/dev/null && echo "✅ docker-compose" || (command -v podman-compose &>/dev/null && echo "✅ podman-compose" || echo "ℹ️ No instalado"))"
+        echo "• DOCKER_HOST:         $docker_host_val"
+        echo "• CLI podman-utils:    $utils_status"
+        echo "• Entorno KDE 6:       $(if [ -f "$HOME/.config/environment.d/10-podman.conf" ]; then echo "✅ Configurado"; else echo "ℹ️ No presente"; fi)"
+        echo "• Generador Quadlets:  $(if [ -f /usr/lib/systemd/user-generators/podman-user-generator ]; then echo "✅ Integrado en systemd"; else echo "ℹ️ No detectado"; fi)"
+        echo "-----------------------------------------------------------------"
+        echo "📦 Contenedores en ejecución:"
         podman ps --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || echo "  (Ninguno en ejecución)"
     else
-        echo "• Podman:              No instalado"
+        echo "• Motor Podman:        ❌ No instalado en el sistema"
+        echo "• Paquete Zypper:      Disponible en repositorios oficiales de openSUSE"
+        echo "• Socket de Usuario:   ℹ️ Inactivo (requiere Podman)"
+        echo "• Persistencia Linger: $(if [ "$linger_val" = "yes" ]; then echo "✅ Habilitada"; else echo "ℹ️ Deshabilitada"; fi)"
+        echo "• Rangos SubUID/GID:   $subuid_status"
+        echo "• CLI podman-utils:    $utils_status"
+        echo "-----------------------------------------------------------------"
+        echo "💡 Para instalar Podman y configurar todo el entorno rootless:"
+        echo "   Ejecuta: $0"
     fi
     echo "================================================================="
 }
 
-# 2. Verificar e instalar complementos opcionales con Zypper
+# 2. Verificar e instalar paquetes con Zypper solo si faltan
 install_packages() {
-    log_info "Verificando paquetes y dependencias de Podman vía Zypper..."
-    if command -v sudo &>/dev/null; then
-        sudo zypper --non-interactive install -y \
-            podman \
-            podman-compose \
-            podman-docker \
-            netavark \
-            aardvark-dns \
-            shadow 2>/dev/null || true
+    log_info "Comprobando paquetes del motor Podman..."
+    local missing_pkgs=()
+
+    if ! rpm -q podman &>/dev/null; then missing_pkgs+=("podman"); fi
+    if ! rpm -q podman-docker &>/dev/null; then missing_pkgs+=("podman-docker"); fi
+    if ! rpm -q netavark &>/dev/null; then missing_pkgs+=("netavark"); fi
+    if ! rpm -q aardvark-dns &>/dev/null; then missing_pkgs+=("aardvark-dns"); fi
+    if ! rpm -q fuse-overlayfs &>/dev/null; then missing_pkgs+=("fuse-overlayfs"); fi
+    if ! rpm -q shadow &>/dev/null; then missing_pkgs+=("shadow"); fi
+
+    # Si Podman no está instalado, incluir también docker-compose en la instalación inicial
+    if ! command -v podman &>/dev/null; then
+        missing_pkgs+=("docker-compose")
     fi
-    log_ok "Paquetes de Podman verificados."
+
+    if [ ${#missing_pkgs[@]} -gt 0 ]; then
+        log_step "Instalando paquetes faltantes (${missing_pkgs[*]}) vía Zypper..."
+        if ! command -v sudo &>/dev/null; then
+            log_error "Se requieren permisos administrativos (sudo) para instalar: ${missing_pkgs[*]}"
+            exit 1
+        fi
+        sudo zypper --non-interactive install -y "${missing_pkgs[@]}"
+        log_ok "Paquetes de Podman instalados correctamente."
+    else
+        log_ok "Todos los paquetes base de Podman ya están instalados."
+    fi
+
+    if ! command -v podman &>/dev/null; then
+        log_error "No se pudo detectar el comando 'podman' tras la instalación."
+        exit 1
+    fi
 }
 
 # 3. Configurar almacenamiento overlay nativo
@@ -117,7 +171,7 @@ pull_options = {enable_partial_images = "true", use_hard_links = "false", ostree
 [storage.options.overlay]
 mount_program = "/usr/bin/fuse-overlayfs"
 EOF
-        log_ok "storage.conf creado con driver overlay."
+        log_ok "storage.conf creado con driver overlay y fuse-overlayfs."
     else
         log_info "storage.conf ya existe, manteniendo configuración actual."
     fi
@@ -154,12 +208,12 @@ enable_linger() {
     linger_state=$(loginctl show-user "$USER" 2>/dev/null | grep -i "Linger=" | cut -d= -f2 || echo "no")
     if [ "$linger_state" != "yes" ]; then
         log_info "Habilitando linger para el usuario $USER..."
-        loginctl enable-linger "$USER" 2>/dev/null || {
+        if ! loginctl enable-linger "$USER" 2>/dev/null; then
             if command -v sudo &>/dev/null; then
                 sudo loginctl enable-linger "$USER"
             fi
-        }
-        log_ok "Linger habilitado. Tus pods y contenedores no se detendrán al cerrar la terminal."
+        fi
+        log_ok "Linger habilitado. Tus pods y Quadlets seguirán corriendo sin sesión activa."
     else
         log_ok "Linger ya está habilitado para $USER."
     fi
@@ -170,7 +224,7 @@ configure_subuids() {
     log_info "Verificando rangos subuid/subgid para namespaces rootless..."
     if ! grep -q "^$USER:" /etc/subuid 2>/dev/null || ! grep -q "^$USER:" /etc/subgid 2>/dev/null; then
         if command -v sudo &>/dev/null; then
-            log_info "Asignando rangos subuid/subgid con usermod..."
+            log_info "Asignando rangos subuid/subgid para $USER con usermod..."
             sudo usermod --add-subuids 100000-165535 --add-subgids 100000-165535 "$USER" 2>/dev/null || true
             podman system migrate 2>/dev/null || true
             log_ok "Rangos subuid/subgid configurados."
@@ -190,11 +244,11 @@ enable_podman_socket() {
 
 # 8. Exportar DOCKER_HOST en sesión KDE y Shells (Bash predeterminado / Zsh condicional)
 configure_docker_host() {
-    log_info "Configurando DOCKER_HOST para KDE Plasma / Wayland y Shells (Bash / Zsh)..."
+    log_info "Configurando DOCKER_HOST para KDE Plasma 6 y Shells (Bash / Zsh)..."
     local socket_path="/run/user/$(id -u)/podman/podman.sock"
     local export_line="export DOCKER_HOST=\"unix://$socket_path\""
 
-    # 8.1. Sesión gráfica KDE Plasma / Wayland (environment.d)
+    # 8.1. Sesión gráfica KDE Plasma 6 / Wayland (environment.d)
     mkdir -p "$HOME/.config/environment.d"
     cat <<EOF > "$HOME/.config/environment.d/10-podman.conf"
 DOCKER_HOST=unix://$socket_path
@@ -244,7 +298,7 @@ EOF
         fi
     fi
 
-    log_ok "DOCKER_HOST integrado en KDE Plasma, Bash (~/.bashrc.d/podman.sh) y Zsh (si ~/.zshrc existe)."
+    log_ok "DOCKER_HOST integrado en KDE Plasma, Bash (~/.bashrc.d/podman.sh) y Zsh (si existe ~/.zshrc)."
 }
 
 # 9. Enlazar podman-utils al PATH del usuario
@@ -301,7 +355,9 @@ setup_quadlets() {
     fi
 }
 
-# Procesar argumentos
+# ------------------------------------------------------------------------------
+# PROCESAR ARGUMENTOS CLI
+# ------------------------------------------------------------------------------
 case "${1:-}" in
     --help|-h|help)
         show_help

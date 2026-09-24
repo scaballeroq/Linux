@@ -49,17 +49,15 @@ Instala Podman rootless con todas las dependencias necesarias.
 
 Crea la estructura de systemd para gestionar contenedores como servicios.
 
-### 3. Anadir CLI al PATH
+### 3. CLI podman-utils disponible en PATH
+
+El script `podman-install.sh` crea automáticamente un enlace simbólico en `~/.local/bin/podman-utils` y registra los autocompletados para Bash y Zsh.
+
+Si deseas verificar el comando o ejecutarlo directamente:
 
 ```bash
-# En ~/.bashrc o ~/.zshrc
-export PATH="$HOME/Workspace/Repositorios/Debian/Podman/lib:$PATH"
-```
-
-O crea un alias:
-
-```bash
-alias podman-utils="$HOME/Workspace/Repositorios/Debian/Podman/lib/podman-utils.sh"
+podman-utils doctor
+podman-utils help
 ```
 
 ---

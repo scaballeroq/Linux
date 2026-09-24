@@ -28,7 +28,8 @@ log_step()  { echo -e "${BLUE}>>${NC}    $1"; }
 
 require_podman() {
     if ! command -v podman &>/dev/null; then
-        log_error "Podman no está instalado. Ejecuta primero: ./install/podman-install.sh"
+        log_error "Podman no está instalado en el sistema."
+        echo "💡 Puedes instalarlo y configurarlo ejecutando: $PODMAN_DIR/install/podman-install.sh"
         exit 1
     fi
 }
@@ -56,6 +57,13 @@ show_status() {
     echo "================================================================="
     echo "🔍 ESTADO DE SYSTEMD QUADLETS - OPENSUSE TUMBLEWEED"
     echo "================================================================="
+    if ! command -v podman &>/dev/null; then
+        echo "• Motor Podman:        ❌ No instalado en el sistema"
+        echo "💡 Ejecuta el instalador base: $PODMAN_DIR/install/podman-install.sh"
+        echo "================================================================="
+        return 0
+    fi
+
     echo "• Directorio Quadlets: $HOME/.config/containers/systemd"
     echo "• Generador Quadlet:   $(if [ -f /usr/lib/systemd/user-generators/podman-user-generator ]; then echo 'Presente (/usr/lib/systemd/user-generators/podman-user-generator)'; else echo 'No detectado'; fi)"
     echo ""

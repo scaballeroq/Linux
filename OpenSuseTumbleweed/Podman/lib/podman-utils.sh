@@ -30,11 +30,20 @@ log_ok()    { echo -e "${GREEN}[OK]${NC}   $1"; }
 log_error() { echo -e "${RED}[ERR]${NC}  $1"; }
 log_step()  { echo -e "${BLUE}>>${NC}    $1"; }
 
+require_podman() {
+    if ! command -v podman &>/dev/null; then
+        log_error "Podman no está instalado en este sistema."
+        echo "💡 Ejecuta el instalador para configurarlo: $PODMAN_DIR/install/podman-install.sh"
+        exit 1
+    fi
+}
+
 # =============================================================================
 # PROYECTOS
 # =============================================================================
 
 cmd_create() {
+    require_podman
     local template="${1:-}"
     local project_name="${2:-}"
 
@@ -99,6 +108,7 @@ cmd_create() {
 }
 
 cmd_start() {
+    require_podman
     local project_name="${1:-}"
 
     if [ -z "$project_name" ]; then
@@ -126,6 +136,7 @@ cmd_start() {
 }
 
 cmd_stop() {
+    require_podman
     local project_name="${1:-}"
 
     if [ -z "$project_name" ]; then
@@ -156,6 +167,7 @@ cmd_restart() {
 }
 
 cmd_logs() {
+    require_podman
     local project_name="${1:-}"
     local service_name="${2:-}"
 
@@ -177,6 +189,7 @@ cmd_logs() {
 }
 
 cmd_status() {
+    require_podman
     local project_name="${1:-}"
 
     if [ -z "$project_name" ]; then
@@ -209,6 +222,7 @@ cmd_status() {
 }
 
 cmd_destroy() {
+    require_podman
     local project_name="${1:-}"
 
     if [ -z "$project_name" ]; then
@@ -250,6 +264,7 @@ cmd_destroy() {
 # =============================================================================
 
 cmd_install_global() {
+    require_podman
     local service="${1:-}"
 
     if [ -z "$service" ]; then
@@ -281,6 +296,7 @@ cmd_install_global() {
 }
 
 cmd_uninstall_global() {
+    require_podman
     local service="${1:-}"
 
     if [ -z "$service" ]; then
@@ -338,6 +354,40 @@ unlink_project() {
     rm -f "$SYSTEMD_USER_DIR/$project_name.target"
 }
 
+cmd_link() {
+    require_podman
+    local project_name="${1:-}"
+
+    if [ -z "$project_name" ]; then
+        log_error "Uso: podman-utils link <nombre-proyecto>"
+        exit 1
+    fi
+
+    local project_dir="$PROJECTS_DIR/$project_name"
+    if [ ! -d "$project_dir" ]; then
+        log_error "El proyecto '$project_name' no existe en $project_dir"
+        exit 1
+    fi
+
+    link_project "$project_name" "$project_dir"
+    systemctl --user daemon-reload
+    log_ok "Archivos Quadlet del proyecto '$project_name' enlazados a systemd."
+}
+
+cmd_unlink() {
+    require_podman
+    local project_name="${1:-}"
+
+    if [ -z "$project_name" ]; then
+        log_error "Uso: podman-utils unlink <nombre-proyecto>"
+        exit 1
+    fi
+
+    unlink_project "$project_name"
+    systemctl --user daemon-reload
+    log_ok "Archivos Quadlet del proyecto '$project_name' desenlazados de systemd."
+}
+
 get_project_services() {
     local project_name="$1"
     local project_dir="$PROJECTS_DIR/$project_name"
@@ -355,6 +405,7 @@ get_project_services() {
 # =============================================================================
 
 cmd_list() {
+    require_podman
     echo "================================================================="
     echo "PROYECTOS ACTIVOS:"
     echo "================================================================="
@@ -418,7 +469,8 @@ cmd_doctor() {
     if command -v podman &>/dev/null; then
         log_ok "Podman: $(podman --version)"
     else
-        log_error "Podman no está instalado."
+        log_error "Podman no está instalado en el sistema."
+        echo "💡 Ejecuta: $PODMAN_DIR/install/podman-install.sh"
     fi
 
     # 2. Systemd Socket
@@ -448,7 +500,21 @@ cmd_doctor() {
         log_info "DOCKER_HOST: No exportado en el shell actual (Carga con: $reload_hint)"
     fi
 
-    # 5. Generador Quadlet
+    # 5. Rangos SubUID / SubGID
+    if grep -q "^$USER:" /etc/subuid 2>/dev/null && grep -q "^$USER:" /etc/subgid 2>/dev/null; then
+        log_ok "Rangos SubUID/GID: Configurados en /etc/subuid y /etc/subgid"
+    else
+        log_error "Rangos SubUID/GID no configurados para $USER (Requerido para rootless)."
+    fi
+
+    # 6. Almacenamiento
+    if command -v podman &>/dev/null; then
+        local driver
+        driver=$(podman info --format '{{.Store.GraphDriverName}}' 2>/dev/null || echo "overlay")
+        log_ok "Almacenamiento: Driver $driver"
+    fi
+
+    # 7. Generador Quadlet
     if [ -f /usr/lib/systemd/user-generators/podman-user-generator ]; then
         log_ok "Generador Quadlet: Integrado en Systemd"
     else
