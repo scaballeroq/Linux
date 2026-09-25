@@ -51,6 +51,7 @@ Operating system configuration, KDE Plasma 6 customization, and hardening script
 - **`starship.sh` & `starship.toml`**: Starship prompt manager (`--enable`, `--disable`, `--status`).
 - **`yt-dlp-setup.sh`**: Multimedia dependencies (yt-dlp, FFmpeg, AtomicParsley, aria2, Deno JS engine via Mise).
 - **`multimedia.sh`**: Official OpenH264 (Cisco) codecs, official FFmpeg, GStreamer plugins, and decoupled media players via Flatpak without Packman (`--status`).
+- **`flatpak.sh`**: Decoupled desktop apps suite via Flatpak/Flathub (Flatseal, Podman Desktop, Warehouse, VLC, Celluloid, OBS Studio, Spotify, Vesktop...) without touching the base system (`--status`, `--all`, `--essential`, `--multimedia`, `--clean`, `--update`).
 - **`chrome.sh`**: Official Google Chrome RPM repository activation and `google-chrome-stable` installation (`--status`).
 - **`steam.sh`**: Native Steam with GameMode, MangoHud, Proton-GE, and 32-bit Vulkan/Mesa drivers (`--status`).
 - **`hp-printer-setup.sh`**: HP printer stack (CUPS, HPLIP, proprietary plugin for LaserJet M15w, Firewalld USB/Wi-Fi, `--status`).
@@ -104,7 +105,9 @@ just tuning-status       # Diagnostic of system performance metrics
 just kitty               # Configure Kitty terminal with opacity, blur, and Catppuccin theme
 just virtualization      # Setup KVM/QEMU, modular Libvirt, and Btrfs NoCoW
 just virtualization-status # Diagnostic of KVM hypervisor
-just multimedia          # Install Packman at priority 90, full codecs, and FFmpeg
+just multimedia          # Official OpenH264 codecs and Flatpak multimedia stack
+just flatpak             # Install recommended Flatpak suite (Flatseal, Podman Desktop, Warehouse, VLC...)
+just flatpak-status      # Diagnostics of Flathub remotes and installed apps
 just chrome              # Install official Google Chrome
 just steam               # Install native Steam and 32-bit graphics stack
 just languages           # Install Node, Python (uv), Rust, .NET, Java, and Angular

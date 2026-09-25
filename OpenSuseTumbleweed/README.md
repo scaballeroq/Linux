@@ -51,6 +51,7 @@ Scripts de configuración del sistema operativo, personalización de KDE Plasma 
 - **`starship.sh` & `starship.toml`**: Prompt Starship moderno con configuración temática openSUSE (`--enable`, `--disable`, `--status`).
 - **`yt-dlp-setup.sh`**: Dependencias para manejo multimedia (yt-dlp, FFmpeg, AtomicParsley, aria2, motor JS Deno vía Mise).
 - **`multimedia.sh`**: Configuración de codecs multimedia oficiales (OpenH264 Cisco), FFmpeg oficial, plugins GStreamer y reproductores multimedia desacoplados vía Flatpak sin Packman (`--status`).
+- **`flatpak.sh`**: Suite de aplicaciones de escritorio y utilidades desacopladas vía Flatpak/Flathub (Flatseal, Podman Desktop, Warehouse, VLC, Celluloid, OBS Studio, Spotify, Vesktop...) sin tocar el sistema base (`--status`, `--all`, `--essential`, `--multimedia`, `--clean`, `--update`).
 - **`chrome.sh`**: Activación del repositorio oficial de Google Chrome e instalación de `google-chrome-stable` (`--status`).
 - **`steam.sh`**: Instalación de Steam nativo con GameMode, MangoHud, Proton-GE y drivers Vulkan de 32-bit (`--status`).
 - **`hp-printer-setup.sh`**: Pila de impresión para impresoras HP (CUPS, HPLIP, plugin propietario para LaserJet M15w, Firewalld USB/Wi-Fi, `--status`).
@@ -105,6 +106,8 @@ just kitty               # Configura terminal Kitty con opacidad, blur y tema Ca
 just virtualization      # Configura KVM/QEMU, Libvirt modular y Btrfs NoCoW
 just virtualization-status # Diagnóstico del hipervisor KVM
 just multimedia          # Configura codecs OpenH264 oficiales y Flatpak multimedia
+just flatpak             # Instala suite recomendada Flatpak (Flatseal, Podman Desktop, Warehouse, VLC...)
+just flatpak-status      # Diagnóstico de repositorios Flathub y aplicaciones instaladas
 just chrome              # Instala Google Chrome oficial
 just steam               # Instala Steam nativo y librerías 32-bit
 just languages           # Instala Node, Python (uv), Rust, .NET, Java y Angular

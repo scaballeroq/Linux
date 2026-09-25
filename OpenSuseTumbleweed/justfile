@@ -2,11 +2,11 @@
 # (openSUSE Tumbleweed + KDE Plasma 6)
 
 # Instala todo el entorno por defecto (Auto-detección de CPU / Portátil AMD)
-setup-all: post-install multimedia chrome steam laptop tuning kde-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+setup-all: post-install multimedia flatpak chrome steam laptop tuning kde-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
     @echo "🚀 Entorno completo de openSUSE Tumbleweed (KDE Plasma 6) configurado. Por favor, reinicia el sistema."
 
 # Perfil completo para Portátil de desarrollo (AMD Ryzen + Virtualización + Contenedores)
-setup-laptop-amd: post-install-amd multimedia chrome steam laptop tuning kde-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+setup-laptop-amd: post-install-amd multimedia flatpak chrome steam laptop tuning kde-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
     @echo "🚀 Entorno Portátil AMD Ryzen (KDE Plasma 6) configurado con éxito. Por favor, reinicia el sistema."
 
 # Perfil para Sobremesa Centro Multimedia (Intel Core / Media Center - Sin virtualización ni batería)
@@ -141,6 +141,22 @@ multimedia:
 # Estado de repositorios multimedia (OpenH264), códecs oficiales y Flatpak
 multimedia-status:
     ./Setup/multimedia.sh --status
+
+# Aplicaciones y herramientas desacopladas vía Flatpak (Flatseal, Podman Desktop, Warehouse, VLC...)
+flatpak *args:
+    ./Setup/flatpak.sh {{args}}
+
+# Diagnóstico y estado de Flatpak, repositorio Flathub y aplicaciones instaladas
+flatpak-status:
+    ./Setup/flatpak.sh --status
+
+# Actualizar todas las aplicaciones y runtimes de Flatpak
+flatpak-update:
+    ./Setup/flatpak.sh --update
+
+# Limpiar runtimes huérfanos y dependencias no utilizadas de Flatpak
+flatpak-clean:
+    ./Setup/flatpak.sh --clean
 
 # Navegador Google Chrome oficial (Instalación, actualización u opciones)
 chrome *args:
