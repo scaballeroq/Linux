@@ -97,10 +97,13 @@ Para mantener el sistema base de openSUSE Tumbleweed 100% puro contra los reposi
 - **Desarrollo y Bases de Datos**:
   - `Bruno` (`com.usebruno.Bruno`): Cliente API REST y GraphQL ligero, offline y versionable en Git (sustituto libre de Postman).
   - `DBeaver Community` (`io.dbeaver.DBeaverCommunity`): Gestor universal de bases de datos para desarrollo local y contenedores Podman.
-- **Productividad, Notas y Copias de Seguridad**:
+- **Productividad, Ofimática y Copias de Seguridad**:
+  - `LibreOffice` (`org.libreoffice.LibreOffice`): Suite ofimática completa desacoplada del sistema base.
   - `Obsidian` (`md.obsidian.Obsidian`): Bóveda de conocimiento y notas interconectadas en Markdown local.
   - `LocalSend` (`org.localsend.localsend_app`): Envío seguro y ultrarrápido de archivos en red local entre Linux, Android e iOS.
   - `Pika Backup` (`org.gnome.World.PikaBackup`): Copias de seguridad incrementales, deduplicadas y cifradas con BorgBackup.
+- **Navegadores Web y Privacidad**:
+  - `Mozilla Firefox` (`org.mozilla.firefox`): Navegador web con sandbox estricto y códecs multimedia completos.
 - **Diseño y Creatividad**:
   - `GIMP` (`org.gimp.GIMP`): Editor avanzado de imágenes y retoque fotográfico con runtimes gráficos aislados.
   - `Inkscape` (`org.inkscape.Inkscape`): Editor profesional de gráficos vectoriales SVG.

@@ -77,9 +77,13 @@ APPS_CATALOG=(
     "io.dbeaver.DBeaverCommunity|DBeaver Community|dev|0|Gestor universal de bases de datos (SQL, NoSQL, Podman containers)"
 
     # Productividad, Notas y Copias de Seguridad
+    "org.libreoffice.LibreOffice|LibreOffice|productivity|0|Suite ofimática completa desacoplada del sistema"
     "md.obsidian.Obsidian|Obsidian|productivity|0|Bóveda de conocimiento y notas interconectadas en Markdown local"
     "org.localsend.localsend_app|LocalSend|productivity|0|Transferencia segura y rápida de archivos en red local (LAN/Wi-Fi)"
     "org.gnome.World.PikaBackup|Pika Backup|productivity|0|Copias de seguridad incrementales y cifradas basadas en BorgBackup"
+
+    # Navegadores Web y Privacidad
+    "org.mozilla.firefox|Mozilla Firefox|web|0|Navegador web con sandbox estricto y códecs multimedia completos"
 
     # Diseño y Creatividad
     "org.gimp.GIMP|GIMP|graphics|0|Editor avanzado de imágenes con códecs y runtimes desacoplados"
@@ -162,6 +166,8 @@ resolve_app_id() {
         pika|pika-backup|pikabackup) echo "org.gnome.World.PikaBackup" ;;
         gimp) echo "org.gimp.GIMP" ;;
         inkscape) echo "org.inkscape.Inkscape" ;;
+        libreoffice|office) echo "org.libreoffice.LibreOffice" ;;
+        firefox) echo "org.mozilla.firefox" ;;
         *) echo "$query" ;;
     esac
 }
@@ -305,6 +311,9 @@ install_suite() {
             graphics)
                 if [ "$category" = "graphics" ]; then should_install=1; fi
                 ;;
+            web)
+                if [ "$category" = "web" ]; then should_install=1; fi
+                ;;
         esac
 
         if [ "$should_install" -eq 1 ]; then
@@ -359,8 +368,9 @@ Opciones principales:
   -e, --essential, --core Instala únicamente las herramientas esenciales del sistema (Flatseal, Podman Desktop, Warehouse).
   -m, --multimedia        Instala la suite multimedia desacoplada (VLC, Celluloid, OBS Studio, Kdenlive, Kodi, Stremio, Audacity, Spotify).
       --dev               Instala herramientas de desarrollo y APIs (Bruno, DBeaver).
-      --productivity      Instala utilidades de productividad y notas (Obsidian, LocalSend, Pika Backup).
+      --productivity      Instala utilidades de productividad y ofimática (LibreOffice, Obsidian, LocalSend, Pika Backup).
       --graphics          Instala suite de diseño gráfico (GIMP, Inkscape).
+      --web               Instala navegadores web en sandbox (Mozilla Firefox).
       --comms             Instala las herramientas de comunicación (Vesktop/Discord, Telegram).
       --gaming            Instala herramientas de gaming (Proton-GE).
   -u, --update            Actualiza todas las aplicaciones y runtimes instalados.
@@ -400,6 +410,8 @@ Catálogo disponible:
   • Pika Backup       (org.gnome.World.PikaBackup)       [Copias de seguridad Borg]
   • GIMP              (org.gimp.GIMP)                    [Edición gráfica avanzada]
   • Inkscape          (org.inkscape.Inkscape)            [Gráficos vectoriales SVG]
+  • LibreOffice       (org.libreoffice.LibreOffice)      [Suite ofimática completa]
+  • Firefox           (org.mozilla.firefox)              [Navegador web en sandbox]
   • Proton-GE         (com.valvesoftware.Steam.CompatibilityTool.Proton-GE) [Juegos Steam]
 EOF
 }
@@ -464,6 +476,10 @@ case "${1:-}" in
         ;;
     --graphics|graphics)
         install_suite "graphics" "$TARGET_SCOPE"
+        exit 0
+        ;;
+    --web|web)
+        install_suite "web" "$TARGET_SCOPE"
         exit 0
         ;;
     install)
