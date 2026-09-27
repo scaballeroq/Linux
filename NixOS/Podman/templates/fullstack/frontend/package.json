@@ -1,0 +1,9 @@
+{
+  "name": "__PROJECT__-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "echo 'Servidor de desarrollo activo'",
+    "build": "echo 'Build ok'"
+  }
+}
