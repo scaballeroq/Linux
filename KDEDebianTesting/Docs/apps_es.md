@@ -2,46 +2,149 @@
 sidebar_position: 9
 ---
 
-# Aplicaciones y Juegos en Debian 13
+# Aplicaciones y Juegos en Debian Testing (KDE Plasma 6)
 
-Esta guía detalla la instalación de software y herramientas de escritorio, así como plataformas de ocio digital descritas en las carpetas `Apps` y `Juegos`.
-
-El ecosistema de Debian 13 (Trixie) permite instalar tanto herramientas visuales del sistema mediante gestores de paquetes tradicionales (APT) como software de ocio de forma aislada a través de formatos universales (Flatpak).
+Esta guía detalla la suite de aplicaciones de escritorio, herramientas visuales y plataformas de juegos configuradas en las carpetas `Setup` y `Juegos`.
 
 ---
 
-## 1. Meld: Comparación Visual de Archivos (`meld.sh`)
+## 1. Suite Nativa de KDE Plasma 6
 
-Meld es una herramienta gráfica para comparar y fusionar diferencias entre archivos, directorios y repositorios de control de versiones. Es ideal para resolver conflictos de mezcla en Git.
+Debian Testing (Trixie/Sid) incorpora la suite completa de KDE Gear y aplicaciones de KDE Plasma 6:
 
-* **Instalación**:
-  ```bash
-  sudo apt update
-  sudo apt install -y meld
-  ```
+- **Dolphin**: Administrador de archivos rápido con vista de detalles por defecto y menús contextuales KIO para Kitty y Google Antigravity.
+- **Kate & KWrite**: Editores de texto avanzados con resaltado de sintaxis y terminal integrada.
+- **Spectacle**: Captura de pantalla y grabación de región en Wayland (atajo `Print Screen` o comando `captura`).
+- **Okular**: Visor universal de documentos (PDF, ePub, Markdown).
+- **Gwenview**: Visor de imágenes optimizado.
+- **Ark**: Gestor de archivos comprimidos con soporte multi-formato (`tar`, `zip`, `7z`, `rar`).
+- **KCalc**: Calculadora de precisión científica.
+- **Discover**: Tienda de software integrada con backend Flathub activado (`plasma-discover-backend-flatpak`).
 
 ---
 
-## 2. Steam: Plataforma de Juegos y Compatibilidad (`steam.sh`)
+## 2. Navegador Google Chrome (`chrome.sh`)
 
-Para garantizar que el sistema mantenga su estabilidad sin mezclar librerías de 32 bits (i386) a nivel de sistema APT, la instalación de Steam se realiza en formato aislado mediante Flatpak/Flathub.
+Instala la versión oficial estable de Google Chrome con repositorio firmado por Google (llave desarmada en `/etc/apt/keyrings/google-chrome.gpg` y `/etc/apt/sources.list.d/google-chrome.list`):
 
-1. **Instalación de Steam**:
-   ```bash
-   flatpak install flathub com.valvesoftware.Steam
-   ```
+```bash
+just chrome
+# o ./Setup/chrome.sh
+```
 
-2. **Capa de Compatibilidad (Proton-GE)**:
-   Se instala **Proton GloriousEggroll (Proton-GE)** para mejorar la compatibilidad, velocidad y estabilidad de videojuegos de Windows sobre sistemas Linux:
-   ```bash
-   flatpak install flathub com.valvesoftware.Steam.CompatibilityTool.Proton-GE
-   ```
+Diagnóstico del repositorio y binario:
+```bash
+./Setup/chrome.sh --status
+```
+
+---
+
+## 3. Steam, Rendimiento y Juegos (`steam.sh`)
+
+Configura la estación de juegos nativa con aceleración por hardware:
+
+- **Steam nativo**: Paquete oficial mediante arquitectura multiarch (`dpkg --add-architecture i386`), drivers Vulkan de 32 bits (`mesa-vulkan-drivers:i386`, `libgl1-mesa-dri:i386`).
+- **Optimizadores de rendimiento**: GameMode (`gamemoderun`) y MangoHud para monitorización en tiempo real de FPS, temperaturas y uso de GPU.
+- **Proton-GE**: Capa de compatibilidad GloriousEggroll para ejecutar videojuegos de Windows con máxima fluidez (`com.valvesoftware.Steam.CompatibilityTool.Proton-GE`).
+
+```bash
+just steam
+# o ./Setup/steam.sh
+```
+
+---
+
+## 4. Centro Multimedia Kodi (`kodi`)
+
+Transforma el equipo en un Media Center de alta fidelidad:
+
+- Paquete oficial `kodi` con aceleración VA-API.
+- Complementos de streaming: `kodi-inputstream-adaptive`, `kodi-inputstream-rtmp`, `kodi-pvr-iptvsimple`.
+
+```bash
+just kodi
+```
+
+---
+
+## 5. Meld: Comparación Visual de Archivos y Git Diff
+
+Herramienta gráfica para resolución de conflictos en Git y comparación de directorios:
+
+```bash
+sudo apt update && sudo apt install -y meld
+```
+
+---
+
+## 6. Aplicaciones Desacopladas vía Flatpak (`flatpak.sh`)
+
+Para mantener el sistema base de Debian Testing 100% puro contra los repositorios oficiales y evitar dependencias de terceros conflictivas (como deb-multimedia), las aplicaciones multimedia y herramientas de escritorio se ejecutan sobre runtimes estándar de **Flathub**:
+
+- **Gestión y Contenedores**:
+  - `Flatseal` (`com.github.tchx84.Flatseal`): Control gráfico granular de permisos del sandbox (carpetas, sockets Wayland, red, dispositivos).
+  - `Podman Desktop` (`io.podman_desktop.PodmanDesktop`): Panel visual completo para gestionar contenedores, imágenes, pods y servicios Quadlet de Podman Rootless.
+  - `Warehouse` (`io.github.flattool.Warehouse`): Mantenimiento de Flatpaks, visualizador de propiedades y limpiador de restos/datos huérfanos.
+- **Multimedia y Creación (con códecs completos y VA-API)**:
+  - `VLC Media Player` (`org.videolan.VLC`): Reproductor universal desacoplado.
+  - `Celluloid` (`io.github.celluloid_player.Celluloid`): Reproductor basado en MPV acelerado por hardware con GPU AMD Radeon Vega / Intel HD.
+  - `OBS Studio` (`com.obsproject.Studio`): Grabación y streaming con soporte PipeWire/Wayland nativo.
+  - `Kdenlive` (`org.kde.kdenlive`): Editor de vídeo profesional no lineal con códecs completos integrados.
+  - `Kodi` (`tv.kodi.Kodi`): Centro multimedia avanzado para streaming y reproducción en alta definición.
+  - `Stremio` (`com.stremio.Stremio`): Centro y agregador de contenidos multimedia y streaming.
+  - `Spotify` (`com.spotify.Client`): Reproductor oficial de música en streaming.
+  - `Audacity` (`org.audacityteam.Audacity`): Editor y grabador de audio profesional multi-pista.
+- **Desarrollo y Bases de Datos**:
+  - `Bruno` (`com.usebruno.Bruno`): Cliente API REST y GraphQL ligero, offline y versionable en Git (sustituto libre de Postman).
+  - `DBeaver Community` (`io.dbeaver.DBeaverCommunity`): Gestor universal de bases de datos para desarrollo local y contenedores Podman.
+- **Productividad, Ofimática y Copias de Seguridad**:
+  - `LibreOffice` (`org.libreoffice.LibreOffice`): Suite ofimática completa desacoplada del sistema base.
+  - `Obsidian` (`md.obsidian.Obsidian`): Bóveda de conocimiento y notas interconectadas en Markdown local.
+  - `LocalSend` (`org.localsend.localsend_app`): Envío seguro y ultrarrápido de archivos en red local entre Linux, Android e iOS.
+  - `Pika Backup` (`org.gnome.World.PikaBackup`): Copias de seguridad incrementales, deduplicadas y cifradas con BorgBackup.
+- **Navegadores Web y Privacidad**:
+  - `Mozilla Firefox` (`org.mozilla.firefox`): Navegador web con sandbox estricto y códecs multimedia completos.
+- **Diseño y Creatividad**:
+  - `GIMP` (`org.gimp.GIMP`): Editor avanzado de imágenes y retoque fotográfico con runtimes gráficos aislados.
+  - `Inkscape` (`org.inkscape.Inkscape`): Editor profesional de gráficos vectoriales SVG.
+- **Comunicación y Gaming**:
+  - `Vesktop` (`dev.vencord.Vesktop`): Discord optimizado para Wayland con screen sharing funcional por PipeWire.
+  - `Telegram Desktop` (`org.telegram.desktop`): Mensajería rápida y segura en sandbox.
+  - `Proton-GE` (`com.valvesoftware.Steam.CompatibilityTool.Proton-GE`): Capa de compatibilidad para videojuegos en Steam.
+
+### Uso y Comandos:
+
+```bash
+# Diagnóstico del estado de repositorios y aplicaciones instaladas
+just flatpak-status
+# o ./flatpak --status
+
+# Instalación modular por perfiles
+./flatpak --essential   # Flatseal, Podman Desktop, Warehouse
+./flatpak --multimedia  # VLC, Celluloid, OBS Studio, Kdenlive, Kodi, Stremio...
+./flatpak --dev         # Bruno, DBeaver Community
+./flatpak --productivity # Obsidian, LocalSend, Pika Backup
+./flatpak --graphics    # GIMP, Inkscape
+./flatpak --comms       # Vesktop, Telegram
+./flatpak --all         # Todo el catálogo disponible
+
+# Instalar aplicaciones individuales por alias o ID
+./flatpak install bruno
+./flatpak install dbeaver
+./flatpak install obsidian
+./flatpak install localsend
+./flatpak install gimp
+
+# Mantenimiento del entorno Flatpak
+just flatpak-update     # Actualizar aplicaciones y runtimes
+just flatpak-clean      # Limpiar runtimes huérfanos sin usar
+```
 
 ---
 
 ## Verificación
 
-Para comprobar que las herramientas se han instalado correctamente:
-
-- **Meld**: Ejecuta `meld` en consola o ábrelo desde tu lanzador de aplicaciones del escritorio.
-- **Steam**: Lanza Steam desde el menú de aplicaciones de tu escritorio GNOME. Al iniciar sesión, puedes habilitar Proton-GE en los ajustes de compatibilidad de Steam (Steam > Parámetros > Compatibilidad > Habilitar Steam Play).
+- **KDE Plasma**: Lanza las aplicaciones desde el menú de inicio (Kickoff) o mediante KRunner (`Alt+Space`).
+- **Chrome**: Ejecuta `google-chrome` o compruébalo con `./Setup/chrome.sh --status`.
+- **Flatpak**: Verifica el estado con `just flatpak-status` o inspecciona permisos con `Flatseal`.
+- **Steam**: Abre Steam, ve a *Parámetros > Compatibilidad* y verifica la habilitación de Steam Play / Proton.

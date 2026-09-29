@@ -1,6 +1,6 @@
 #!/bin/bash
 # post-install-intel.sh - Script de post-instalación para Debian Testing (Trixie) con Intel Core (Haswell/i7-4790) + Multimedia (Kodi/Streaming)
-# (Configurado con ZRAM, Microcódigo Intel, VA-API i965/Intel HD Graphics, Codecs, Kodi, PipeWire y GNOME)
+# (Configurado con ZRAM, Microcódigo Intel, VA-API i965/Intel HD Graphics, Codecs, Kodi, PipeWire y Suite KDE Plasma 6)
 
 set -euo pipefail
 
@@ -13,7 +13,7 @@ fi
 echo "================================================================="
 echo "🚀 INICIANDO POST-INSTALACIÓN: DEBIAN TESTING ($CODENAME) - INTEL CORE / MEDIA CENTER"
 echo "🖥️ Optimizado para sobremesa Intel Haswell (i7-4790 / HD Graphics 4600)"
-echo "🎬 Configuración multimedia para Kodi, Netflix, Prime Video y streaming"
+echo "🎬 Configuración multimedia para Kodi, streaming y KDE Plasma 6"
 echo "================================================================="
 
 # 1. Habilitar Repositorios Extra (Contrib, Non-Free, Non-Free-Firmware)
@@ -85,6 +85,8 @@ sudo apt install -y \
     gstreamer1.0-plugins-bad \
     gstreamer1.0-plugins-ugly \
     gstreamer1.0-libav \
+    gstreamer1.0-vaapi \
+    gstreamer1.0-tools \
     libbluray2 2>/dev/null || true
 
 # 6. Centro Multimedia (Kodi y complementos de streaming)
@@ -106,46 +108,49 @@ sudo apt install -y \
 
 systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
 
-# 8. Entorno de Escritorio GNOME y Aplicaciones Base
-echo "ℹ️ Instalando componentes y utilidades base de GNOME..."
+# 8. Entorno de Escritorio KDE Plasma 6 y Aplicaciones Base
+echo "ℹ️ Instalando componentes y utilidades base de KDE Plasma 6..."
 sudo apt install -y \
-    gnome-core \
-    gnome-shell \
-    gnome-control-center \
-    gnome-tweaks \
-    gnome-terminal \
-    ptyxis \
-    nautilus \
-    file-roller \
-    gnome-text-editor \
-    gnome-calculator \
-    gnome-disk-utility \
-    gnome-system-monitor \
+    kde-plasma-desktop \
+    plasma-workspace-wayland \
+    dolphin \
+    dolphin-plugins \
+    kio-extras \
+    kio-admin \
+    kate \
+    spectacle \
+    kcalc \
+    ark \
+    gwenview \
+    okular \
+    plasma-systemmonitor \
+    partitionmanager \
+    kinfocenter \
+    kitty \
     power-profiles-daemon \
     ffmpegthumbnailer \
-    evince \
-    seahorse 2>/dev/null || true
+    ffmpegthumbs \
+    wl-clipboard \
+    papirus-icon-theme 2>/dev/null || true
 
-# 9. Integración de Flatpak & Flathub en GNOME Software
-echo "ℹ️ Configurando Flatpak y Flathub para GNOME Software..."
-sudo apt install -y flatpak gnome-software gnome-software-plugin-flatpak 2>/dev/null || true
-flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+# 9. Integración de Flatpak & Flathub en KDE Discover
+echo "ℹ️ Configurando Flatpak y Flathub para KDE Discover..."
+sudo apt install -y flatpak plasma-discover-backend-flatpak 2>/dev/null || true
+sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
 
-# 10. Software Esencial de Sistema (Sin herramientas de virtualización KVM)
+# 10. Software Esencial de Sistema
 echo "ℹ️ Instalando utilidades esenciales para Debian..."
 sudo apt install -y \
     build-essential \
     cmake \
     curl \
+    wget \
     btop \
     htop \
     inxi \
     fuse3 \
-    exfat-fuse \
     exfatprogs \
-    vlc \
-    gimp \
-    gparted \
     7zip \
     p7zip-full \
     unrar \
@@ -156,13 +161,12 @@ sudo apt install -y \
     fastfetch 2>/dev/null || true
 
 # 11. Limpieza de Paquetes Antiguos
-echo "ℹ️ Limpiando paquetes obsoletos..."
+echo "🧹 Limpiando caché y paquetes obsoletos..."
 sudo apt autoremove -y
-sudo apt clean
+sudo apt autoclean
 
 echo "================================================================="
-echo "✅ Debian Testing ($CODENAME) + GNOME (Intel Haswell / Media Center) configurado con éxito."
-echo "🎬 Aceleración gráfica por hardware i965 activada y Kodi instalado."
-echo "💡 Para Netflix y Prime Video en Firefox: Ve a Ajustes de Firefox -> General -> 'Reproducir contenido con control DRM'."
-echo "💡 Se recomienda reiniciar el equipo para arrancar con el nuevo Kernel Linux, drivers Intel y ZRAM."
+echo "✅ Post-instalación Intel Core / Media Center completada con éxito."
+echo "💡 Se recomienda reiniciar el sistema para aplicar los cambios de microcódigo,"
+echo "   módulos de vídeo VA-API y servidor de audio PipeWire."
 echo "================================================================="

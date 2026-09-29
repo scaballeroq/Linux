@@ -1,100 +1,123 @@
-# 🔧 DebianTesting: Debian Testing + GNOME Environment Configuration
+# 🌀 Debian Testing Environment Configuration (KDE Plasma 6)
 
-This repository contains an organized, modular, and automated collection of configuration scripts for **Debian Testing (Trixie)** systems with the **GNOME** desktop environment (optimized for workstation PCs and development laptops).
+This repository contains an organized, modular, and automated collection of configuration scripts for **Debian Testing (Trixie/Sid)** systems running the **KDE Plasma 6** desktop environment on **Wayland** (optimized for developer laptops and dark-mode workstations).
 
 ---
 
-## 📂 Repository Structure
+## 📂 Repository Organization
 
-The configuration is modularly organized for easy maintenance and deployment:
+The configuration is modularly structured for ease of maintenance and clarity:
 
 ### 🐚 [Bash.Setup](./Bash.Setup/)
-The core of the Bash terminal configuration:
-- **`aliases.sh`**: Common aliases and modern Rust CLI replacements (`eza`, `bat`, `duf`, `dust`).
-- **`environment.sh`**: Global shell variables (`PATH`, `EDITOR`, colored `less` man pages).
-- **`functions.sh`**: Advanced shell functions and multimedia tools (FFmpeg, ImageMagick, unified archive extraction).
-- **`gnome_settings.sh`**: Environment configurations, night light, dark theme toggles, and shortcuts to GNOME Control Center.
-- **`history.sh`**: Optimized Bash history (no duplicates, up to 20k entries).
-- **`options.sh`**: Bash runtime options (`shopt` and `bind`).
-- **`podman-functions.sh`**: Simplified container management aliases.
-- **`rclone_aliases.sh`**: Cloud synchronization aliases with Google Drive.
-- **`yt-dlp_aliases.sh`**: High-performance multimedia downloading.
-
-### ⚙️ [Setup](./Setup/)
-Operating system setup, GNOME personalization, and security hardening:
-- **`post-install.sh`**: Smart dispatcher with automatic CPU vendor detection (AMD vs Intel) and CLI flags (`--amd`, `--intel`).
-- **`post-install-amd.sh`**: Post-installation optimized for **AMD Ryzen** CPUs and Radeon Graphics (AMD microcode, GPU firmware, RADV, Mesa, ZRAM, PipeWire, GNOME).
-- **`post-install-intel.sh`**: Post-installation optimized for **Intel Core** desktop PCs (Haswell i7-4790 / HD Graphics 4600) tailored for media center & streaming (Intel microcode, `i965` VA-API driver, codecs, Kodi, no virtualization).
-- **`gnome-settings.sh`**: Automated GNOME personalization via GSettings (Night Light at 3500K, 24h clock, window buttons, prefer dark theme, VRR).
-- **`gnome-extensions.sh`**: Clean, automated installation of 11 curated GNOME extensions with GSettings schema compilation (see [GNOME Extensions Guide](./Docs/gnome_extensions_en.md)).
-- **`ptyxis.sh`**: Modern Ptyxis terminal setup (85% translucent profile, no scrollbar, `Ctrl+Alt+T` shortcut, and Nautilus context menu integration).
-- **`kitty.sh`**: GPU-accelerated Kitty terminal setup with 85% opacity, blur effects, JetBrainsMono Nerd Font, and GNOME/Nautilus integration.
-- **`apariencia.sh`**: Themes, icons, and Qt/GTK style consistency (Adwaita-Dark and Papirus-Dark).
-- **`fingerprint-setup.sh`**: Fingerprint unlocking and PAM authentication (`fprintd`, `sudo`, `polkit-1`, `pam-auth-update`).
-- **`hp-printer-setup.sh`**: HP LaserJet Pro M15w printer USB setup (CUPS, HPLIP, proprietary plugin, and `system-config-printer`).
-- **`debian-tuning.sh`**: Kernel Sysctl tweaks (`inotify`, `max_map_count`) and `distrobox` container support.
-- **`build-custom-kernel.sh`**: High-performance Linux kernel compiler optimized for `x86_64-v3` architecture, 1000Hz timer, and Dynamic Preemption.
-- **`cockpit.sh`**: Cockpit web administration console with Podman, KVM, and Storage modules.
-- **`fastfetch.sh`**: Aesthetic system information banner upon terminal launch.
-- **`firefox.sh`**: Official Mozilla Firefox (.deb from Mozilla APT).
-- **`fonts.sh`**: Developer typography (JetBrainsMono, FiraCode, CascadiaCode Nerd Fonts).
-- **`mount-workspace.sh`**: Safe auto-mounting of `/home/caballero/Workspace`.
-- **`seguridad.sh`**: UFW Firewall hardening for laptop.
-- **`shell.sh`**: Modern CLI utilities (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`) and Starship prompt.
-- **`screensaver-setup.sh`**: 3D/Matrix screensaver upon locking GNOME session.
-- **`plymouth-setup.sh`**: Visual boot splash screen installer and theme selector (Plymouth: BGRT UEFI OEM, Debian 13 Ceratopsian, Spinner, and live desktop preview).
-- **`yt-dlp-setup.sh`**: Multimedia dependencies (yt-dlp, ffmpeg, and Deno JS engine via mise).
+Core terminal configuration, optimized for **Bash** (default project shell with modular loader in `~/.bashrc.d`) and **Zsh** (compatible when `~/.zshrc` exists).
+- **`aliases.sh`**: Common shortcuts, modern Rust tools (`eza`, `bat`, `duf`, `dust`, `procs`, `btop`), Dolphin (`kioclient6`), Wayland clipboard (`wl-clipboard`), and **APT** package management (`update`, `upgrade`, `install`, `remove`, `clean`, `list`, `installed`, `pkg-info`).
+- **`environment.sh`**: Global environment variables (`EDITOR`, `PATH`, Wayland/KDE Qt, `DOCKER_HOST`, `LIBVIRT_DEFAULT_URI`) and automatic Mise activation.
+- **`functions.sh`**: Advanced shell functions (`mkcd`, `up`, `backup`, `extract`, `duh`) and multimedia utilities (FFmpeg / ImageMagick).
+- **`kde_settings.sh`**: Session settings and shortcuts for KDE Plasma 6 Wayland (Breeze Dark/Light, Night Color, Plasma/KWin restarts, KCM shortcuts).
+- **`history.sh`**: Optimized command history (deduplication, instant sync, 20k entries).
+- **`options.sh`**: Advanced shell options (`autocd`, typo correction with `cdspell`, extended globbing).
+- **`podman-functions.sh`**: Container shortcuts and helpers for Rootless Podman and Systemd Quadlets (`pps`, `pexec`, `quadlet-*`).
+- **`rclone_aliases.sh`**: Cloud sync shortcuts for Google Drive / OneDrive.
+- **`yt-dlp_aliases.sh`**: Optimized multimedia downloads with yt-dlp and FFmpeg.
 
 ### 🐳 [Podman](./Podman/)
-Rootless container ecosystem and Systemd Quadlets:
-- **Installation**: `podman-install.sh`, `quadlets-setup.sh`
-- **Shared Services**: Traefik, PostgreSQL, Redis, Keycloak.
-- **Templates**: Python-Postgres, Python-Postgres-Redis, Fullstack.
+Rootless container ecosystem with native systemd Quadlets:
+- **`install/podman-install.sh`**: Installation and configuration of Rootless Podman, user socket, linger, pasta/passt networking, and CLI (`--status`, `--help`).
+- **`install/quadlets-setup.sh`**: Directory setup and systemd Quadlet unit management (`--status`, `--install-shared`).
+- **`lib/podman-utils.sh`**: Full CLI project manager (`create`, `start`, `stop`, `restart`, `logs`, `status`, `destroy`, `doctor`).
+- **`projects/`**: Directory for active projects.
+- **`services-shared/`**: Global shared services (PostgreSQL, Redis, Traefik, Keycloak).
+- **`templates/`**: Project templates (`python-postgres`, `python-postgres-redis`, `fullstack`).
+- **`scripts-standalone/`**: Catalog of 17 individual pre-configured containers for development.
 
-### 🖥️ [Virtualization](./Virtualizacion/)
-- **`virtualization.sh`**: High-performance KVM/QEMU, Libvirt, modular sockets, VirtIO, and Nested KVM setup.
-- **`notas_virtualizacion_debian.md`**: In-depth virtualization notes on Debian.
+### 🖥️ [Virtualizacion](./Virtualizacion/)
+- **`virtualization.sh`**: High-performance virtualization setup (KVM/QEMU, modular Libvirt, virt-manager, virtio-win, Btrfs NoCoW, Polkit) with complete CLI (`--status`, `--with-windows`, `--help`).
+- **`notas_virtualizacion_opensuse.md`**: Architectural reference for KVM/QEMU, VirtIO, networking, and storage.
 
-### 💻 [IDEs and Editors](./IDE/)
-- **`neovim.sh`**: Neovim with LazyVim.
-- **`vscode.sh`**: Visual Studio Code (.deb from Microsoft).
-- **`antigravity.sh`**: Google Antigravity Desktop 2.0.
-- **`antigravity-cli.sh`** & **`antigravity-ide.sh`**: Google Antigravity CLI and IDE engine.
-- **`opencode.sh`**: OpenCode AI CLI/Editor.
+### ⚙️ [Setup](./Setup/)
+Operating system setup, KDE Plasma 6 customization, and hardening:
+- **`post-install.sh`**: Smart dispatcher with CPU auto-detection (AMD Ryzen vs Intel Core).
+- **`post-install-amd.sh`**: Post-installation optimized for AMD Ryzen (ZRAM, RADV, Mesa, PipeWire, official Debian repos, Flatpak Flathub, KDE Plasma 6, KDE Gear suite).
+- **`post-install-intel.sh`**: Post-installation optimized for Intel Core / Media Center (VA-API Intel i965 / media-driver, PipeWire, codecs, and Kodi).
+- **`kde-settings.sh`**: KDE Plasma 6 desktop customization (Breeze Dark, KWin titlebar buttons `IAX`, Dolphin KIO servicemenus for Kitty and Antigravity, Night Color at 4000K, Ctrl+Alt+T shortcut).
+- **`laptop-setup.sh`**: Developer laptop optimizations (power-profiles-daemon, Bluetooth FastConnectable/battery, smart lid close with multi-monitor, Wayland Touchpad, PowerDevil profiles in Plasma 6, `--status`).
+- **`fingerprint-setup.sh`**: Biometric authentication and unlocking (fprintd + PAM on KDE Plasma 6 via `pam-auth-update`, SDDM bypass for instant password + KWallet unlocking, `--status`, `--enroll`, `--verify`, `--disable`, `--sddm-bypass`).
+- **`debian-tuning.sh`**: Kernel tuning (`sysctl` ZRAM/BBR/Inotify), file descriptor limits (1M), Baloo exclusions in KDE Plasma 6, and ZRAM compression (`--status`, `--sysctl`, `--limits`, `--baloo`, `--zram`).
+- **`cockpit.sh`**: Cockpit web console and desktop client launcher (Podman, KVM, storage, `--status`, `--open`, `--client`, `--start`, `--stop`, `--disable`).
+- **`fastfetch.sh`**: System summary with `debian` (official spiral) and `compact` (FastCat) themes (`--status`, `--theme`, `--diff`, `--force`).
+- **`fonts.sh`**: Developer fonts manager and diagnostics (JetBrainsMono, FiraCode, CascadiaCode, Meslo, and Hack Nerd Fonts, `--status`, `--list`, `--clean`).
+- **`kitty.sh`**: GPU-accelerated Kitty terminal with opacity/blur, Catppuccin Mocha theme, Ctrl+Alt+T shortcut, and Dolphin servicemenu (`--status`).
+- **`seguridad.sh`**: Hardening with Firewalld / UFW (services `kdeconnect`, `mdns`, `ssh`, Cockpit 9090, `trusted` zone for virbr0 and `podman+`), and sysctl unprivileged ports for development (`--status`).
+- **`shell.sh`**: Modern terminal utilities (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`, `dust`, `btop`, `jq`).
+- **`starship.sh` & `starship.toml`**: Starship prompt with Debian-themed styling (`--enable`, `--disable`, `--status`).
+- **`yt-dlp-setup.sh`**: Multimedia downloading stack (yt-dlp, FFmpeg, aria2, mutagen, Mise-integrated Deno JS runtime).
+- **`multimedia.sh`**: Official Debian multimedia packages, FFmpeg, GStreamer plugins, and decoupled Flatpak players (`--status`).
+- **`flatpak.sh`**: Decoupled desktop applications suite via Flatpak/Flathub (Flatseal, Podman Desktop, Warehouse, VLC, Celluloid, OBS Studio, Spotify, Vesktop...) without polluting base system (`--status`, `--all`, `--essential`, `--multimedia`, `--clean`, `--update`).
+- **`chrome.sh`**: Official Google Chrome repository and `google-chrome-stable` with dearmored keyring (`--status`).
+- **`steam.sh`**: Native Steam via `i386` multiarch, GameMode, MangoHud, Proton-GE, and 32-bit Vulkan drivers (`--status`).
+- **`hp-printer-setup.sh`**: HP printing stack (CUPS, HPLIP, proprietary plugin for LaserJet M15w, Firewalld USB/Wi-Fi, `--status`).
 
-### 🎮 [Gaming](./Juegos/)
-- **`steam.sh`**: Sandboxed Steam via Flatpak with **Proton-GE** support.
+### 💻 [IDE](./IDE/)
+- **`antigravity.sh`**: Google Antigravity Desktop setup (Chromium sandbox SUID `4755`, native libraries, Dolphin KIO servicemenu).
+- **`antigravity-cli.sh`**: Google Antigravity CLI (`agy`) setup.
+- **`antigravity-ide.sh`**: Google Antigravity IDE Engine setup (KDE launcher and Dolphin servicemenu).
+- **`git.sh`**: Git, Delta, Lazygit, and GitHub CLI setup with global best practices.
+- **`opencode.sh`**: OpenCode AI CLI setup integrated into PATH.
+
+### ⚡ [ProgrammingLanguages](./ProgrammingLanguages/)
+Modern runtime management with **Mise** and **Rustup**:
+- **`mise.sh`**: Mise version manager via official APT repository with `environment.d` integration.
+- **`python.sh` & `python-uv-init.sh`**: System Python protection (PEP 668), `uv@latest` via Mise (`UV_LINK_MODE=copy`), and `py-project` CLI for project scaffolding (FastAPI, CLI, Data Science).
+- **`nodejs.sh`**: Active Node.js LTS with Corepack (`pnpm`, `yarn`).
+- **`rust.sh`**: Rustup Stable channel with `rust-analyzer`, `clippy`, `rustfmt`, and `cargo-binstall`.
+- **`dotnet.sh`**: .NET SDK LTS with `DOTNET_ROOT` in `environment.d`.
+- **`java.sh`**: OpenJDK LTS (Java 21) with digital certificate support (AutoFirma / DNIe) and Maven.
+- **`angular.sh`**: Angular CLI latest version via Mise-managed npm.
 
 ---
 
 ## 🚀 Quick Deployment with Just
 
-To deploy the environment tailored to your machine profile:
-
 ```bash
-git clone https://github.com/scaballeroq/DebianTesting.git
-cd DebianTesting
-chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/install/*.sh Git/*.sh Juegos/*.sh
+git clone https://github.com/scaballeroq/KDEDebianTesting.git
+cd KDEDebianTesting
+chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/install/*.sh Podman/lib/*.sh Juegos/*.sh
 
-# Development Laptop (AMD Ryzen + Fingerprint + Virtualization):
+# Developer Laptop (AMD Ryzen + KDE Plasma 6 + Virtualization + Podman):
 just setup-laptop-amd
 
-# Multimedia Desktop Workstation (Intel Haswell / Media Center + Kodi - No Virtualization):
+# Multimedia Desktop (Intel Haswell / Media Center + Kodi - Without virtualization):
 just setup-media-desktop
+
+# Or complete default installation:
+just setup-all
 ```
 
-Or run individual components:
+Or run individual recipes:
 ```bash
-just post-install-amd    # Post-installation exclusively for AMD Ryzen
-just post-install-intel  # Post-installation for Intel Media Center
-just kodi                # Install Kodi and streaming plugins
-just gnome               # Apply GNOME GSettings configuration
-just extensions          # Install and compile the 11 GNOME extensions
-just ptyxis              # Install and configure Ptyxis terminal emulator
-just plymouth            # Setup and activate graphical boot splash screen
-just ides                # Install Neovim, VSCode, Antigravity, and OpenCode
-just build-kernel        # Compile a native x86_64-v3 Linux kernel
+just post-install        # Base post-installation with CPU auto-detection
+just kde-setup           # KDE Plasma 6, Breeze Dark, and shortcuts
+just kde-status          # Check KDE Plasma configuration status
+just laptop              # Laptop optimization (Touchpad, Bluetooth)
+just fingerprint-status  # Biometric authentication status
+just tuning              # Apply sysctl, limits, Baloo exclusions, and ZRAM
+just tuning-status       # Performance tuning diagnostics
+just kitty               # Kitty terminal with opacity, blur, and Catppuccin
+just virtualization      # KVM/QEMU, modular Libvirt, and Btrfs NoCoW
+just virtualization-status # Hypervisor diagnostics
+just multimedia          # Codecs and Flatpak multimedia
+just flatpak             # Install recommended Flatpak suite
+just flatpak-status      # Diagnose Flathub repositories and installed apps
+just chrome              # Official Google Chrome
+just steam               # Native Steam and 32-bit drivers
+just languages           # Node, Python (uv), Rust, .NET, Java, and Angular
+just python-uv           # Interactive py-project assistant
+just podman-setup        # Rootless Podman and Quadlets
+just podman-status       # Full container diagnostics
+just update              # Update packages (apt update && apt upgrade)
+just dist-upgrade        # Distribution upgrade (apt dist-upgrade)
 ```
 
 ---
+
 *Maintained by [caballero](https://github.com/scaballeroq)*

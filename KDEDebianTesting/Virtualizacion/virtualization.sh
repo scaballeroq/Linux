@@ -1,99 +1,474 @@
 #!/bin/bash
-# virtualization.sh - Instalación y Optimización Avanzada de Virtualización (KVM/QEMU) para Debian 13 (Trixie) con Kernel Custom x86_64-v3
+# ==============================================================================
+# virtualization.sh - Instalación y Optimización Avanzada de Virtualización (KVM/QEMU)
+# Sistema: Debian Testing (Trixie/Sid) | Escritorio: KDE Plasma 6 (Wayland)
+# ==============================================================================
+# Características:
+# - Integración Doble de Gestión:
+#     * Cockpit Machines: Consola web ligera en https://localhost:9090
+#     * Virt-Manager: Interfaz avanzada de escritorio para KDE Plasma 6 Wayland
+# - Integración KDE Plasma 6 Wayland: Regla Polkit sin contraseñas para el grupo 'libvirt'.
+# - Aceleración Gráfica 3D VirGL (libvirglrenderer1 + virtio-gpu-gl) con grupo 'render'.
+# - Almacenamiento Btrfs NoCoW (+C) en /var/lib/libvirt/images si la partición es Btrfs.
+# - Compartición de carpetas host-guest de alta velocidad mediante VirtioFS (virtiofsd).
+# - Aceleración por hardware AMD AVIC / Intel EPT y virtualización anidada (Nested KVM).
+# - Aceleración de red del kernel (vhost_net, vhost_vsock, tun).
+# - Backend nativo nftables en libvirt coordinado con cortafuegos.
+# - Deduplicación de memoria RAM (KSM vía tmpfiles.d) y perfil Tuned virtual-host.
+# - Detección segura de interfaces Wi-Fi para evitar desconexiones en portátiles.
+# ==============================================================================
 
 set -euo pipefail
 
-echo "🚀 Configurando entorno de virtualización de alto rendimiento (KVM/QEMU) en Debian 13..."
-
 TARGET_USER="${SUDO_USER:-$USER}"
+TARGET_HOME=$(getent passwd "$TARGET_USER" 2>/dev/null | cut -d: -f6)
+[ -z "$TARGET_HOME" ] && TARGET_HOME="$HOME"
 
-# 1. Instalación de paquetes necesarios
-echo "ℹ️ Instalando QEMU, libvirt, virt-manager y herramientas auxiliares vía APT..."
-sudo apt update
-sudo apt install -y \
-    qemu-system-x86 \
-    qemu-utils \
-    libvirt-daemon-system \
-    libvirt-clients \
-    virt-manager \
-    virt-viewer \
-    virtinst \
-    dnsmasq-base \
-    dmidecode \
-    bridge-utils \
-    netcat-openbsd \
-    iptables \
-    nftables \
-    ovmf \
-    swtpm \
-    libosinfo-bin \
-    guestfs-tools \
-    tuned \
-    acl \
-    polkitd
+WITH_WINDOWS=false
+STATUS_ONLY=false
 
-# Si el servicio del paquete standalone 'dnsmasq' estuviera instalado y activo, lo deshabilitamos
-# para evitar que capture el puerto 53 (0.0.0.0:53) e impida que libvirt inicie la red NAT virtual.
+TUNED_ADM_BIN=$(command -v tuned-adm 2>/dev/null || echo "/usr/sbin/tuned-adm")
+
+is_pkg_installed() {
+    local pkg="$1"
+    dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null | grep -q "install ok installed"
+}
+
+show_help() {
+    cat <<EOF
+Uso: $0 [OPCIONES]
+
+Script de aprovisionamiento y optimización de virtualización KVM/QEMU en Debian Testing.
+Diseñado para maximizar el rendimiento de máquinas virtuales y soportar dos vías de gestión:
+  1. Cockpit Web Console (módulo cockpit-machines en https://localhost:9090)
+  2. Virt-Manager (interfaz de escritorio avanzada para KDE Plasma 6 Wayland)
+
+OPCIONES:
+  --status, -s, --check Verifica el estado de KVM, Cockpit, sockets libvirt, módulos del kernel,
+                        Polkit, Btrfs NoCoW, Firewall, Tuned y red sin realizar cambios.
+  --with-windows        Instala o descarga los controladores VirtIO para Windows (virtio-win.iso).
+  -h, --help            Muestra esta ayuda y recomendaciones para VMs Linux.
+
+CARACTERÍSTICAS Y OPTIMIZACIONES:
+  - Integración Doble de Gestión: Cockpit Machines (Web) + Virt-Manager (KDE Plasma 6 Wayland).
+  - Integración KDE Plasma 6 Wayland: Regla Polkit sin contraseñas para el grupo 'libvirt'.
+  - Aceleración Gráfica 3D VirGL (libvirglrenderer1) con grupo 'render' para AMD Radeon Vega / Intel.
+  - Almacenamiento Btrfs NoCoW (+C) en /var/lib/libvirt/images para evitar fragmentación.
+  - Compartición ultrarrápida de carpetas host-guest mediante VirtioFS (virtiofsd).
+  - Aceleración por hardware AMD AVIC / Intel EPT y virtualización anidada (Nested KVM).
+  - Aceleración de red del kernel (vhost_net, vhost_vsock, tun).
+  - Backend nativo nftables en libvirt coordinado con el cortafuegos.
+  - Deduplicación de memoria RAM (KSM vía tmpfiles.d) y perfil Tuned virtual-host.
+  - Detección segura de interfaces Wi-Fi para evitar desconexiones en portátiles.
+EOF
+}
+
+check_status() {
+    echo "================================================================="
+    echo "🔍 DIAGNÓSTICO DEL ENTORNO DE VIRTUALIZACIÓN (DEBIAN TESTING)"
+    echo "================================================================="
+
+    echo -n "• Entorno de Escritorio Host: "
+    local desktop="${XDG_CURRENT_DESKTOP:-Desconocido}"
+    local session_type="${XDG_SESSION_TYPE:-Desconocido}"
+    echo "✅ $desktop ($session_type)"
+
+    echo -n "• Soporte de Virtualización Hardware (CPU): "
+    if grep -E -q '(vmx|svm)' /proc/cpuinfo; then
+        local cpu_model
+        cpu_model=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs)
+        echo "✅ Detectado ($cpu_model)"
+    else
+        echo "❌ No detectado o deshabilitado en BIOS/UEFI."
+    fi
+
+    echo -n "• Dispositivo /dev/kvm: "
+    if [ -e /dev/kvm ]; then
+        if [ -w /dev/kvm ]; then
+            echo "✅ Accesible con permisos de lectura/escritura"
+        else
+            echo "⚠️ Presente pero sin permisos de escritura (requiere pertenecer al grupo kvm)"
+        fi
+    else
+        echo "❌ No encontrado."
+    fi
+
+    echo -n "• Virtualización Anidada (Nested KVM): "
+    if [ -f /sys/module/kvm_amd/parameters/nested ]; then
+        local nested_amd
+        nested_amd=$(cat /sys/module/kvm_amd/parameters/nested 2>/dev/null || echo "0")
+        if [ "$nested_amd" = "1" ] || [ "$nested_amd" = "Y" ]; then
+            echo "✅ Activa en AMD (nested=1)"
+        else
+            echo "ℹ️ Inactiva en AMD (parámetro nested=$nested_amd)"
+        fi
+    elif [ -f /sys/module/kvm_intel/parameters/nested ]; then
+        local nested_intel
+        nested_intel=$(cat /sys/module/kvm_intel/parameters/nested 2>/dev/null || echo "0")
+        if [ "$nested_intel" = "1" ] || [ "$nested_intel" = "Y" ]; then
+            echo "✅ Activa en Intel (nested=1)"
+        else
+            echo "ℹ️ Inactiva en Intel (parámetro nested=$nested_intel)"
+        fi
+    else
+        echo "ℹ️ Módulos KVM no cargados en este momento"
+    fi
+
+    echo -n "• Módulos de aceleración de red/kernel: "
+    local modules=("vhost_net" "vhost_vsock" "tun")
+    local loaded=()
+    for mod in "${modules[@]}"; do
+        if lsmod | grep -q "^$mod "; then
+            loaded+=("$mod")
+        fi
+    done
+    echo "${loaded[*]:-Ninguno cargado (se cargarán con la optimización)}"
+
+    echo "• Estado de servicios/sockets de Libvirt:"
+    local services=("virtqemud.socket" "virtnetworkd.socket" "libvirtd.socket" "libvirtd.service")
+    for s in "${services[@]}"; do
+        local state
+        state=$(systemctl is-active "$s" 2>/dev/null || true)
+        [ -z "$state" ] && state="inactivo"
+        echo "  - $s: $state"
+    done
+
+    echo "• Consola Web Cockpit & Módulo de Máquinas Virtuales:"
+    local cockpit_socket_state
+    cockpit_socket_state=$(systemctl is-active cockpit.socket 2>/dev/null || echo "inactivo")
+    echo "  - Servicio cockpit.socket: $cockpit_socket_state (Puerto 9090)"
+
+    echo -n "  - Módulo cockpit-machines: "
+    if [ -d "/usr/share/cockpit/machines" ] || is_pkg_installed cockpit-machines; then
+        echo "✅ Instalado y disponible (/usr/share/cockpit/machines)"
+    else
+        echo "❌ No instalado"
+    fi
+
+    if [ "$cockpit_socket_state" = "active" ]; then
+        echo "  - Acceso Web Cockpit: 🌐 https://localhost:9090 (o https://$(ip route get 1.1.1.1 2>/dev/null | awk '{print $7}' | head -n1 || echo 'IP-LOCAL'):9090)"
+    fi
+
+    echo -n "• Estado de la red virtual 'default': "
+    if ip link show virbr0 >/dev/null 2>&1; then
+        echo "✅ Activa (interfaz virbr0 levantada)"
+    elif [ -f /etc/libvirt/qemu/networks/autostart/default.xml ] || [ -f /etc/libvirt/qemu/networks/default.xml ]; then
+        echo "ℹ️ Definida en disco (se activará al iniciar libvirt)"
+    elif command -v virsh >/dev/null 2>&1 && timeout 2 virsh -c qemu:///system net-info default >/dev/null 2>&1; then
+        echo "✅ Activa (en ejecución en libvirt)"
+    else
+        echo "⚠️ No configurada aún (se creará automáticamente)"
+    fi
+
+    echo -n "• Integración con Cortafuegos: "
+    if command -v firewall-cmd >/dev/null 2>&1 && systemctl is-active --quiet firewalld 2>/dev/null; then
+        local pub_services
+        pub_services=$(firewall-cmd --zone=public --list-services 2>/dev/null || true)
+        if echo "$pub_services" | grep -qw "cockpit"; then
+            echo "✅ Firewalld activo y servicio 'cockpit' permitido"
+        else
+            echo "✅ Firewalld activo"
+        fi
+    elif systemctl is-active --quiet ufw 2>/dev/null; then
+        echo "✅ UFW activo"
+    else
+        echo "ℹ️ Cortafuegos no activo"
+    fi
+
+    echo -n "• Almacenamiento VM (/var/lib/libvirt/images): "
+    if [ -d /var/lib/libvirt/images ]; then
+        local fs_type
+        fs_type=$(stat -f -c %T /var/lib/libvirt/images 2>/dev/null || true)
+        if [ "$fs_type" = "btrfs" ]; then
+            if lsattr -d /var/lib/libvirt/images 2>/dev/null | grep -q 'C'; then
+                echo "✅ Btrfs NoCoW (+C activo, optimizado para IOPS)"
+            else
+                echo "⚠️ Btrfs con Copy-on-Write activo (se recomienda aplicar chattr +C)"
+            fi
+        else
+            echo "✅ Presente ($fs_type)"
+        fi
+    else
+        echo "ℹ️ Pendiente de creación"
+    fi
+
+    echo -n "• Regla Polkit sin contraseñas para libvirt: "
+    if [ -f /etc/polkit-1/rules.d/80-libvirt.rules ] || [ -f /etc/polkit-1/rules.d/50-libvirt.rules ]; then
+        echo "✅ Presente (/etc/polkit-1/rules.d/80-libvirt.rules)"
+    else
+        echo "⚠️ No configurada (KDE/Cockpit solicitarán autenticación de root)"
+    fi
+
+    echo -n "• Pertenencia a grupos requeridos ($TARGET_USER): "
+    local user_groups
+    user_groups=$(id -Gn "$TARGET_USER" 2>/dev/null || true)
+    local has_libvirt=false
+    local has_kvm=false
+    local has_render=false
+    [[ "$user_groups" =~ (^|[[:space:]])libvirt($|[[:space:]]) ]] && has_libvirt=true
+    [[ "$user_groups" =~ (^|[[:space:]])kvm($|[[:space:]]) ]] && has_kvm=true
+    [[ "$user_groups" =~ (^|[[:space:]])render($|[[:space:]]) ]] && has_render=true
+
+    if [ "$has_libvirt" = true ] && [ "$has_kvm" = true ] && [ "$has_render" = true ]; then
+        echo "✅ libvirt, kvm, render"
+    else
+        echo "⚠️ Incompleto ($user_groups). Faltan: $([ "$has_libvirt" = false ] && echo -n "libvirt ") $([ "$has_kvm" = false ] && echo -n "kvm ") $([ "$has_render" = false ] && echo -n "render")"
+    fi
+
+    echo "• Interfaces gráficas y herramientas de gestión:"
+    echo -n "  - virt-manager (GUI de escritorio KDE): "
+    if is_pkg_installed virt-manager || command -v virt-manager >/dev/null 2>&1; then
+        echo "✅ Instalado"
+    else
+        echo "❌ No instalado"
+    fi
+
+    echo -n "  - virt-viewer (Visor SPICE/VNC): "
+    if is_pkg_installed virt-viewer || command -v virt-viewer >/dev/null 2>&1; then
+        echo "✅ Instalado"
+    else
+        echo "❌ No instalado"
+    fi
+
+    echo -n "• Gestor de energía y recursos (Tuned): "
+    if [ -x "$TUNED_ADM_BIN" ] && systemctl is-active --quiet tuned 2>/dev/null; then
+        local tuned_profile
+        tuned_profile=$("$TUNED_ADM_BIN" active 2>/dev/null | cut -d: -f2 | xargs || true)
+        echo "✅ Activo (Perfil: ${tuned_profile:-desconocido})"
+    elif systemctl is-enabled --quiet tuned 2>/dev/null; then
+        echo "ℹ️ Tuned habilitado pero inactivo"
+    else
+        echo "ℹ️ Tuned inactivo"
+    fi
+
+    echo -n "• Deduplicación de memoria KSM: "
+    if [ -f /sys/kernel/mm/ksm/run ] && [ "$(cat /sys/kernel/mm/ksm/run 2>/dev/null)" = "1" ]; then
+        echo "✅ Activo (KSM en ejecución)"
+    else
+        echo "ℹ️ Inactivo"
+    fi
+
+    echo -n "• Herramientas de aceleración y soporte de hardware: "
+    local tools=("libvirglrenderer1" "virtiofsd" "osinfo-db" "spice-vdagent" "swtpm" "ovmf")
+    local found_tools=()
+    for t in "${tools[@]}"; do
+        if is_pkg_installed "$t" || command -v "$t" >/dev/null 2>&1; then
+            found_tools+=("$t")
+        fi
+    done
+    echo "${found_tools[*]:-Ninguna instalada}"
+
+    echo -n "• VirtIO Drivers (Windows): "
+    if [ -f "$TARGET_HOME/Descargas/virtio-drivers/virtio-win.iso" ]; then
+        echo "✅ Presente en $TARGET_HOME/Descargas/virtio-drivers/virtio-win.iso"
+    else
+        echo "ℹ️ No descargado (opcional con --with-windows)"
+    fi
+
+    echo "================================================================="
+}
+
+# Procesamiento de argumentos
+for arg in "$@"; do
+    case "$arg" in
+        --status|-s|--check)
+            STATUS_ONLY=true
+            ;;
+        --with-windows)
+            WITH_WINDOWS=true
+            ;;
+        -h|--help|help)
+            show_help
+            exit 0
+            ;;
+        *)
+            echo "❌ Opción desconocida: $arg"
+            show_help
+            exit 1
+            ;;
+    esac
+done
+
+if [ "$STATUS_ONLY" = true ]; then
+    check_status
+    exit 0
+fi
+
+echo "🚀 Iniciando configuración y optimización de virtualización KVM/QEMU en Debian Testing..."
+echo "🎯 Integrando Cockpit Machines (Web) y Virt-Manager (KDE Plasma 6 Wayland con GPU AMD Vega)..."
+
+# ---------------------------------------------------------------------------
+# 1. Instalación de paquetes necesarios vía APT
+# ---------------------------------------------------------------------------
+echo "ℹ️ [1/13] Verificando e instalando paquetes oficiales para Debian Testing..."
+
+PKGS=(
+    qemu-system-x86
+    qemu-utils
+    ovmf
+    libvirt-daemon-system
+    libvirt-clients
+    virt-manager
+    virt-viewer
+    virtinst
+    virt-top
+    libvirglrenderer1
+    cockpit
+    cockpit-machines
+    cockpit-ws
+    cockpit-bridge
+    virtiofsd
+    spice-vdagent
+    swtpm
+    libosinfo-bin
+    dnsmasq-base
+    dmidecode
+    tuned
+    acl
+    guestfs-tools
+    nftables
+    bridge-utils
+    netcat-openbsd
+)
+
+export DEBIAN_FRONTEND=noninteractive
+sudo apt-get update -qq
+sudo apt-get install -y "${PKGS[@]}"
+
+# Si el servicio standalone 'dnsmasq' estuviera activo, lo deshabilitamos
 if systemctl is-active --quiet dnsmasq.service 2>/dev/null || systemctl is-enabled --quiet dnsmasq.service 2>/dev/null; then
-    echo "ℹ️ Deshabilitando servicio del demonio dnsmasq del sistema para permitir que libvirt gestione virbr0..."
+    echo "  • Deshabilitando servicio standalone dnsmasq para evitar conflictos con virbr0 en puerto 53..."
     sudo systemctl stop dnsmasq.service 2>/dev/null || true
     sudo systemctl disable dnsmasq.service 2>/dev/null || true
 fi
 
-# 2. Controladores VirtIO para Windows (ISO estable oficial de Fedora)
-echo "ℹ️ Descargando controladores VirtIO para Windows (virtio-win.iso)..."
-VIRTIO_DIR="$HOME/Descargas/virtio-drivers"
-mkdir -p "$VIRTIO_DIR"
-if [ ! -f "$VIRTIO_DIR/virtio-win.iso" ]; then
-    echo "⬇️ Descargando la versión estable más reciente de virtio-win.iso..."
-    curl -fsSL -o "$VIRTIO_DIR/virtio-win.iso" "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso" || true
+# ---------------------------------------------------------------------------
+# 2. Controladores VirtIO para Windows (Opcional vía --with-windows)
+# ---------------------------------------------------------------------------
+if [ "$WITH_WINDOWS" = true ]; then
+    echo "ℹ️ [2/13] Descargando controladores VirtIO para Windows..."
+    VIRTIO_DIR="$TARGET_HOME/Descargas/virtio-drivers"
+    mkdir -p "$VIRTIO_DIR"
+    if [ ! -f "$VIRTIO_DIR/virtio-win.iso" ]; then
+        echo "⬇️ Descargando la versión estable más reciente de virtio-win.iso..."
+        curl -fsSL -o "$VIRTIO_DIR/virtio-win.iso" "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso" || true
+        chown -R "$TARGET_USER:$TARGET_USER" "$VIRTIO_DIR" 2>/dev/null || true
+        echo "  ✅ virtio-win.iso descargado en $VIRTIO_DIR/virtio-win.iso"
+    else
+        echo "  ✅ ISO de VirtIO ya presente en $VIRTIO_DIR/virtio-win.iso"
+    fi
 else
-    echo "✅ ISO de VirtIO ya presente en $VIRTIO_DIR/virtio-win.iso"
+    echo "ℹ️ [2/13] Omitiendo descarga de drivers Windows (las distribuciones Linux tienen VirtIO nativo en el kernel)."
 fi
 
-# 3. Módulos del Kernel, Virtualización Anidada (Nested KVM) y vhost_net/vhost_vsock
-echo "ℹ️ Habilitando virtualización anidada (Nested KVM) y aceleración de red (vhost_net, vhost_vsock)..."
+# ---------------------------------------------------------------------------
+# 3. Módulos del Kernel, Aceleración de CPU (AVIC/EPT) y Virtualización Anidada
+# ---------------------------------------------------------------------------
+echo "ℹ️ [3/13] Configurando optimizaciones de CPU y virtualización anidada (Nested KVM)..."
 sudo mkdir -p /etc/modprobe.d /etc/modules-load.d
 
-CPU_VENDOR=$(grep -m1 'vendor_id' /proc/cpuinfo | awk '{print $3}')
-if [ "$CPU_VENDOR" == "GenuineIntel" ]; then
-    echo "options kvm_intel nested=1" | sudo tee /etc/modprobe.d/kvm_intel.conf > /dev/null
-    sudo modprobe -r kvm_intel 2>/dev/null || true
-    sudo modprobe kvm_intel 2>/dev/null || true
-elif [ "$CPU_VENDOR" == "AuthenticAMD" ]; then
-    echo "options kvm_amd nested=1" | sudo tee /etc/modprobe.d/kvm_amd.conf > /dev/null
+CPU_VENDOR=$(grep -m1 'vendor_id' /proc/cpuinfo | awk '{print $3}' || true)
+if [ "$CPU_VENDOR" = "AuthenticAMD" ]; then
+    echo "  • Optimizando KVM para AMD Ryzen (nested=1, avic=1, npt=1)..."
+    cat <<EOF | sudo tee /etc/modprobe.d/kvm_amd.conf > /dev/null
+# Configuración KVM para procesadores AMD Ryzen / Zen en Debian Testing
+options kvm_amd nested=1 avic=1 npt=1
+EOF
     sudo modprobe -r kvm_amd 2>/dev/null || true
     sudo modprobe kvm_amd 2>/dev/null || true
+elif [ "$CPU_VENDOR" = "GenuineIntel" ]; then
+    echo "  • Optimizando KVM para Intel Core (nested=1, ept=1, vpid=1, pml=1)..."
+    cat <<EOF | sudo tee /etc/modprobe.d/kvm_intel.conf > /dev/null
+# Configuración KVM para procesadores Intel Core / Xeon en Debian Testing
+options kvm_intel nested=1 ept=1 vpid=1 pml=1
+EOF
+    sudo modprobe -r kvm_intel 2>/dev/null || true
+    sudo modprobe kvm_intel 2>/dev/null || true
 fi
 
-# Aceleración de red y sockets del Kernel
+# Aceleración de red en el kernel (vhost_net), sockets rápidos VM-Host (vhost_vsock) y túneles (tun)
+echo "  • Habilitando módulos de aceleración en el kernel (vhost_net, vhost_vsock, tun)..."
 cat <<EOF | sudo tee /etc/modules-load.d/kvm-vhost.conf > /dev/null
 vhost_net
 vhost_vsock
+tun
 EOF
 sudo modprobe vhost_net 2>/dev/null || true
 sudo modprobe vhost_vsock 2>/dev/null || true
+sudo modprobe tun 2>/dev/null || true
 
-# 4. Ajustes de /etc/libvirt/qemu.conf
-# Restaurar/mantener usuario y grupo estándar libvirt-qemu:kvm en Debian
-echo "ℹ️ Asegurando configuración estándar en /etc/libvirt/qemu.conf..."
+# ---------------------------------------------------------------------------
+# 4. Ajustes de /etc/libvirt/qemu.conf (Permisos y dynamic_ownership)
+# ---------------------------------------------------------------------------
+echo "ℹ️ [4/13] Configurando permisos y propiedad dinámica en libvirt..."
+sudo mkdir -p /etc/libvirt
 if [ -f /etc/libvirt/qemu.conf ]; then
-    sudo sed -i 's/^user = .*/#user = "libvirt-qemu"/' /etc/libvirt/qemu.conf 2>/dev/null || true
-    sudo sed -i 's/^group = .*/#group = "kvm"/' /etc/libvirt/qemu.conf 2>/dev/null || true
+    sudo sed -i 's/^#*dynamic_ownership = .*/dynamic_ownership = 1/' /etc/libvirt/qemu.conf 2>/dev/null || true
 fi
 
-# 5. Ajustes de Firewall Nftables en Libvirt (/etc/libvirt/network.conf)
-echo "ℹ️ Configurando backend de firewall nftables en libvirt..."
-if [ -f /etc/libvirt/network.conf ]; then
-    sudo sed -i 's/^#*firewall_backend = .*/firewall_backend = "nftables"/' /etc/libvirt/network.conf 2>/dev/null || true
+# ---------------------------------------------------------------------------
+# 5. Backend de Firewall y Reglas (nftables nativo + Cockpit)
+# ---------------------------------------------------------------------------
+echo "ℹ️ [5/13] Configurando backend de red en libvirt (nftables) e integrando con Firewall..."
+
+cat <<EOF | sudo tee /etc/libvirt/network.conf > /dev/null
+# Backend de firewall para Debian Testing (nftables nativo)
+firewall_backend = "nftables"
+EOF
+
+if command -v firewall-cmd >/dev/null 2>&1 && systemctl is-active --quiet firewalld 2>/dev/null; then
+    echo "  • Aplicando reglas en Firewalld..."
+    DEFAULT_ZONE=$(sudo firewall-cmd --get-default-zone 2>/dev/null || echo "public")
+    sudo firewall-cmd --permanent --zone="$DEFAULT_ZONE" --add-service=cockpit 2>/dev/null || true
+    sudo firewall-cmd --permanent --zone=libvirt --add-interface=virbr0 2>/dev/null || true
+    sudo firewall-cmd --permanent --zone=libvirt --add-forward 2>/dev/null || true
+    sudo firewall-cmd --permanent --zone="$DEFAULT_ZONE" --add-masquerade 2>/dev/null || true
+    sudo firewall-cmd --reload 2>/dev/null || true
+    echo "  ✅ Reglas de Firewalld aplicadas."
+elif command -v ufw >/dev/null 2>&1 && systemctl is-active --quiet ufw 2>/dev/null; then
+    sudo ufw allow 9090/tcp 2>/dev/null || true
 fi
 
-# 6. Verificación de capacidades KVM del Host
-echo "ℹ️ Verificando soporte de hardware KVM..."
-virt-host-validate qemu || echo "⚠️ Advertencia: Revisa que la virtualización VT-x / AMD-V esté habilitada en tu BIOS/UEFI."
+# ---------------------------------------------------------------------------
+# 6. Regla Polkit para KDE Plasma 6 y Cockpit (Sin contraseñas de root)
+# ---------------------------------------------------------------------------
+echo "ℹ️ [6/13] Configurando regla Polkit para administración local sin contraseña..."
+sudo mkdir -p /etc/polkit-1/rules.d
+cat <<EOF | sudo tee /etc/polkit-1/rules.d/80-libvirt.rules > /dev/null
+/* Permitir a usuarios en el grupo libvirt gestionar la virtualización sin pedir contraseña */
+polkit.addRule(function(action, subject) {
+    if (action.id.indexOf("org.libvirt") === 0 && subject.isInGroup("libvirt")) {
+        return polkit.Result.YES;
+    }
+});
+EOF
+sudo chmod 644 /etc/polkit-1/rules.d/80-libvirt.rules
+echo "  ✅ Regla /etc/polkit-1/rules.d/80-libvirt.rules configurada."
 
-# 7. Inicialización de Clave de Secretos (Debian 13 / Trixie)
-echo "ℹ️ Verificando soporte de cifrado de secretos libvirt..."
+# ---------------------------------------------------------------------------
+# 7. Verificación de capacidades KVM del Host
+# ---------------------------------------------------------------------------
+echo "ℹ️ [7/13] Validando capacidades de virtualización del hardware..."
+virt-host-validate qemu || echo "  ⚠️ Nota: Si alguna comprobación falla, verifica que la virtualización AMD-V esté activa en tu BIOS/UEFI."
+
+# ---------------------------------------------------------------------------
+# 8. Activación de Sockets Modulares / Monolítico de Libvirt y Cockpit
+# ---------------------------------------------------------------------------
+echo "ℹ️ [8/13] Habilitando servicios de Libvirt y Cockpit..."
+
+sudo systemctl daemon-reload
+# Probar sockets modulares o monolítico libvirtd
+if systemctl list-unit-files virtqemud.socket 2>/dev/null | grep -q virtqemud; then
+    sudo systemctl stop libvirtd.service libvirtd.socket 2>/dev/null || true
+    sudo systemctl disable libvirtd.service libvirtd.socket 2>/dev/null || true
+    sudo systemctl enable --now virtqemud.socket virtnetworkd.socket virtstoraged.socket virtnodedevd.socket virtnwfilterd.socket virtsecretd.socket virtproxyd.socket 2>/dev/null || true
+else
+    sudo systemctl enable --now virtlogd.socket virtlockd.socket 2>/dev/null || true
+    sudo systemctl enable --now libvirtd.socket libvirtd-ro.socket libvirtd-admin.socket 2>/dev/null || true
+    sudo systemctl restart libvirtd.service 2>/dev/null || sudo systemctl start libvirtd.service 2>/dev/null || true
+fi
+
+# Inicialización de Clave de Secretos (Debian 13)
 sudo mkdir -p /var/lib/libvirt/secrets
 sudo chmod 700 /var/lib/libvirt/secrets
 if [ -f /usr/lib/systemd/system/virt-secret-init-encryption.service ]; then
@@ -103,98 +478,200 @@ if [ -f /usr/lib/systemd/system/virt-secret-init-encryption.service ]; then
     fi
 fi
 
-# 8. Reglas de Polkit para virt-manager sin contraseña
-echo "ℹ️ Configurando reglas de Polkit para el grupo libvirt..."
-sudo mkdir -p /etc/polkit-1/rules.d
-cat <<'EOF' | sudo tee /etc/polkit-1/rules.d/80-libvirt.rules > /dev/null
-/* Permitir gestión completa de libvirt/KVM a los miembros del grupo libvirt */
-polkit.addRule(function(action, subject) {
-    if (action.id == "org.libvirt.unix.manage" && subject.isInGroup("libvirt")) {
-        return polkit.Result.YES;
-    }
-});
+# Habilitar servicio web Cockpit
+sudo systemctl enable --now cockpit.socket 2>/dev/null || true
+echo "  ✅ Sockets de Libvirt y Cockpit activados."
+
+# ---------------------------------------------------------------------------
+# 9. Configuración de Red Virtual NAT y Storage Pool con Btrfs NoCoW
+# ---------------------------------------------------------------------------
+echo "ℹ️ [9/13] Configurando red virtual NAT por defecto (virbr0)..."
+sudo systemctl restart virtnetworkd.service 2>/dev/null || sudo systemctl restart libvirtd.service 2>/dev/null || true
+
+sudo mkdir -p /etc/libvirt/qemu/networks/autostart
+DEFAULT_NET_XML="/etc/libvirt/qemu/networks/default.xml"
+if [ ! -f "$DEFAULT_NET_XML" ]; then
+    echo "  • Generando definición XML para la red virtual 'default'..."
+    cat <<EOF | sudo tee "$DEFAULT_NET_XML" > /dev/null
+<network>
+  <name>default</name>
+  <forward mode='nat'/>
+  <bridge name='virbr0' stp='on' delay='0'/>
+  <ip address='192.168.122.1' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='192.168.122.2' end='192.168.122.254'/>
+    </dhcp>
+  </ip>
+</network>
 EOF
-sudo chmod 644 /etc/polkit-1/rules.d/80-libvirt.rules
+fi
 
-# 9. Configuración de Servicios y Sockets de Libvirt
-echo "ℹ️ Habilitando sockets y demonio monolithic de libvirt..."
-sudo systemctl daemon-reload
-sudo systemctl enable --now virtlogd.socket virtlockd.socket 2>/dev/null || true
-sudo systemctl enable --now libvirtd.socket libvirtd-ro.socket libvirtd-admin.socket 2>/dev/null || true
-sudo systemctl restart libvirtd.service 2>/dev/null || sudo systemctl start libvirtd.service 2>/dev/null || true
+if ! sudo virsh net-info default >/dev/null 2>&1; then
+    sudo virsh net-define "$DEFAULT_NET_XML" 2>/dev/null || true
+fi
 
-# 10. Configuración de Red Virtual y Storage Pool por Defecto
-echo "ℹ️ Configurando red virtual NAT por defecto (virbr0)..."
 sudo virsh net-start default 2>/dev/null || true
 sudo virsh net-autostart default 2>/dev/null || true
 
-echo "ℹ️ Configurando pool de almacenamiento por defecto..."
+echo "ℹ️ [9/13] Configurando directorio de imágenes (/var/lib/libvirt/images)..."
+sudo mkdir -p /var/lib/libvirt/images
+
+# Optimización Btrfs NoCoW (+C): evita fragmentación severa y mejora latencia de E/S
+FS_TYPE=$(stat -f -c %T /var/lib/libvirt/images 2>/dev/null || true)
+if [ "$FS_TYPE" = "btrfs" ]; then
+    echo "  ⚡ Btrfs detectado en /var/lib/libvirt/images: aplicando atributo NoCoW (+C)..."
+    sudo chattr +C /var/lib/libvirt/images 2>/dev/null || true
+fi
+
+echo "  • Asegurando storage pool 'default'..."
+if ! sudo virsh pool-info default >/dev/null 2>&1; then
+    sudo virsh pool-define-as --name default --type dir --target /var/lib/libvirt/images 2>/dev/null || true
+    sudo virsh pool-build default 2>/dev/null || true
+fi
 sudo virsh pool-start default 2>/dev/null || true
 sudo virsh pool-autostart default 2>/dev/null || true
 
-# 11. Configuración de Bridge Linux (br0) solo para interfaces Ethernet cableadas
-echo "ℹ️ Comprobando compatibilidad de Bridge de red (br0)..."
+# ---------------------------------------------------------------------------
+# 10. Configuración de Red: Detección Segura de Interfaz (Cableada vs Wi-Fi)
+# ---------------------------------------------------------------------------
+echo "ℹ️ [10/13] Analizando conectividad de red del host..."
 PHYS_IFACE=$(ip route | grep default | awk '{print $5}' | head -n1 || true)
 
-if [ -n "$PHYS_IFACE" ] && [[ "$PHYS_IFACE" =~ ^(en|eth) ]]; then
-    if ! nmcli con show br0 >/dev/null 2>&1; then
-        echo "Creando bridge br0 sobre la interfaz Ethernet $PHYS_IFACE..."
-        sudo nmcli con add type bridge ifname br0 con-name br0
-        sudo nmcli con add type bridge-slave ifname "$PHYS_IFACE" con-name br0-port master br0
-        sudo nmcli con modify br0 ipv4.method auto
-        
-        cat <<EOF > /tmp/host-bridge.xml
+is_wireless() {
+    local iface="$1"
+    [ -z "$iface" ] && return 1
+    [[ "$iface" =~ ^wl ]] && return 0
+    [ -d "/sys/class/net/$iface/wireless" ] && return 0
+    if command -v iw >/dev/null 2>&1; then
+        iw dev "$iface" info >/dev/null 2>&1 && return 0
+    fi
+    return 1
+}
+
+if [ -n "$PHYS_IFACE" ]; then
+    if is_wireless "$PHYS_IFACE"; then
+        echo "  ℹ️ Interfaz inalámbrica detectada ('$PHYS_IFACE')."
+        echo "  🛡️ Se mantiene la red NAT por defecto ('virbr0') para evitar incompatibilidades con Wi-Fi 802.11."
+    elif [ "$PHYS_IFACE" != "br0" ]; then
+        echo "  ℹ️ Interfaz cableada detectada: '$PHYS_IFACE'."
+        if command -v nmcli >/dev/null 2>&1; then
+            if ! nmcli con show br0 >/dev/null 2>&1; then
+                echo "  • Creando bridge br0 sobre interfaz Ethernet $PHYS_IFACE..."
+                sudo nmcli con add type bridge ifname br0 con-name br0 2>/dev/null || true
+                sudo nmcli con add type bridge-slave ifname "$PHYS_IFACE" con-name br0-port master br0 2>/dev/null || true
+                sudo nmcli con modify br0 ipv4.method auto 2>/dev/null || true
+
+                cat <<EOF > /tmp/host-bridge.xml
 <network>
   <name>host-bridge</name>
   <forward mode='bridge'/>
   <bridge name='br0'/>
 </network>
 EOF
-        sudo virsh net-define /tmp/host-bridge.xml 2>/dev/null || true
-        sudo virsh net-start host-bridge 2>/dev/null || true
-        sudo virsh net-autostart host-bridge 2>/dev/null || true
-        echo "✅ Bridge br0 creado y registrado en libvirt como 'host-bridge'."
-    else
-        echo "✅ El bridge br0 ya existe, omitiendo creación."
+                sudo virsh net-define /tmp/host-bridge.xml 2>/dev/null || true
+                sudo virsh net-start host-bridge 2>/dev/null || true
+                sudo virsh net-autostart host-bridge 2>/dev/null || true
+                echo "  ✅ Bridge br0 creado y registrado en libvirt como 'host-bridge'."
+            fi
+        fi
     fi
-else
-    echo "ℹ️ La conexión principal ($PHYS_IFACE) es inalámbrica (Wi-Fi) o no compatible con bridging directo."
-    echo "ℹ️ Las máquinas virtuales utilizarán la red virtual NAT por defecto (virbr0), compatible con Wi-Fi."
 fi
 
-# 12. Perfil de Rendimiento Tuned (virtual-host)
-echo "ℹ️ Aplicando optimizaciones de rendimiento con tuned (virtual-host)..."
-sudo systemctl enable --now tuned.service || true
-sudo tuned-adm profile virtual-host || true
+# ---------------------------------------------------------------------------
+# 11. Optimización de Memoria (KSM) y Perfil Tuned
+# ---------------------------------------------------------------------------
+echo "ℹ️ [11/13] Configurando deduplicación de memoria RAM (KSM) y Tuned..."
+sudo mkdir -p /etc/tmpfiles.d
+cat <<EOF | sudo tee /etc/tmpfiles.d/ksm.conf > /dev/null
+# Deduplicación de páginas de memoria RAM compartidas entre VMs KVM
+w /sys/kernel/mm/ksm/run - - - - 1
+w /sys/kernel/mm/ksm/sleep_millisecs - - - - 100
+EOF
 
-# 13. Permisos de Usuario y Listas de Control de Acceso (ACL)
-echo "ℹ️ Configurando grupos de usuario (libvirt, kvm)..."
-sudo usermod -aG libvirt,kvm "$TARGET_USER" 2>/dev/null || sudo usermod -aG libvirt "$TARGET_USER"
+if [ -d /sys/kernel/mm/ksm ]; then
+    echo 1 | sudo tee /sys/kernel/mm/ksm/run > /dev/null 2>&1 || true
+    echo 100 | sudo tee /sys/kernel/mm/ksm/sleep_millisecs > /dev/null 2>&1 || true
+fi
+echo "  ✅ KSM activado."
 
-echo "ℹ️ Configurando permisos ACL en el directorio de imágenes (/var/lib/libvirt/images)..."
-sudo mkdir -p /var/lib/libvirt/images
+if [ -x "$TUNED_ADM_BIN" ]; then
+    sudo systemctl enable --now tuned.service 2>/dev/null || true
+    sudo "$TUNED_ADM_BIN" profile virtual-host 2>/dev/null || true
+    echo "  ✅ Perfil Tuned 'virtual-host' aplicado."
+fi
+
+# ---------------------------------------------------------------------------
+# 12. Permisos de Usuario y Grupos (libvirt, kvm, render)
+# ---------------------------------------------------------------------------
+echo "ℹ️ [12/13] Configurando grupos de usuario (libvirt, kvm, render) para $TARGET_USER..."
+# Grupo render permite aceleración 3D VirGL directa en GPUs AMD Radeon Vega (/dev/dri/renderD128)
+sudo usermod -aG libvirt,kvm,render "$TARGET_USER" 2>/dev/null || sudo usermod -aG libvirt,kvm "$TARGET_USER" 2>/dev/null || true
+
+echo "  • Configurando listas de control de acceso (ACL) en /var/lib/libvirt/images..."
 sudo setfacl -R -b /var/lib/libvirt/images 2>/dev/null || true
 sudo setfacl -R -m u:"$TARGET_USER":rwX /var/lib/libvirt/images 2>/dev/null || true
 sudo setfacl -d -m u:"$TARGET_USER":rwX /var/lib/libvirt/images 2>/dev/null || true
 
-# 14. Variable de Entorno LIBVIRT_DEFAULT_URI
-echo "ℹ️ Configurando LIBVIRT_DEFAULT_URI en el entorno del usuario..."
-if [ -d "/etc/bashrc.d" ] || [ -d "$HOME/.bashrc.d" ]; then
-    mkdir -p ~/.bashrc.d
-    cat <<EOF > ~/.bashrc.d/virtualization.sh
-# Configuración KVM/QEMU conectando al modo de sistema por defecto
+# ---------------------------------------------------------------------------
+# 13. Variable de Entorno LIBVIRT_DEFAULT_URI en el Perfil de Usuario
+# ---------------------------------------------------------------------------
+echo "ℹ️ [13/13] Configurando LIBVIRT_DEFAULT_URI en el perfil de $TARGET_USER..."
+
+# 13.1. Sesión de escritorio KDE / systemd --user (environment.d)
+mkdir -p "$TARGET_HOME/.config/environment.d"
+cat <<EOF > "$TARGET_HOME/.config/environment.d/10-libvirt.conf"
+LIBVIRT_DEFAULT_URI=qemu:///system
+EOF
+
+# 13.2. Zsh modular (~/.zshrc.d)
+mkdir -p "$TARGET_HOME/.zshrc.d"
+cat <<EOF > "$TARGET_HOME/.zshrc.d/virtualization.zsh"
+# Configuración KVM/QEMU conectando al daemon de sistema por defecto
 export LIBVIRT_DEFAULT_URI="qemu:///system"
 EOF
-    echo "✅ Configuración modular de Virtualización creada en ~/.bashrc.d/virtualization.sh"
-else
-    if ! grep -q "LIBVIRT_DEFAULT_URI" ~/.bashrc; then
-        echo '' >> ~/.bashrc
-        echo '# Configuración KVM/QEMU conectando al modo de sistema por defecto' >> ~/.bashrc
-        echo "export LIBVIRT_DEFAULT_URI='qemu:///system'" >> ~/.bashrc
-    fi
-fi
 
+# 13.3. Bash modular (~/.bashrc.d)
+mkdir -p "$TARGET_HOME/.bashrc.d"
+cat <<EOF > "$TARGET_HOME/.bashrc.d/virtualization.sh"
+# Configuración KVM/QEMU conectando al daemon de sistema por defecto
+export LIBVIRT_DEFAULT_URI="qemu:///system"
+EOF
+
+# Asignar propiedad al usuario objetivo
+chown -R "$TARGET_USER:$TARGET_USER" \
+    "$TARGET_HOME/.config/environment.d" \
+    "$TARGET_HOME/.zshrc.d" \
+    "$TARGET_HOME/.bashrc.d" 2>/dev/null || true
+
+# Propagar a la sesión actual de systemd/D-Bus si está activa
+sudo -u "$TARGET_USER" dbus-update-activation-environment --systemd LIBVIRT_DEFAULT_URI=qemu:///system 2>/dev/null || true
+
+# ---------------------------------------------------------------------------
+# Resumen Final y Vías de Gestión
+# ---------------------------------------------------------------------------
+HOST_IP=$(ip route get 1.1.1.1 2>/dev/null | awk '{print $7}' | head -n1 || echo '127.0.0.1')
 echo "================================================================="
-echo "✅ Entorno de Virtualización KVM/QEMU para Debian 13 configurado con éxito."
-echo "💡 Recuerda reiniciar o cerrar sesión para aplicar los cambios de grupo (libvirt, kvm)."
+echo "✅ Entorno de Virtualización KVM/QEMU Configurado y Optimizado con Éxito"
+echo "================================================================="
+echo "🌐 1. CONSOLA WEB COCKPIT (Módulo Máquinas Virtuales):"
+echo "   • URL Local:    https://localhost:9090"
+echo "   • URL en tu Red: https://$HOST_IP:9090"
+echo "   • Acceso: Inicia sesión con tu usuario '$TARGET_USER' y contraseña."
+echo "   • Ideal para: Crear y arrancar VMs rápidamente, monitorizar consumo de CPU/RAM/Disco,"
+echo "     y administrar el host de forma ligera desde cualquier navegador."
+echo ""
+echo "🖥️ 2. VIRT-MANAGER (Escritorio KDE Plasma 6 Wayland):"
+echo "   • Ejecuta en terminal o lanzador de aplicaciones: virt-manager"
+echo "   • Ideal para: Máxima aceleración gráfica 3D (VirGL en AMD Radeon Vega),"
+echo "     carpetas compartidas VirtIO-FS, redirección USB y sonido de baja latencia."
+echo ""
+echo "💡 RECOMENDACIONES DE RENDIMIENTO PARA VMS LINUX (Virt-Manager):"
+echo "  • Procesador: Modelo 'host-passthrough' (rendimiento nativo AMD Zen 2 / Intel)."
+echo "  • Gráficos: Pantalla SPICE + Aceleración OpenGL activada."
+echo "  • Tarjeta de Video: 'VirtIO' con 'Aceleración 3D' marcada (GPU AMD Vega / Intel)."
+echo "  • Almacenamiento: Bus 'VirtIO', caché 'writeback', descartar 'unmap' (TRIM)."
+echo "  • Compartir Carpetas: Hardware -> Sistema de archivos -> 'virtiofs'."
+echo "================================================================="
+echo "⚠️ IMPORTANTE: Cierra sesión y vuelve a iniciarla (o reinicia el equipo)"
+echo "   para que se apliquen los nuevos grupos: libvirt, kvm, render."
 echo "================================================================="

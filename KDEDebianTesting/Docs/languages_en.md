@@ -2,142 +2,118 @@
 sidebar_position: 6
 ---
 
-# Programming Languages Management on Debian 13
+# Programming Languages Management on Debian Testing
 
-This guide details the installation, control, and maintenance of programming languages and their development environments managed in the `ProgrammingLanguages` folder.
+This guide details the installation, management, and maintenance of programming languages and SDKs in the `ProgrammingLanguages` directory.
 
-Environment management is centralized through **Mise** (runtimes and SDKs) and **Rustup** (Rust toolchain), supplemented by automated tasks configured via a `justfile`.
+Environment orchestration is driven by **Mise** (runtimes and SDKs) and **Rustup** (Rust toolchain), managed via the root `justfile` and integrated with **KDE Plasma 6 (Wayland / systemd user session)** and **Bash** (default) / **Zsh** (compatible).
 
 ---
 
-## 1. Version Manager Mise (`mise.sh`)
+## 1. Mise Version Manager (`mise.sh`)
 
-Mise is a modern CLI version manager that replaces older tools like `asdf`, `nvm`, or `pyenv`. It downloads and configures development environments globally or locally.
+Mise is a high-performance polyglot tool version manager written in Rust that replaces `asdf`, `nvm`, and `pyenv`.
 
-1. **Official Repository Registration and Installation**:
+1. **Installation via Official APT Repository**:
    ```bash
-   sudo apt update
-   sudo apt install -y curl gpg
    sudo mkdir -p -m 755 /etc/apt/keyrings
-   curl -fsSL https://mise.jdx.dev/gpg-key.pub | sudo gpg --dearmor -o /etc/apt/keyrings/mise-archive-keyring.gpg
+   curl -fsSL https://mise.jdx.dev/gpg-key.pub | gpg --dearmor | sudo tee /etc/apt/keyrings/mise-archive-keyring.gpg > /dev/null
+   sudo chmod 644 /etc/apt/keyrings/mise-archive-keyring.gpg
    echo "deb [signed-by=/etc/apt/keyrings/mise-archive-keyring.gpg arch=$(dpkg --print-architecture)] https://mise.jdx.dev/deb stable main" | sudo tee /etc/apt/sources.list.d/mise.list > /dev/null
    sudo apt update
    sudo apt install -y mise
    ```
 
-2. **Shell Activation**:
-   Mise initialization is added to `~/.bashrc.d/mise.sh`:
-   ```bash
-   eval "$(mise activate bash)"
-   ```
+2. **Shell and Desktop Activation**:
+   - KDE Plasma & GUI session: `~/.config/environment.d/10-mise.conf`
+   - Bash: `~/.bashrc.d/mise.sh` and completions
+   - Zsh: `~/.zshrc.d/mise.zsh` (`eval "$(mise activate zsh)"`) and completions
 
 ---
 
-## 2. Language Runtimes and SDKs
+## 2. Runtimes and SDKs (LTS Versions)
 
-Once Mise is installed, the following development environments are deployed globally:
+### Node.js (`nodejs.sh`)
+* **Dependencies**: Ensures `build-essential`, `g++`, `make`, `curl`, `python3` via APT for native npm package compilation (`node-gyp`).
+* **Installation**: Installs and pins **active LTS**:
+  ```bash
+  mise use --global node@lts
+  ```
+* **Corepack (pnpm / yarn)**: Automatically enables Corepack:
+  ```bash
+  mise exec node@lts -- corepack enable
+  mise reshim
+  ```
 
-### Node.js (`nodejs.sh` and `angular.sh`)
-* **Dependencies**: Installs `build-essential`, `python3`, `g++`, and `make` via APT, which are required to build native npm dependencies (`node-gyp`).
-* **Installation**: Configures the global Node.js LTS 22 release:
-  ```bash
-  mise use --global node@22
-  ```
-* **Safe NPM Updates**: Cleans npm cache and pre-installs the `promise-retry` package to bypass common npm registry upgrade errors on Debian, then updates NPM:
-  ```bash
-  mise exec node@22 -- npm install -g npm@latest
-  ```
-* **Angular CLI**: Installs the official Angular CLI globally:
+### Angular CLI (`angular.sh`)
+* **Installation**: Installed globally via Mise-managed npm:
   ```bash
   mise use --global npm:@angular/cli@latest
   ```
+* **Optimizations**: Disables interactive analytics prompts and generates shell completions.
 
-### Python (`python.sh`)
-* **Dependencies**: Installs system libraries required to build C extensions for Python (`libssl-dev`, `zlib1g-dev`, `libffi-dev`, etc.).
-* **Installation**: Installs the optimized 3.12 branch and updates the pip package manager:
-  ```bash
-  mise use --global python@3.12
-  mise exec python@3.12 -- python -m pip install --upgrade pip
-  ```
+### Python & uv (`python.sh` & `python-uv-init.sh`)
+* **Dependencies**: Ensures `python3`, `python3-pip`, `python3-venv`, `python3-dev` to comply with PEP 668.
+* **Installation**: Installs **uv** via Mise (`mise use --global uv@latest`) and configures `UV_LINK_MODE=copy`.
+* **Project Initializer**: Includes `python-uv-init.sh` (`py-project`) for templated environments (FastAPI, CLI, Data Science).
+* **Detailed Guide**: See [python_uv_es.md](file:///home/caballero/Workspace/Repositorios/Linux/KDEDebianTesting/Docs/python_uv_es.md).
 
 ### .NET SDK (`dotnet.sh`)
-* **Installation**: Installs the latest major version of the .NET SDK:
+* **Dependencies**: `libicu-dev`, `libssl-dev`, `libkrb5-dev`, `zlib1g-dev`, `libunwind-dev`.
+* **Installation**: Installs LTS version:
   ```bash
-  mise use --global dotnet@10
+  mise use --global dotnet@lts
   ```
-
-### Gemini CLI (`gemini.sh`)
-* **Installation**: Installs the Google Gemini command-line helper interface:
-  ```bash
-  mise use --global npm:@google/gemini-cli@latest
-  ```
+* **Environment**: Configures `DOTNET_ROOT` in `~/.config/environment.d/10-dotnet.conf`.
 
 ---
 
 ## 3. Rust Environment (`rust.sh`)
 
-Rust is managed through its official standard toolchain installer **Rustup**.
+Managed via official standard toolchain **Rustup** on the **Stable** channel.
 
-1. **System Build Dependencies**:
+1. **System Compilers**:
    ```bash
-   sudo apt install -y build-essential cmake libssl-dev pkg-config curl
+   sudo apt update
+   sudo apt install -y build-essential cmake libssl-dev pkg-config curl git lld clang
    ```
 
-2. **Rustup Installation**:
-   Downloads the installation script without directly modifying the global environment path to preserve modular loading:
+2. **Rustup Installer**:
+   Installs `stable` profile without polluting system paths:
    ```bash
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile default --no-modify-path
    ```
 
-3. **Modular Environment Loading**:
-   Adds the Cargo bin path variables inside `~/.bashrc.d/rust.sh`:
-   ```bash
-   if [ -f "$HOME/.cargo/env" ]; then
-       . "$HOME/.cargo/env"
-   fi
-   ```
+3. **IDE Components**:
+   `rust-src`, `rust-analyzer`, `clippy`, `rustfmt`.
 
-4. **Fast Binary Installer (`cargo-binstall`)**:
-   Downloads and integrates `cargo-binstall`, which installs Rust-written CLI tools directly from GitHub pre-compiled binaries instead of compiling them from source locally (saving massive compilation times):
-   ```bash
-   curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-   ```
+4. **KDE Plasma & Shell Integration**:
+   - `~/.config/environment.d/10-rust.conf`
+   - `~/.bashrc.d/rust.sh` / `~/.zshrc.d/rust.zsh`
+
+5. **Fast Binary Installer (`cargo-binstall`)**:
+   Downloads pre-compiled crates directly from GitHub releases.
 
 ---
 
-## 4. OpenJDK Java compatible with AutoFirma (`java.sh`)
+## 4. OpenJDK Java (`java.sh`)
 
-AutoFirma requires Java Virtual Machine integration and NSS tools. These are installed system-wide via APT:
-```bash
-sudo apt install -y default-jre default-jdk libnss3-tools
-```
+Installs OpenJDK LTS:
+* **Packages**: `openjdk-21-jdk`, `openjdk-21-jre`, `pcscd`, `libpcsclite1`, `libnss3-tools`, `maven`.
+* **JVM Detection**: Sets `JAVA_HOME` in `~/.config/environment.d/10-java.conf` pointing to `/usr/lib/jvm/java-21-openjdk-amd64`.
 
 ---
 
 ## 5. Task Automation (`justfile`)
 
-A `justfile` is included to trigger individual runtime installations using simple commands:
-
-```make
-# Installs Mise
-mise:
-    ./mise.sh
-
-# Installs Node
-node:
-    ./nodejs.sh
-
-# Installs Python
-python:
-    ./python.sh
-
-# Installs Rust
-rust:
-    ./rust.sh
-
-# Installs Gemini CLI
-gemini:
-    ./gemini.sh
+```bash
+just mise
+just node
+just python
+just python-uv
+just rust
+just dotnet
+just java
+just angular
+just languages
 ```
-
-You can execute any recipe with `just <recipe>` inside the `ProgrammingLanguages` folder.

@@ -2,22 +2,22 @@
 sidebar_position: 2
 ---
 
-# System Setup on Debian Testing (DebianTesting)
+# System Setup on Debian Testing (KDE Plasma 6)
 
-This guide details the base setup process, automatic workspace mount, custom `x86_64-v3` kernel compilation, GNOME desktop customization, Ptyxis terminal, GNOME Shell extensions, and Cockpit web administration panel on **Debian Testing (Trixie)** with **GNOME**.
+This guide details the base configuration, microcode, hardware graphics acceleration, kernel sysctl tuning, **KDE Plasma 6 (Wayland)** customization, Kitty terminal, modern CLI utilities, and web administration panel on **Debian Testing (Trixie/Sid)**.
 
-Configurations are automated via scripts located in the `Setup` directory.
+All setups are automated through the scripts in the `Setup` directory and the root [`justfile`](file:///home/caballero/Workspace/Repositorios/Linux/KDEDebianTesting/justfile).
 
 ---
 
 ## 1. Base Post-Installation (`post-install.sh`, `post-install-amd.sh`, `post-install-intel.sh`)
 
-Prepares the base system by enabling additional official repositories (`contrib`, `non-free`, `non-free-firmware`), installing essential packages, ZRAM memory compression, PipeWire audio, GNOME suite, and tailored GPU/media acceleration.
+Prepares the base system with official Debian Testing repositories (`main`, `contrib`, `non-free`, `non-free-firmware`), ZRAM, PipeWire, Flatpak/Flathub, the KDE Plasma 6 desktop suite (`kde-plasma-desktop`, `plasma-workspace-wayland`), and hardware-optimized graphics drivers.
 
 ### Available Scripts:
 
 - **Smart Dispatcher (`post-install.sh`)**:
-  Automatically detects CPU vendor (`AuthenticAMD` vs `GenuineIntel`) or allows CLI flags:
+  Auto-detects CPU (`AuthenticAMD` vs `GenuineIntel`) or allows explicit flags:
   ```bash
   ./Setup/post-install.sh          # Auto-detection
   ./Setup/post-install.sh --amd    # Force AMD mode
@@ -25,93 +25,95 @@ Prepares the base system by enabling additional official repositories (`contrib`
   ```
 
 - **AMD Ryzen Profile (`post-install-amd.sh`)**:
-  Tailored for AMD Ryzen CPUs and Radeon Graphics:
-  - Microcode: `amd64-microcode`
-  - GPU Firmware: `firmware-amd-graphics`
-  - Graphics Stack: `mesa-va-drivers`, `mesa-vdpau-drivers`, `mesa-vulkan-drivers` (RADV), `radeontop`, `va-driver-all`.
+  - Firmware and microcode: `firmware-amd-graphics`, `amd64-microcode`.
+  - Graphics stack: `mesa-va-drivers`, `mesa-vulkan-drivers`, `radeontop`.
+  - Flatpak & Flathub integration for decoupled software.
+  - KDE Plasma 6 suite: Dolphin, Kate, Spectacle, Gwenview, Ark, Okular, Discover (Flatpak backend).
   ```bash
   just post-install-amd
   ```
 
 - **Intel Core / Media Center Profile (`post-install-intel.sh`)**:
-  Tailored for Intel Core desktop PCs (specifically 4th Gen Haswell i7-4790 with Intel HD Graphics 4600) used as a media center for Kodi, Netflix, and Prime Video:
-  - Microcode: `intel-microcode`
-  - Video VA-API Acceleration: `i965-va-driver`, `i965-va-driver-shaders`, `intel-media-va-driver`, `intel-gpu-tools` (`intel_gpu_top`).
-  - Media & Streaming: `kodi`, `kodi-inputstream-adaptive`, `kodi-inputstream-rtmp`, `kodi-pvr-iptvsimple`, codecs `ffmpeg`, `libavcodec-extra`, `gstreamer1.0-*`.
-  - **No KVM Virtualization**: Stripped of virtualization overhead and laptop battery daemon to keep the media workstation lean and snappy.
+  - Microcode: `intel-microcode`, `firmware-misc-nonfree`.
+  - Video VA-API: `intel-media-va-driver`, `i965-va-driver-shaders`, `mesa-vulkan-drivers`.
+  - Multimedia: `kodi`, codecs `ffmpeg`, `gstreamer1.0-plugins-*`.
   ```bash
   just post-install-intel
   ```
 
-### Common Installed Packages:
-- **Compilation**: `build-essential`, `cmake`
-- **Memory**: `zram-tools` (ZRAM with ZSTD at 50%)
-- **Audio**: `pipewire`, `pipewire-alsa`, `pipewire-pulse`, `pipewire-jack`, `wireplumber`
-- **Monitoring**: `btop`, `htop`, `inxi`, `gnome-system-monitor`
-- **Utilities**: `curl`, `fuse3`, `exfatprogs`, `p7zip-full`, `unrar`, `zip`, `unzip`, `bzip2`, `xz-utils`
-- **Graphics & Multimedia**: `vlc`, `gimp`, `gparted`, `evince`, `seahorse`
-- **GNOME Suite**: `gnome-core`, `gnome-shell`, `gnome-control-center`, `gnome-tweaks`, `ptyxis`, `nautilus`, `file-roller`, `gnome-text-editor`, `gnome-calculator`, `gnome-disk-utility`, `power-profiles-daemon`, `ffmpegthumbnailer`
-- **Universal Packages**: `flatpak`, `gnome-software`, `gnome-software-plugin-flatpak` with Flathub repo.
-
 ---
 
-## 2. Workspace Partition Auto-mount (`mount-workspace.sh`)
+## 2. KDE Plasma 6 Desktop Customization (`kde-settings.sh`)
 
-Automatically mounts the `/home/caballero/Workspace` data partition in `/etc/fstab` using UUID identification and safe `defaults,noatime,nofail` flags.
+- **Theme & Appearance**: Full Breeze Dark (`org.kde.breezedark.desktop`) and GTK 3/4 Breeze-Dark sync.
+- **KWin**: Right titlebar buttons (`ButtonsOnRight "IAX"`).
+- **Night Color**: Set to 4000K for eye comfort.
+- **Dolphin**: Details view by default, streamlined UI, and right-click KIO Servicemenus:
+  - "Open in Kitty" (`~/.local/share/kio/servicemenus/open-in-kitty.desktop`).
+  - "Open in Antigravity" (`~/.local/share/kio/servicemenus/open-in-antigravity.desktop`).
+  - "Open in Antigravity IDE" (`~/.local/share/kio/servicemenus/open-in-antigravity-ide.desktop`).
+- **Shortcuts**: Global `Ctrl+Alt+T` to spawn Kitty.
 
 ```bash
-just workspace
+just kde-setup
+just kde-theme-dark
+just kde-theme-light
+just kde-status
 ```
 
 ---
 
-## 3. Native x86_64-v3 Linux Kernel Builder (`build-custom-kernel.sh`)
+## 3. Laptop Optimization (`laptop-setup.sh`) & Fingerprint (`fingerprint-setup.sh`)
 
-Fetches the latest official stable release from `kernel.org`, applies `x86_64-v3` microarchitecture optimizations, **1000Hz** timer frequency, and dynamic preemption.
+- **Power Profiles Daemon**: Native integration with KDE battery applet.
+- **Touchpad (Wayland)**: Tap-to-click enabled, dynamic Natural Scrolling via KWin D-Bus and `kcminputrc`.
+- **PowerDevil**: AC sleep disabled, battery sleep 30m.
+- **Smart Lid Close**: Inhibits suspend when external monitors are connected.
+- **Bluetooth (BlueZ)**: `FastConnectable` and `Experimental` battery reporting.
 
 ```bash
-just build-kernel
+just laptop
+just fingerprint
+just fingerprint-status
+just fingerprint --enroll
+just fingerprint --verify
+just fingerprint-sddm-bypass
 ```
 
 ---
 
-## 4. Clean GNOME Extensions Installation (`gnome-extensions.sh`)
+## 4. Performance Tuning (`debian-tuning.sh`)
 
-Installs `gnome-browser-connector`, `extension-manager`, `gnome-weather`, and cleanly downloads/registers the 11 curated GNOME extensions with GSettings schema compilation (`glib-compile-schemas`). See [GNOME Extensions Guide](./gnome_extensions_en.md).
+CLI-driven system tuning (`--status`, `--sysctl`, `--limits`, `--baloo`, `--zram`):
+- **Sysctl**: ZRAM (`vm.swappiness=180`), Inotify expanded (`fs.inotify.max_user_watches=1048576`), TCP BBR.
+- **Limits**: File descriptors increased to 1,048,576 for large builds and containers.
+- **Systemd**: `DefaultTasksMax=infinity` and `DefaultTimeoutStopSec=10s`.
+- **Baloo**: Automated exclusions for heavy developer folders (`node_modules`, `target`, `.git`, `.venv`, `Workspace`).
 
 ```bash
-just extensions
+just tuning
+just tuning-status
 ```
 
 ---
 
-## 5. GNOME Personalization via GSettings (`gnome-settings.sh`)
+## 5. Shell & Terminal (`shell.sh`, `starship.sh`, `fastfetch.sh`, `fonts.sh`)
 
-Configures:
-- **Night Light** at 3500K.
-- **24-hour clock** and battery percentage.
-- **Window controls**: minimize, maximize, close on the right.
-- **Touchpad**: Tap-to-click, natural scrolling, two-finger gestures.
-- **Mutter**: Variable Refresh Rate (VRR) & fractional scaling.
-- **Dark Mode**: Prefer dark theme.
-
-```bash
-just gnome
-```
+- **CLI Tools**: `eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`, `dust`, `btop`, `jq`.
+- **Starship Prompt**:
+  ```bash
+  just starship
+  just starship-disable
+  just starship-status
+  ```
+- **Nerd Fonts**: Manages `JetBrainsMono`, `FiraCode`, `CascadiaCode`, `Meslo`, `Hack`.
+- **Fastfetch**: Themes `debian` (official spiral) and `compact` (FastCat).
 
 ---
 
-## 6. Modern Terminals (Ptyxis and Kitty)
+## 6. Kitty Terminal (`kitty.sh`)
 
-### Ptyxis (`ptyxis.sh`)
-Installs and configures Ptyxis with translucent dark styling (85% opacity), no scrollbar, global `Ctrl + Alt + T` shortcut, and Nautilus context menu integration via `nautilus-open-any-terminal`.
-
-```bash
-just ptyxis
-```
-
-### Kitty (`kitty.sh`)
-Installs and configures GPU-accelerated Kitty terminal with Catppuccin Mocha / Tokyo Night dark theme, 85% background opacity with blur, JetBrainsMono Nerd Font typography, slanted powerline tab bar, and on-the-fly opacity adjustments (`Ctrl+Shift+A` + `M`/`L`/`1`).
+GPU-accelerated terminal with Catppuccin Mocha theme, opacity 0.75, blur 32, JetBrainsMono Nerd Font, and `Ctrl+Alt+T` shortcut.
 
 ```bash
 just kitty
@@ -119,67 +121,59 @@ just kitty
 
 ---
 
-## 7. 3D Screensaver and Lock Screen (`screensaver-setup.sh`)
+## 7. Security & Firewall (`seguridad.sh`)
 
-Installs XScreenSaver 3D/GL suite, registers the autostart daemon, and maps `Super + L` to lock the screen with active screensavers.
+Firewalld / UFW hardening with rules for KDE Connect, mDNS, SSH, Cockpit 9090, Podman rootless, and KVM `virbr0`.
 
 ```bash
-just screensaver
+just security
+just security-status
 ```
 
 ---
 
-## 8. Shell Environment (`shell.sh`, `fastfetch.sh`, `fonts.sh`)
+## 8. Multimedia & YouTube Downloads (`multimedia.sh`, `yt-dlp-setup.sh`)
 
-Installs modern terminal CLI utilities (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`), Nerd Fonts, and Starship prompt.
+- Native Debian Testing packages, GStreamer, FFmpeg, VA-API acceleration, decoupled Flatpak players.
+- yt-dlp stack with mutagen, aria2, and Mise-integrated Deno JS runtime.
 
 ```bash
-just shell
-just fonts
-just fastfetch
+just multimedia
+just multimedia-status
+just yt-dlp
 ```
 
 ---
 
-## 9. Cockpit Web Management (`cockpit.sh`)
+## 9. Google Chrome (`chrome.sh`) & Steam (`steam.sh`)
 
-Deploys Cockpit admin console with modules for Podman, KVM/QEMU VMs, and storage disks at [https://localhost:9090](https://localhost:9090).
+- **Chrome**: Official Google repository and `google-chrome-stable`.
+- **Steam**: Multiarch `i386`, GameMode, MangoHud, and Proton-GE.
+
+```bash
+just chrome
+just steam
+```
+
+---
+
+## 10. Cockpit Web Administration (`cockpit.sh`)
+
+Web administration at [https://localhost:9090](https://localhost:9090) with modules for Podman, KVM machines, storage, networking, and SOS reports.
 
 ```bash
 just cockpit
+just cockpit-status
+just cockpit-open
+just cockpit-client
 ```
 
 ---
 
-## 10. Themes and Desktop Appearance (`apariencia.sh`)
+## Verification
 
-Applies Papirus-Dark and Adwaita styling across GTK and Qt applications.
-
-```bash
-just apariencia
-```
-
----
-
-## 11. Graphical Boot Splash (`plymouth-setup.sh`)
-
-Installs, configures, and activates Plymouth boot splash with support for multiple official and modern themes (`bgrt`, `ceratopsian`, `spinner`, etc.), ensuring a smooth, flicker-free startup.
-
-- **Install and activate default theme (BGRT / Ceratopsian)**:
-  ```bash
-  just plymouth
-  # or ./Setup/plymouth-setup.sh
-  ```
-- **List all available themes**:
-  ```bash
-  ./Setup/plymouth-setup.sh --list
-  ```
-- **Activate a specific theme**:
-  ```bash
-  ./Setup/plymouth-setup.sh ceratopsian
-  ```
-- **Preview splash screen on desktop**:
-  ```bash
-  ./Setup/plymouth-setup.sh --preview
-  ```
-
+- **KDE Plasma 6**: `just kde-status`
+- **Tuning**: `just tuning-status`
+- **Virtualization**: `just virtualization-status`
+- **Containers**: `just podman-status`
+- **Multimedia**: `just multimedia-status`

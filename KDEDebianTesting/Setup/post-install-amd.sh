@@ -1,6 +1,6 @@
 #!/bin/bash
 # post-install-amd.sh - Script de post-instalación para Debian Testing (Trixie) con AMD Ryzen y AMD Graphics
-# (Configurado con ZRAM, Kernel rolling, Microcódigo AMD, Mesa Vulkan/VA-API, PipeWire y Suite GNOME)
+# (Configurado con ZRAM, Kernel rolling, Microcódigo AMD, Mesa Vulkan/VA-API, PipeWire y Suite KDE Plasma 6)
 
 set -euo pipefail
 
@@ -74,7 +74,9 @@ sudo apt install -y \
     gstreamer1.0-plugins-good \
     gstreamer1.0-plugins-bad \
     gstreamer1.0-plugins-ugly \
-    gstreamer1.0-libav 2>/dev/null || true
+    gstreamer1.0-libav \
+    gstreamer1.0-vaapi \
+    gstreamer1.0-tools 2>/dev/null || true
 
 # 6. Sistema de Audio de Alta Fidelidad (PipeWire + WirePlumber)
 echo "ℹ️ Habilitando servidor de audio moderno PipeWire y WirePlumber..."
@@ -87,47 +89,49 @@ sudo apt install -y \
 
 systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
 
-# 7. Entorno de Escritorio GNOME y Aplicaciones Base
-echo "ℹ️ Instalando componentes y utilidades base de GNOME..."
+# 7. Entorno de Escritorio KDE Plasma 6 y Aplicaciones Base
+echo "ℹ️ Instalando componentes y utilidades base de KDE Plasma 6..."
 sudo apt install -y \
-    gnome-core \
-    gnome-shell \
-    gnome-control-center \
-    gnome-tweaks \
-    gnome-terminal \
-    ptyxis \
-    nautilus \
-    file-roller \
-    gnome-text-editor \
-    gnome-calculator \
-    gnome-disk-utility \
-    gnome-system-monitor \
+    kde-plasma-desktop \
+    plasma-workspace-wayland \
+    dolphin \
+    dolphin-plugins \
+    kio-extras \
+    kio-admin \
+    kate \
+    spectacle \
+    kcalc \
+    ark \
+    gwenview \
+    okular \
+    plasma-systemmonitor \
+    partitionmanager \
+    kinfocenter \
+    kitty \
     power-profiles-daemon \
-    switcheroo-control \
     ffmpegthumbnailer \
-    evince \
-    seahorse 2>/dev/null || true
+    ffmpegthumbs \
+    wl-clipboard \
+    papirus-icon-theme 2>/dev/null || true
 
-# 8. Integración de Flatpak & Flathub en GNOME Software
-echo "ℹ️ Configurando Flatpak y Flathub para GNOME Software..."
-sudo apt install -y flatpak gnome-software gnome-software-plugin-flatpak 2>/dev/null || true
-flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+# 8. Integración de Flatpak & Flathub en KDE Discover
+echo "ℹ️ Configurando Flatpak y Flathub para KDE Discover..."
+sudo apt install -y flatpak plasma-discover-backend-flatpak 2>/dev/null || true
+sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
 
-# 9. Software Esencial de Sistema
+# 9. Software Esencial de Sistema y Desarrollo
 echo "ℹ️ Instalando utilidades esenciales para Debian..."
 sudo apt install -y \
     build-essential \
     cmake \
     curl \
+    wget \
     btop \
     htop \
     inxi \
     fuse3 \
-    exfat-fuse \
     exfatprogs \
-    vlc \
-    gimp \
-    gparted \
     7zip \
     p7zip-full \
     unrar \
@@ -138,11 +142,12 @@ sudo apt install -y \
     fastfetch 2>/dev/null || true
 
 # 10. Limpieza de Paquetes Antiguos
-echo "ℹ️ Limpiando paquetes obsoletos..."
+echo "🧹 Limpiando caché y paquetes obsoletos..."
 sudo apt autoremove -y
-sudo apt clean
+sudo apt autoclean
 
 echo "================================================================="
-echo "✅ Debian Testing ($CODENAME) + GNOME (AMD Ryzen) configurado con éxito."
-echo "💡 Se recomienda reiniciar el equipo para arrancar con el nuevo Kernel Linux, drivers AMD y ZRAM."
+echo "✅ Post-instalación AMD Ryzen completada exitosamente."
+echo "💡 Se recomienda reiniciar el sistema para cargar el microcódigo,"
+echo "   los nuevos módulos del kernel y los servicios de audio/gráficos."
 echo "================================================================="

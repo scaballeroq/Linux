@@ -2,54 +2,77 @@
 sidebar_position: 5
 ---
 
-# Development Environments (IDEs) on Debian 13
+# Development Environments and IDEs on Debian Testing
 
-This guide details the installation and setup of editors and development tools located in the `IDE` directory.
+This guide details the developer tools, Artificial Intelligence platforms, and version control utilities managed in the `IDE` directory.
+
+All tools are tailored for **Debian Testing (Trixie/Sid)**, **Wayland**, **KDE Plasma 6**, and **Bash** (default) / **Zsh** (compatible if `~/.zshrc` exists).
 
 ---
 
-## 1. Neovim & LazyVim (`neovim.sh`)
+## 1. Google Antigravity Suite
 
-Installs Neovim with LazyVim starter config for a terminal-based IDE workflow.
+Google Antigravity is the next-generation AI coding environment and pair-programming assistant.
 
+### Google Antigravity Desktop (`antigravity.sh`)
+Installs the Google Antigravity desktop application:
+- Installs to `/opt/antigravity` with SUID `4755` permissions for the Chromium/Electron sandbox (`chrome-sandbox`).
+- Ensures required system libraries (`libnss3`, `libgbm1`, `libasound2t64`, etc.).
+- Creates desktop launcher (`antigravity.desktop`) and icon in `/usr/share/pixmaps/antigravity.png`.
+- Configures **Dolphin** integration via KIO Servicemenus for right-click folder opening:
+  `~/.local/share/kio/servicemenus/open-in-antigravity.desktop`.
+
+### Google Antigravity CLI (`antigravity-cli.sh`)
+Installs the Antigravity command-line interface (`agy`), allowing fast terminal task invocation and workflow management.
+
+### Google Antigravity IDE Engine (`antigravity-ide.sh`)
+Installs the standalone Antigravity IDE engine, registering system shortcuts, binaries, and Dolphin contextual menus (`~/.local/share/kio/servicemenus/open-in-antigravity-ide.desktop`).
+
+---
+
+## 2. Git Version Control Toolchain (`git.sh`)
+
+Deploys and tunes modern Git tooling on Debian Testing:
+- **git**: Core version control via APT.
+- **delta** (`git-delta`): Modern visual syntax highlighter for `git diff` and `git show`.
+- **lazygit**: Terminal UI for interactive Git workflows.
+- **github-cli** (`gh`): Official GitHub command-line interface.
+
+Applies recommended global settings:
 ```bash
-./IDE/neovim.sh
+git config --global core.pager "delta"
+git config --global interactive.diffFilter "delta --color-only"
+git config --global init.defaultBranch "main"
 ```
 
 ---
 
-## 2. Visual Studio Code (`vscode.sh`)
+## 3. OpenCode AI CLI (`opencode.sh`)
 
-Installs official VS Code from Microsoft's APT repository.
-
-```bash
-./IDE/vscode.sh
-```
+Installs the OpenCode AI CLI assistant for terminal sessions, integrating LLM completions and shell toolchains.
 
 ---
 
-## 3. Google Antigravity Desktop 2.0, CLI & IDE Engine (`antigravity.sh`, `antigravity-cli.sh`, `antigravity-ide.sh`)
+## 4. KDE Plasma Native Editors
 
-Full suite of installation scripts for Google Antigravity:
-
-- **Google Antigravity Desktop 2.0 (`antigravity.sh`)**: Full installer configuring `/opt/antigravity`, `/usr/local/bin/update-antigravity`, desktop application launcher, and Chromium SUID sandbox (`4755`).
-- **Google Antigravity CLI (`antigravity-cli.sh`)**: Terminal CLI tool installer.
-- **Google Antigravity IDE Engine (`antigravity-ide.sh`)**: Standalone IDE engine installer.
-
-```bash
-just antigravity
-just antigravity-cli
-just antigravity-ide
-```
+- **Kate**: Feature-rich editor with syntax highlighting, project support, and integrated terminal.
+- **KWrite**: Lightweight text editor for quick edits.
+- **Dolphin Integration**: Contextual actions to open projects in Google Antigravity.
 
 ---
 
-## 4. OpenCode AI CLI/Editor (`opencode.sh`)
-
-Automated installer for OpenCode AI tool with version specification (`1.18.13`).
+## Verification
 
 ```bash
-./IDE/opencode.sh
-# Or using just:
-just opencode
+# Git, Delta, Lazygit and GitHub CLI
+git --version
+delta --version
+lazygit --version
+gh --version
+
+# Antigravity CLI
+agy --version 2>/dev/null || antigravity --version
+
+# OpenCode
+opencode --version 2>/dev/null || true
 ```

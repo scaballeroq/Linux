@@ -1,5 +1,5 @@
 #!/bin/bash
-# post-install.sh - Despachador y selector inteligente de post-instalación para Debian Testing (Trixie) + GNOME
+# post-install.sh - Despachador y selector inteligente de post-instalación para Debian Testing (Trixie) + KDE Plasma 6
 # Detecta automáticamente la arquitectura de CPU (AMD Ryzen vs Intel Core) o permite selección manual
 
 set -euo pipefail
@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 show_help() {
     cat <<EOF
-🚀 Despachador de Post-Instalación para Debian Testing (Trixie) + GNOME
+🚀 Despachador de Post-Instalación para Debian Testing (Trixie) + KDE Plasma 6
 
 Uso:
   $0 [OPCIÓN]
@@ -20,8 +20,8 @@ Opciones:
   --help, -h         Muestra este mensaje de ayuda.
 
 Scripts independientes disponibles:
-  • Setup/post-install-amd.sh   -> Optimizado para AMD Ryzen (microcódigo AMD, RADV, Mesa)
-  • Setup/post-install-intel.sh -> Optimizado para Intel Core / HD Graphics (microcódigo Intel, i965 VA-API, Kodi, sin virtualización)
+  • Setup/post-install-amd.sh   -> Optimizado para AMD Ryzen (microcódigo AMD, RADV, Mesa, KDE Plasma 6)
+  • Setup/post-install-intel.sh -> Optimizado para Intel Core / HD Graphics (microcódigo Intel, i965 VA-API, Kodi, KDE Plasma 6)
 EOF
 }
 

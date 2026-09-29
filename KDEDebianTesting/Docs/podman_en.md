@@ -1,93 +1,69 @@
 ---
-sidebar_position: 8
+sidebar_position: 10
 ---
 
-# Container Management with Podman on Debian 13
+# Podman Rootless and Systemd Quadlets on Debian Testing (KDE Plasma 6)
 
-This guide details the installation of the **Podman** container platform and the list of pre-configured services inside the `Podman` folder.
-
-Unlike Docker, Podman runs by default in a secure, **daemonless**, and **rootless** mode, keeping user containers securely isolated in user-space.
-
----
-
-## 1. Configuring Podman Core (`podman.sh`)
-
-Installs Podman, its `compose` orchestration helper, and modern network stacks native to Debian 13:
-
-1. **Component Installation**:
-   ```bash
-   sudo apt update
-   sudo apt install -y podman podman-compose podman-docker uidmap slirp4netns passt
-   ```
-   * **`podman-docker`**: Installs a symlink helper to automatically forward `docker` commands directly to `podman`.
-   * **`uidmap`**: Critical for mapping sub-UIDs and sub-GIDs in user space to execute secure rootless containers.
-   * **`passt` / `pasta`**: High-performance network stack for rootless containers, built-in by default starting with Podman 5 (standard in Debian 13).
-
-2. **User Session Persistence (Linger)**:
-   Configures systemd to keep user containers running in the background even after the terminal session closes:
-   ```bash
-   loginctl enable-linger "$USER"
-   ```
-
-3. **User Socket and Compatibility**:
-   Enables the user's Podman socket that emulates the Docker socket API, allowing native integrations with developer tools (like IDEs or Testcontainers):
-   ```bash
-   systemctl --user enable --now podman.socket
-   ```
-
-4. **DOCKER_HOST Variable**:
-   Exposes the user socket path inside `~/.bashrc.d/podman.sh` so third-party tools locate Podman automatically:
-   ```bash
-   export DOCKER_HOST="unix://$XDG_RUNTIME_DIR/podman/podman.sock"
-   ```
+This guide describes the deployment of the **Rootless Podman** container ecosystem and native integration with **Systemd Quadlets** on **Debian Testing (Trixie/Sid)**.
 
 ---
 
-## 2. Integrated Development Network
+## 1. Architecture
 
-All auxiliary containers and infrastructure are deployed on a common Podman bridge network named `devfed-net`. The scripts create it automatically if it's not present:
+- **Security**: 100% rootless execution without root privileges or daemon processes (`daemonless`).
+- **Modern Networking**: High-performance rootless networking with `passt` / `pasta` and `slirp4netns` native to Debian Testing with Netavark and local container DNS.
+- **Orchestration**: Quadlets managed as native Systemd user units in `~/.config/containers/systemd/`.
+- **Docker Compatibility**: Podman user socket active at `$XDG_RUNTIME_DIR/podman/podman.sock` and `docker -> podman` symlink.
+- **Persistence**: User linger mode enabled (`loginctl enable-linger`) so user containers survive logout.
+
+---
+
+## 2. Installation and Configuration
+
 ```bash
-if ! podman network exists devfed-net; then
-    podman network create devfed-net
-fi
+just podman-base      # Installs Podman, passt, uidmap, and user socket
+just podman-quadlets  # Sets up Quadlet directories and shared services
+just podman-status    # Diagnoses container runtime and tools
 ```
 
 ---
 
-## 3. Catalog of Developer Services
+## 3. Project and Container Manager (`podman-utils.sh`)
 
-The scripts use Podman's `--replace` flag to stop and clean up any previous instance of the container. The services are organized as follows:
+Includes the CLI utility `podman-utils.sh` (available in `PATH` and via the `podman-utils` alias):
 
-### Databases
-* **PostgreSQL** (`podman-postgres.sh`): Starts PostgreSQL on port `5432` (default credentials: `postgres/postgres`).
-* **MySQL** (`podman-mysql.sh`): Starts MySQL on port `3306` (credentials: `root/root`).
-* **MongoDB** (`podman-mongodb.sh`): Starts MongoDB on port `27017` (rootless without initial password).
-* **Redis** (`podman-redis.sh`): Starts a Redis in-memory key-value store on port `6379`.
-
-### Administration, Monitoring, and Tracing
-* **Portainer CE** (`podman-portainer.sh`): Graphical container management UI exposed securely at `https://localhost:9443`.
-* **Adminer** (`podman-adminer.sh`): Lightweight database manager for SQL/NoSQL databases on `http://localhost:8080`.
-* **Dozzle** (`podman-dozzle.sh`): Lightweight real-time log viewer available on `http://localhost:8888`.
-* **Grafana** (`podman-grafana.sh`): Analytics and monitoring dashboard exposed on `http://localhost:3000`.
-* **Prometheus** (`podman-prometheus.sh`): Metrics scraper database available on `http://localhost:9090`.
-* **Jaeger** (`podman-jaeger.sh`): Distributed tracing platform UI exposed on `http://localhost:16686`.
-
-### Infrastructure and Utilities
-* **Nginx** (`podman-nginx.sh`): Web server exposed on standard ports `80` (HTTP) and `443` (HTTPS).
-* **Keycloak** (`podman-keycloak.sh`): Identity and Access Management (IAM) provider exposed on `http://localhost:8081` (credentials: `admin/admin`).
-* **RabbitMQ** (`podman-rabbitmq.sh`): Message broker exposed on `5672` (management UI on `http://localhost:15672` with `guest/guest`).
-* **MinIO** (`podman-minio.sh`): Object Storage compatible with AWS S3 (API on `9000`, dashboard Console on `http://localhost:9001` with `minioadmin/minioadmin`).
-* **MailHog** (`podman-mailhog.sh`): Development SMTP server to intercept outgoing emails in testing (SMTP on `1025`, Web interface on `http://localhost:8025`).
-* **Browserless** (`podman-browserless.sh`): Headless Chrome browser managed via APIs on port `3001`.
-
-### Frameworks and CMS
-* **WordPress** (`podman-wordpress.sh`): Launches a WordPress site on port `8082`, configured to hook into the local MySQL container.
-* **Storybook** (`podman-storybook.sh`): Starts Storybook component playground on port `6006`.
+```bash
+podman-utils doctor             # Environment health check
+podman-utils templates          # List available templates
+podman-utils create <tpl> <nom> # Create isolated project from template
+podman-utils shared-start       # Start global services (Traefik, Postgres...)
+podman-utils shared-status      # Check shared services status
+```
 
 ---
 
-## Verification
+## 4. Available Templates (`Podman/templates/`)
 
-- **Podman Status**: Run `podman info` (should display rootless details).
-- **Socket**: Run `curl --unix-socket $XDG_RUNTIME_DIR/podman/podman.sock http://d/info` to check socket replies.
-- **Services**: Run any helper script (e.g. `./podman-postgres.sh`) and verify execution using `podman ps`.
+- `python-postgres`: Python backend + PostgreSQL.
+- `python-postgres-redis`: Python backend + PostgreSQL + Redis Cache.
+- `fullstack`: Frontend + Backend + PostgreSQL + Keycloak Auth + Traefik Reverse Proxy.
+
+---
+
+## 5. Shared Services (`Podman/services-shared/`)
+
+- `traefik.container`: Local reverse proxy with routing.
+- `postgres-global.container`: Shared developer PostgreSQL database.
+- `redis-global.container`: Centralized Redis cache.
+- `keycloak.container`: IAM authentication server (OIDC/OAuth2).
+
+---
+
+## 6. Standalone Container Scripts (`Podman/scripts-standalone/`)
+
+Collection of 17 individual containers ready for rapid development with safe replacement (`--replace`):
+- Databases: MariaDB, MySQL, PostgreSQL, MongoDB, Redis.
+- Messaging & Queues: RabbitMQ, Apache Kafka.
+- Search & Observability: Elasticsearch, OpenSearch, Graylog, Grafana.
+- Web Servers & Tools: Apache HTTPD, Nginx, Adminer.
+- Security & Utilities: Vaultwarden, Cloudflare Tunnel.
