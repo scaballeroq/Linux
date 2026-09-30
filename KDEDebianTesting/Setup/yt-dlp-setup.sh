@@ -155,12 +155,12 @@ get_mutagen_version() {
 }
 
 get_atomicparsley_version() {
-    if command -v AtomicParsley &>/dev/null; then
-        local ver
-        ver=$(AtomicParsley --version 2>/dev/null | awk 'NR==1 {print $2}')
-        echo "${ver:-Instalado}"
-    elif is_pkg_installed atomicparsley; then
+    if is_pkg_installed atomicparsley; then
         dpkg-query -W -f='${Version}\n' atomicparsley 2>/dev/null
+    elif command -v AtomicParsley &>/dev/null; then
+        local ver
+        ver=$(AtomicParsley --version 2>&1 | awk '{for(i=1;i<=NF;i++) if($i ~ /^[0-9]/) {print $i; exit}}')
+        echo "${ver:-Instalado}"
     else
         echo "No instalado"
     fi
