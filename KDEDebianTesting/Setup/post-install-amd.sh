@@ -157,9 +157,26 @@ sudo apt install -y \
     xz-utils \
     fastfetch 2>/dev/null || true
 
-# 10. Limpieza de Paquetes Antiguos
-echo "🧹 Limpiando caché y paquetes obsoletos..."
-sudo apt autoremove -y
+# 10. Desinstalación y purga de bloatware: KDE PIM (KMail, Kontact, Akonadi) y LibreOffice (APT)
+echo "🧹 Desinstalando bloatware de KDE PIM (KMail, Kontact, Akonadi) y LibreOffice APT..."
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    sudo -u "$SUDO_USER" akonadictl stop 2>/dev/null || true
+else
+    akonadictl stop 2>/dev/null || true
+fi
+
+mapfile -t BLOAT_PACKAGES < <(dpkg-query -W -f='${Package}\n' 'kmail*' 'kontact*' 'korganizer*' 'kaddressbook*' '*akonadi*' '*kdepim*' 'pim-*' 'libreoffice*' 2>/dev/null || true)
+
+if [ ${#BLOAT_PACKAGES[@]} -gt 0 ]; then
+    echo "   Purgando ${#BLOAT_PACKAGES[@]} paquetes de KDE PIM, Akonadi y LibreOffice (APT)..."
+    sudo apt purge -y "${BLOAT_PACKAGES[@]}" 2>/dev/null || true
+else
+    echo "   ✅ No se detectaron paquetes de KDE PIM, Akonadi ni LibreOffice instalados vía APT."
+fi
+
+# 11. Limpieza de Paquetes Antiguos y Dependencias Huérfanas
+echo "🧹 Limpiando dependencias huérfanas, paquetes obsoletos y caché..."
+sudo apt autoremove --purge -y
 sudo apt autoclean
 
 echo "================================================================="
