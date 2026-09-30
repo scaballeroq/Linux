@@ -12,7 +12,7 @@ Las configuraciones están automatizadas a través de los scripts ubicados en la
 
 ## 1. Post-Instalación Base (`post-install.sh`, `post-install-amd.sh`, `post-install-intel.sh`)
 
-Prepara el sistema base configurando los repositorios oficiales de Debian Testing (`main`, `contrib`, `non-free`, `non-free-firmware`), ZRAM, PipeWire, Flatpak/Flathub, la suite de KDE Plasma 6 (`kde-plasma-desktop`, `plasma-workspace-wayland`) y la pila gráfica optimizada según el procesador.
+Prepara el sistema base configurando los repositorios oficiales de Debian Testing (`main`, `contrib`, `non-free`, `non-free-firmware`), ZRAM, PipeWire, Flatpak/Flathub, la suite de KDE Plasma 6 (`kde-plasma-desktop`, `plasma-workspace`) y la pila gráfica optimizada según el procesador.
 
 ### Scripts disponibles:
 

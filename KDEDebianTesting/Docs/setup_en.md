@@ -12,7 +12,7 @@ All setups are automated through the scripts in the `Setup` directory and the ro
 
 ## 1. Base Post-Installation (`post-install.sh`, `post-install-amd.sh`, `post-install-intel.sh`)
 
-Prepares the base system with official Debian Testing repositories (`main`, `contrib`, `non-free`, `non-free-firmware`), ZRAM, PipeWire, Flatpak/Flathub, the KDE Plasma 6 desktop suite (`kde-plasma-desktop`, `plasma-workspace-wayland`), and hardware-optimized graphics drivers.
+Prepares the base system with official Debian Testing repositories (`main`, `contrib`, `non-free`, `non-free-firmware`), ZRAM, PipeWire, Flatpak/Flathub, the KDE Plasma 6 desktop suite (`kde-plasma-desktop`, `plasma-workspace`), and hardware-optimized graphics drivers.
 
 ### Available Scripts:
 

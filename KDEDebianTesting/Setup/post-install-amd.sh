@@ -7,30 +7,39 @@ set -euo pipefail
 # Detectar versión/codename de Debian
 CODENAME=$(grep '^VERSION_CODENAME=' /etc/os-release | cut -d= -f2 || true)
 if [ -z "$CODENAME" ]; then
-    CODENAME=$(lsb_release -sc 2>/dev/null || echo "trixie")
+    CODENAME=$(lsb_release -sc 2>/dev/null || echo "forky")
 fi
 
 echo "================================================================="
 echo "🚀 INICIANDO POST-INSTALACIÓN: DEBIAN TESTING ($CODENAME) - AMD RYZEN"
 echo "================================================================="
 
-# 1. Habilitar Repositorios Extra (Contrib, Non-Free, Non-Free-Firmware)
+# 1. Habilitar Repositorios Extra (Contrib, Non-Free, Non-Free-Firmware) y sincronizar codename
 echo "ℹ️ Configurando repositorios contrib, non-free y non-free-firmware para $CODENAME..."
 
 sudo apt update
 sudo apt install -y curl ca-certificates gnupg lsb-release
 
-# Habilitar contrib, non-free y non-free-firmware en repositorios existentes (soporte para debian.sources DEB822 y sources.list clásico)
-if [ -f /etc/apt/sources.list.d/debian.sources ]; then
-    sudo sed -i -E '/^Components:/ { /main/!b; s/[[:space:]]+(contrib|non-free-firmware|non-free)//g; s/\bmain\b/main contrib non-free non-free-firmware/; }' /etc/apt/sources.list.d/debian.sources
-fi
+# Sincronizar suite/codename si los repositorios apuntan a una versión anterior (ej. trixie en un sistema Debian Testing / forky)
 if [ -f /etc/apt/sources.list ]; then
+    if [ "$CODENAME" = "forky" ] && grep -qE '\b(trixie|bookworm)\b' /etc/apt/sources.list; then
+        echo "⚠️ Detectado codename desactualizado en /etc/apt/sources.list. Sincronizando repositorios a '$CODENAME'..."
+        sudo sed -i -E "s/\b(trixie|bookworm)\b/$CODENAME/g" /etc/apt/sources.list
+    fi
     sudo sed -i -E '/^deb(-src)?[[:space:]]+/ { /main/!b; s/[[:space:]]+(contrib|non-free-firmware|non-free)//g; s/\bmain\b/main contrib non-free non-free-firmware/; }' /etc/apt/sources.list
+fi
+
+if [ -f /etc/apt/sources.list.d/debian.sources ]; then
+    if [ "$CODENAME" = "forky" ] && grep -qE '\b(trixie|bookworm)\b' /etc/apt/sources.list.d/debian.sources; then
+        echo "⚠️ Detectado codename desactualizado en /etc/apt/sources.list.d/debian.sources. Sincronizando repositorios a '$CODENAME'..."
+        sudo sed -i -E "s/\b(trixie|bookworm)\b/$CODENAME/g" /etc/apt/sources.list.d/debian.sources
+    fi
+    sudo sed -i -E '/^Components:/ { /main/!b; s/[[:space:]]+(contrib|non-free-firmware|non-free)//g; s/\bmain\b/main contrib non-free non-free-firmware/; }' /etc/apt/sources.list.d/debian.sources
 fi
 
 echo "ℹ️ Debian Testing ($CODENAME) detectado: Obteniendo paquetes más recientes."
 sudo apt update
-sudo apt upgrade -y
+sudo apt full-upgrade -y
 
 # 2. Compresión de Memoria ZRAM (Evita bloqueos del sistema al compilar/multitarea)
 echo "ℹ️ Instalando y configurando SWAP comprimida en RAM (ZRAM con ZSTD)..."
@@ -52,7 +61,7 @@ sudo apt install -y \
     firmware-amd-graphics \
     amd64-microcode 2>/dev/null || sudo apt install -y linux-image-amd64 linux-headers-amd64 firmware-linux-nonfree amd64-microcode 2>/dev/null || true
 
-# 4. Stack Gráfico y Aceleración HW para AMD (Mesa / RADV / VA-API / VDPAU / Vulkan)
+# 4. Stack Gráfico y Aceleración HW para AMD (Mesa / RADV / VA-API / Vulkan)
 echo "ℹ️ Instalando controladores gráficos AMD Mesa (RADV/RadeonSI) y aceleración de hardware..."
 sudo apt install -y \
     mesa-va-drivers \
@@ -60,10 +69,9 @@ sudo apt install -y \
     mesa-vulkan-drivers \
     mesa-utils \
     libgl1-mesa-dri \
-    va-driver-all \
     vulkan-tools \
     vainfo \
-    radeontop 2>/dev/null || sudo apt install -y mesa-va-drivers mesa-vdpau-drivers mesa-vulkan-drivers mesa-utils vainfo || true
+    radeontop 2>/dev/null || sudo apt install -y mesa-va-drivers mesa-vulkan-drivers mesa-utils vainfo || true
 
 # 5. Codecs Multimedia y FFmpeg
 echo "ℹ️ Instalando FFmpeg y codecs multimedia de alto rendimiento..."
@@ -87,13 +95,17 @@ sudo apt install -y \
     pipewire-jack \
     wireplumber 2>/dev/null || true
 
-systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    sudo -u "$SUDO_USER" systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
+else
+    systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
+fi
 
 # 7. Entorno de Escritorio KDE Plasma 6 y Aplicaciones Base
 echo "ℹ️ Instalando componentes y utilidades base de KDE Plasma 6..."
 sudo apt install -y \
     kde-plasma-desktop \
-    plasma-workspace-wayland \
+    plasma-workspace \
     dolphin \
     dolphin-plugins \
     kio-extras \
@@ -118,7 +130,11 @@ sudo apt install -y \
 echo "ℹ️ Configurando Flatpak y Flathub para KDE Discover..."
 sudo apt install -y flatpak plasma-discover-backend-flatpak 2>/dev/null || true
 sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
-flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    sudo -u "$SUDO_USER" flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+else
+    flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+fi
 
 # 9. Software Esencial de Sistema y Desarrollo
 echo "ℹ️ Instalando utilidades esenciales para Debian..."

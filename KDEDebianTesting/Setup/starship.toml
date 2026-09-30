@@ -71,7 +71,7 @@ deleted = "🗑 "
 [python]
 symbol = "🐍 "
 style = "yellow"
-format = "via [${symbol}${pyenv_prefix}(${version} )(\($virtualenv\) )]($style)"
+format = 'via [${symbol}${pyenv_prefix}(${version} )(\($virtualenv\) )]($style)'
 
 [nodejs]
 symbol = "󰎙 "
