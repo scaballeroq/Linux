@@ -1,1 +1,0 @@
-Revisar/rust.sh
