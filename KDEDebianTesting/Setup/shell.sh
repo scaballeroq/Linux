@@ -2,7 +2,7 @@
 # ==============================================================================
 # shell.sh - Instalación y Optimización de Herramientas Modernas de Terminal
 # Debian Testing (Trixie/Sid) + KDE Plasma 6
-# (eza, bat, fzf, zoxide, ripgrep, fd-find, duf, dust, procs, btop, jq)
+# (eza, bat, fzf, zoxide, ripgrep, fd-find, duf, du-dust, procs, btop, jq)
 # ==============================================================================
 
 set -euo pipefail
@@ -42,7 +42,7 @@ CLI_TOOLS=(
     ripgrep
     fd-find
     duf
-    dust
+    du-dust
     procs
     btop
     curl
@@ -79,16 +79,16 @@ Opciones:
   --help, -h          Muestra este mensaje de ayuda.
 
 Herramientas gestionadas:
-  • eza:       Sustituto moderno de 'ls' con soporte git, iconos y colores.
-  • bat:       Visor de archivos ('cat' mejorado) con syntax highlighting (batcat -> bat).
-  • fzf:       Buscador difuso interactivo (Ctrl+R para historial, Ctrl+T para archivos, Alt+C).
-  • zoxide:    Navegación inteligente de directorios ('cd' rápido con memoria de frecuencias).
-  • ripgrep:   Búsqueda ultra-rápida de texto (rg) respetando .gitignore.
-  • fd-find:   Búsqueda intuitiva y rápida de archivos en lugar de find (fdfind -> fd).
-  • duf/dust:  Visualización estética del uso de disco y directorios.
-  • procs:     Visualizador moderno de procesos con jerarquía y colores.
-  • btop:      Monitor interactivo de recursos del sistema con aceleración y gráficos.
-  • jq/curl:   Manipulación JSON e interacción con APIs y red.
+  • eza:            Sustituto moderno de 'ls' con soporte git, iconos y colores.
+  • bat:            Visor de archivos ('cat' mejorado) con syntax highlighting (batcat -> bat).
+  • fzf:            Buscador difuso interactivo (Ctrl+R para historial, Ctrl+T para archivos, Alt+C).
+  • zoxide:         Navegación inteligente de directorios ('cd' rápido con memoria de frecuencias).
+  • ripgrep:        Búsqueda ultra-rápida de texto (rg) respetando .gitignore.
+  • fd-find:        Búsqueda intuitiva y rápida de archivos en lugar de find (fdfind -> fd).
+  • duf / du-dust:  Visualización estética del uso de disco y directorios ('dust').
+  • procs:          Visualizador moderno de procesos con jerarquía y colores.
+  • btop:           Monitor interactivo de recursos del sistema con aceleración y gráficos.
+  • jq/curl:        Manipulación JSON e interacción con APIs y red.
 EOF
 }
 
@@ -106,6 +106,10 @@ show_status() {
             printf "  • %-10s ❌ No instalado\n" "$tool"
         fi
     done
+    echo "-----------------------------------------------------------------"
+    echo "🔗 Symlinks Debian (~/.local/bin):"
+    echo "  • fd  -> fdfind:                $(if [ -L "$USER_HOME/.local/bin/fd" ] || command -v fd &>/dev/null; then echo "✅ Presente"; else echo "❌ No presente"; fi)"
+    echo "  • bat -> batcat:                $(if [ -L "$USER_HOME/.local/bin/bat" ] || command -v bat &>/dev/null; then echo "✅ Presente"; else echo "❌ No presente"; fi)"
     echo "-----------------------------------------------------------------"
     echo "🐚 Integración en Bash ($BASHRC):"
     echo "  • Cargador modular (.bashrc.d): $(if grep -q "\.bashrc\.d" "$BASHRC" 2>/dev/null; then echo "✅ Configurado"; else echo "❌ No presente"; fi)"
@@ -153,19 +157,38 @@ else
     echo "  ⬇️ Instalando utilidades faltantes vía APT: ${MISSING_PACKAGES[*]}..."
     export DEBIAN_FRONTEND=noninteractive
     $SUDO apt-get update -qq
-    $SUDO apt-get install -y "${MISSING_PACKAGES[@]}" 2>/dev/null || true
-    echo "  ✅ Paquetes instalados."
+    if ! $SUDO apt-get install -y "${MISSING_PACKAGES[@]}"; then
+        echo "  ⚠️ Falló la instalación por lotes. Intentando paquete por paquete..."
+        FAILED_PACKAGES=()
+        for pkg in "${MISSING_PACKAGES[@]}"; do
+            if $SUDO apt-get install -y "$pkg"; then
+                echo "  ✅ Instalado: $pkg"
+            else
+                echo "  ❌ Error al instalar: $pkg"
+                FAILED_PACKAGES+=("$pkg")
+            fi
+        done
+        if [ ${#FAILED_PACKAGES[@]} -gt 0 ]; then
+            echo "  ⚠️ No se pudieron instalar los siguientes paquetes: ${FAILED_PACKAGES[*]}"
+        fi
+    else
+        echo "  ✅ Paquetes instalados."
+    fi
 fi
 
 # Debian symlinks: fd -> fdfind, bat -> batcat
 run_as_user mkdir -p "$USER_HOME/.local/bin"
-if command -v fdfind &>/dev/null && ! command -v fd &>/dev/null; then
-    run_as_user ln -sf "$(command -v fdfind)" "$USER_HOME/.local/bin/fd"
-    echo "  ✅ Symlink creado: ~/.local/bin/fd -> fdfind"
+if command -v fdfind &>/dev/null; then
+    if [ "$(readlink -f "$USER_HOME/.local/bin/fd" 2>/dev/null)" != "$(command -v fdfind)" ]; then
+        run_as_user ln -sf "$(command -v fdfind)" "$USER_HOME/.local/bin/fd"
+        echo "  ✅ Symlink creado: ~/.local/bin/fd -> fdfind"
+    fi
 fi
-if command -v batcat &>/dev/null && ! command -v bat &>/dev/null; then
-    run_as_user ln -sf "$(command -v batcat)" "$USER_HOME/.local/bin/bat"
-    echo "  ✅ Symlink creado: ~/.local/bin/bat -> batcat"
+if command -v batcat &>/dev/null; then
+    if [ "$(readlink -f "$USER_HOME/.local/bin/bat" 2>/dev/null)" != "$(command -v batcat)" ]; then
+        run_as_user ln -sf "$(command -v batcat)" "$USER_HOME/.local/bin/bat"
+        echo "  ✅ Symlink creado: ~/.local/bin/bat -> batcat"
+    fi
 fi
 
 # 2. Integración de Zoxide, FZF y Carga Modular en Bash
