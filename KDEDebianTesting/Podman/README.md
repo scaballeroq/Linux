@@ -1,6 +1,14 @@
 # Podman Professional - Quadlets para Desarrollo
 
-Gestion de contenedores con **Podman + Quadlets + systemd** para proyectos Python/PostgreSQL con proxy, autenticacion y servicios compartidos.
+Gestión de contenedores con **Podman Rootless + Quadlets + systemd** en **Debian Testing (forky/sid) + KDE Plasma 6 (Wayland)**.
+
+Optimizado específicamente para:
+- **CPU:** AMD Ryzen 7 PRO 4750U (8 núcleos / 16 hilos Zen 2)
+- **GPU:** AMD Radeon Vega 7 Graphics (passthrough acelerado `/dev/dri/card0` y `/dev/dri/renderD128`)
+- **Memoria:** 32 GB RAM DDR4 con ZRAM swap activa
+- **Almacenamiento:** SSD NVMe 1 TB en formato `ext4` con driver `overlay` nativo en kernel (sin FUSE)
+- **Red:** Rootless de alto rendimiento con `pasta` (`passt`) y Netavark
+- **Seguridad:** Firewalld con interfaces `podman+` en zona `trusted`
 
 ---
 
@@ -8,52 +16,58 @@ Gestion de contenedores con **Podman + Quadlets + systemd** para proyectos Pytho
 
 ```
 Podman/
-├── install/                  # Scripts de instalacion
-│   ├── podman-install.sh     # Instala Podman rootless
-│   └── quadlets-setup.sh     # Configura systemd para Quadlets
+├── install/                  # Scripts de instalación y configuración
+│   ├── podman-install.sh     # Instala y optimiza Podman rootless para el hardware
+│   └── quadlets-setup.sh     # Configura directorios y servicios systemd Quadlets
 │
-├── lib/
-│   └── podman-utils.sh       # CLI para gestionar proyectos
+├── lib/                      # CLI y autocompletados
+│   ├── podman-utils.sh       # CLI para proyectos, contenedores y Quadlets
+│   ├── podman-utils-completion.bash # Autocompletado Bash
+│   └── podman-utils-completion.zsh  # Autocompletado Zsh
 │
-├── templates/                # Plantillas de proyectos
-│   ├── python-postgres/      # Python + PostgreSQL
-│   ├── python-postgres-redis/# Python + PostgreSQL + Redis
-│   └── fullstack/            # Front + Back + PostgreSQL + Traefik + Keycloak
+├── templates/                # Plantillas de proyectos declarativos
+│   ├── python-postgres/      # Python 3.13 + PostgreSQL 17
+│   ├── python-postgres-redis/# Python + PostgreSQL + Redis 7
+│   └── fullstack/            # Frontend (Node 22) + Backend + Postgres + Traefik + Keycloak
 │
-├── services-shared/          # Servicios globales reutilizables
-│   ├── traefik.container     # Proxy inverso
-│   ├── keycloak.container    # OAuth2/OIDC (Google, Microsoft, GitHub)
+├── services-shared/          # Servicios globales y redes compartidas
+│   ├── proxy-net.network     # Red bridge común para servicios globales
+│   ├── traefik.container     # Proxy inverso global
+│   ├── keycloak.container    # OAuth2/OIDC compartido
 │   ├── postgres-global.container  # PostgreSQL compartido
 │   └── redis-global.container     # Redis compartido
 │
-└── projects/                 # Tus proyectos (gitignored)
+├── scripts-standalone/       # Contenedores de desarrollo rápido con volúmenes persistentes
+└── projects/                 # Tus proyectos locales (gitignored)
 ```
 
 ---
 
-## Instalacion
+## Instalación
 
-### 1. Instalar Podman
+### 1. Instalar y Optimizar Podman
 
 ```bash
 ./install/podman-install.sh
 ```
 
-Instala Podman rootless con todas las dependencias necesarias.
+Configura Podman rootless con almacenamiento overlay nativo en kernel, `containers.conf` con 8 descargas paralelas y soporte GPU Vega 7, linger persistente, socket Docker API y variables de entorno para KDE Plasma 6 y shells.
 
-### 2. Configurar Quadlets
+### 2. Configurar Quadlets y Servicios Globales
 
 ```bash
+# Inicializar estructura de directorios:
 ./install/quadlets-setup.sh
-```
 
-Crea la estructura de systemd para gestionar contenedores como servicios.
+# O instalar también todos los servicios y redes compartidos:
+./install/quadlets-setup.sh --install-shared
+```
 
 ### 3. CLI podman-utils disponible en PATH
 
 El script `podman-install.sh` crea automáticamente un enlace simbólico en `~/.local/bin/podman-utils` y registra los autocompletados para Bash y Zsh.
 
-Si deseas verificar el comando o ejecutarlo directamente:
+Si deseas verificar el entorno o diagnosticar el sistema:
 
 ```bash
 podman-utils doctor
@@ -337,18 +351,24 @@ systemctl --user daemon-reload
 
 ## Comandos de podman-utils
 
-| Comando | Descripcion |
+| Comando | Descripción |
 |---------|-------------|
 | `create <template> <nombre>` | Crear proyecto desde plantilla |
-| `start <nombre>` | Iniciar proyecto |
+| `start <nombre>` | Iniciar proyecto vía systemd |
 | `stop <nombre>` | Detener proyecto |
 | `restart <nombre>` | Reiniciar proyecto |
-| `logs <nombre> [servicio]` | Ver logs en tiempo real |
-| `status <nombre>` | Ver estado del proyecto |
-| `destroy <nombre>` | Eliminar proyecto (datos incluidos) |
-| `link <nombre>` | Enlazar proyecto a systemd |
+| `logs <nombre> [servicio]` | Ver logs en tiempo real vía journalctl |
+| `status <nombre>` | Ver estado detallado del proyecto y contenedores |
+| `destroy <nombre>` | Eliminar proyecto (archivos, contenedores, volúmenes) |
+| `link <nombre>` | Enlazar proyecto a systemd Quadlets |
 | `unlink <nombre>` | Desenlazar proyecto de systemd |
-| `install-global <servicio>` | Instalar servicio compartido |
+| `install-global <servicio>` | Instalar servicio/red compartido (`postgres-global`, `traefik`, `all`) |
 | `uninstall-global <servicio>` | Desinstalar servicio compartido |
-| `list` | Listar proyectos |
+| `pps` | Listar contenedores activos con formato enriquecido (redes, puertos) |
+| `pexec <id> [cmd]` | Abrir shell interactivo en un contenedor |
+| `quadlet-status` | Diagnóstico de todos los Quadlets y servicios de usuario |
+| `quadlet-reload` | Recargar generadores y unidades systemd de usuario |
+| `list` | Listar proyectos y contenedores asociados |
 | `list-templates` | Listar plantillas disponibles |
+| `doctor` | Diagnóstico completo de motor, socket, GPU, storage y red |
+

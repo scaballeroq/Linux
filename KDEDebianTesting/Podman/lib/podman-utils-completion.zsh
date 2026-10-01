@@ -1,6 +1,6 @@
 #compdef podman-utils
 # =============================================================================
-# Zsh Completion for podman-utils (Fedora 44 Workstation + GNOME)
+# Zsh Completion for podman-utils (Debian Testing + KDE Plasma 6)
 # =============================================================================
 
 _podman_utils_get_repo_dir() {
@@ -32,6 +32,10 @@ _podman_utils() {
         'unlink:Desenlaza los archivos Quadlet de systemd'
         'install-global:Instala un servicio compartido en systemd user'
         'uninstall-global:Desinstala un servicio compartido'
+        'pps:Lista contenedores activos con formato enriquecido'
+        'pexec:Acceso interactivo a un contenedor'
+        'quadlet-status:Diagnóstico de todos los Quadlets instalados'
+        'quadlet-reload:Recarga de generadores y unidades systemd de usuario'
         'list:Lista todos los proyectos creados y su estado'
         'list-templates:Muestra las plantillas de proyectos disponibles'
         'doctor:Ejecuta diagnóstico de Podman y Quadlets'

@@ -101,19 +101,19 @@ install_global_services() {
         return 0
     fi
 
-    log_info "Instalando servicios compartidos (.container)..."
-    for container_file in "$shared_dir"/*.container; do
-        [ -f "$container_file" ] || continue
+    log_info "Instalando definiciones compartidas de Quadlets (.container, .network, .volume)..."
+    for quadlet_file in "$shared_dir"/*.{container,network,volume,kube,image}; do
+        [ -f "$quadlet_file" ] || continue
 
         local basename
-        basename="$(basename "$container_file")"
+        basename="$(basename "$quadlet_file")"
         local target="$systemd_global/$basename"
 
         # Reemplazar placeholder del socket path si existiera
-        if grep -q "__PODMAN_SOCKET__" "$container_file" 2>/dev/null; then
-            sed "s|__PODMAN_SOCKET__|$socket_path|g" "$container_file" > "$target"
+        if grep -q "__PODMAN_SOCKET__" "$quadlet_file" 2>/dev/null; then
+            sed "s|__PODMAN_SOCKET__|$socket_path|g" "$quadlet_file" > "$target"
         else
-            cp "$container_file" "$target"
+            cp "$quadlet_file" "$target"
         fi
 
         log_ok "  $basename -> ~/.config/containers/systemd/global/"

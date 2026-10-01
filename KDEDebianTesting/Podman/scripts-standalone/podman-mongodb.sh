@@ -11,16 +11,15 @@ if ! command -v podman &>/dev/null; then
 fi
 
 NETWORK="dev-net"
-if podman network exists devfed-net 2>/dev/null; then
-    NETWORK="devfed-net"
-elif ! podman network exists "$NETWORK" 2>/dev/null; then
+if ! podman network exists "$NETWORK" 2>/dev/null; then
     podman network create "$NETWORK"
 fi
 
-echo "ℹ️ Iniciando MongoDB (latest)..."
+echo "ℹ️ Iniciando MongoDB con volumen persistente..."
 podman run -d --replace \
     --name mongo-dev \
     --network "$NETWORK" \
+    -v mongo-standalone-data:/data/db \
     -p 27017:27017 \
     docker.io/library/mongo:latest
-echo "✅ MongoDB iniciado en puerto 27017"
+echo "✅ MongoDB iniciado en puerto 27017 (volume: mongo-standalone-data)"

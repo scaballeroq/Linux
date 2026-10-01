@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # podman-install.sh - Instalación y Configuración Profesional de Podman Rootless
-# Debian Testing (Trixie) + KDE Plasma 6 (Wayland)
+# Debian Testing (forky/sid) + KDE Plasma 6 (Wayland)
+# Hardware: AMD Ryzen 7 PRO 4750U (8C/16T) | AMD Radeon Vega 7 | 32 GB RAM | NVMe ext4
 # ==============================================================================
 # Características:
 # - Despliegue 100% rootless con socket de usuario systemd (/run/user/$UID/podman/podman.sock).
 # - Habilita linger para que los contenedores y Quadlets sigan corriendo sin sesión gráfica.
 # - Integración nativa con KDE Plasma 6 vía ~/.config/environment.d/10-podman.conf.
 # - Integración modular de shell para Bash (~/.bashrc.d) y Zsh (~/.zshrc.d).
-# - Comprobación de paquetes requeridos vía APT (podman, podman-docker, uidmap, slirp4netns, pasta, fuse-overlayfs).
-# - Driver overlay nativo con storage.conf optimizado.
+# - Almacenamiento optimizado: driver overlay nativo en kernel (sin sobrecarga FUSE) sobre ext4/NVMe.
+# - Optimización de motor containers.conf: 8 hilos de descarga paralela, crun, pasta y GPU passthrough (/dev/dri).
+# - Verificación de seguridad en Firewalld (interfaz podman+ en zona trusted).
 # - Enlace automático del CLI 'podman-utils' en ~/.local/bin con autocompletados.
 # - Despliegue estructurado del ecosistema de Quadlets.
 # - Comandos CLI: --status, --help.
@@ -46,26 +48,30 @@ require_non_root() {
 show_help() {
     cat <<EOF
 🐳 Instalador y Optimizador de Podman Rootless - Debian Testing (KDE Plasma 6)
+   Optimizado para: AMD Ryzen 7 PRO (8C/16T) | Vega 7 GPU | NVMe ext4
 
 Uso:
   $0 [OPCIÓN]
 
 Opciones:
-  (sin argumentos)       Instala paquetes (si no están presentes), configura almacenamiento,
+  (sin argumentos)       Instala paquetes (si no están presentes), configura almacenamiento
+                         overlay nativo (sin FUSE), containers.conf optimizado para AMD Ryzen,
                          registries, linger, socket Docker API, DOCKER_HOST, CLI podman-utils
                          y la estructura de Quadlets.
   --status, -s           Muestra el estado completo del motor Podman, socket, linger,
-                         DOCKER_HOST, almacenamiento y contenedores.
+                         DOCKER_HOST, overlay nativo, firewalld, GPU y contenedores.
   --help, -h             Muestra este mensaje de ayuda.
 
 Características configuradas:
-  • Paquetes Debian:     Verifica podman, podman-docker, uidmap, slirp4netns, pasta y compose.
+  • Paquetes Debian:     Verifica podman, podman-docker, uidmap, passt (pasta), catatonit y compose.
+  • Kernel Overlay:      Driver overlay nativo en kernel sobre ext4/NVMe (máximo rendimiento I/O).
+  • Optimización Ryzen:  image_parallel_copies = 8, pids_limit = 4096, runtime crun, red pasta.
+  • Aceleración GPU:     Soporte /dev/dri (card0, renderD128) para AMD Radeon Vega 7.
   • Persistencia Linger: Habilita loginctl linger para ejecutar contenedores en segundo plano.
   • Docker Socket API:   Activa podman.socket en /run/user/\$UID/podman/podman.sock.
   • Sesión KDE / GUI:    Inyecta DOCKER_HOST en ~/.config/environment.d/10-podman.conf.
   • Shells (Bash / Zsh): Configura variables de entorno en ~/.bashrc.d y autocompletados.
-  • Almacenamiento:      Configura driver overlay nativo en ~/.config/containers/storage.conf.
-  • Registries:          docker.io, quay.io, ghcr.io y registry.debian.org.
+  • Seguridad Firewalld: Valida que podman+ esté asignado a la zona trusted.
   • CLI podman-utils:    Enlaza podman-utils en ~/.local/bin con autocompletados.
 EOF
 }
@@ -77,9 +83,11 @@ show_status() {
     echo "================================================================="
 
     local linger_val socket_status docker_host_val utils_status storage_info subuid_status
+    local fw_status unpriv_ports gpu_status
 
     linger_val=$(loginctl show-user "$USER" 2>/dev/null | grep -i "Linger=" | cut -d= -f2 || echo "no")
-    socket_status=$(systemctl --user is-active podman.socket 2>/dev/null || echo "inactivo")
+    socket_status=$(systemctl --user is-active podman.socket 2>/dev/null || true)
+    socket_status="${socket_status:-inactivo}"
     docker_host_val="${DOCKER_HOST:-$(grep "DOCKER_HOST=" "$HOME/.config/environment.d/10-podman.conf" 2>/dev/null | cut -d= -f2- || echo "No configurado")}"
     utils_status=$(command -v podman-utils &>/dev/null && echo "✅ Disponible en PATH (~/.local/bin/podman-utils)" || echo "ℹ️ No enlazado en PATH")
 
@@ -89,17 +97,48 @@ show_status() {
         subuid_status="⚠️ No asignados en /etc/subuid o /etc/subgid"
     fi
 
+    # Comprobación de Firewalld
+    if command -v firewall-cmd &>/dev/null; then
+        if firewall-cmd --state &>/dev/null; then
+            local trusted_ifaces
+            trusted_ifaces=$(firewall-cmd --zone=trusted --list-interfaces 2>/dev/null || echo "")
+            if [[ "$trusted_ifaces" =~ "podman+" ]]; then
+                fw_status="✅ Activo (interfaz podman+ en zona trusted)"
+            else
+                fw_status="⚠️ Activo (podman+ NO está en zona trusted)"
+            fi
+        else
+            fw_status="ℹ️ Inactivo"
+        fi
+    else
+        fw_status="ℹ️ Firewalld no instalado"
+    fi
+
+    # Puertos no privilegiados
+    unpriv_ports=$(cat /proc/sys/net/ipv4/ip_unprivileged_port_start 2>/dev/null || echo "1024")
+
+    # Aceleración GPU AMD
+    if [ -e /dev/dri/renderD128 ]; then
+        gpu_status="✅ AMD Radeon Vega 7 (/dev/dri/renderD128)"
+    else
+        gpu_status="ℹ️ Dispositivo DRI no detectado"
+    fi
+
     if command -v podman &>/dev/null; then
         echo "• Motor Podman:        ✅ $(podman --version 2>/dev/null)"
-        echo "• Socket de Usuario:   $(if [ "$socket_status" = "active" ]; then echo "✅ Activo"; else echo "⚠️ $socket_status"; fi)"
+        echo "• Socket de Usuario:   $(if [ "$socket_status" = "active" ]; then echo "✅ Activo"; else echo "⚠️ Inactivo ($socket_status)"; fi)"
         echo "• Socket Path:         /run/user/$(id -u)/podman/podman.sock"
         echo "• Persistencia Linger: $(if [ "$linger_val" = "yes" ]; then echo "✅ Habilitada"; else echo "ℹ️ Deshabilitada"; fi)"
         echo "• Rangos SubUID/GID:   $subuid_status"
-        storage_info=$(podman info --format '{{.Store.GraphDriverName}} ({{.Store.GraphRoot}})' 2>/dev/null || echo "overlay")
+        storage_info=$(podman info --format '{{.Store.GraphDriverName}} (Native Diff: {{index .Store.GraphStatus "Native Overlay Diff"}})' 2>/dev/null || echo "overlay nativo")
         echo "• Almacenamiento:      $storage_info"
+        echo "• Red Rootless:        $(podman info --format '{{.Host.RootlessNetworkCmd}} ({{.Host.NetworkBackend}})' 2>/dev/null || echo "pasta / netavark")"
         echo "• Emulación Docker:    $(command -v docker &>/dev/null && echo "✅ Activa (podman-docker)" || echo "ℹ️ No instalada")"
         echo "• Proveedor Compose:   $(command -v docker-compose &>/dev/null && echo "✅ docker-compose" || (command -v podman-compose &>/dev/null && echo "✅ podman-compose" || echo "ℹ️ No instalado"))"
         echo "• DOCKER_HOST:         $docker_host_val"
+        echo "• Cortafuegos:         $fw_status"
+        echo "• Puertos Rootless:    ip_unprivileged_port_start = $unpriv_ports (permite puertos >= $unpriv_ports)"
+        echo "• GPU Passthrough:     $gpu_status"
         echo "• CLI podman-utils:    $utils_status"
         echo "• Entorno KDE 6:       $(if [ -f "$HOME/.config/environment.d/10-podman.conf" ]; then echo "✅ Configurado"; else echo "ℹ️ No presente"; fi)"
         echo "• Generador Quadlets:  $(if [ -f /usr/lib/systemd/user-generators/podman-user-generator ]; then echo "✅ Integrado en systemd"; else echo "ℹ️ No detectado"; fi)"
@@ -112,6 +151,7 @@ show_status() {
         echo "• Socket de Usuario:   ℹ️ Inactivo (requiere Podman)"
         echo "• Persistencia Linger: $(if [ "$linger_val" = "yes" ]; then echo "✅ Habilitada"; else echo "ℹ️ Deshabilitada"; fi)"
         echo "• Rangos SubUID/GID:   $subuid_status"
+        echo "• Cortafuegos:         $fw_status"
         echo "• CLI podman-utils:    $utils_status"
         echo "-----------------------------------------------------------------"
         echo "💡 Para instalar Podman y configurar todo el entorno rootless:"
@@ -122,7 +162,7 @@ show_status() {
 
 # 2. Verificar e instalar paquetes con APT solo si faltan
 install_packages() {
-    log_info "Comprobando paquetes del motor Podman en Debian Testing..."
+    log_info "Comprobando paquetes del motor Podman en Debian Testing (forky/sid)..."
     local missing_pkgs=()
 
     check_pkg() {
@@ -132,12 +172,11 @@ install_packages() {
     if ! check_pkg podman; then missing_pkgs+=("podman"); fi
     if ! check_pkg podman-docker; then missing_pkgs+=("podman-docker"); fi
     if ! check_pkg uidmap; then missing_pkgs+=("uidmap"); fi
-    if ! check_pkg slirp4netns; then missing_pkgs+=("slirp4netns"); fi
-    if ! check_pkg pasta && ! check_pkg passt; then missing_pkgs+=("passt"); fi
-    if ! check_pkg fuse-overlayfs; then missing_pkgs+=("fuse-overlayfs"); fi
+    if ! check_pkg passt && ! check_pkg pasta; then missing_pkgs+=("passt"); fi
     if ! check_pkg catatonit; then missing_pkgs+=("catatonit"); fi
+    if ! check_pkg fuse-overlayfs; then missing_pkgs+=("fuse-overlayfs"); fi
 
-    # Si Podman no está instalado, incluir también podman-compose o docker-compose
+    # Si Podman no está instalado, incluir también podman-compose
     if ! command -v podman &>/dev/null; then
         missing_pkgs+=("podman-compose")
     fi
@@ -161,30 +200,87 @@ install_packages() {
     fi
 }
 
-# 3. Configurar almacenamiento overlay nativo
+# 3. Configurar almacenamiento overlay nativo en kernel (óptimo para ext4 en NVMe)
 configure_storage() {
-    log_info "Configurando almacenamiento de contenedores (storage.conf)..."
+    log_info "Configurando almacenamiento nativo de contenedores (storage.conf)..."
     local storage_conf="$HOME/.config/containers/storage.conf"
     mkdir -p "$(dirname "$storage_conf")"
 
     if [ ! -f "$storage_conf" ]; then
         cat > "$storage_conf" <<'EOF'
+# Configuración optimizada para Debian Testing sobre SSD NVMe ext4
 [storage]
 driver = "overlay"
+runroot = "/run/user/%U/containers"
+graphroot = "%h/.local/share/containers/storage"
 
 [storage.options]
 pull_options = {enable_partial_images = "true", use_hard_links = "false", ostree_repos = ""}
 
 [storage.options.overlay]
-mount_program = "/usr/bin/fuse-overlayfs"
+# En Linux 6.x/7.x con ext4, el kernel maneja overlayfs nativo rootless sin sobrecarga FUSE
+mountopt = "nodev,metacopy=on"
 EOF
-        log_ok "storage.conf creado con driver overlay y fuse-overlayfs."
+        log_ok "storage.conf creado con driver overlay nativo del kernel (sin sobrecarga FUSE)."
     else
-        log_info "storage.conf ya existe, manteniendo configuración actual."
+        # Si existe y tiene fuse-overlayfs forzado, advertir o corregir para máximo rendimiento
+        if grep -q 'mount_program = "/usr/bin/fuse-overlayfs"' "$storage_conf" 2>/dev/null; then
+            log_warn "storage.conf tiene fuse-overlayfs activo. Comentándolo para usar overlay nativo del kernel..."
+            sed -i 's|^mount_program = "/usr/bin/fuse-overlayfs"|# mount_program = "/usr/bin/fuse-overlayfs"|' "$storage_conf"
+            log_ok "storage.conf actualizado a overlay nativo en kernel."
+        else
+            log_info "storage.conf ya existe y utiliza overlay nativo."
+        fi
     fi
 }
 
-# 4. Configurar registros oficiales
+# 4. Configurar containers.conf optimizado para AMD Ryzen (8C/16T), 32GB RAM y Vega 7
+configure_containers_conf() {
+    log_info "Configurando optimizaciones de hardware en containers.conf..."
+    local containers_conf="$HOME/.config/containers/containers.conf"
+    mkdir -p "$(dirname "$containers_conf")"
+
+    if [ ! -f "$containers_conf" ]; then
+        cat > "$containers_conf" <<'EOF'
+# containers.conf - Optimizado para HP EliteBook 855 G7
+# AMD Ryzen 7 PRO 4750U (8C/16T) | 32 GB RAM | Radeon Vega 7 | KDE Plasma 6 Wayland
+
+[containers]
+# Integración nativa con journald y systemd en KDE Plasma 6
+log_driver = "journald"
+
+# Límite amplio de PIDs para entornos de desarrollo intensivo
+pids_limit = 4096
+
+# Dispositivos de aceleración gráfica para contenedores (AMD Vega 7 / VA-API)
+devices = [
+    "/dev/dri/card0:/dev/dri/card0:rwm",
+    "/dev/dri/renderD128:/dev/dri/renderD128:rwm"
+]
+
+[engine]
+# OCI Runtime en C ultra-rápido nativo de Debian
+runtime = "crun"
+
+# Gestor cgroups v2 integrado con systemd user
+cgroup_manager = "systemd"
+
+# Red rootless de alto rendimiento pasta (passt)
+network_cmd_path = "/usr/bin/pasta"
+
+# Paralelismo optimizado para 8 núcleos / 16 hilos en descargas de capas
+image_parallel_copies = 8
+
+# Base de datos SQLite rápida (por defecto en Podman 5+)
+database_backend = "sqlite"
+EOF
+        log_ok "containers.conf configurado (8 descargas paralelas, journald, crun, pasta y GPU DRI)."
+    else
+        log_info "containers.conf ya existe, manteniendo configuración actual."
+    fi
+}
+
+# 5. Configurar registros oficiales
 configure_registries() {
     log_info "Configurando registros de búsqueda de imágenes (registries.conf)..."
     local registries_conf="$HOME/.config/containers/registries.conf"
@@ -208,7 +304,7 @@ EOF
     fi
 }
 
-# 5. Habilitar persistencia de servicios de usuario (Linger)
+# 6. Habilitar persistencia de servicios de usuario (Linger)
 enable_linger() {
     log_info "Verificando persistencia de servicios en segundo plano (Linger)..."
     local linger_state
@@ -226,7 +322,7 @@ enable_linger() {
     fi
 }
 
-# 6. Comprobar asignación de subuid y subgid
+# 7. Comprobar asignación de subuid y subgid
 configure_subuids() {
     log_info "Verificando rangos subuid/subgid para namespaces rootless..."
     if ! grep -q "^$USER:" /etc/subuid 2>/dev/null || ! grep -q "^$USER:" /etc/subgid 2>/dev/null; then
@@ -241,7 +337,7 @@ configure_subuids() {
     fi
 }
 
-# 7. Habilitar Podman Socket en systemd user (Compatible con Docker API)
+# 8. Habilitar Podman Socket en systemd user (Compatible con Docker API)
 enable_podman_socket() {
     log_info "Habilitando e iniciando podman.socket de systemd en modo usuario..."
     systemctl --user daemon-reload
@@ -249,23 +345,26 @@ enable_podman_socket() {
     log_ok "Socket de Podman activo en /run/user/$(id -u)/podman/podman.sock."
 }
 
-# 8. Exportar DOCKER_HOST en sesión KDE y Shells (Bash predeterminado / Zsh condicional)
+# 9. Exportar DOCKER_HOST en sesión KDE y Shells (Bash predeterminado / Zsh condicional)
 configure_docker_host() {
     log_info "Configurando DOCKER_HOST para KDE Plasma 6 y Shells (Bash / Zsh)..."
     local socket_path="/run/user/$(id -u)/podman/podman.sock"
     local export_line="export DOCKER_HOST=\"unix://$socket_path\""
+    local testcontainers_line="export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=\"$socket_path\""
 
-    # 8.1. Sesión gráfica KDE Plasma 6 / Wayland (environment.d)
+    # 9.1. Sesión gráfica KDE Plasma 6 / Wayland (environment.d)
     mkdir -p "$HOME/.config/environment.d"
     cat <<EOF > "$HOME/.config/environment.d/10-podman.conf"
 DOCKER_HOST=unix://$socket_path
+TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=$socket_path
 EOF
 
-    # 8.2. Integración modular Bash (~/.bashrc.d/podman.sh) - PREDETERMINADO
+    # 9.2. Integración modular Bash (~/.bashrc.d/podman.sh) - PREDETERMINADO
     mkdir -p "$HOME/.bashrc.d"
     cat <<EOF > "$HOME/.bashrc.d/podman.sh"
 # Podman Docker API Integration
 $export_line
+$testcontainers_line
 
 # PATH para utilidades de usuario
 if [ -d "\$HOME/.local/bin" ] && [[ ":\$PATH:" != *":\$HOME/.local/bin:"* ]]; then
@@ -273,23 +372,25 @@ if [ -d "\$HOME/.local/bin" ] && [[ ":\$PATH:" != *":\$HOME/.local/bin:"* ]]; th
 fi
 EOF
 
-    # 8.3. Fallback directo en ~/.bashrc solo si no procesa ~/.bashrc.d
+    # 9.3. Fallback directo en ~/.bashrc solo si no procesa ~/.bashrc.d
     if [ -f "$HOME/.bashrc" ] && ! grep -q "bashrc.d" "$HOME/.bashrc" 2>/dev/null; then
         if ! grep -q "DOCKER_HOST=" "$HOME/.bashrc" 2>/dev/null; then
             cat <<EOF >> "$HOME/.bashrc"
 
 # Podman Docker API Integration
 $export_line
+$testcontainers_line
 EOF
         fi
     fi
 
-    # 8.4. Integración modular Zsh (~/.zshrc.d/podman.zsh) - CONDICIONAL SI EXISTE ~/.zshrc
+    # 9.4. Integración modular Zsh (~/.zshrc.d/podman.zsh) - CONDICIONAL SI EXISTE ~/.zshrc
     if [ -f "$HOME/.zshrc" ]; then
         mkdir -p "$HOME/.zshrc.d"
         cat <<EOF > "$HOME/.zshrc.d/podman.zsh"
 # Podman Docker API Integration
 $export_line
+$testcontainers_line
 
 # PATH para utilidades de usuario
 if [ -d "\$HOME/.local/bin" ] && [[ ":\$PATH:" != *":\$HOME/.local/bin:"* ]]; then
@@ -301,6 +402,7 @@ EOF
 
 # Podman Docker API Integration
 $export_line
+$testcontainers_line
 EOF
         fi
     fi
@@ -308,7 +410,31 @@ EOF
     log_ok "DOCKER_HOST integrado en KDE Plasma, Bash (~/.bashrc.d/podman.sh) y Zsh (si existe ~/.zshrc)."
 }
 
-# 9. Enlazar podman-utils al PATH del usuario
+# 10. Validar / Configurar Firewalld para interfaces Podman
+configure_firewalld() {
+    log_info "Verificando reglas de Firewalld para contenedores..."
+    if command -v firewall-cmd &>/dev/null && firewall-cmd --state &>/dev/null; then
+        local trusted_ifaces
+        trusted_ifaces=$(firewall-cmd --zone=trusted --list-interfaces 2>/dev/null || echo "")
+        if [[ ! "$trusted_ifaces" =~ "podman+" ]]; then
+            log_info "Asignando interfaz podman+ a la zona trusted en Firewalld..."
+            if command -v sudo &>/dev/null; then
+                sudo firewall-cmd --permanent --zone=trusted --add-interface=podman+ 2>/dev/null || true
+                sudo firewall-cmd --permanent --zone=trusted --add-interface=cni-podman+ 2>/dev/null || true
+                sudo firewall-cmd --reload 2>/dev/null || true
+                log_ok "Interfaz podman+ agregada a zona trusted en Firewalld."
+            else
+                log_warn "Ejecuta con sudo para agregar podman+ a trusted: sudo firewall-cmd --permanent --zone=trusted --add-interface=podman+ && sudo firewall-cmd --reload"
+            fi
+        else
+            log_ok "Interfaz podman+ ya configurada en zona trusted de Firewalld."
+        fi
+    else
+        log_info "Firewalld no está activo o no disponible."
+    fi
+}
+
+# 11. Enlazar podman-utils al PATH del usuario
 setup_podman_utils_cli() {
     log_info "Configurando CLI 'podman-utils' en ~/.local/bin..."
     mkdir -p "$HOME/.local/bin"
@@ -319,7 +445,7 @@ setup_podman_utils_cli() {
     fi
 }
 
-# 10. Configurar autocompletado de podman-utils en Bash y Zsh (condicional)
+# 12. Configurar autocompletado de podman-utils en Bash y Zsh (condicional)
 setup_completions() {
     log_info "Configurando autocompletado para podman-utils en Bash (y Zsh si existe ~/.zshrc)..."
     local bash_comp_dir="$HOME/.local/share/bash-completion/completions"
@@ -353,7 +479,7 @@ EOF
     log_ok "Autocompletado de podman-utils configurado."
 }
 
-# 11. Desplegar estructura de Quadlets
+# 13. Desplegar estructura de Quadlets
 setup_quadlets() {
     log_info "Configurando estructura de directorios para Quadlets..."
     if [ -f "$SCRIPT_DIR/quadlets-setup.sh" ]; then
@@ -381,19 +507,21 @@ case "${1:-}" in
         require_non_root
         install_packages
         configure_storage
+        configure_containers_conf
         configure_registries
         enable_linger
         configure_subuids
         enable_podman_socket
         configure_docker_host
+        configure_firewalld
         setup_podman_utils_cli
         setup_completions
         setup_quadlets
         echo ""
         show_status
         echo "================================================================="
-        echo "✅ Podman Rootless y Quadlets configurados con éxito para Bash/Zsh y KDE."
-        echo "💡 Comandos útiles: podman-utils create <template> <nombre> | podman ps"
+        echo "✅ Podman Rootless y Quadlets optimizados para AMD Ryzen, KDE 6 y Wayland."
+        echo "💡 Comandos útiles: podman-utils create <template> <nombre> | podman-utils doctor"
         echo "================================================================="
         ;;
     *)

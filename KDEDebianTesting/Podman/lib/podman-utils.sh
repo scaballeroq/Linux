@@ -4,7 +4,9 @@
 # Debian Testing (KDE Plasma 6 + Wayland)
 # =============================================================================
 
-set -euo pipefail
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    set -euo pipefail
+fi
 
 # Directorios base
 REAL_SCRIPT="$(readlink -f "${BASH_SOURCE[0]:-$0}")"
@@ -268,31 +270,67 @@ cmd_install_global() {
     local service="${1:-}"
 
     if [ -z "$service" ]; then
-        log_error "Uso: podman-utils install-global <servicio>"
+        log_error "Uso: podman-utils install-global <servicio|red|all>"
         echo ""
-        echo "Servicios disponibles en $SHARED_DIR:"
-        for f in "$SHARED_DIR"/*.container; do
-            [ -f "$f" ] && basename "$f" .container
+        echo "Definiciones disponibles en $SHARED_DIR:"
+        for f in "$SHARED_DIR"/*.{container,network,volume}; do
+            [ -f "$f" ] && basename "$f" | sed -E 's/\.(container|network|volume)$//'
         done
         exit 1
     fi
 
-    local src="$SHARED_DIR/$service.container"
-    local dst="$SYSTEMD_GLOBAL_DIR/$service.container"
+    mkdir -p "$SYSTEMD_GLOBAL_DIR"
     local socket_path="/run/user/$(id -u)/podman/podman.sock"
 
-    if [ ! -f "$src" ]; then
-        log_error "Servicio global '$service' no encontrado en $SHARED_DIR"
+    # Si se pasa "all", instalar todo
+    if [ "$service" = "all" ]; then
+        log_step "Instalando todos los servicios y redes globales compartidos..."
+        for f in "$SHARED_DIR"/*.{container,network,volume}; do
+            [ -f "$f" ] || continue
+            local base
+            base="$(basename "$f")"
+            if grep -q "__PODMAN_SOCKET__" "$f" 2>/dev/null; then
+                sed "s|__PODMAN_SOCKET__|$socket_path|g" "$f" > "$SYSTEMD_GLOBAL_DIR/$base"
+            else
+                cp "$f" "$SYSTEMD_GLOBAL_DIR/$base"
+            fi
+            log_ok "  Instalado: $base"
+        done
+        systemctl --user daemon-reload
+        log_ok "Todos los servicios globales instalados en systemd user."
+        return 0
+    fi
+
+    # Asegurar red proxy-net.network para cualquier servicio global
+    if [ "$service" != "proxy-net" ] && [ -f "$SHARED_DIR/proxy-net.network" ] && [ ! -f "$SYSTEMD_GLOBAL_DIR/proxy-net.network" ]; then
+        cp "$SHARED_DIR/proxy-net.network" "$SYSTEMD_GLOBAL_DIR/proxy-net.network"
+        log_ok "Red 'proxy-net.network' instalada automáticamente como prerrequisito."
+    fi
+
+    local matched=0
+    for ext in container network volume; do
+        local src="$SHARED_DIR/$service.$ext"
+        local dst="$SYSTEMD_GLOBAL_DIR/$service.$ext"
+        if [ -f "$src" ]; then
+            if grep -q "__PODMAN_SOCKET__" "$src" 2>/dev/null; then
+                sed "s|__PODMAN_SOCKET__|$socket_path|g" "$src" > "$dst"
+            else
+                cp "$src" "$dst"
+            fi
+            matched=1
+            log_ok "Servicio global '$service.$ext' instalado en ~/.config/containers/systemd/global/"
+            break
+        fi
+    done
+
+    if [ "$matched" -eq 0 ]; then
+        log_error "Definición '$service' no encontrada en $SHARED_DIR"
         exit 1
     fi
 
-    mkdir -p "$SYSTEMD_GLOBAL_DIR"
-    sed "s|__PODMAN_SOCKET__|$socket_path|g" "$src" > "$dst"
-
     systemctl --user daemon-reload
-
-    log_ok "Servicio global '$service' instalado."
-    echo "Para iniciarlo: systemctl --user start $service.service"
+    log_ok "Generadores Quadlet sincronizados."
+    echo "Para iniciarlo (si es contenedor): systemctl --user start $service.service"
 }
 
 cmd_uninstall_global() {
@@ -304,15 +342,21 @@ cmd_uninstall_global() {
         exit 1
     fi
 
-    local dst="$SYSTEMD_GLOBAL_DIR/$service.container"
+    local removed=0
+    for ext in container network volume; do
+        local dst="$SYSTEMD_GLOBAL_DIR/$service.$ext"
+        if [ -f "$dst" ]; then
+            systemctl --user stop "$service.service" 2>/dev/null || true
+            rm -f "$dst"
+            removed=1
+            log_ok "Servicio global '$service.$ext' desinstalado."
+        fi
+    done
 
-    if [ -f "$dst" ]; then
-        systemctl --user stop "$service.service" 2>/dev/null || true
-        rm -f "$dst"
+    if [ "$removed" -eq 1 ]; then
         systemctl --user daemon-reload
-        log_ok "Servicio global '$service' desinstalado."
     else
-        log_info "El servicio '$service' no estaba instalado."
+        log_info "El servicio o red '$service' no estaba instalado."
     fi
 }
 
@@ -458,11 +502,54 @@ cmd_list_templates() {
 }
 
 # =============================================================================
+# UTILIDADES RÁPIDAS (PPS, PEXEC, QUADLET-STATUS, QUADLET-RELOAD)
+# =============================================================================
+
+cmd_pps() {
+    require_podman
+    podman ps --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Networks}}\t{{.Ports}}"
+}
+
+cmd_pexec() {
+    require_podman
+    local container="${1:-}"
+    if [ -z "$container" ]; then
+        log_error "Uso: podman-utils pexec <nombre-o-id> [comando]"
+        exit 1
+    fi
+    shift || true
+    if [ $# -gt 0 ]; then
+        podman exec -it "$container" "$@"
+    else
+        podman exec -it "$container" /bin/sh -c 'if [ -x /bin/bash ]; then exec /bin/bash; else exec /bin/sh; fi'
+    fi
+}
+
+cmd_quadlet_status() {
+    echo "================================================================="
+    echo "📋 ARCHIVOS QUADLET EN ~/.config/containers/systemd"
+    echo "================================================================="
+    find "$SYSTEMD_QUADLETS_DIR" -type f \( -name "*.container" -o -name "*.network" -o -name "*.volume" \) 2>/dev/null | sed "s|$HOME|~|g" || echo "  (Sin archivos)"
+    echo ""
+    echo "📋 UNIDADES SYSTEMD ACTIVAS GESTIONADAS POR QUADLETS"
+    echo "================================================================="
+    systemctl --user list-units "*podman*" "*systemd-*" 2>/dev/null || echo "  (Sin unidades)"
+    echo "================================================================="
+}
+
+cmd_quadlet_reload() {
+    log_step "Recargando generador Quadlet y systemd user daemon..."
+    systemctl --user daemon-reload
+    log_ok "Recarga completada. Unidades Quadlet sincronizadas con systemd."
+}
+
+# =============================================================================
 # DOCTOR / DIAGNOSTICS
 # =============================================================================
 cmd_doctor() {
     echo "================================================================="
     echo "🩺 DIAGNÓSTICO DE PODMAN ROOTLESS - DEBIAN TESTING (KDE 6)"
+    echo "   AMD Ryzen 7 PRO 4750U | Vega 7 GPU | NVMe ext4"
     echo "================================================================="
 
     # 1. Podman CLI
@@ -507,14 +594,37 @@ cmd_doctor() {
         log_error "Rangos SubUID/GID no configurados para $USER (Requerido para rootless)."
     fi
 
-    # 6. Almacenamiento
+    # 6. Almacenamiento y Overlay Nativo
     if command -v podman &>/dev/null; then
         local driver
-        driver=$(podman info --format '{{.Store.GraphDriverName}}' 2>/dev/null || echo "overlay")
-        log_ok "Almacenamiento: Driver $driver"
+        driver=$(podman info --format '{{.Store.GraphDriverName}} (Native Diff: {{index .Store.GraphStatus "Native Overlay Diff"}})' 2>/dev/null || echo "overlay nativo")
+        log_ok "Almacenamiento: $driver"
     fi
 
-    # 7. Generador Quadlet
+    # 7. Red Rootless (Pasta)
+    if command -v pasta &>/dev/null; then
+        log_ok "Red Rootless: pasta disponible ($(pasta --version 2>&1 | head -1))"
+    else
+        log_info "Red Rootless: passt/pasta no detectado en PATH"
+    fi
+
+    # 8. Cortafuegos (Firewalld)
+    if command -v firewall-cmd &>/dev/null && firewall-cmd --state &>/dev/null; then
+        local trusted_ifaces
+        trusted_ifaces=$(firewall-cmd --zone=trusted --list-interfaces 2>/dev/null || echo "")
+        if [[ "$trusted_ifaces" =~ "podman+" ]]; then
+            log_ok "Cortafuegos: Firewalld activo y podman+ asignado a zona trusted"
+        else
+            log_error "Cortafuegos: Firewalld activo pero podman+ NO está en zona trusted"
+        fi
+    fi
+
+    # 9. Aceleración Gráfica (AMD Radeon Vega 7)
+    if [ -e /dev/dri/renderD128 ]; then
+        log_ok "Aceleración GPU: AMD Vega 7 accesible (/dev/dri/renderD128)"
+    fi
+
+    # 10. Generador Quadlet
     if [ -f /usr/lib/systemd/user-generators/podman-user-generator ]; then
         log_ok "Generador Quadlet: Integrado en Systemd"
     else
@@ -530,6 +640,7 @@ cmd_doctor() {
 usage() {
     cat <<EOF
 🐳 podman-utils - Gestor de Proyectos y Contenedores Quadlets (Debian Testing)
+   Optimizado para: AMD Ryzen 7 PRO (8C/16T) | Vega 7 GPU | KDE Plasma 6
 
 Uso:
   podman-utils <comando> [argumentos]
@@ -546,8 +657,14 @@ Proyectos:
   unlink <nombre>              Desenlaza los archivos Quadlet de systemd
 
 Servicios Globales:
-  install-global <servicio>    Instala un servicio compartido (postgres, redis, traefik, keycloak)
+  install-global <servicio>    Instala servicio/red compartido (postgres-global, redis-global, traefik, keycloak, all)
   uninstall-global <servicio>  Desinstala un servicio compartido
+
+Utilidades de Inspección y Control:
+  pps                          Muestra contenedores activos con formato enriquecido (redes, puertos)
+  pexec <id> [cmd]             Acceso interactivo /bin/bash a un contenedor en ejecución
+  quadlet-status               Diagnóstico de todos los archivos Quadlet y servicios systemd
+  quadlet-reload               Recarga inmediata de generadores systemd user daemon
 
 Diagnóstico e Información:
   list                         Lista todos los proyectos creados y su estado
@@ -556,6 +673,17 @@ Diagnóstico e Información:
   help                         Muestra este mensaje de ayuda
 EOF
 }
+
+# =============================================================================
+# ALIASES AL CARGAR VIA SOURCE
+# =============================================================================
+if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
+    alias pps="podman-utils pps"
+    alias pexec="podman-utils pexec"
+    alias quadlet-status="podman-utils quadlet-status"
+    alias quadlet-reload="podman-utils quadlet-reload"
+    return 0 2>/dev/null || true
+fi
 
 # =============================================================================
 # MAIN ENTRYPOINT
@@ -572,6 +700,10 @@ case "${1:-}" in
     unlink)           shift; cmd_unlink "$@" ;;
     install-global)   shift; cmd_install_global "$@" ;;
     uninstall-global) shift; cmd_uninstall_global "$@" ;;
+    pps)              shift; cmd_pps "$@" ;;
+    pexec)            shift; cmd_pexec "$@" ;;
+    quadlet-status)   cmd_quadlet_status ;;
+    quadlet-reload)   cmd_quadlet_reload ;;
     list|ps)          cmd_list ;;
     list-templates)   cmd_list_templates ;;
     doctor|check)     cmd_doctor ;;

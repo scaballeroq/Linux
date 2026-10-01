@@ -11,9 +11,7 @@ if ! command -v podman &>/dev/null; then
 fi
 
 NETWORK="dev-net"
-if podman network exists devfed-net 2>/dev/null; then
-    NETWORK="devfed-net"
-elif ! podman network exists "$NETWORK" 2>/dev/null; then
+if ! podman network exists "$NETWORK" 2>/dev/null; then
     podman network create "$NETWORK"
 fi
 
