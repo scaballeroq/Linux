@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==============================================================================
 # virtualization.sh - Instalación y Optimización Avanzada de Virtualización (KVM/QEMU)
-# Sistema: Debian Testing (Trixie/Sid) | Escritorio: KDE Plasma 6 (Wayland)
+# Sistema: Debian Testing (forky/sid) | Escritorio: KDE Plasma 6 (Wayland)
 # ==============================================================================
 # Características:
 # - Integración Doble de Gestión:
@@ -9,12 +9,12 @@
 #     * Virt-Manager: Interfaz avanzada de escritorio para KDE Plasma 6 Wayland
 # - Integración KDE Plasma 6 Wayland: Regla Polkit sin contraseñas para el grupo 'libvirt'.
 # - Aceleración Gráfica 3D VirGL (libvirglrenderer1 + virtio-gpu-gl) con grupo 'render'.
-# - Almacenamiento Btrfs NoCoW (+C) en /var/lib/libvirt/images si la partición es Btrfs.
+# - Almacenamiento Btrfs NoCoW (+C) si aplica, o ext4 optimizado en SSD NVMe.
 # - Compartición de carpetas host-guest de alta velocidad mediante VirtioFS (virtiofsd).
 # - Aceleración por hardware AMD AVIC / Intel EPT y virtualización anidada (Nested KVM).
 # - Aceleración de red del kernel (vhost_net, vhost_vsock, tun).
-# - Backend nativo nftables en libvirt coordinado con cortafuegos.
-# - Deduplicación de memoria RAM (KSM vía tmpfiles.d) y perfil Tuned virtual-host.
+# - Backend nativo nftables en libvirt coordinado con Firewalld.
+# - Deduplicación de memoria RAM (KSM equilibrado) y compatibilidad con power-profiles-daemon.
 # - Detección segura de interfaces Wi-Fi para evitar desconexiones en portátiles.
 # ==============================================================================
 
@@ -38,7 +38,7 @@ show_help() {
     cat <<EOF
 Uso: $0 [OPCIONES]
 
-Script de aprovisionamiento y optimización de virtualización KVM/QEMU en Debian Testing.
+Script de aprovisionamiento y optimización de virtualización KVM/QEMU en Debian Testing (forky/sid).
 Diseñado para maximizar el rendimiento de máquinas virtuales y soportar dos vías de gestión:
   1. Cockpit Web Console (módulo cockpit-machines en https://localhost:9090)
   2. Virt-Manager (interfaz de escritorio avanzada para KDE Plasma 6 Wayland)
@@ -125,7 +125,12 @@ check_status() {
     echo "${loaded[*]:-Ninguno cargado (se cargarán con la optimización)}"
 
     echo "• Estado de servicios/sockets de Libvirt:"
-    local services=("virtqemud.socket" "virtnetworkd.socket" "libvirtd.socket" "libvirtd.service")
+    local services=()
+    if systemctl list-unit-files virtqemud.socket 2>/dev/null | grep -q virtqemud; then
+        services=("virtqemud.socket" "virtnetworkd.socket")
+    else
+        services=("libvirtd.socket" "libvirtd.service" "virtlogd.socket" "virtlockd.socket")
+    fi
     for s in "${services[@]}"; do
         local state
         state=$(systemctl is-active "$s" 2>/dev/null || true)
@@ -178,13 +183,15 @@ check_status() {
     echo -n "• Almacenamiento VM (/var/lib/libvirt/images): "
     if [ -d /var/lib/libvirt/images ]; then
         local fs_type
-        fs_type=$(stat -f -c %T /var/lib/libvirt/images 2>/dev/null || true)
+        fs_type=$(findmnt -n -o FSTYPE /var/lib/libvirt/images 2>/dev/null || stat -f -c %T /var/lib/libvirt/images 2>/dev/null || echo "desconocido")
         if [ "$fs_type" = "btrfs" ]; then
             if lsattr -d /var/lib/libvirt/images 2>/dev/null | grep -q 'C'; then
                 echo "✅ Btrfs NoCoW (+C activo, optimizado para IOPS)"
             else
                 echo "⚠️ Btrfs con Copy-on-Write activo (se recomienda aplicar chattr +C)"
             fi
+        elif [ "$fs_type" = "ext4" ] || [ "$fs_type" = "ext2/ext3" ]; then
+            echo "✅ ext4 en SSD NVMe (rendimiento nativo con VirtIO y TRIM)"
         else
             echo "✅ Presente ($fs_type)"
         fi
@@ -230,15 +237,19 @@ check_status() {
         echo "❌ No instalado"
     fi
 
-    echo -n "• Gestor de energía y recursos (Tuned): "
-    if [ -x "$TUNED_ADM_BIN" ] && systemctl is-active --quiet tuned 2>/dev/null; then
+    echo -n "• Gestor de energía y recursos: "
+    if systemctl is-active --quiet power-profiles-daemon 2>/dev/null; then
+        local ppd_profile
+        ppd_profile=$(powerprofilesctl get 2>/dev/null || echo "activo")
+        echo "✅ power-profiles-daemon activo en Plasma 6 (Perfil: $ppd_profile)"
+    elif [ -x "$TUNED_ADM_BIN" ] && systemctl is-active --quiet tuned 2>/dev/null; then
         local tuned_profile
         tuned_profile=$("$TUNED_ADM_BIN" active 2>/dev/null | cut -d: -f2 | xargs || true)
-        echo "✅ Activo (Perfil: ${tuned_profile:-desconocido})"
+        echo "✅ Tuned activo (Perfil: ${tuned_profile:-desconocido})"
     elif systemctl is-enabled --quiet tuned 2>/dev/null; then
         echo "ℹ️ Tuned habilitado pero inactivo"
     else
-        echo "ℹ️ Tuned inactivo"
+        echo "ℹ️ Sin daemon de perfiles activo"
     fi
 
     echo -n "• Deduplicación de memoria KSM: "
@@ -418,7 +429,7 @@ EOF
 
 if command -v firewall-cmd >/dev/null 2>&1 && systemctl is-active --quiet firewalld 2>/dev/null; then
     echo "  • Aplicando reglas en Firewalld..."
-    DEFAULT_ZONE=$(sudo firewall-cmd --get-default-zone 2>/dev/null || echo "public")
+    DEFAULT_ZONE=$(firewall-cmd --get-default-zone 2>/dev/null || echo "public")
     sudo firewall-cmd --permanent --zone="$DEFAULT_ZONE" --add-service=cockpit 2>/dev/null || true
     sudo firewall-cmd --permanent --zone=libvirt --add-interface=virbr0 2>/dev/null || true
     sudo firewall-cmd --permanent --zone=libvirt --add-forward 2>/dev/null || true
@@ -578,23 +589,31 @@ EOF
 fi
 
 # ---------------------------------------------------------------------------
-# 11. Optimización de Memoria (KSM) y Perfil Tuned
+# 11. Optimización de Memoria (KSM) y Perfiles de Energía
 # ---------------------------------------------------------------------------
-echo "ℹ️ [11/13] Configurando deduplicación de memoria RAM (KSM) y Tuned..."
+echo "ℹ️ [11/13] Configurando deduplicación de memoria RAM (KSM) y gestión de energía..."
 sudo mkdir -p /etc/tmpfiles.d
+
+# KSM en portátiles con 32 GB RAM: intervalo balanceado (500ms) para no consumir batería innecesaria
 cat <<EOF | sudo tee /etc/tmpfiles.d/ksm.conf > /dev/null
 # Deduplicación de páginas de memoria RAM compartidas entre VMs KVM
+# Intervalo moderado para balancear consumo de CPU y memoria en portátiles
 w /sys/kernel/mm/ksm/run - - - - 1
-w /sys/kernel/mm/ksm/sleep_millisecs - - - - 100
+w /sys/kernel/mm/ksm/sleep_millisecs - - - - 500
+w /sys/kernel/mm/ksm/pages_to_scan - - - - 100
 EOF
 
 if [ -d /sys/kernel/mm/ksm ]; then
     echo 1 | sudo tee /sys/kernel/mm/ksm/run > /dev/null 2>&1 || true
-    echo 100 | sudo tee /sys/kernel/mm/ksm/sleep_millisecs > /dev/null 2>&1 || true
+    echo 500 | sudo tee /sys/kernel/mm/ksm/sleep_millisecs > /dev/null 2>&1 || true
 fi
-echo "  ✅ KSM activado."
+echo "  ✅ KSM activado con intervalo equilibrado para portátil."
 
-if [ -x "$TUNED_ADM_BIN" ]; then
+# Detección inteligente de gestor de energía: Respetar power-profiles-daemon de KDE Plasma 6 en portátiles
+if systemctl is-active --quiet power-profiles-daemon 2>/dev/null; then
+    echo "  ⚡ power-profiles-daemon detectado y activo (KDE Plasma 6): se mantiene como gestor primario para preservar la batería del portátil."
+    echo "  ℹ️ Omitiendo activación de Tuned 'virtual-host' para evitar sobreescritura de gobernadores y consumo excesivo en batería."
+elif [ -x "$TUNED_ADM_BIN" ]; then
     sudo systemctl enable --now tuned.service 2>/dev/null || true
     sudo "$TUNED_ADM_BIN" profile virtual-host 2>/dev/null || true
     echo "  ✅ Perfil Tuned 'virtual-host' aplicado."
@@ -666,11 +685,12 @@ echo "   • Ideal para: Máxima aceleración gráfica 3D (VirGL en AMD Radeon V
 echo "     carpetas compartidas VirtIO-FS, redirección USB y sonido de baja latencia."
 echo ""
 echo "💡 RECOMENDACIONES DE RENDIMIENTO PARA VMS LINUX (Virt-Manager):"
-echo "  • Procesador: Modelo 'host-passthrough' (rendimiento nativo AMD Zen 2 / Intel)."
+echo "  • Procesador: Modelo 'host-passthrough' con topología adecuada (ej: 4 u 6 vCPUs AMD Zen 2 Renoir)."
 echo "  • Gráficos: Pantalla SPICE + Aceleración OpenGL activada."
-echo "  • Tarjeta de Video: 'VirtIO' con 'Aceleración 3D' marcada (GPU AMD Vega / Intel)."
-echo "  • Almacenamiento: Bus 'VirtIO', caché 'writeback', descartar 'unmap' (TRIM)."
-echo "  • Compartir Carpetas: Hardware -> Sistema de archivos -> 'virtiofs'."
+echo "  • Tarjeta de Video: 'VirtIO' con 'Aceleración 3D' marcada (VirGL sobre AMD Radeon Vega 7 vía /dev/dri/renderD128)."
+echo "  • Almacenamiento: Bus 'VirtIO', formato 'qcow2' (o 'raw'), caché 'none' (E/S directa NVMe sin doble buffer) o 'writeback', descartar 'unmap' (TRIM nativo NVMe)."
+echo "  • Red: Dispositivo 'virtio' conectado a red NAT 'default' (virbr0)."
+echo "  • Compartir Carpetas: Hardware -> Sistema de archivos -> 'virtiofs' (virtiofsd de alta velocidad)."
 echo "================================================================="
 echo "⚠️ IMPORTANTE: Cierra sesión y vuelve a iniciarla (o reinicia el equipo)"
 echo "   para que se apliquen los nuevos grupos: libvirt, kvm, render."
