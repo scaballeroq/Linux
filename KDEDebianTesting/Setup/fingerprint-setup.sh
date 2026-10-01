@@ -1,17 +1,24 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # fingerprint-setup.sh - Autenticación y Desbloqueo por Huella Dactilar (fprintd + PAM)
-# Sistema: Debian Testing (Trixie/Sid) | Escritorio: KDE Plasma 6 (Wayland)
-# Hardware: HP EliteBook 855 G7 (Sensor Synaptics 06cb:00df / genérico)
+# Sistema: Debian Testing (forky/sid) | Escritorio: KDE Plasma 6 (Wayland)
+# Hardware: HP EliteBook 855 G7 (AMD Ryzen 7 PRO 4750U, Sensor Synaptics 06cb:00df)
 # ==============================================================================
-# Características:
-# - Integración oficial y segura en PAM mediante pam-auth-update y common-auth.
-# - Soporte nativo en KDE Plasma 6: KScreenLocker (bloqueo), SDDM (login) y Polkit.
-# - Optimización para SDDM evitando el retardo de timeout (30s) y desbloqueando KWallet.
-# - Diagnóstico integral del lector USB biométrico y del daemon fprintd por D-Bus.
-# - Detección de huellas registradas para el usuario actual.
-# - Comandos CLI: --status, --enroll, --verify, --disable, --sddm-bypass, --help.
-# - Ejecución rootless para diagnósticos, enrolamiento y verificación.
+# Características de la Arquitectura:
+# 1. SDDM (Login inicial al arrancar):
+#    - Exclusivamente por contraseña (evita retardo de timeout de fprintd).
+#    - Garantiza el auto-desbloqueo inmediato del cofre de claves (KWallet / kdewallet)
+#      al iniciar la sesión de Plasma.
+#    - Preserva íntegramente la sesión de systemd-logind, límites, keyring y entorno.
+# 2. KDE Plasma 6 KScreenLocker (Pantalla de bloqueo):
+#    - Doble autenticador paralelo/concurrente:
+#      * /etc/pam.d/kde: Autenticador interactivo de contraseña (inmediato, sin trabas).
+#      * /etc/pam.d/kde-fingerprint: Autenticador biométrico en segundo plano.
+#    - Huella y contraseña disponibles SIMULTÁNEAMENTE en todo momento.
+# 3. Terminal (sudo) y Polkit (Ventanas de autorización KDE):
+#    - Pide huella dactilar primero con fallback transparente a contraseña.
+# 4. Diagnóstico integral con telemetría del lector biométrico USB Synaptics.
+# 5. Soporte para registro por CLI (fprintd-enroll) o GUI (kcmshell6 kcm_users).
 # ==============================================================================
 
 set -euo pipefail
@@ -27,6 +34,8 @@ else
     USER_HOME="${HOME:-/home/$REAL_USER}"
 fi
 
+REAL_UID=$(id -u "$REAL_USER" 2>/dev/null || echo "1000")
+
 if [ "$EUID" -ne 0 ]; then
     SUDO="sudo"
 else
@@ -35,7 +44,12 @@ fi
 
 run_as_user() {
     if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-        sudo -u "$REAL_USER" env HOME="$USER_HOME" "$@"
+        sudo -u "$REAL_USER" env \
+            HOME="$USER_HOME" \
+            USER="$REAL_USER" \
+            XDG_RUNTIME_DIR="/run/user/$REAL_UID" \
+            DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$REAL_UID/bus}" \
+            "$@"
     else
         "$@"
     fi
@@ -54,7 +68,19 @@ is_pkg_installed() {
 }
 
 # ------------------------------------------------------------------------------
-# 2. VERIFICACIÓN E INSTALACIÓN DE DEPENDENCIAS
+# 2. CONSTANTES DE ARCHIVOS PAM
+# ------------------------------------------------------------------------------
+SDDM_PAM_FILE="/etc/pam.d/sddm"
+SDDM_PAM_BACKUP="/etc/pam.d/sddm.orig"
+
+KDE_PAM_FILE="/etc/pam.d/kde"
+KDE_PAM_BACKUP="/etc/pam.d/kde.orig"
+
+KDE_FP_PAM_FILE="/etc/pam.d/kde-fingerprint"
+COMMON_AUTH_FILE="/etc/pam.d/common-auth"
+
+# ------------------------------------------------------------------------------
+# 3. VERIFICACIÓN E INSTALACIÓN DE DEPENDENCIAS
 # ------------------------------------------------------------------------------
 ensure_dependencies() {
     local missing=()
@@ -73,84 +99,255 @@ ensure_dependencies() {
         $SUDO apt-get install -y "${missing[@]}"
         $SUDO systemctl enable --now fprintd.service 2>/dev/null || true
     else
-        echo "  ✅ Paquetes requeridos (fprintd, libpam-fprintd) ya están instalados."
+        echo "  ✅ Paquetes requeridos (fprintd, libpam-fprintd) instalados."
+    fi
+
+    # Asegurar que el servicio de fprintd esté activo
+    if systemctl is-enabled fprintd.service &>/dev/null; then
+        $SUDO systemctl start fprintd.service 2>/dev/null || true
+    else
+        require_root
+        $SUDO systemctl enable --now fprintd.service 2>/dev/null || true
     fi
 }
 
 # ------------------------------------------------------------------------------
-# 3. GESTIÓN DE PAM (pam-auth-update y SDDM)
+# 4. CONFIGURACIÓN DE SDDM (LOGIN EXCLUSIVO POR CONTRASEÑA / KWALLET UNLOCK)
 # ------------------------------------------------------------------------------
-SDDM_PAM_FILE="/etc/pam.d/sddm"
-
 configure_sddm_bypass() {
     require_root
-    echo "🖥️  Configurando optimización para SDDM (login inmediato con contraseña)..."
+    echo "🖥️  Configurando SDDM (autenticación obligatoria por contraseña para auto-desbloqueo de KWallet)..."
+
+    # Crear respaldo si aún no existe
+    if [ -f "$SDDM_PAM_FILE" ] && [ ! -f "$SDDM_PAM_BACKUP" ]; then
+        $SUDO cp -p "$SDDM_PAM_FILE" "$SDDM_PAM_BACKUP"
+        echo "   💾 Copia de respaldo guardada en $SDDM_PAM_BACKUP"
+    fi
+
     cat <<'EOF' | $SUDO tee "$SDDM_PAM_FILE" >/dev/null
 #%PAM-1.0
 # Configuración optimizada de SDDM para Debian Testing + KDE Plasma 6
-# Evita el retardo de timeout de fprintd (30s) en el inicio de sesión inicial
-# y garantiza el desbloqueo automático de KWallet mediante la contraseña.
-# (La huella dactilar permanece activa para sudo, kscreenlocker y polkit).
+# Hardware: HP EliteBook 855 G7
+#
+# Propósito:
+# 1. Login inicial obligatorio por contraseña para desbloquear automáticamente KWallet (kdewallet).
+# 2. Evita retrasos y timeouts de fprintd en la pantalla de inicio de sesión.
+# 3. Preserva íntegramente la sesión de systemd-logind, límites, keyring y variables de entorno.
 
+# Control de acceso inicial
 auth     requisite      pam_nologin.so
-auth     optional       pam_kwallet5.so
-auth     optional       pam_kwallet.so
-auth     required       pam_unix.so      try_first_pass
+auth     required       pam_succeed_if.so user != root quiet_success
+
+# Autenticación exclusiva por contraseña (pasa PAM_AUTHTOK a pam_kwallet5)
+auth     [success=1 default=ignore] pam_unix.so nullok try_first_pass
+auth     requisite                  pam_deny.so
+auth     required                   pam_permit.so
+-auth    optional                   pam_gnome_keyring.so
+-auth    optional                   pam_kwallet5.so
 
 @include common-account
-@include common-password
+
+# Gestión de contexto SELinux, UID de login, keyring y límites del sistema
+session  [success=ok ignore=ignore module_unknown=ignore default=bad] pam_selinux.so close
+session  required       pam_loginuid.so
+session  [success=ok ignore=ignore module_unknown=ignore default=bad] pam_selinux.so open
+session  optional       pam_keyinit.so force revoke
+session  required       pam_limits.so
+
 @include common-session
 
-session  optional       pam_kwallet5.so  auto_start
-session  optional       pam_kwallet.so   auto_start
+@include common-password
+
+# Carga de variables de entorno de sesión
+session  required       pam_env.so
+session  required       pam_env.so envfile=/etc/default/locale user_readenv=1
 EOF
     $SUDO chmod 644 "$SDDM_PAM_FILE"
-    echo "  ✅ SDDM configurado: Contraseña inmediata sin retardo y auto-desbloqueo de KWallet."
+    echo "  ✅ SDDM configurado: Contraseña inmediata en inicio y cofre KWallet auto-desbloqueado."
 }
 
 remove_sddm_bypass() {
     require_root
-    if [ -f "$SDDM_PAM_FILE" ]; then
-        echo "🗑️  Restaurando configuración predeterminada de SDDM..."
-        $SUDO rm -f "$SDDM_PAM_FILE"
-        echo "  ✅ Archivo /etc/pam.d/sddm eliminado (SDDM volverá a usar la configuración global)."
+    echo "🗑️  Restaurando configuración predeterminada de SDDM..."
+    if [ -f "$SDDM_PAM_BACKUP" ]; then
+        $SUDO cp -p "$SDDM_PAM_BACKUP" "$SDDM_PAM_FILE"
+        echo "  ✅ Archivo /etc/pam.d/sddm restaurado desde la copia de respaldo."
+    else
+        cat <<'EOF' | $SUDO tee "$SDDM_PAM_FILE" >/dev/null
+#%PAM-1.0
+auth    requisite       pam_nologin.so
+auth    required        pam_succeed_if.so user != root quiet_success
+@include common-auth
+-auth   optional        pam_gnome_keyring.so
+-auth   optional        pam_kwallet5.so
+@include common-account
+session [success=ok ignore=ignore module_unknown=ignore default=bad] pam_selinux.so close
+session required        pam_loginuid.so
+session [success=ok ignore=ignore module_unknown=ignore default=bad] pam_selinux.so open
+session optional        pam_keyinit.so force revoke
+session required        pam_limits.so
+@include common-session
+@include common-password
+session required        pam_env.so
+session required        pam_env.so envfile=/etc/default/locale user_readenv=1
+EOF
+        $SUDO chmod 644 "$SDDM_PAM_FILE"
+        echo "  ✅ Archivo /etc/pam.d/sddm reconfigurado al estándar de Debian."
     fi
 }
 
+# ------------------------------------------------------------------------------
+# 5. CONFIGURACIÓN DE KSCREENLOCKER (HUELLA Y CONTRASEÑA CONCURRENTES)
+# ------------------------------------------------------------------------------
+configure_kde_lockscreen() {
+    require_root
+    echo "🔒 Configurando pantalla de bloqueo (KScreenLocker: huella y contraseña simultáneas)..."
+
+    # Respaldar archivo original de kde si no existe respaldo previo
+    if [ -f "$KDE_PAM_FILE" ] && [ ! -f "$KDE_PAM_BACKUP" ]; then
+        $SUDO cp -p "$KDE_PAM_FILE" "$KDE_PAM_BACKUP"
+        echo "   💾 Copia de respaldo guardada en $KDE_PAM_BACKUP"
+    fi
+
+    # Configurar /etc/pam.d/kde para autenticación directa por contraseña
+    # (El autenticador no interactivo kscreenlocker ejecutará concurrentemente /etc/pam.d/kde-fingerprint)
+    cat <<'EOF' | $SUDO tee "$KDE_PAM_FILE" >/dev/null
+#%PAM-1.0
+# KDE Plasma 6 KScreenLocker - Servicio de Contraseña (Interactivo)
+# Configuración optimizada para doble autenticador concurrente:
+# - Este archivo gestiona el campo de contraseña inmediatamente sin bloquearse por fprintd.
+# - El sensor de huella dactilar opera concurrentemente mediante /etc/pam.d/kde-fingerprint.
+
+auth     requisite       pam_nologin.so
+auth     required        pam_succeed_if.so user != root quiet_success
+
+# Autenticación directa por contraseña para KScreenLocker
+auth     [success=1 default=ignore] pam_unix.so nullok try_first_pass
+auth     requisite                  pam_deny.so
+auth     required                   pam_permit.so
+auth     optional                   pam_kwallet5.so
+
+@include common-account
+
+session  [success=ok ignore=ignore module_unknown=ignore default=bad] pam_selinux.so close
+session  required       pam_loginuid.so
+session  [success=ok ignore=ignore module_unknown=ignore default=bad] pam_selinux.so open
+session  optional       pam_keyinit.so force revoke
+session  required       pam_limits.so
+session  required       pam_env.so readenv=1
+session  required       pam_env.so readenv=1 envfile=/etc/default/locale
+
+@include common-session
+session  optional       pam_kwallet5.so auto_start
+@include common-password
+EOF
+    $SUDO chmod 644 "$KDE_PAM_FILE"
+
+    # Asegurar que /etc/pam.d/kde-fingerprint esté presente y habilitado
+    if [ ! -f "$KDE_FP_PAM_FILE" ]; then
+        cat <<'EOF' | $SUDO tee "$KDE_FP_PAM_FILE" >/dev/null
+#%PAM-1.0
+# KDE Plasma 6 KScreenLocker - Servicio Biométrico (No interactivo)
+auth     requisite       pam_nologin.so
+auth     required        pam_succeed_if.so user != root quiet_success
+auth     required        pam_fprintd.so
+auth     optional        pam_kwallet5.so
+
+@include common-account
+
+session  [success=ok ignore=ignore module_unknown=ignore default=bad] pam_selinux.so close
+session  required       pam_loginuid.so
+session  [success=ok ignore=ignore module_unknown=ignore default=bad] pam_selinux.so open
+session  optional       pam_keyinit.so force revoke
+session  required       pam_limits.so
+session  required       pam_env.so readenv=1
+session  required       pam_env.so readenv=1 envfile=/etc/default/locale
+
+@include common-session
+session  optional       pam_kwallet5.so auto_start
+password required       pam_fprintd.so
+EOF
+        $SUDO chmod 644 "$KDE_FP_PAM_FILE"
+    fi
+
+    echo "  ✅ KScreenLocker configurado: Huella y contraseña disponibles en paralelo al bloquear."
+}
+
+remove_kde_lockscreen() {
+    require_root
+    echo "🗑️  Restaurando configuración predeterminada de KScreenLocker..."
+    if [ -f "$KDE_PAM_BACKUP" ]; then
+        $SUDO cp -p "$KDE_PAM_BACKUP" "$KDE_PAM_FILE"
+        echo "  ✅ Archivo /etc/pam.d/kde restaurado desde la copia de respaldo."
+    else
+        cat <<'EOF' | $SUDO tee "$KDE_PAM_FILE" >/dev/null
+#%PAM-1.0
+auth    requisite       pam_nologin.so
+auth	required	pam_succeed_if.so user != root quiet_success
+@include common-auth
+auth    optional        pam_kwallet5.so
+@include common-account
+session [success=ok ignore=ignore module_unknown=ignore default=bad] pam_selinux.so close
+session required        pam_loginuid.so
+session [success=ok ignore=ignore module_unknown=ignore default=bad] pam_selinux.so open
+session optional        pam_keyinit.so force revoke
+session required        pam_limits.so
+session required        pam_env.so readenv=1
+session required        pam_env.so readenv=1 envfile=/etc/default/locale
+@include common-session
+session optional        pam_kwallet5.so auto_start
+@include common-password
+EOF
+        $SUDO chmod 644 "$KDE_PAM_FILE"
+        echo "  ✅ Archivo /etc/pam.d/kde reconfigurado al estándar de Debian."
+    fi
+}
+
+# ------------------------------------------------------------------------------
+# 6. GESTIÓN GLOBAL DE PAM (pam-auth-update)
+# ------------------------------------------------------------------------------
 enable_pam() {
     require_root
-    echo "🔐 Habilitando módulo de autenticación por huella (libpam-fprintd) en PAM..."
-    
+    echo "🔐 Habilitando módulo de autenticación biométrica (libpam-fprintd) en PAM..."
+
     if command -v pam-auth-update &>/dev/null; then
         $SUDO pam-auth-update --enable fprintd 2>/dev/null || true
     fi
 
     # Asegurar que el servicio fprintd esté activo
     $SUDO systemctl enable --now fprintd.service 2>/dev/null || true
-    echo "  ✅ Módulo pam_fprintd.so integrado en PAM."
+    echo "  ✅ Módulo pam_fprintd.so integrado en PAM (sudo, polkit)."
 
-    # Configurar bypass de SDDM para login rápido y KWallet automático
+    # 1. Configurar SDDM para contraseña exclusiva (KWallet auto-unlock en boot)
     configure_sddm_bypass
+
+    # 2. Configurar KScreenLocker para huella y contraseña simultáneas
+    configure_kde_lockscreen
 }
 
 disable_pam() {
     require_root
-    echo "🔓 Deshabilitando autenticación por huella dactilar en PAM..."
+    echo "🔓 Deshabilitando autenticación biométrica en PAM..."
     if command -v pam-auth-update &>/dev/null; then
         $SUDO pam-auth-update --remove fprintd 2>/dev/null || true
     fi
     remove_sddm_bypass
+    remove_kde_lockscreen
     echo "  ✅ Autenticación biométrica desactivada de PAM."
 }
 
 # ------------------------------------------------------------------------------
-# 4. ENROLAMIENTO Y VERIFICACIÓN
+# 7. ENROLAMIENTO Y VERIFICACIÓN
 # ------------------------------------------------------------------------------
 enroll_finger() {
     local finger="${1:-right-index-finger}"
     echo "🖐️  Iniciando registro de huella dactilar para el usuario '$REAL_USER'..."
     echo "   Dedo seleccionado: $finger"
-    echo "   (Coloca y levanta tu dedo en el sensor cuando se indique)"
+    echo "   Hardware: HP EliteBook 855 G7 (Sensor táctil capacitivo Synaptics 06cb:00df)"
+    echo "   Tipo de sensor: Pulsación ('press') | Requiere 9 etapas de contacto"
+    echo "   -----------------------------------------------------------------"
+    echo "   👉 Apoya tu dedo firmemente sobre el sensor y levántalo cuando la terminal"
+    echo "      indique el progreso hasta completar las 9 etapas."
     echo "-----------------------------------------------------------------"
     run_as_user fprintd-enroll -f "$finger" "$REAL_USER"
 }
@@ -158,7 +355,7 @@ enroll_finger() {
 verify_finger() {
     local finger="${1:-}"
     echo "🔍 Probando verificación de huella dactilar en el sensor..."
-    echo "   (Coloca tu dedo registrado en el lector biométrico)"
+    echo "   (Apoya tu dedo registrado en el lector biométrico)"
     echo "-----------------------------------------------------------------"
     if [ -n "$finger" ]; then
         run_as_user fprintd-verify -f "$finger" "$REAL_USER"
@@ -168,12 +365,13 @@ verify_finger() {
 }
 
 # ------------------------------------------------------------------------------
-# 5. DIAGNÓSTICO Y ESTADO
+# 8. DIAGNÓSTICO Y ESTADO DETALLADO
 # ------------------------------------------------------------------------------
 show_status() {
     echo "================================================================="
     echo "🔐 ESTADO DE AUTENTICACIÓN POR HUELLA DACTILAR"
     echo "   Sistema: Debian Testing | Entorno: KDE Plasma 6 (Wayland)"
+    echo "   Equipo:  HP EliteBook 855 G7 (AMD Ryzen 7 PRO 4750U)"
     echo "================================================================="
     echo "👤 Usuario:                $REAL_USER"
 
@@ -182,9 +380,9 @@ show_status() {
     hw_desc=$(lsusb 2>/dev/null | grep -iE "fingerprint|synaptics|fprint|validity|elan|authentec" | sed 's/.*ID [0-9a-f:]* //' | head -n 1)
     hw_id=$(lsusb 2>/dev/null | grep -iE "fingerprint|synaptics|fprint|validity|elan|authentec" | grep -oE "ID [0-9a-f:]*" | head -n 1)
     if [ -n "$hw_desc" ]; then
-        echo "💻 Lector Biométrico USB:   ✅ $hw_id $hw_desc"
+        echo "💻 Sensor Biométrico USB:  ✅ $hw_id $hw_desc"
     else
-        echo "💻 Lector Biométrico USB:   ⚠️ No detectado en el bus USB"
+        echo "💻 Sensor Biométrico USB:  ⚠️ No detectado en el bus USB"
     fi
 
     # 2. Driver libfprint / Daemon fprintd por D-Bus
@@ -193,36 +391,45 @@ show_status() {
     if echo "$fp_dev" | grep -q "found [1-9]"; then
         local dev_path
         dev_path=$(echo "$fp_dev" | grep "Using device" | sed 's/Using device //')
-        echo "🔌 Reconocimiento fprintd:  ✅ Operativo ($dev_path)"
+        echo "🔌 Reconocimiento fprintd: ✅ Operativo ($dev_path)"
+        echo "   Tipo de escaneo:        Pulsación capacitiva ('press' - 9 etapas de contacto)"
     else
-        echo "🔌 Reconocimiento fprintd:  ❌ No reconocido por libfprint"
+        echo "🔌 Reconocimiento fprintd: ❌ No reconocido por libfprint"
     fi
 
     # 3. Paquetes instalados
     local fprintd_ver fprintd_pam_ver
     fprintd_ver=$(dpkg-query -W -f='${Version}\n' fprintd 2>/dev/null || echo "No instalado")
     fprintd_pam_ver=$(dpkg-query -W -f='${Version}\n' libpam-fprintd 2>/dev/null || echo "No instalado")
-    echo "📦 Paquete fprintd:         $fprintd_ver"
-    echo "📦 Paquete libpam-fprintd:  $fprintd_pam_ver"
+    echo "📦 Paquete fprintd:        $fprintd_ver"
+    echo "📦 Paquete libpam-fprintd: $fprintd_pam_ver"
 
-    # 4. Estado en PAM
-    local pam_status="❌ Inactivo (El sistema NO solicitará huella en login/sudo)"
-    if grep -q "pam_fprintd.so" /etc/pam.d/common-auth 2>/dev/null; then
-        pam_status="✅ Activo (pam_fprintd.so habilitado en /etc/pam.d/common-auth)"
+    # 4. Estado en PAM (common-auth)
+    local pam_status="❌ Inactivo (Huella no solicitada por PAM)"
+    if grep -q "pam_fprintd.so" "$COMMON_AUTH_FILE" 2>/dev/null; then
+        pam_status="✅ Activo (pam_fprintd.so habilitado con fallback a contraseña)"
     fi
-    echo "🛡️  Estado de PAM:          $pam_status"
+    echo "🛡️  PAM Global (sudo/polkit): $pam_status"
 
-    local sddm_status="⚠️ Predeterminado (Hereda timeout de fprintd)"
+    # 5. Estado de SDDM (Pantalla de login en arranque)
+    local sddm_status="⚠️ Predeterminado (Pide huella o hereda timeout)"
     if [ -f "$SDDM_PAM_FILE" ]; then
-        if grep -q "pam_unix.so" "$SDDM_PAM_FILE" && ! grep -q "pam_fprintd" "$SDDM_PAM_FILE"; then
-            sddm_status="✅ Optimizado (Contraseña inmediata + KWallet auto-unlock)"
-        else
-            sddm_status="ℹ️ Personalizado"
+        if grep -q "pam_unix.so" "$SDDM_PAM_FILE" && ! grep -q "pam_fprintd" "$SDDM_PAM_FILE" && ! grep -q "@include common-auth" "$SDDM_PAM_FILE"; then
+            sddm_status="✅ Optimizado (Solo contraseña en boot -> KWallet desbloqueado)"
         fi
     fi
-    echo "🖥️  Login SDDM:            $sddm_status"
+    echo "🖥️  Login SDDM (Boot):      $sddm_status"
 
-    # 5. Huellas registradas para el usuario
+    # 6. Estado de KScreenLocker (Pantalla de bloqueo KDE)
+    local kde_status="⚠️ Predeterminado"
+    if [ -f "$KDE_PAM_FILE" ] && [ -f "$KDE_FP_PAM_FILE" ]; then
+        if ! grep -q "@include common-auth" "$KDE_PAM_FILE" && grep -q "pam_unix.so" "$KDE_PAM_FILE" && grep -q "pam_fprintd.so" "$KDE_FP_PAM_FILE"; then
+            kde_status="✅ Optimizado (Huella y contraseña concurrentes en paralelo)"
+        fi
+    fi
+    echo "🔒 Bloqueo KScreenLocker:  $kde_status"
+
+    # 7. Huellas registradas para el usuario
     echo "-----------------------------------------------------------------"
     echo "🖐️  Huellas registradas para $REAL_USER:"
     if echo "$fp_dev" | grep -qi "no fingers enrolled"; then
@@ -238,13 +445,13 @@ show_status() {
     fi
 
     echo "================================================================="
-    if ! grep -q "pam_fprintd.so" /etc/pam.d/common-auth 2>/dev/null; then
-        echo "💡 PAM no está habilitado. Ejecuta 'just fingerprint' para activarlo."
+    if ! grep -q "pam_fprintd.so" "$COMMON_AUTH_FILE" 2>/dev/null; then
+        echo "💡 Para habilitar la configuración completa: 'just fingerprint'"
     fi
     if echo "$fp_dev" | grep -qi "no fingers enrolled"; then
         echo "💡 Para registrar tu huella dactilar:"
-        echo "   - Gráficamente: Preferencias del Sistema -> Usuarios -> Configurar huella dactilar"
-        echo "   - Por terminal: just fingerprint --enroll (o fprintd-enroll)"
+        echo "   - Por terminal:  just fingerprint --enroll (o just fingerprint-enroll)"
+        echo "   - Gráficamente:  kcmshell6 kcm_users (o Ajustes del Sistema -> Usuarios)"
     fi
     echo "================================================================="
 }
@@ -253,39 +460,38 @@ show_help() {
     cat <<EOF
 Uso: $(basename "$0") [OPCIONES]
 
-Configuración, diagnóstico y gestión de autenticación biométrica por huella dactilar
-(fprintd + PAM + KDE Plasma 6 Wayland) en Debian Testing.
+Configuración, optimización y diagnóstico de huella dactilar (fprintd + PAM + KDE Plasma 6 Wayland).
+Adaptado para HP EliteBook 855 G7 (Sensor Synaptics 06cb:00df).
 
-Hardware: HP EliteBook 855 G7 (Sensor Synaptics 06cb:00df / genérico)
+POLÍTICA DE AUTENTICACIÓN IMPLEMENTADA:
+  1. Login inicial (SDDM al arrancar):
+     - Pide exclusivamente la contraseña para desbloquear el cofre de claves (KWallet).
+     - Evita el retardo de 30s del sensor en el arranque.
+  2. Pantalla de bloqueo (KScreenLocker):
+     - Doble autenticador simultáneo: puedes desbloquear tocando el sensor biométrico
+       O escribiendo la contraseña y presionando Enter, en paralelo sin bloqueos.
+  3. Terminal (sudo) y Polkit (KDE):
+     - Solicita huella dactilar primero con fallback transparente a contraseña.
 
 OPCIONES:
   -s, --status         Muestra el estado detallado del hardware, paquetes, PAM y huellas.
-  -e, --enroll [DEDO]  Registra una huella en la terminal (por defecto: right-index-finger).
+  -e, --enroll [DEDO]  Registra una huella en terminal (por defecto: right-index-finger).
   -v, --verify [DEDO]  Prueba la verificación en el sensor con las huellas registradas.
-  -d, --disable        Deshabilita la autenticación por huella dactilar en PAM.
-      --sddm-bypass    Configura SDDM para contraseña inmediata (sin retardo) y desbloqueo de KWallet.
-      --sddm-reset     Restaura SDDM a la configuración predeterminada de PAM.
+  -d, --disable        Deshabilita la autenticación biométrica en PAM y restaura configuración.
+      --sddm-bypass    Configura SDDM para contraseña exclusiva (KWallet auto-unlock).
+      --sddm-reset     Restaura SDDM a la configuración predeterminada.
+      --kde-parallel   Configura KScreenLocker para huella y contraseña concurrentes.
+      --kde-reset      Restaura KScreenLocker a la configuración predeterminada.
   -h, --help           Muestra esta ayuda.
-
-EJEMPLOS:
-  $(basename "$0")                  # Habilita dependencias, PAM y optimización SDDM
-  $(basename "$0") --status         # Diagnóstico de sensor, PAM, SDDM y huellas registradas
-  $(basename "$0") --enroll         # Registra el índice derecho vía terminal
-  $(basename "$0") --verify         # Prueba el lector biométrico
-  $(basename "$0") --sddm-bypass    # Aplica optimización de contraseña rápida para SDDM
-  $(basename "$0") --disable        # Desactiva la huella de PAM (login/sudo/bloqueo)
 
 DEDOS ADMITIDOS POR fprintd:
   right-thumb, right-index-finger, right-middle-finger, right-ring-finger, right-little-finger
   left-thumb, left-index-finger, left-middle-finger, left-ring-finger, left-little-finger
-
-CONFIGURACIÓN GRÁFICA EN KDE PLASMA 6:
-  Preferencias del Sistema -> Usuarios -> (Tu usuario) -> Configurar huella dactilar
 EOF
 }
 
 # ------------------------------------------------------------------------------
-# 6. PARSEO DE ARGUMENTOS Y FLUJO PRINCIPAL
+# 9. PARSEO DE ARGUMENTOS Y FLUJO PRINCIPAL
 # ------------------------------------------------------------------------------
 ACTION=""
 ARG_PARAM=""
@@ -322,6 +528,14 @@ while [ $# -gt 0 ]; do
             ;;
         --sddm-reset)
             ACTION="sddm-reset"
+            shift
+            ;;
+        --kde-parallel)
+            ACTION="kde-parallel"
+            shift
+            ;;
+        --kde-reset)
+            ACTION="kde-reset"
             shift
             ;;
         -h|--help)
@@ -361,10 +575,19 @@ case "$ACTION" in
         remove_sddm_bypass
         exit 0
         ;;
+    kde-parallel)
+        configure_kde_lockscreen
+        exit 0
+        ;;
+    kde-reset)
+        remove_kde_lockscreen
+        exit 0
+        ;;
 esac
 
 echo "================================================================="
 echo "🖐️  Configuración de Huella Dactilar para Debian Testing ($REAL_USER)"
+echo "   Hardware: HP EliteBook 855 G7 (AMD Ryzen 7 PRO 4750U)"
 echo "================================================================="
 
 ensure_dependencies
@@ -373,5 +596,5 @@ enable_pam
 echo ""
 show_status
 echo "================================================================="
-echo "✅ Configuración biométrica completada."
+echo "✅ Configuración biométrica completada con éxito."
 echo "================================================================="

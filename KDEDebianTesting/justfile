@@ -45,6 +45,14 @@ fingerprint-status:
 fingerprint-sddm-bypass:
     ./Setup/fingerprint-setup.sh --sddm-bypass
 
+# Registrar huella dactilar en la terminal (sensor táctil de 9 etapas)
+fingerprint-enroll *finger:
+    ./Setup/fingerprint-setup.sh --enroll {{finger}}
+
+# Probar verificación biométrica en el lector
+fingerprint-verify *finger:
+    ./Setup/fingerprint-setup.sh --verify {{finger}}
+
 # Configuración de impresoras HP (CUPS, HPLIP, plugin propietario para LaserJet M15w)
 printer:
     ./Setup/hp-printer-setup.sh

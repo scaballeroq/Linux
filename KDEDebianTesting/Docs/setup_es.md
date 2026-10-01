@@ -93,14 +93,18 @@ just laptop
 
 ### Autenticación por Huella Dactilar (`fingerprint-setup.sh`)
 
-Configura el lector biométrico USB Synaptics mediante `fprintd` y el módulo oficial `pam_fprintd.so` a través de `pam-auth-update`:
+Configura el lector biométrico USB Synaptics (`06cb:00df`) mediante `fprintd` y PAM (`libpam-fprintd`):
+
+- **SDDM al arrancar**: Autenticación exclusiva por contraseña para auto-desbloquear el cofre de claves (**KWallet** / `kdewallet`) sin pedir contraseña posterior ni demoras.
+- **Pantalla de Bloqueo (KScreenLocker)**: Doble autenticador simultáneo en paralelo; se puede desbloquear tocando el sensor **O** escribiendo la contraseña en cualquier momento.
+- **Terminal (`sudo`) y Polkit**: Huella dactilar prioritaria con fallback transparente a contraseña.
 
 ```bash
-just fingerprint          # Habilita el módulo en PAM
-just fingerprint-status   # Diagnóstico de sensor, PAM y huellas registradas
-just fingerprint --enroll # Registra una huella en terminal
-just fingerprint --verify # Prueba el sensor biométrico
-just fingerprint-sddm-bypass # Optimiza SDDM para contraseña sin retardo y desbloqueo de KWallet
+just fingerprint          # Aplica la configuración biométrica completa en PAM
+just fingerprint-status   # Diagnóstico del lector USB, estado de PAM, SDDM y huellas
+just fingerprint-enroll   # Registra huella dactilar por terminal (9 etapas de contacto)
+just fingerprint-verify   # Prueba la verificación en el sensor
+just fingerprint-sddm-bypass # Aplica exclusivamente la optimización de SDDM
 ```
 
 ---

@@ -73,11 +73,11 @@ just kde-status
 
 ```bash
 just laptop
-just fingerprint
-just fingerprint-status
-just fingerprint --enroll
-just fingerprint --verify
-just fingerprint-sddm-bypass
+just fingerprint          # Full biometric PAM configuration (SDDM password-only, lockscreen dual)
+just fingerprint-status   # Detailed diagnostics (sensor hardware, PAM, SDDM, lockscreen, fingerprints)
+just fingerprint-enroll   # Enroll fingerprint in CLI (9 touch stages)
+just fingerprint-verify   # Test verification on sensor
+just fingerprint-sddm-bypass # Apply SDDM password-only bypass (KWallet auto-unlock)
 ```
 
 ---
