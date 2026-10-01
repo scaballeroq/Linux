@@ -16,10 +16,6 @@ alias repo='cd ~/Workspace/Repositorios'
 alias repos='cd ~/Workspace/Repositorios'
 alias debian='cd ~/Workspace/Repositorios/Linux/KDEDebianTesting'
 alias kdedebian='cd ~/Workspace/Repositorios/Linux/KDEDebianTesting'
-alias opensuse='cd ~/Workspace/Repositorios/Linux/OpenSuseTumbleweed'
-alias tumbleweed='cd ~/Workspace/Repositorios/Linux/OpenSuseTumbleweed'
-alias fedora='cd ~/Workspace/Repositorios/Linux/Fedora-Workstation'
-alias cachyos='cd ~/Workspace/Repositorios/Linux/CachyOS'
 
 # 2. INTEGRACIÓN CON KDE PLASMA Y ESCRITORIO
 alias open='xdg-open'
