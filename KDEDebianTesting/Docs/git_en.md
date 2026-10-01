@@ -39,7 +39,7 @@ The environment incorporates **Git**, the visual diff syntax-highlighter **Git-D
    ```
 
 5. **Lazygit (TUI) Installation**:
-   Installed automatically to `/usr/local/bin` from official GitHub releases.
+   Installed via Debian Testing official APT repositories (`lazygit`), with automatic fallback to official GitHub releases if necessary.
 
 ---
 

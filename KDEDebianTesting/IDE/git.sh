@@ -4,8 +4,8 @@
 # Debian Testing (KDE Plasma 6 + Wayland / Kitty Terminal)
 # ==============================================================================
 # Características:
-# - Despliegue idempotente: comprueba paquetes primero (rpm -q) y evita invocar
-#   'sudo' o Zypper si Git, Git-Delta, Lazygit y GitHub CLI ya están instalados.
+# - Despliegue idempotente: comprueba paquetes primero (dpkg-query) y evita invocar
+#   'sudo' o APT si Git, Git-Delta, Lazygit y GitHub CLI ya están instalados.
 # - Configuración global recomendada: rebase por defecto, autoSetupRemote, zdiff3.
 # - Integración de Git-Delta con visualización 'side-by-side' y resaltado de sintaxis.
 # - Integración de Lazygit con delta pager y tema adaptado a KDE Breeze Dark.
@@ -140,6 +140,7 @@ check_pkg() {
 
 if ! check_pkg git; then MISSING_PKGS+=("git"); fi
 if ! check_pkg git-delta && ! command -v delta &>/dev/null; then MISSING_PKGS+=("git-delta"); fi
+if ! check_pkg lazygit && ! command -v lazygit &>/dev/null; then MISSING_PKGS+=("lazygit"); fi
 
 # Configurar repositorio oficial de GitHub CLI (gh) si no está instalado
 if ! check_pkg gh && ! command -v gh &>/dev/null; then
@@ -164,30 +165,41 @@ if [ ${#MISSING_PKGS[@]} -gt 0 ]; then
         exit 1
     fi
     $SUDO apt-get update -qq || true
-    $SUDO apt-get install -y "${MISSING_PKGS[@]}" 2>/dev/null || true
-    echo "  ✅ Paquetes de Git instalados."
+    if ! $SUDO apt-get install -y "${MISSING_PKGS[@]}"; then
+        echo "  ⚠️ Falló la instalación grupal, intentando paquete por paquete..."
+        for pkg in "${MISSING_PKGS[@]}"; do
+            $SUDO apt-get install -y "$pkg" || echo "  ⚠️ No se pudo instalar $pkg vía APT"
+        done
+    else
+        echo "  ✅ Paquetes de Git instalados vía APT."
+    fi
 fi
 
-# Lazygit (instalar vía APT o binario oficial de GitHub)
+# Lazygit fallback: binario oficial de GitHub si no se pudo instalar por APT
 if ! check_pkg lazygit && ! command -v lazygit &>/dev/null; then
-    echo "  ⬇️ Instalando Lazygit desde binario oficial de GitHub..."
+    echo "  ⬇️ Instalando Lazygit desde binario oficial de GitHub (fallback)..."
     ARCH=$(uname -m)
     case "$ARCH" in
         x86_64) LAZYGIT_ARCH="x86_64" ;;
         aarch64) LAZYGIT_ARCH="arm64" ;;
         *) echo "❌ Arquitectura no soportada para Lazygit: $ARCH"; exit 1 ;;
     esac
-    LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": "v\K[^"]*' || echo "")
-    if [ -n "$LAZYGIT_VERSION" ]; then
-        mkdir -p "$USER_HOME/.local/bin"
-        curl -Lo "/tmp/lazygit.tar.gz" "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_${LAZYGIT_ARCH}.tar.gz"
-        tar xf "/tmp/lazygit.tar.gz" -C "/tmp" lazygit
-        install "/tmp/lazygit" "$USER_HOME/.local/bin/lazygit"
-        rm -f "/tmp/lazygit" "/tmp/lazygit.tar.gz"
-        echo "  ✅ Lazygit instalado en $USER_HOME/.local/bin/lazygit"
+    LAZYGIT_TAG=$(basename "$(curl -fsSLI -o /dev/null -w "%{url_effective}" https://github.com/jesseduffield/lazygit/releases/latest 2>/dev/null)" || true)
+    LAZYGIT_VERSION="${LAZYGIT_TAG#v}"
+    if [ -n "$LAZYGIT_VERSION" ] && [ "$LAZYGIT_VERSION" != "latest" ]; then
+        run_as_user mkdir -p "$USER_HOME/.local/bin"
+        local_tar="/tmp/lazygit.tar.gz"
+        if curl -fsSLo "$local_tar" "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_${LAZYGIT_ARCH}.tar.gz"; then
+            tar xf "$local_tar" -C "/tmp" lazygit
+            run_as_user install "/tmp/lazygit" "$USER_HOME/.local/bin/lazygit"
+            rm -f "/tmp/lazygit" "$local_tar"
+            echo "  ✅ Lazygit instalado en $USER_HOME/.local/bin/lazygit"
+        else
+            echo "  ❌ Error al descargar el binario de Lazygit desde GitHub."
+        fi
+    else
+        echo "  ❌ No se pudo determinar la última versión de Lazygit en GitHub."
     fi
-else
-    echo "  ✅ Paquetes de Git (git, git-delta, gh, lazygit) ya satisfechos en el sistema."
 fi
 
 # ------------------------------------------------------------------------------

@@ -39,7 +39,7 @@ El entorno incluye el cliente **Git**, el formateador visual de diferencias **Gi
    ```
 
 5. **Instalación de Lazygit (TUI)**:
-   Instalado automáticamente en `/usr/local/bin` desde la última release oficial de GitHub.
+   Instalado mediante los repositorios oficiales de APT en Debian Testing (`lazygit`), con fallback automático a la release oficial de GitHub si fuera necesario.
 
 ---
 
