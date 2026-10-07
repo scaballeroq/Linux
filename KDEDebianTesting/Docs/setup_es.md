@@ -107,6 +107,22 @@ just fingerprint-verify   # Prueba la verificación en el sensor
 just fingerprint-sddm-bypass # Aplica exclusivamente la optimización de SDDM
 ```
 
+### Splash de Arranque Plymouth (`plymouth-setup.sh`)
+
+Sustituye el arranque estándar por el tema moderno **`debian-spinner`**:
+
+- **Logo oficial de Debian**: En alta definición sobre fondo negro puro (`0x000000`).
+- **Spinner circular**: Animación suave de carga debajo del logotipo.
+- **Early KMS (AMDGPU)**: Inclusión del driver en el initramfs para arranque instantáneo a 1080p sin parpadeos ni cambio brusco de resolución.
+
+```bash
+just plymouth             # Instala y activa el tema con logo oficial + spinner
+just plymouth --swirl     # Variante con la espiral roja minimalista (sin texto)
+just plymouth-status      # Diagnóstico del tema, initramfs y parámetros de GRUB
+just plymouth-preview     # Previsualiza la animación en una ventana gráfica
+just plymouth --restore   # Restaura el tema predeterminado original (ceratopsian)
+```
+
 ---
 
 ## 4. Optimizaciones de Rendimiento (`debian-tuning.sh`)

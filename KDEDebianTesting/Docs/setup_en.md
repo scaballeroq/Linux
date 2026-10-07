@@ -78,6 +78,10 @@ just fingerprint-status   # Detailed diagnostics (sensor hardware, PAM, SDDM, lo
 just fingerprint-enroll   # Enroll fingerprint in CLI (9 touch stages)
 just fingerprint-verify   # Test verification on sensor
 just fingerprint-sddm-bypass # Apply SDDM password-only bypass (KWallet auto-unlock)
+just plymouth             # Install and enable debian-spinner theme (Debian logo + animated spinner)
+just plymouth --swirl     # Minimalist red swirl variant (no text)
+just plymouth-status      # Diagnostic of theme, KMS, and initramfs
+just plymouth-preview     # Live window preview of splash animation
 ```
 
 ---

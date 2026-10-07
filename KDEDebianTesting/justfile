@@ -53,6 +53,18 @@ fingerprint-enroll *finger:
 fingerprint-verify *finger:
     ./Setup/fingerprint-setup.sh --verify {{finger}}
 
+# Splash de arranque gráfico Plymouth (Logo oficial de Debian + spinner circular)
+plymouth *args:
+    ./Setup/plymouth-setup.sh {{args}}
+
+# Estado del tema de arranque, paquetes y módulos KMS de Plymouth
+plymouth-status:
+    ./Setup/plymouth-setup.sh --status
+
+# Previsualizar el arranque de Plymouth en una ventana gráfica
+plymouth-preview:
+    ./Setup/plymouth-setup.sh --preview
+
 # Configuración de impresoras HP (CUPS, HPLIP, plugin propietario para LaserJet M15w)
 printer:
     ./Setup/hp-printer-setup.sh
