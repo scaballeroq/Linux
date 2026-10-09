@@ -105,10 +105,11 @@ Rust se gestiona mediante su herramienta oficial estándar e independiente **Rus
 
 ## 4. OpenJDK Java (`java.sh`)
 
-Instalación de OpenJDK LTS para Debian Testing vía APT:
-* **Paquetes**: `openjdk-21-jdk`, `openjdk-21-jre` junto con `pcscd`, `libpcsclite1`, `libnss3-tools` y `maven` (soporte para AutoFirma, FNMT, DNIe y lectores de tarjetas inteligentes).
-* **Gestión JVM**: Detección y configuración automática del entorno en `/usr/lib/jvm/java-21-openjdk-amd64`.
-* **Integración KDE Plasma**: Configuración de `JAVA_HOME` en `~/.config/environment.d/10-java.conf` para Android Studio, IntelliJ IDEA, Gradle y Maven.
+Instalación y optimización de OpenJDK para Debian Testing vía APT:
+* **Paquetes**: Metapaquete oficial `default-jdk` y `openjdk-21-jdk` (LTS), `ca-certificates-java`, `maven`, `curl` y herramientas de tarjetas inteligentes (`pcscd`, `libpcsclite1`, `libnss3-tools` para soporte de AutoFirma, FNMT y DNIe).
+* **Gestión JVM**: Detección y resolución canónica del entorno en `/usr/lib/jvm/default-java` o `/usr/lib/jvm/java-21-openjdk-amd64` con soporte para `update-java-alternatives` (`--alternatives`).
+* **Optimización AMD Ryzen (16 hilos)**: Maven multihilo (`MAVEN_ARGS="-T 1C"`) y generación de `~/.gradle/gradle.properties` (paralelo, daemon, 16 workers, VFS watch en ext4 y heap de 4 GB).
+* **Integración KDE Plasma 6 & Wayland**: `JAVA_HOME` y flags de renderizado (`_JAVA_AWT_WM_NONREPARENTING=1`, antialiasing subpixel LCD) en `~/.config/environment.d/10-java.conf` y `~/.bashrc.d/java.sh`.
 
 ---
 

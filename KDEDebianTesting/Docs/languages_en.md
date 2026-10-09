@@ -98,9 +98,11 @@ Managed via official standard toolchain **Rustup** on the **Stable** channel.
 
 ## 4. OpenJDK Java (`java.sh`)
 
-Installs OpenJDK LTS:
-* **Packages**: `openjdk-21-jdk`, `openjdk-21-jre`, `pcscd`, `libpcsclite1`, `libnss3-tools`, `maven`.
-* **JVM Detection**: Sets `JAVA_HOME` in `~/.config/environment.d/10-java.conf` pointing to `/usr/lib/jvm/java-21-openjdk-amd64`.
+Installation and optimization of OpenJDK for Debian Testing via APT:
+* **Packages**: Official metapackage `default-jdk` and `openjdk-21-jdk` (LTS), `ca-certificates-java`, `maven`, `curl` and smartcard tools (`pcscd`, `libpcsclite1`, `libnss3-tools` for AutoFirma and Spanish eID DNIe).
+* **JVM Detection**: Canonical resolution in `/usr/lib/jvm/default-java` or `/usr/lib/jvm/java-21-openjdk-amd64` with support for Debian alternatives (`--alternatives`).
+* **AMD Ryzen Optimization (16 threads)**: Multithreaded Maven (`MAVEN_ARGS="-T 1C"`) and automated `~/.gradle/gradle.properties` (parallel, daemon, 16 workers, VFS watch on ext4 and 4 GB heap).
+* **KDE Plasma 6 & Wayland Integration**: `JAVA_HOME` and GUI rendering flags (`_JAVA_AWT_WM_NONREPARENTING=1`, subpixel LCD font antialiasing) in `~/.config/environment.d/10-java.conf` and `~/.bashrc.d/java.sh`.
 
 ---
 
