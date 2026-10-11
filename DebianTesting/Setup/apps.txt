@@ -1,0 +1,20 @@
+############### SOFTWARE ###############
+sudo apt -y install linux-headers-$(uname -r)
+sudo apt -y install build-essential checkinstall make automake cmake autoconf curl btop htop git inxi gcc
+sudo apt install -y exfat-fuse hfsplus gparted
+sudo apt install vlc gimp
+sudo apt install p7zip-full
+
+############### TIENDAS ###############
+sudo apt -y install synaptic
+sudo apt install flatpak
+sudo apt install gnome-software-plugin-flatpak
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+############### CODECS ###############
+sudo apt install ffmpeg gstreamer1.0-pulseaudio vorbis-tools ffmpeg-doc
+
+############### ASPECTO ###############
+sudo apt install papirus-icon-theme
+sudo apt install yaru-theme-gtk yaru-theme-icon yaru-theme-unity yaru-theme-sound yaru-theme-gnome-shell
+
