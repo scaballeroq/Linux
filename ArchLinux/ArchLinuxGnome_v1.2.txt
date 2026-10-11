@@ -1,0 +1,183 @@
+###########################################################################
+Configuración de archivos del sistema.
+###########################################################################
+###########################################################################
+########## Pacman
+sudo nano /etc/pacman.conf
+
+# Misc options
+ Color
+ ParallelDownloads = 10
+ ILoveCandy
+ 
+###########################################################################
+CHAOTIC-AUR
+###########################################################################
+########## 
+sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
+sudo pacman-key --lsign-key 3056513887B78AEB
+sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
+gnome-text-editor /etc/pacman.conf
+    [chaotic-aur]
+    Include = /etc/pacman.d/chaotic-mirrorlist
+
+###########################################################################
+###########################################################################
+# 1. Desarrollo, AUR y Kernel (Crucial para drivers y herramientas de compilación)
+sudo pacman -S --needed base-devel git linux-headers dkms cmake
+
+# 2. Sistemas de archivos (Soporte total para pendrives, tarjetas SD y discos NTFS/FAT)
+sudo pacman -S --needed dosfstools mtools exfatprogs ntfs-3g
+
+# 3. Framework Multimedia (GStreamer para GNOME y códecs globales)
+sudo pacman -S --needed ffmpeg gst-libav gst-plugins-base gst-plugins-good gst-plugins-bad gst-plugins-ugly
+sudo pacman -S --needed alsa-plugins flac lame libvorbis opus x264 x265
+
+# 4. Compresión (Soporte nativo y rápido para el gestor de archivos de GNOME)
+sudo pacman -S --needed 7zip unrar zstd lz4 unzip zip
+
+# 5. Instalar Flatpak, el portal de GNOME y la tienda de software con su plugin
+sudo pacman -S --needed flatpak xdg-desktop-portal-gtk gnome-software 
+
+# 6. Añadir el repositorio de Flathub (A nivel de usuario, sin sudo es mejor)
+flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+# 7.1. Si prefieres PARU (Escrito en Rust, rápido y moderno)
+sudo pacman -S paru
+
+# 7.2. O si prefieres YAY (El clásico en Go, ultra estable)
+sudo pacman -S yay
+
+#  8. La versión moderna de FUSE y soporte para montar discos remotos por SSH
+sudo pacman -S --needed fuse3 sshfs
+
+# 9. Monitor Sistema
+sudo pacman -S btop rocm-smi-lib
+
+# 9. Navegadores
+sudo pacman --needed -S firefox firefox-i18n-es-es google-chrome gnome-browser-connector
+
+# 10. Aspecto y fuentes
+  # A. Instalar fuentes de desarrollo y tema de iconos Papirus (Repositorios oficiales)
+	sudo pacman -S --needed \
+	  ttf-jetbrains-mono-nerd \
+	  ttf-firacode-nerd \
+	  ttf-meslo-nerd \
+	  ttf-ubuntu-font-family \
+	  papirus-icon-theme
+
+  # B. Instalar fuentes de Microsoft (Gracias a tu Chaotic-AUR)
+	sudo pacman -S --needed ttf-ms-fonts
+
+  # C. Refrescar el caché de fuentes para tu usuario de GNOME (Sin sudo)
+	fc-cache -f -v
+
+# 11. Instalar la suite LibreOffice Fresh, su idioma en español y el corrector global del sistema
+sudo pacman -S --needed libreoffice-fresh libreoffice-fresh-es hunspell-es_es
+
+# 12. Imágen
+sudo pacman -S --needed \
+  gimp gimp-help-es \
+  inkscape \
+  darktable
+  
+flatpak install --user flathub \
+  org.kde.krita \
+  org.kde.digikam
+
+# 13. Vídeo
+sudo pacman -S --needed \
+  obs-studio \
+  mpv \
+  handbrake
+sudo pacman -S --needed xdg-desktop-portal-gnome
+
+flatpak install --user flathub \
+  org.kde.kdenlive
+
+# 14. Telegram nativo, Rclone para tus nubes y Google Earth Pro (vía Chaotic-AUR)
+sudo pacman -S --needed \
+  telegram-desktop \
+  rclone \
+  google-earth-pro
+
+# 15. Spotify t Discord
+flatpak install --user flathub \
+  com.spotify.Client \
+  com.discordapp.Discord
+
+# 16. nDNS y Avahi
+sudo pacman -S --needed avahi nss-mdns
+
+gnome-text-editor /etc/nsswitch.conf
+	hosts: files mymachines mdns_minimal [NOTFOUND=return] dns myhostname
+sudo systemctl enable --now avahi-daemon
+
+# 17. Firewalld
+sudo pacman -S --needed firewalld firewall-config
+sudo systemctl enable --now firewalld
+sudo firewall-cmd --set-default-zone=home
+
+# 18. Plymouth
+sudo pacman -S --needed plymouth
+
+gnome-text-editor /etc/mkinitcpio.conf
+	HOOKS=(base udev plymouth autodetect microcode modconf kms keyboard keymap consolefont block filesystems fsck)
+
+# 19. AppArmor
+sudo pacman -S --needed apparmor
+sudo systemctl enable apparmor.service
+
+# 20. Ssystemd-boot
+gnome-text-editor /etc/kernel/cmdline
+	root=PARTUUID=f2b2aad9-d1bc-4824-9afc-41de72fc47a5 zswap.enabled=0 rw rootfstype=ext4 loglevel=3 quiet splash apparmor=1 security=apparmor
+
+sudo pacman -S linux
+
+# 21. Huella dactilar
+sudo pacman -S --needed fprintd
+Registra tus huellas cómodamente desde el panel de Configuración de GNOME -> Usuarios.
+
+gnome-text-editor /etc/pam.d/sudo
+#%PAM-1.0
+auth		sufficient	pam_fprintd.so max_tries=3
+auth		include		system-auth
+account		include		system-auth
+session		include		system-auth
+session		optional	pam_systemd.so class=none
+
+########################################################
+SERVICIO IMPRESION
+###########################################################################
+sudo pacman -S --needed cups cups-filters ghostscript gsfonts hplip
+sudo systemctl enable --now cups.service
+systemctl status cups.service
+sudo gpasswd -a $USER lp
+sudo gpasswd -a $USER sys
+http://localhost:631
+
+
+
+###########################################################################
+GNOME EXTENSION
+###########################################################################
+sudo pacman -S --needed gnome-shell gnome-shell-extension-appindicator gnome-shell-extension-caffeine gnome-shell-extension-dash-to-panel gnome-shell-extension-blur-my-shell gnome-shell-extension-dash-to-dock yaru-gnome-shell-theme
+
+
+###########################################################################
+Desinstalar
+###########################################################################
+
+sudo pacman -R gnome-music decibels simple-scan
+
+
+
+
+
+
+
+
+
+
+
+
