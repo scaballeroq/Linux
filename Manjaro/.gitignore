@@ -1,0 +1,33 @@
+# Logs y temporales
+*.log
+*.tmp
+*.bak
+*.swp
+*~
+
+# Directorios de compilación y caches
+__pycache__/
+*.py[cod]
+node_modules/
+dist/
+build/
+target/
+
+# Entornos virtuales
+.venv/
+env/
+venv/
+
+# Secretos y credenciales locales
+.env
+*.pem
+*.key
+
+# Descargas temporales
+*.iso
+*.tar.xz
+*.tar.gz
+*.deb
+*.pkg.tar.zst
+/Descargas/
+/tmp/
