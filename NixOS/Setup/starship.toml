@@ -1,0 +1,105 @@
+# 🚀 Starship Config: NixOS (Optimizado con Nerd Fonts y KDE Plasma 6)
+
+# Formato general del prompt (Una sola línea, limpia y con alto contraste)
+format = """
+$os\
+$directory\
+$git_branch\
+$git_status\
+$package\
+$nodejs\
+$rust\
+$python\
+$dotnet\
+$docker_context\
+$nix_shell\
+$line_break\
+$character"""
+
+# Línea en blanco entre comandos para legibilidad
+add_newline = true
+
+# Carácter del prompt (Minimalista)
+[character]
+success_symbol = "[❯](bold cyan)"
+error_symbol = "[✖](bold red)"
+
+# Icono del SO (NixOS Snowflake Azul/Cyan)
+[os]
+format = "[$symbol]($style) "
+style = "bold cyan"
+disabled = false
+
+[os.symbols]
+NixOS = " "
+openSUSE = " "
+SUSE = " "
+Ubuntu = " "
+Debian = " "
+Arch = "󰣇 "
+Fedora = " "
+Linux = " "
+
+# Configuración del Directorio
+[directory]
+truncation_length = 3
+truncation_symbol = "…/"
+style = "bold cyan"
+read_only = " 󰌾"
+home_symbol = "󱂵 ~"
+
+# Git Branch (Con icono de Nerd Fonts)
+[git_branch]
+symbol = " "
+style = "bold magenta"
+format = "on [$symbol$branch]($style) "
+
+# Git Status (Visual y detallado)
+[git_status]
+format = '([\[$all_status$ahead_behind\]]($style) )'
+style = "bold red"
+ahead = "⇡${count}"
+behind = "⇣${count}"
+diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+conflicted = "󰞇 "
+untracked = ""
+modified = "󰛿 "
+staged = "●"
+renamed = "»"
+deleted = "🗑 "
+
+# Indicador de Entorno Nix (nix-shell / devShell)
+[nix_shell]
+symbol = " "
+format = 'via [$symbol($name )]($style)'
+style = "bold blue"
+heuristic = true
+
+# Lenguajes y Runtimes
+[nodejs]
+symbol = "󰛦 "
+format = "via [$symbol($version )]($style)"
+style = "bold green"
+
+[rust]
+symbol = "󱘗 "
+format = "via [$symbol($version )]($style)"
+style = "bold red"
+
+[python]
+symbol = "󰌠 "
+format = "via [${symbol}${pyenv_prefix}(${version} )(\($virtualenv\) )]($style)"
+style = "bold yellow"
+
+[dotnet]
+symbol = "󰪮 "
+format = "via [$symbol($version )]($style)"
+style = "bold blue"
+
+[docker_context]
+symbol = "󰡨 "
+format = "via [$symbol$context]($style) "
+style = "bold blue"
+
+[package]
+disabled = true

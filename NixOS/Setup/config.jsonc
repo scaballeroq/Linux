@@ -1,0 +1,114 @@
+// Default Fastfetch Config for NixOS
+{
+    "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+    "logo": {
+        "source": "nixos",
+        "type": "builtin",
+        "color": {
+            "1": "cyan",
+            "2": "blue"
+        },
+        "padding": {
+            "top": 0,
+            "right": 3
+        }
+    },
+    "display": {
+        "separator": "  ➜  ",
+        "color": {
+            "separator": "cyan"
+        },
+        "key": {
+            "width": 15
+        }
+    },
+    "modules": [
+        {
+            "type": "title",
+            "format": "{#1}{#36} {#37}{user-name}{#36}@{#34}{host-name}{#0}"
+        },
+        {
+            "type": "custom",
+            "format": "{#36}──────────────────────────────────────────{#0}"
+        },
+        {
+            "type": "host",
+            "key": "󰍹 Host",
+            "keyColor": "cyan"
+        },
+        {
+            "type": "os",
+            "key": " OS",
+            "keyColor": "cyan"
+        },
+        {
+            "type": "kernel",
+            "key": " Kernel",
+            "keyColor": "cyan"
+        },
+        {
+            "type": "uptime",
+            "key": "󰅐 Uptime",
+            "keyColor": "cyan"
+        },
+        {
+            "type": "packages",
+            "key": "󰏖 Packages",
+            "keyColor": "cyan"
+        },
+        {
+            "type": "shell",
+            "key": " Shell",
+            "keyColor": "cyan"
+        },
+        {
+            "type": "de",
+            "key": " DE/WM",
+            "keyColor": "cyan"
+        },
+        {
+            "type": "terminal",
+            "key": " Terminal",
+            "keyColor": "cyan"
+        },
+        {
+            "type": "display",
+            "key": "󰍹 Pantalla",
+            "keyColor": "blue"
+        },
+        {
+            "type": "cpu",
+            "key": " CPU",
+            "keyColor": "blue"
+        },
+        {
+            "type": "gpu",
+            "key": "󰢮 GPU",
+            "keyColor": "blue"
+        },
+        {
+            "type": "memory",
+            "key": "󰘚 Memoria",
+            "keyColor": "blue"
+        },
+        {
+            "type": "swap",
+            "key": "󰓡 ZRAM/Swap",
+            "keyColor": "blue"
+        },
+        {
+            "type": "disk",
+            "key": "󰋊 /nix/store",
+            "folders": "/nix/store:/",
+            "keyColor": "blue"
+        },
+        {
+            "type": "custom",
+            "format": "{#36}──────────────────────────────────────────{#0}"
+        },
+        {
+            "type": "colors",
+            "symbol": "circle"
+        }
+    ]
+}
