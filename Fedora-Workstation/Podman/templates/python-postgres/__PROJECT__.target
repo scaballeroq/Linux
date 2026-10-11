@@ -1,0 +1,5 @@
+[Unit]
+Description=__PROJECT__ Project Target
+
+[Install]
+WantedBy=default.target

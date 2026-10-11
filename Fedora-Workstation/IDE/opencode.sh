@@ -1,0 +1,104 @@
+#!/bin/bash
+# ==============================================================================
+# opencode.sh - Instalación de OpenCode AI CLI para Fedora 44
+# Optimizado para Bash, Zsh y GNOME
+# ==============================================================================
+
+set -euo pipefail
+
+OPENCODE_VERSION="${1:-1.18.13}"
+
+echo "================================================================="
+echo "🤖 Instalando OpenCode AI CLI (Versión: $OPENCODE_VERSION)..."
+echo "================================================================="
+
+if [ "$EUID" -ne 0 ]; then
+    if ! command -v sudo &> /dev/null; then
+        echo "❌ Error: 'sudo' no está disponible."
+        exit 1
+    fi
+    SUDO="sudo"
+else
+    SUDO=""
+fi
+
+# Detectar usuario real en caso de ejecución con sudo
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    REAL_USER="$SUDO_USER"
+    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+else
+    REAL_USER="${USER:-$(id -un)}"
+    USER_HOME="${HOME:-/home/$REAL_USER}"
+fi
+
+run_as_user() {
+    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+        sudo -u "$REAL_USER" env HOME="$USER_HOME" "$@"
+    else
+        "$@"
+    fi
+}
+
+# 1. Asegurar dependencias vía DNF5
+echo "ℹ️ [1/3] Verificando dependencias (curl)..."
+if command -v dnf5 &> /dev/null; then
+    $SUDO dnf5 install -y curl 2>/dev/null || true
+else
+    $SUDO dnf install -y curl 2>/dev/null || true
+fi
+
+# 2. Descargar e instalar OpenCode en la versión indicada
+TMP_INSTALLER="/tmp/opencode_install_$$.sh"
+echo "⬇️ [2/3] Descargando e instalando OpenCode $OPENCODE_VERSION..."
+curl -fsSL https://opencode.ai/install -o "$TMP_INSTALLER"
+
+VERSION="$OPENCODE_VERSION" run_as_user bash "$TMP_INSTALLER"
+rm -f "$TMP_INSTALLER"
+
+# 3. Exportar PATH en Bash (predeterminado) y Zsh (condicional)
+echo "⚙️ [3/3] Configurando PATH en Bash (y Zsh si existe ~/.zshrc)..."
+BASHRC="$USER_HOME/.bashrc"
+BASHRC_D="$USER_HOME/.bashrc.d"
+run_as_user touch "$BASHRC"
+
+if [ -d "$BASHRC_D" ]; then
+    cat << 'EOF' | run_as_user tee "$BASHRC_D/opencode.sh" > /dev/null
+# OpenCode AI CLI
+export PATH="$HOME/.opencode/bin:$HOME/.local/bin:$PATH"
+EOF
+fi
+
+if ! grep -q ".opencode/bin" "$BASHRC" 2>/dev/null; then
+    echo -e '\n# OpenCode AI CLI\nexport PATH="$HOME/.opencode/bin:$HOME/.local/bin:$PATH"' | run_as_user tee -a "$BASHRC" > /dev/null
+fi
+
+ZSHRC="$USER_HOME/.zshrc"
+ZSHRC_D="$USER_HOME/.zshrc.d"
+if [ -f "$ZSHRC" ]; then
+    if [ -d "$ZSHRC_D" ]; then
+        cat << 'EOF' | run_as_user tee "$ZSHRC_D/opencode.zsh" > /dev/null
+# OpenCode AI CLI
+export PATH="$HOME/.opencode/bin:$HOME/.local/bin:$PATH"
+EOF
+    fi
+    if ! grep -q ".opencode/bin" "$ZSHRC" 2>/dev/null; then
+        echo -e '\n# OpenCode AI CLI\nexport PATH="$HOME/.opencode/bin:$HOME/.local/bin:$PATH"' | run_as_user tee -a "$ZSHRC" > /dev/null
+    fi
+fi
+
+# Exportar PATH para la sesión actual del script
+export PATH="$USER_HOME/.local/bin:$USER_HOME/.opencode/bin:$PATH"
+
+# 4. Verificación
+echo "================================================================="
+if command -v opencode &> /dev/null || [ -x "$USER_HOME/.local/bin/opencode" ] || [ -x "$USER_HOME/.opencode/bin/opencode" ]; then
+    echo "✅ OpenCode instalado con éxito:"
+    opencode --version 2>/dev/null || "$USER_HOME/.local/bin/opencode" --version 2>/dev/null || true
+else
+    echo "✅ Instalación finalizada."
+fi
+echo "💡 Para disponer del comando en tu terminal actual ejecuta: source ~/.bashrc"
+if [ -f "$ZSHRC" ]; then
+    echo "💡 (Si utilizas Zsh, ejecuta: 'source ~/.zshrc')"
+fi
+echo "================================================================="

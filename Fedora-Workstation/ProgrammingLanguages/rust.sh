@@ -1,0 +1,147 @@
+#!/bin/bash
+# ==============================================================================
+# rust.sh - Instalación de Rust (Canal Stable / Producción) y Cargo-Binstall
+# Optimizado para Fedora Workstation, GNOME (Wayland) y Zsh / Bash (IDEs y CLI)
+# ==============================================================================
+
+set -euo pipefail
+
+echo "================================================================="
+echo "🦀 Instalando Rust (Canal Stable / Producción) para Fedora Workstation"
+echo "================================================================="
+
+if [ "$EUID" -ne 0 ]; then
+    if ! command -v sudo &> /dev/null; then
+        echo "❌ Error: 'sudo' no está disponible."
+        exit 1
+    fi
+    SUDO="sudo"
+else
+    SUDO=""
+fi
+
+# Detectar usuario real en caso de ejecución con sudo
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    REAL_USER="$SUDO_USER"
+    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+else
+    REAL_USER="${USER:-$(id -un)}"
+    USER_HOME="${HOME:-/home/$REAL_USER}"
+fi
+
+run_as_user() {
+    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+        sudo -u "$REAL_USER" env HOME="$USER_HOME" PATH="$USER_HOME/.cargo/bin:$USER_HOME/.local/bin:$PATH" "$@"
+    else
+        PATH="$USER_HOME/.cargo/bin:$USER_HOME/.local/bin:$PATH" "$@"
+    fi
+}
+
+# Exportar PATH para este proceso
+export PATH="$USER_HOME/.cargo/bin:$USER_HOME/.local/bin:/usr/bin:$PATH"
+
+# 1. Dependencias de compilación para Rust y módulos nativos en Fedora
+echo "ℹ️ [1/4] Verificando dependencias de compilación para Rust (Fedora toolchain)..."
+$SUDO dnf5 install -y @development-tools cmake openssl-devel pkgconf-pkg-config curl git lld clang-devel 2>/dev/null || true
+echo "  ✅ Dependencias de compilación preparadas."
+
+# 2. Instalación / Actualización de Rust vía Rustup (Canal Stable)
+echo "ℹ️ [2/4] Configurando Rustup y canal Stable..."
+if [ ! -x "$USER_HOME/.cargo/bin/rustup" ] && ! command -v rustup &> /dev/null; then
+    echo "  ⬇️ Descargando e instalando Rustup..."
+    run_as_user curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | run_as_user sh -s -- -y --default-toolchain stable --profile default --no-modify-path
+else
+    echo "  🔄 Actualizando toolchain Rust Stable..."
+    run_as_user rustup default stable 2>/dev/null || true
+    run_as_user rustup update stable 2>/dev/null || true
+fi
+
+# 3. Componentes esenciales para desarrollo e IDEs (rust-analyzer, clippy, rustfmt, rust-src)
+echo "ℹ️ [3/4] Instalando componentes para IDEs (rust-analyzer, clippy, rustfmt)..."
+run_as_user rustup component add rust-src rust-analyzer clippy rustfmt 2>/dev/null || true
+
+# 4. Instalación de cargo-binstall (descargas binarias ultra-rápidas sin compilar)
+if [ ! -x "$USER_HOME/.cargo/bin/cargo-binstall" ] && ! command -v cargo-binstall &> /dev/null; then
+    echo "  ⬇️ Instalando cargo-binstall para descargas precompiladas..."
+    run_as_user curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | run_as_user bash 2>/dev/null || true
+else
+    echo "  ✅ cargo-binstall ya está instalado."
+fi
+
+# 5. Integración con GNOME (environment.d) y Shells (Zsh / Bash)
+echo "ℹ️ [4/4] Configurando integración con GNOME y Shells..."
+ENV_DIR="$USER_HOME/.config/environment.d"
+run_as_user mkdir -p "$ENV_DIR"
+
+cat << 'EOF' | run_as_user tee "$ENV_DIR/10-rust.conf" > /dev/null
+# Integración de Rust / Cargo para GNOME y entornos gráficos (IDEs)
+PATH=${HOME}/.cargo/bin:${PATH}
+EOF
+
+# Integración modular en Shells (Bash predeterminado; Zsh si existe ~/.zshrc)
+BASHRC_D="$USER_HOME/.bashrc.d"
+run_as_user mkdir -p "$BASHRC_D"
+
+cat << 'EOF' | run_as_user tee "$BASHRC_D/rust.sh" > /dev/null
+# Rust & Cargo Environment
+if [ -f "$HOME/.cargo/env" ]; then
+    . "$HOME/.cargo/env"
+fi
+EOF
+
+# Fallback para .bashrc
+BASHRC="$USER_HOME/.bashrc"
+run_as_user touch "$BASHRC"
+if ! grep -q ".cargo/env" "$BASHRC" 2>/dev/null; then
+    if ! grep -q ".bashrc.d" "$BASHRC" 2>/dev/null; then
+        echo -e '\n# Rust Environment\nif [ -f "$HOME/.cargo/env" ]; then . "$HOME/.cargo/env"; fi' | run_as_user tee -a "$BASHRC" > /dev/null
+    fi
+fi
+
+# Autocompletados para Bash
+COMPLETIONS_DIR="$USER_HOME/.local/share/bash-completion/completions"
+run_as_user mkdir -p "$COMPLETIONS_DIR"
+
+if command -v rustup &>/dev/null || [ -x "$USER_HOME/.cargo/bin/rustup" ]; then
+    run_as_user rustup completions bash > "$COMPLETIONS_DIR/rustup" 2>/dev/null || true
+    run_as_user rustup completions bash cargo > "$COMPLETIONS_DIR/cargo" 2>/dev/null || true
+fi
+
+# Integración Zsh condicional
+if [ -f "$USER_HOME/.zshrc" ]; then
+    ZSHRC_D="$USER_HOME/.zshrc.d"
+    run_as_user mkdir -p "$ZSHRC_D"
+
+    cat << 'EOF' | run_as_user tee "$ZSHRC_D/rust.zsh" > /dev/null
+# Rust & Cargo Environment
+if [ -f "$HOME/.cargo/env" ]; then
+    . "$HOME/.cargo/env"
+fi
+EOF
+
+    ZSH_COMPLETIONS_DIR="$USER_HOME/.local/share/zsh/site-functions"
+    ZFUNC_DIR="$USER_HOME/.zfunc"
+    run_as_user mkdir -p "$ZSH_COMPLETIONS_DIR" "$ZFUNC_DIR"
+
+    if command -v rustup &>/dev/null || [ -x "$USER_HOME/.cargo/bin/rustup" ]; then
+        run_as_user rustup completions zsh > "$ZSH_COMPLETIONS_DIR/_rustup" 2>/dev/null || true
+        run_as_user rustup completions zsh cargo > "$ZSH_COMPLETIONS_DIR/_cargo" 2>/dev/null || true
+        run_as_user rustup completions zsh > "$ZFUNC_DIR/_rustup" 2>/dev/null || true
+        run_as_user rustup completions zsh cargo > "$ZFUNC_DIR/_cargo" 2>/dev/null || true
+    fi
+fi
+
+# Obtener versiones instaladas
+RUSTC_VER=$(run_as_user rustc --version 2>/dev/null || echo "instalado")
+CARGO_VER=$(run_as_user cargo --version 2>/dev/null || echo "instalado")
+BINSTALL_VER=$(run_as_user cargo-binstall --version 2>/dev/null || echo "disponible")
+
+echo "================================================================="
+echo "✅ Rust (Stable) configurado con éxito para Fedora Workstation y GNOME:"
+echo "  • Rustc:       $RUSTC_VER"
+echo "  • Cargo:       $CARGO_VER"
+echo "  • Binstall:    $BINSTALL_VER"
+echo "  • IDE Tools:   rust-analyzer, clippy, rustfmt, rust-src"
+echo "  • GNOME:       ~/.config/environment.d/10-rust.conf"
+echo "  • Shells:      Autocompletado Bash (predeterminada)$([ -f "$USER_HOME/.zshrc" ] && echo " & Zsh (compatible)") (_cargo, _rustup)"
+echo "================================================================="
