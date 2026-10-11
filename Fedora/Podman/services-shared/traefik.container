@@ -1,0 +1,28 @@
+[Unit]
+Description=Traefik Proxy Global
+After=podman-network-proxy-net.service
+
+[Container]
+ContainerName=traefik
+Image=docker.io/library/traefik:v3.2
+Network=proxy-net
+PublishPort=80:80
+PublishPort=443:443
+PublishPort=8080:8080
+Volume=%t/podman/podman.sock:/var/run/docker.sock:ro
+Volume=traefik-config:/etc/traefik
+Command=--providers.docker --providers.docker.exposedbydefault=false --entrypoints.web.address=:80 --entrypoints.websecure.address=:443 --api.dashboard=true --api.insecure=true --log.level=INFO
+HealthCmd=traefik healthcheck --ping
+HealthStartPeriod=10s
+HealthInterval=10s
+HealthRetries=3
+HealthTimeout=5s
+
+[Volume]
+VolumeName=traefik-config
+
+[Network]
+NetworkName=proxy-net
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,39 @@
+# ProgrammingLanguages - Justfile
+# Este justfile es para uso desde el directorio ProgrammingLanguages/
+# Para el justfile principal, usar ../justfile
+
+# Gestor de runtimes Mise
+mise:
+    ./mise.sh
+
+# Node.js LTS
+node:
+    ./nodejs.sh
+
+# Python
+python:
+    ./python.sh
+
+# Rust
+rust:
+    ./rust.sh
+
+# .NET SDK
+dotnet:
+    ./dotnet.sh
+
+# Java (OpenJDK)
+java:
+    ./java.sh
+
+# Angular CLI
+angular:
+    ./angular.sh
+
+# Gemini CLI
+gemini:
+    ./gemini.sh
+
+# Todos los lenguajes
+all: mise node python rust dotnet java angular gemini
+    echo "✅ Todos los lenguajes instalados."
