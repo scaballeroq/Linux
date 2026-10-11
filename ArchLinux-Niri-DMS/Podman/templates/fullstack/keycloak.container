@@ -1,0 +1,24 @@
+[Unit]
+Description=Keycloak for __PROJECT__
+Requires=network-online.target
+After=network-online.target __PROJECT__-postgres.service
+
+[Container]
+ContainerName=__PROJECT__-keycloak
+Image=quay.io/keycloak/keycloak:latest
+Exec=start-dev
+EnvironmentFile=__PROJECT_DIR__/.env
+Environment=KC_DB=postgres
+Environment=KC_DB_URL=jdbc:postgresql://__PROJECT__-postgres:5432/keycloak
+Environment=KC_DB_USERNAME=postgres
+Environment=KC_DB_PASSWORD=changeme
+Environment=KC_HOSTNAME=localhost
+PublishPort=8081:8080
+Network=__PROJECT__.network
+
+[Service]
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=__PROJECT__.target
