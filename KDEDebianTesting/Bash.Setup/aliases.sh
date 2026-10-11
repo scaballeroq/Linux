@@ -15,7 +15,7 @@ alias ~='cd ~'
 alias repo='cd ~/Workspace/Repositorios'
 alias repos='cd ~/Workspace/Repositorios'
 alias debian='cd ~/Workspace/Repositorios/Linux/KDEDebianTesting'
-alias kdedebian='cd ~/Workspace/Repositorios/Linux/KDEDebianTesting'
+alias linux='cd ~/Workspace/Repositorios/Linux'
 
 # 2. INTEGRACIÓN CON KDE PLASMA Y ESCRITORIO
 alias open='xdg-open'
