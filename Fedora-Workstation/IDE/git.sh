@@ -72,8 +72,8 @@ fi
 
 # 2. Configuración Global de Git y Delta (Ejecutada como usuario real)
 echo "ℹ️ [2/3] Aplicando configuración global y mejores prácticas modernas de Git..."
-GIT_USER_NAME="${GIT_USER_NAME:-Sergio Caballero}"
-GIT_USER_EMAIL="${GIT_USER_EMAIL:-scaballeroq@gmail.com}"
+GIT_USER_NAME="${GIT_USER_NAME:-Tu Nombre}"
+GIT_USER_EMAIL="${GIT_USER_EMAIL:-tu_email@ejemplo.com}"
 
 # Identidad del desarrollador
 run_as_user git config --global user.name "$GIT_USER_NAME"

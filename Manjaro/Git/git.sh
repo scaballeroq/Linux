@@ -8,8 +8,8 @@ sudo pacman -S --needed --noconfirm git git-delta lazygit
 
 # Configuración Global de Git
 echo "ℹ️ Aplicando configuración global de Git..."
-GIT_USER_NAME="${GIT_USER_NAME:-Sergio Caballero}"
-GIT_USER_EMAIL="${GIT_USER_EMAIL:-scaballeroq@gmail.com}"
+GIT_USER_NAME="${GIT_USER_NAME:-Tu Nombre}"
+GIT_USER_EMAIL="${GIT_USER_EMAIL:-tu_email@ejemplo.com}"
 
 git config --global user.name "$GIT_USER_NAME"
 git config --global user.email "$GIT_USER_EMAIL"

@@ -76,7 +76,7 @@
   # 7. USUARIO PRINCIPAL (caballero)
   users.users.caballero = {
     isNormalUser = true;
-    description = "Sergio Caballero";
+    description = "Usuario Principal";
     extraGroups = [
       "networkmanager"
       "wheel"

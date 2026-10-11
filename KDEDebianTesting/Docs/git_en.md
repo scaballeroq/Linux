@@ -20,8 +20,8 @@ The environment incorporates **Git**, the visual diff syntax-highlighter **Git-D
 
 2. **Global User Configuration**:
    ```bash
-   git config --global user.name "Sergio Caballero"
-   git config --global user.email "scaballeroq@gmail.com"
+   git config --global user.name "Your Name"
+   git config --global user.email "your_email@example.com"
    ```
 
 3. **Best Practices**:

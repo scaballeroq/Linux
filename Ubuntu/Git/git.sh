@@ -9,8 +9,10 @@ sudo apt install -y git git-delta
 
 # Configuración Global de Git
 echo "ℹ️ Aplicando configuración global de Git..."
-git config --global user.name "Sergio Caballero"
-git config --global user.email "scaballeroq@gmail.com"
+GIT_USER_NAME="${GIT_USER_NAME:-Tu Nombre}"
+GIT_USER_EMAIL="${GIT_USER_EMAIL:-tu_email@ejemplo.com}"
+git config --global user.name "$GIT_USER_NAME"
+git config --global user.email "$GIT_USER_EMAIL"
 
 # Mejores prácticas modernas
 git config --global init.defaultBranch main

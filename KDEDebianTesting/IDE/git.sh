@@ -211,8 +211,8 @@ echo "ℹ️ [2/4] Aplicando configuración global y mejores prácticas modernas
 CURRENT_NAME=$(run_as_user git config --global user.name 2>/dev/null || true)
 CURRENT_EMAIL=$(run_as_user git config --global user.email 2>/dev/null || true)
 
-GIT_USER_NAME="${CURRENT_NAME:-${GIT_USER_NAME:-Sergio Caballero}}"
-GIT_USER_EMAIL="${CURRENT_EMAIL:-${GIT_USER_EMAIL:-scaballeroq@gmail.com}}"
+GIT_USER_NAME="${CURRENT_NAME:-${GIT_USER_NAME:-Tu Nombre}}"
+GIT_USER_EMAIL="${CURRENT_EMAIL:-${GIT_USER_EMAIL:-tu_email@ejemplo.com}}"
 
 run_as_user git config --global user.name "$GIT_USER_NAME"
 run_as_user git config --global user.email "$GIT_USER_EMAIL"

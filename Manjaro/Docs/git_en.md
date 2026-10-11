@@ -22,8 +22,8 @@ The main Git script automates installation and defines version control best prac
 
 2. **Global User Settings**:
    ```bash
-   git config --global user.name "Sergio Caballero"
-   git config --global user.email "scaballeroq@gmail.com"
+   git config --global user.name "Your Name"
+   git config --global user.email "your_email@example.com"
    ```
 
 3. **Modern Best Practices**:

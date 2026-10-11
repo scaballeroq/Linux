@@ -94,9 +94,11 @@ configure_git() {
 
     # Identidad predeterminada si no existe
     if [ -z "$(git config --global user.name 2>/dev/null || true)" ]; then
-        run_as_user git config --global user.name "Sergio Caballero"
-        run_as_user git config --global user.email "scaballeroq@gmail.com"
-        echo "✅ Identidad Git asignada: Sergio Caballero <scaballeroq@gmail.com>"
+        GIT_USER_NAME="${GIT_USER_NAME:-Tu Nombre}"
+        GIT_USER_EMAIL="${GIT_USER_EMAIL:-tu_email@ejemplo.com}"
+        run_as_user git config --global user.name "$GIT_USER_NAME"
+        run_as_user git config --global user.email "$GIT_USER_EMAIL"
+        echo "✅ Identidad Git asignada: $GIT_USER_NAME <$GIT_USER_EMAIL>"
     fi
 
     # Configuración de Git Delta si está disponible

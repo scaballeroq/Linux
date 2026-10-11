@@ -22,8 +22,8 @@ El script principal de Git automatiza la instalación y define las mejores prác
 
 2. **Configuración Global del Usuario**:
    ```bash
-   git config --global user.name "Sergio Caballero"
-   git config --global user.email "scaballeroq@gmail.com"
+   git config --global user.name "Tu Nombre"
+   git config --global user.email "tu_email@ejemplo.com"
    ```
 
 3. **Buenas Prácticas Modernas**:

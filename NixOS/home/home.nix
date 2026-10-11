@@ -15,8 +15,8 @@
   # 2. GIT
   programs.git = {
     enable = true;
-    userName = "Sergio Caballero";
-    userEmail = "scaballeroq@gmail.com";
+    userName = "Tu Nombre";
+    userEmail = "tu_email@ejemplo.com";
     extraConfig = {
       init.defaultBranch = "develop";
       pull.rebase = false;

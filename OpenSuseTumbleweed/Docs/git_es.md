@@ -19,8 +19,8 @@ El entorno incluye el cliente **Git**, el formateador visual de diferencias **Gi
 
 2. **Configuración Global del Usuario**:
    ```bash
-   git config --global user.name "Sergio Caballero"
-   git config --global user.email "scaballeroq@gmail.com"
+   git config --global user.name "Tu Nombre"
+   git config --global user.email "tu_email@ejemplo.com"
    ```
 
 3. **Buenas Prácticas**:

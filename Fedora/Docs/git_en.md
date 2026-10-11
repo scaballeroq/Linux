@@ -21,8 +21,8 @@ Automates installation and best-practice configurations:
 
 2. **Global User Configuration**:
    ```bash
-   git config --global user.name "Sergio Caballero"
-   git config --global user.email "scaballeroq@gmail.com"
+   git config --global user.name "Your Name"
+   git config --global user.email "your_email@example.com"
    ```
 
 3. **Modern Best Practices**:
