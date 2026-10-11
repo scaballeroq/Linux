@@ -1,0 +1,16 @@
+[Unit]
+Description=__PROJECT__ Redis
+Requires=network-online.target
+After=network-online.target
+
+[Container]
+ContainerName=__PROJECT__-redis
+Image=docker.io/library/redis:7-alpine
+PublishPort=6380:6379
+Volume=__PROJECT__-redis-data:/data
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

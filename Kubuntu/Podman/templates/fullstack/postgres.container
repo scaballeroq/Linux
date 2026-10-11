@@ -1,0 +1,19 @@
+[Unit]
+Description=__PROJECT__ PostgreSQL
+Requires=network-online.target
+After=network-online.target
+
+[Container]
+ContainerName=__PROJECT__-postgres
+Image=docker.io/library/postgres:16-alpine
+PublishPort=5433:5432
+Environment=POSTGRES_PASSWORD=devpassword
+Environment=POSTGRES_USER=devuser
+Environment=POSTGRES_DB=__PROJECT__
+Volume=__PROJECT__-postgres-data:/var/lib/postgresql/data
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

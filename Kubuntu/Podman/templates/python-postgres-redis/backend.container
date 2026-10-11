@@ -1,0 +1,20 @@
+[Unit]
+Description=__PROJECT__ Backend
+Requires=network-online.target
+After=network-online.target
+
+[Container]
+ContainerName=__PROJECT__-backend
+Image=docker.io/library/python:3.12-slim
+WorkingDir=/app
+Volume=__PROJECT_DIR__:/app
+PublishPort=8000:8000
+Environment=DATABASE_URL=postgresql://devuser:devpassword@postgres-global:5432/devdb
+Environment=REDIS_URL=redis://redis-global:6379/0
+Exec=python -m http.server 8000
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target
