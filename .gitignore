@@ -1,0 +1,13 @@
+# Archivos del sistema y temporales
+.DS_Store
+Thumbs.db
+*~
+*.swp
+*.bak
+
+# Backups y temporales de empaquetado
+*.tar.gz
+*.tar.xz
+*.tar.zst
+Linux_individual_git_backups/
+.git_backups*/
