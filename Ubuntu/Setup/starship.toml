@@ -1,0 +1,95 @@
+# 🚀 Starship Config: DevUbuntu (Optimized for Ubuntu + Nerd Fonts)
+
+# Formato general del prompt (Una sola línea, limpia y con alto contraste)
+format = """
+$os\
+$directory\
+$git_branch\
+$git_status\
+$package\
+$nodejs\
+$rust\
+$python\
+$dotnet\
+$docker_context\
+$line_break\
+$character"""
+
+# Línea en blanco entre comandos para legibilidad
+add_newline = true
+
+# Carácter del prompt (Minimalista)
+[character]
+success_symbol = "[❯](bold cyan)"
+error_symbol = "[✖](bold red)"
+
+# Icono del SO (Muestra el logo de Ubuntu)
+[os]
+format = "[$symbol]($style) "
+style = "bold orange"
+disabled = false
+
+[os.symbols]
+Ubuntu = " "
+
+# Configuración del Directorio
+[directory]
+truncation_length = 3
+truncation_symbol = "…/"
+style = "bold cyan"
+read_only = " 󰌾"
+home_symbol = "󱂵 ~"
+
+# Git Branch (Con icono de Nerd Fonts)
+[git_branch]
+symbol = " "
+style = "bold magenta"
+format = "on [$symbol$branch]($style) "
+
+# Git Status (Visual y detallado)
+[git_status]
+format = '([\[$all_status$ahead_behind\]]($style) )'
+style = "bold red"
+ahead = "⇡${count}"
+behind = "⇣${count}"
+diverged = "󰹹 ⇡${ahead_count}⇣${behind_count}"
+conflicted = "󰞇 "
+untracked = "󰋗 "
+stashed = "󰏖 "
+modified = "󰏫 "
+staged = "󰐖 "
+renamed = "󰏬 "
+deleted = "󰆴 "
+
+# --- Módulos de Lenguajes (Solo se muestran si estás en un proyecto) ---
+
+[nodejs]
+symbol = " "
+style = "bold green"
+format = "via [$symbol($version)]($style) "
+
+[rust]
+symbol = " "
+style = "bold orange"
+format = "via [$symbol($version)]($style) "
+
+[python]
+symbol = " "
+style = "bold yellow"
+format = "via [$symbol($version) ($virtualenv)]($style) "
+
+[dotnet]
+symbol = "󰪮 "
+style = "bold blue"
+format = "via [$symbol($version)]($style) "
+
+# Docker
+[docker_context]
+symbol = " "
+style = "bold blue"
+format = "on [$symbol$context]($style) "
+
+# Package Manager
+[package]
+symbol = "󰏗 "
+format = "is [$symbol$version]($style) "
