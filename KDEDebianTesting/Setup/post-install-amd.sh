@@ -1,0 +1,186 @@
+#!/bin/bash
+# post-install-amd.sh - Script de post-instalación para Debian Testing (Trixie) con AMD Ryzen y AMD Graphics
+# (Configurado con ZRAM, Kernel rolling, Microcódigo AMD, Mesa Vulkan/VA-API, PipeWire y Suite KDE Plasma 6)
+
+set -euo pipefail
+
+# Detectar versión/codename de Debian
+CODENAME=$(grep '^VERSION_CODENAME=' /etc/os-release | cut -d= -f2 || true)
+if [ -z "$CODENAME" ]; then
+    CODENAME=$(lsb_release -sc 2>/dev/null || echo "forky")
+fi
+
+echo "================================================================="
+echo "🚀 INICIANDO POST-INSTALACIÓN: DEBIAN TESTING ($CODENAME) - AMD RYZEN"
+echo "================================================================="
+
+# 1. Habilitar Repositorios Extra (Contrib, Non-Free, Non-Free-Firmware) y sincronizar codename
+echo "ℹ️ Configurando repositorios contrib, non-free y non-free-firmware para $CODENAME..."
+
+sudo apt update
+sudo apt install -y curl ca-certificates gnupg lsb-release
+
+# Sincronizar suite/codename si los repositorios apuntan a una versión anterior (ej. trixie en un sistema Debian Testing / forky)
+if [ -f /etc/apt/sources.list ]; then
+    if [ "$CODENAME" = "forky" ] && grep -qE '\b(trixie|bookworm)\b' /etc/apt/sources.list; then
+        echo "⚠️ Detectado codename desactualizado en /etc/apt/sources.list. Sincronizando repositorios a '$CODENAME'..."
+        sudo sed -i -E "s/\b(trixie|bookworm)\b/$CODENAME/g" /etc/apt/sources.list
+    fi
+    sudo sed -i -E '/^deb(-src)?[[:space:]]+/ { /main/!b; s/[[:space:]]+(contrib|non-free-firmware|non-free)//g; s/\bmain\b/main contrib non-free non-free-firmware/; }' /etc/apt/sources.list
+fi
+
+if [ -f /etc/apt/sources.list.d/debian.sources ]; then
+    if [ "$CODENAME" = "forky" ] && grep -qE '\b(trixie|bookworm)\b' /etc/apt/sources.list.d/debian.sources; then
+        echo "⚠️ Detectado codename desactualizado en /etc/apt/sources.list.d/debian.sources. Sincronizando repositorios a '$CODENAME'..."
+        sudo sed -i -E "s/\b(trixie|bookworm)\b/$CODENAME/g" /etc/apt/sources.list.d/debian.sources
+    fi
+    sudo sed -i -E '/^Components:/ { /main/!b; s/[[:space:]]+(contrib|non-free-firmware|non-free)//g; s/\bmain\b/main contrib non-free non-free-firmware/; }' /etc/apt/sources.list.d/debian.sources
+fi
+
+echo "ℹ️ Debian Testing ($CODENAME) detectado: Obteniendo paquetes más recientes."
+sudo apt update
+sudo apt full-upgrade -y
+
+# 2. Compresión de Memoria ZRAM (Evita bloqueos del sistema al compilar/multitarea)
+echo "ℹ️ Instalando y configurando SWAP comprimida en RAM (ZRAM con ZSTD)..."
+sudo apt install -y zram-tools 2>/dev/null || true
+if [ -f /etc/default/zramswap ]; then
+    sudo sed -i 's/^#*ALGORITHM=.*/ALGORITHM=zstd/' /etc/default/zramswap
+    sudo sed -i 's/^#*PERCENT=.*/PERCENT=50/' /etc/default/zramswap
+    sudo systemctl restart zramswap.service 2>/dev/null || true
+fi
+
+# 3. Kernel Linux, Firmware y Microcódigo específico para AMD
+echo "ℹ️ Instalando Kernel Linux, Firmware oficial y Microcódigo para AMD Ryzen..."
+sudo apt install -y \
+    linux-image-amd64 \
+    linux-headers-amd64 \
+    firmware-linux \
+    firmware-linux-nonfree \
+    firmware-misc-nonfree \
+    firmware-amd-graphics \
+    amd64-microcode 2>/dev/null || sudo apt install -y linux-image-amd64 linux-headers-amd64 firmware-linux-nonfree amd64-microcode 2>/dev/null || true
+
+# 4. Stack Gráfico y Aceleración HW para AMD (Mesa / RADV / VA-API / Vulkan)
+echo "ℹ️ Instalando controladores gráficos AMD Mesa (RADV/RadeonSI) y aceleración de hardware..."
+sudo apt install -y \
+    mesa-va-drivers \
+    mesa-vdpau-drivers \
+    mesa-vulkan-drivers \
+    mesa-utils \
+    libgl1-mesa-dri \
+    vulkan-tools \
+    vainfo \
+    radeontop 2>/dev/null || sudo apt install -y mesa-va-drivers mesa-vulkan-drivers mesa-utils vainfo || true
+
+# 5. Codecs Multimedia y FFmpeg
+echo "ℹ️ Instalando FFmpeg y codecs multimedia de alto rendimiento..."
+sudo apt install -y \
+    ffmpeg \
+    libavcodec-extra \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav \
+    gstreamer1.0-vaapi \
+    gstreamer1.0-tools 2>/dev/null || true
+
+# 6. Sistema de Audio de Alta Fidelidad (PipeWire + WirePlumber)
+echo "ℹ️ Habilitando servidor de audio moderno PipeWire y WirePlumber..."
+sudo apt install -y \
+    pipewire \
+    pipewire-alsa \
+    pipewire-pulse \
+    pipewire-jack \
+    wireplumber 2>/dev/null || true
+
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    sudo -u "$SUDO_USER" systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
+else
+    systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
+fi
+
+# 7. Entorno de Escritorio KDE Plasma 6 y Aplicaciones Base
+echo "ℹ️ Instalando componentes y utilidades base de KDE Plasma 6..."
+sudo apt install -y \
+    kde-plasma-desktop \
+    plasma-workspace \
+    dolphin \
+    dolphin-plugins \
+    kio-extras \
+    kio-admin \
+    kate \
+    spectacle \
+    kcalc \
+    ark \
+    gwenview \
+    okular \
+    plasma-systemmonitor \
+    partitionmanager \
+    kinfocenter \
+    kitty \
+    power-profiles-daemon \
+    ffmpegthumbnailer \
+    ffmpegthumbs \
+    wl-clipboard \
+    papirus-icon-theme 2>/dev/null || true
+
+# 8. Integración de Flatpak & Flathub en KDE Discover
+echo "ℹ️ Configurando Flatpak y Flathub para KDE Discover..."
+sudo apt install -y flatpak plasma-discover-backend-flatpak 2>/dev/null || true
+sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    sudo -u "$SUDO_USER" flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+else
+    flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+fi
+
+# 9. Software Esencial de Sistema y Desarrollo
+echo "ℹ️ Instalando utilidades esenciales para Debian..."
+sudo apt install -y \
+    build-essential \
+    cmake \
+    curl \
+    wget \
+    btop \
+    htop \
+    inxi \
+    fuse3 \
+    exfatprogs \
+    7zip \
+    p7zip-full \
+    unrar \
+    zip \
+    unzip \
+    bzip2 \
+    xz-utils \
+    fastfetch 2>/dev/null || true
+
+# 10. Desinstalación y purga de bloatware: KDE PIM (KMail, Kontact, Akonadi) y LibreOffice (APT)
+echo "🧹 Desinstalando bloatware de KDE PIM (KMail, Kontact, Akonadi) y LibreOffice APT..."
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    sudo -u "$SUDO_USER" akonadictl stop 2>/dev/null || true
+else
+    akonadictl stop 2>/dev/null || true
+fi
+
+mapfile -t BLOAT_PACKAGES < <(dpkg-query -W -f='${Package}\n' 'kmail*' 'kontact*' 'korganizer*' 'kaddressbook*' '*akonadi*' '*kdepim*' 'pim-*' 'libreoffice*' 2>/dev/null || true)
+
+if [ ${#BLOAT_PACKAGES[@]} -gt 0 ]; then
+    echo "   Purgando ${#BLOAT_PACKAGES[@]} paquetes de KDE PIM, Akonadi y LibreOffice (APT)..."
+    sudo apt purge -y "${BLOAT_PACKAGES[@]}" 2>/dev/null || true
+else
+    echo "   ✅ No se detectaron paquetes de KDE PIM, Akonadi ni LibreOffice instalados vía APT."
+fi
+
+# 11. Limpieza de Paquetes Antiguos y Dependencias Huérfanas
+echo "🧹 Limpiando dependencias huérfanas, paquetes obsoletos y caché..."
+sudo apt autoremove --purge -y
+sudo apt autoclean
+
+echo "================================================================="
+echo "✅ Post-instalación AMD Ryzen completada exitosamente."
+echo "💡 Se recomienda reiniciar el sistema para cargar el microcódigo,"
+echo "   los nuevos módulos del kernel y los servicios de audio/gráficos."
+echo "================================================================="

@@ -1,0 +1,37 @@
+# ProgrammingLanguages Sub-Justfile - Debian Testing
+
+# Instalar todos los lenguajes y runtimes
+languages: mise node python rust dotnet java angular
+    @echo "✅ Todos los lenguajes han sido instalados correctamente."
+
+# Mise version manager
+mise:
+    ./mise.sh
+
+# Node.js LTS
+node:
+    ./nodejs.sh
+
+# Python & uv
+python:
+    ./python.sh
+
+# Creador de proyectos Python aislados con uv
+python-uv:
+    ./python-uv-init.sh
+
+# Rust toolchain & cargo-binstall
+rust:
+    ./rust.sh
+
+# .NET SDK LTS
+dotnet:
+    ./dotnet.sh
+
+# OpenJDK Java LTS
+java:
+    ./java.sh
+
+# Angular CLI
+angular:
+    ./angular.sh
