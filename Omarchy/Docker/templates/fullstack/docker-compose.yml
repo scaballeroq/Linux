@@ -1,0 +1,155 @@
+services:
+  # =============================================================================
+  # Traefik - Proxy Inverso y Enrutamiento Local
+  # =============================================================================
+  traefik:
+    image: docker.io/library/traefik:v3.2
+    container_name: __PROJECT__-traefik
+    restart: unless-stopped
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--log.level=INFO"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080" # Dashboard Traefik
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # =============================================================================
+  # Backend - FastAPI con Recarga en Caliente
+  # =============================================================================
+  backend:
+    image: docker.io/library/python:3.13-slim
+    container_name: __PROJECT__-backend
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./src:/app
+      - ./requirements.txt:/app/requirements.txt:ro
+    env_file:
+      - .env
+    command: sh -c "pip install --no-cache-dir -r requirements.txt && python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.__PROJECT__-backend.rule=Host(`api.__PROJECT__.localhost`)"
+      - "traefik.http.routers.__PROJECT__-backend.entrypoints=web"
+      - "traefik.http.routers.__PROJECT__-backend.service=__PROJECT__-backend"
+      - "traefik.http.services.__PROJECT__-backend.loadbalancer.server.port=8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/health\")' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # =============================================================================
+  # Frontend - Node.js Dev Server con Hot Reload
+  # =============================================================================
+  frontend:
+    image: docker.io/library/node:22-alpine
+    container_name: __PROJECT__-frontend
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    env_file:
+      - .env
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 3000"
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.__PROJECT__-frontend.rule=Host(`app.__PROJECT__.localhost`)"
+      - "traefik.http.routers.__PROJECT__-frontend.entrypoints=web"
+      - "traefik.http.routers.__PROJECT__-frontend.service=__PROJECT__-frontend"
+      - "traefik.http.services.__PROJECT__-frontend.loadbalancer.server.port=3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # =============================================================================
+  # PostgreSQL - Base de Datos
+  # =============================================================================
+  postgres:
+    image: docker.io/library/postgres:17-alpine
+    container_name: __PROJECT__-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_dev_123}
+      POSTGRES_DB: ${POSTGRES_DB:-__PROJECT__}
+    env_file:
+      - .env
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # =============================================================================
+  # Keycloak - Servidor de Autenticación OAuth2 / OIDC
+  # =============================================================================
+  keycloak:
+    image: quay.io/keycloak/keycloak:26
+    container_name: __PROJECT__-keycloak
+    restart: unless-stopped
+    command: start-dev --http-relative-path=/auth
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres
+      KC_DB_URL_DATABASE: ${KEYCLOAK_DB_NAME:-__PROJECT__}
+      KC_DB_USERNAME: ${POSTGRES_USER:-postgres}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-changeme_dev_123}
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8083
+      KC_HOSTNAME_STRICT: "false"
+      KC_PROXY: edge
+    env_file:
+      - .env
+    ports:
+      - "${KEYCLOAK_PORT:-8083}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.__PROJECT__-keycloak.rule=Host(`auth.__PROJECT__.localhost`)"
+      - "traefik.http.routers.__PROJECT__-keycloak.entrypoints=web"
+      - "traefik.http.routers.__PROJECT__-keycloak.service=__PROJECT__-keycloak"
+      - "traefik.http.services.__PROJECT__-keycloak.loadbalancer.server.port=8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/auth/health/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+volumes:
+  postgres-data:

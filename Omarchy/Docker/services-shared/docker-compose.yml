@@ -1,0 +1,126 @@
+services:
+  # =============================================================================
+  # Traefik v3 - Proxy Inverso Global & Dashboard
+  # =============================================================================
+  traefik:
+    image: docker.io/library/traefik:v3.2
+    container_name: traefik-global
+    restart: unless-stopped
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--log.level=INFO"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080" # Dashboard Traefik
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-config:/etc/traefik
+    networks:
+      - proxy-net
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # =============================================================================
+  # PostgreSQL 17 - Base de Datos Global Compartida
+  # =============================================================================
+  postgres-global:
+    image: docker.io/library/postgres:17-alpine
+    container_name: postgres-global
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_GLOBAL_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_GLOBAL_PASSWORD:-changeme_dev_123}
+      POSTGRES_DB: ${POSTGRES_GLOBAL_DB:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-global-data:/var/lib/postgresql/data
+    networks:
+      - proxy-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # =============================================================================
+  # Redis 7 - Caché / Broker Global Compartido
+  # =============================================================================
+  redis-global:
+    image: docker.io/library/redis:7-alpine
+    container_name: redis-global
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-global-data:/data
+    networks:
+      - proxy-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  # =============================================================================
+  # Keycloak 26 - Servidor de Identidad / Autenticación OAuth2 / OIDC Global
+  # =============================================================================
+  keycloak:
+    image: quay.io/keycloak/keycloak:26
+    container_name: keycloak-global
+    restart: unless-stopped
+    command: start-dev --http-relative-path=/auth
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres-global
+      KC_DB_URL_DATABASE: ${KEYCLOAK_DB_NAME:-keycloak}
+      KC_DB_USERNAME: ${POSTGRES_GLOBAL_USER:-postgres}
+      KC_DB_PASSWORD: ${POSTGRES_GLOBAL_PASSWORD:-changeme_dev_123}
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8083
+      KC_HOSTNAME_STRICT: "false"
+      KC_PROXY: edge
+    ports:
+      - "8083:8080"
+    networks:
+      - proxy-net
+    depends_on:
+      postgres-global:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.keycloak.rule=Host(`auth.localhost`)"
+      - "traefik.http.routers.keycloak.entrypoints=web"
+      - "traefik.http.routers.keycloak.service=keycloak"
+      - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/auth/health/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+networks:
+  proxy-net:
+    name: proxy-net
+    driver: bridge
+
+volumes:
+  traefik-config:
+  postgres-global-data:
+  redis-global-data:
