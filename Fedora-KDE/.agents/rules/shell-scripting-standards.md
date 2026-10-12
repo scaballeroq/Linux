@@ -1,6 +1,6 @@
-# Estándares de Shell Scripting (Fedora)
+# Estándares de Shell Scripting (Fedora-KDE)
 
-Esta regla define los estándares de calidad, robustez, seguridad e idempotencia que deben seguir todos los scripts Bash dentro del subproyecto `Fedora`.
+Esta regla define los estándares de calidad, robustez, seguridad e idempotencia que deben seguir todos los scripts Bash dentro del subproyecto `Fedora-KDE`.
 
 ---
 

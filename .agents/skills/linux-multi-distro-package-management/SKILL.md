@@ -40,7 +40,7 @@ sudo apt --fix-broken install
 
 ## 2. Familia Fedora / Red Hat (DNF5)
 
-Aplica a: `Fedora`, `Fedora-Workstation`.
+Aplica a: `Fedora-KDE`, `Fedora-Workstation`.
 
 ```bash
 # 1. Comprobar actualizaciones refrescando metadatos

@@ -58,11 +58,11 @@ just -d KDEDebianTesting update
 
 ## 4. Sincronización y Comparación entre Distribuciones
 
-Para auditar diferencias entre dotfiles de dos distribuciones (ej. `DebianTesting` vs `KDEDebianTesting` o `Fedora` vs `Ubuntu`):
+Para auditar diferencias entre dotfiles de dos distribuciones (ej. `DebianTesting` vs `KDEDebianTesting` o `Fedora-KDE` vs `Ubuntu`):
 
 ```bash
 # Comparar aliases de shell
-diff -u Fedora/Bash.Setup/aliases.sh Ubuntu/Bash.Setup/aliases.sh || true
+diff -u Fedora-KDE/Bash.Setup/aliases.sh Ubuntu/Bash.Setup/aliases.sh || true
 
 # Comparar recetas de justfile
 diff -u KDEDebianTesting/justfile OpenSuseTumbleweed/justfile || true
@@ -77,7 +77,7 @@ diff -u KDEDebianTesting/justfile OpenSuseTumbleweed/justfile || true
 git status -s
 
 # Ver cambios pendientes en un subdirectorio concreto
-git status -- Fedora/
+git status -- Fedora-KDE/
 
 # Ver último commit que afectó a una distribución específica
 git log -n 1 -- <directorio>/

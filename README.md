@@ -13,8 +13,8 @@ Repositorio unificado que centraliza configuraciones, scripts de automatización
 | `CachyOS_Niri_Noctalia` | CachyOS con Niri y configuración personalizada Noctalia |
 | `Debian` | Debian GNU/Linux estable y personalización general |
 | `DebianTesting` | Debian Testing con configuraciones actualizadas y scripts de setup |
-| `Fedora` | Fedora Workstation y herramientas del sistema |
-| `Fedora-Workstation` | Fedora Workstation con scripts de configuración para desarrollo |
+| `Fedora-KDE` | Fedora 44 Workstation con entorno de escritorio KDE Plasma 6 |
+| `Fedora-Workstation` | Fedora 44 Workstation con entorno de escritorio GNOME Shell |
 | `KDEDebian` | Debian con entorno de escritorio KDE Plasma |
 | `KDEDebianTesting` | Debian Testing optimizado para KDE Plasma 6 |
 | `Kubuntu` | Kubuntu con entorno de escritorio KDE Plasma |
