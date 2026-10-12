@@ -209,6 +209,13 @@ optimize_wayland_launcher() {
     sed -i "s|^Exec=google-chrome-stable|Exec=google-chrome-stable $WAYLAND_FLAGS|g" "$USER_DESKTOP_FILE"
     chmod 644 "$USER_DESKTOP_FILE"
 
+    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+        chown -R "$REAL_USER:" "$USER_DESKTOP_DIR" 2>/dev/null || true
+        sudo -u "$REAL_USER" kbuildsycoca6 --noincremental 2>/dev/null || true
+    else
+        kbuildsycoca6 --noincremental 2>/dev/null || true
+    fi
+
     echo -e "${GREEN}✔${NC} Lanzador configurado en $USER_DESKTOP_FILE."
 }
 
@@ -216,6 +223,11 @@ restore_desktop_launcher() {
     if [ -f "$USER_DESKTOP_FILE" ]; then
         echo -e "${BLUE}🔄 Restaurando lanzador de escritorio original del sistema...${NC}"
         rm -f "$USER_DESKTOP_FILE"
+        if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+            sudo -u "$REAL_USER" kbuildsycoca6 --noincremental 2>/dev/null || true
+        else
+            kbuildsycoca6 --noincremental 2>/dev/null || true
+        fi
         echo -e "${GREEN}✔${NC} Lanzador personalizado de usuario eliminado."
     else
         echo -e "${YELLOW}ℹ️ No hay lanzador personalizado que restaurar.${NC}"

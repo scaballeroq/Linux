@@ -68,9 +68,8 @@ echo "================================================================="
 # 1. Asegurar RPM Fusion Non-Free
 echo "⚡ [1/3] Verificando repositorio RPM Fusion Non-Free..."
 if ! is_pkg_installed rpmfusion-nonfree-release; then
-    local fedora_ver
-    fedora_ver=$(rpm -E %fedora 2>/dev/null || echo "44")
-    $SUDO dnf5 install -y "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${fedora_ver}.noarch.rpm" 2>/dev/null || true
+    FEDORA_VER=$(rpm -E %fedora 2>/dev/null || echo "44")
+    $SUDO dnf5 install -y "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${FEDORA_VER}.noarch.rpm" 2>/dev/null || true
 fi
 
 # 2. Instalar Steam, GameMode, MangoHud y librerías 32-bit

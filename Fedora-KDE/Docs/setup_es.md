@@ -174,23 +174,20 @@ just cockpit
 
 ---
 
-## 8. Temas e Integración Visual (`apariencia.sh`)
+## 8. Configuración y Personalización de KDE Plasma 6 (`kde-settings.sh`)
 
-Aplica y gestiona temas globales, motor de estilos SVG Kvantum (Qt5/Qt6), esquemas de color e iconos en KDE Plasma 6 asegurando coherencia visual con aplicaciones GTK 3/4 y Flatpaks:
-- Motor de Widgets Qt: **Kvantum** (con temas SVG como `KvFlatDark`, `KvMojaveDark`, `MateriaDark`) / **Breeze**
-- Tema Global KDE: **Breeze Dark** / **Breeze Light**
-- Iconos: **Papirus-Dark** / **Breeze-Dark**
-- Cursores: `breeze_cursors`
+Aplica y gestiona la personalización de KDE Plasma 6, Dolphin, KWin Wayland (botones a la derecha, Luz Nocturna a 4000K), atajo Ctrl+Alt+T para Kitty, servicemenus de Dolphin (Kitty, Antigravity) y temas visuales (Breeze Dark/Light, motor Kvantum SVG, iconos Papirus-Dark / Breeze-Dark y coherencia con GTK 3/4):
 
 ```bash
-just apariencia
-# Opciones CLI:
-./Setup/apariencia.sh --status              # Muestra la apariencia activa (KDE, Kvantum, GTK)
-./Setup/apariencia.sh --list                # Lista temas globales, iconos y temas Kvantum
-./Setup/apariencia.sh --dark                # Aplica modo oscuro con Kvantum (KvFlatDark + Papirus-Dark)
-./Setup/apariencia.sh --light               # Aplica modo claro con Kvantum (KvFlatLight + Papirus)
-./Setup/apariencia.sh --kvantum-theme KvArcDark  # Aplica un tema Kvantum personalizado
-./Setup/apariencia.sh --breeze-widgets      # Restablece widgets nativos Breeze (sin Kvantum)
+just kde-setup
+# Opciones y temas:
+./Setup/kde-settings.sh --status              # Muestra el diagnóstico detallado (KDE, KWin, Kvantum, GTK)
+./Setup/kde-settings.sh --breeze-dark         # Aplica tema oscuro oficial Breeze Dark
+./Setup/kde-settings.sh --breeze-light        # Aplica tema claro oficial Breeze Light
+./Setup/kde-settings.sh --kvantum             # Activa Kvantum como motor de widgets Qt
+./Setup/kde-settings.sh --kvantum-theme KvFlatDark # Aplica un tema Kvantum específico
+./Setup/kde-settings.sh --papirus             # Aplica iconos Papirus-Dark
+./Setup/kde-settings.sh --list                # Lista temas globales, iconos y temas Kvantum
 ```
 
 ---

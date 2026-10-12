@@ -181,12 +181,11 @@ $SUDO usermod -aG lp "$TARGET_USER" 2>/dev/null || true
 # 4. Habilitar servicios en Firewalld (zona activa / FedoraWorkstation)
 echo "🛡️ [4/6] Configurando Firewalld para descubrimiento e impresión (IPP y mDNS)..."
 if command -v firewall-cmd &>/dev/null && systemctl is-active --quiet firewalld 2>/dev/null; then
-    local active_zone
-    active_zone=$(firewall-cmd --get-default-zone 2>/dev/null || echo "FedoraWorkstation")
-    $SUDO firewall-cmd --permanent --zone="$active_zone" --add-service=ipp --add-service=ipp-client --add-service=mdns 2>/dev/null || \
+    ACTIVE_ZONE=$(firewall-cmd --get-default-zone 2>/dev/null || echo "FedoraWorkstation")
+    $SUDO firewall-cmd --permanent --zone="$ACTIVE_ZONE" --add-service=ipp --add-service=ipp-client --add-service=mdns 2>/dev/null || \
     $SUDO firewall-cmd --permanent --add-service=ipp --add-service=ipp-client --add-service=mdns 2>/dev/null || true
     $SUDO firewall-cmd --reload 2>/dev/null || true
-    echo "   ✅ Reglas de Firewalld (IPP y mDNS) aplicadas en zona '$active_zone'."
+    echo "   ✅ Reglas de Firewalld (IPP y mDNS) aplicadas en zona '$ACTIVE_ZONE'."
 fi
 
 # 5. Comprobación de detección de la impresora

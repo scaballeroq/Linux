@@ -2,16 +2,16 @@
 # (Fedora 44 + KDE Plasma 6)
 
 # Instala todo el entorno por defecto (Auto-detección de CPU / Portátil AMD)
-setup-all: post-install laptop tuning plymouth shell security fonts apariencia fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+setup-all: post-install multimedia flatpak chrome steam laptop tuning kde-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
     @echo "🚀 Entorno completo de Fedora 44 (KDE Plasma 6) configurado. Por favor, reinicia el sistema."
 
 # Perfil completo para Portátil de desarrollo (AMD Ryzen + Virtualización + Contenedores)
-setup-laptop-amd: post-install-amd laptop tuning plymouth shell security fonts apariencia fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
-    @echo "🚀 Entorno Portátil AMD Ryzen configurado con éxito. Por favor, reinicia el sistema."
+setup-laptop-amd: post-install-amd multimedia flatpak chrome steam laptop tuning kde-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+    @echo "🚀 Entorno Portátil AMD Ryzen (KDE Plasma 6) configurado con éxito. Por favor, reinicia el sistema."
 
 # Perfil para Sobremesa Centro Multimedia (Intel Haswell / Media Center - Sin virtualización ni batería)
-setup-media-desktop: post-install-intel tuning plymouth shell security fonts apariencia fastfetch kitty yt-dlp kodi
-    @echo "🚀 Entorno Sobremesa Intel Media Center configurado con éxito. Por favor, reinicia el sistema."
+setup-media-desktop: post-install-intel multimedia chrome tuning kde-setup shell security fonts fastfetch kitty yt-dlp kodi
+    @echo "🚀 Entorno Sobremesa Intel Media Center (KDE Plasma 6) configurado con éxito. Por favor, reinicia el sistema."
 
 # =============================================================================
 # CONFIGURACIÓN BASE DEL SISTEMA
@@ -21,7 +21,7 @@ setup-media-desktop: post-install-intel tuning plymouth shell security fonts apa
 post-install:
     ./Setup/post-install.sh
 
-# Configuración post-instalación para AMD Ryzen (Kernel, firmware-amd, RADV, Mesa, PipeWire, KDE Plasma)
+# Configuración post-instalación para AMD Ryzen (Kernel, firmware-amd, RADV, Mesa, PipeWire, KDE Plasma, ZRAM)
 post-install-amd:
     ./Setup/post-install-amd.sh
 
@@ -33,49 +33,177 @@ post-install-intel:
 laptop:
     ./Setup/laptop-setup.sh
 
-# Configuración e instalación de impresora HP LaserJet Pro M15w (USB)
+# Autenticación y desbloqueo por huella dactilar (fprintd + authselect)
+fingerprint *args:
+    ./Setup/fingerprint-setup.sh {{args}}
+
+# Estado y diagnóstico de la autenticación por huella dactilar
+fingerprint-status:
+    ./Setup/fingerprint-setup.sh --status
+
+# Optimizar SDDM para contraseña inmediata sin retardo y desbloqueo de KWallet
+fingerprint-sddm-bypass:
+    ./Setup/fingerprint-setup.sh --sddm-bypass
+
+# Registrar huella dactilar en la terminal (sensor táctil de 9 etapas)
+fingerprint-enroll *finger:
+    ./Setup/fingerprint-setup.sh --enroll {{finger}}
+
+# Probar verificación biométrica en el lector
+fingerprint-verify *finger:
+    ./Setup/fingerprint-setup.sh --verify {{finger}}
+
+# Configuración e instalación de impresora HP LaserJet Pro M15w (USB y Red)
 printer:
     ./Setup/hp-printer-setup.sh
 
-# Optimizaciones avanzadas de rendimiento (Sysctl, límites, Systemd, Baloo, Distrobox para Fedora 44 + KDE Plasma)
+# Estado del sistema de impresión HP
+printer-status:
+    ./Setup/hp-printer-setup.sh --status
+
+# Personalización y configuración de KDE Plasma 6 (Breeze Dark, KWin botones, Dolphin KIO servicemenu, atajos)
+kde-setup:
+    ./Setup/kde-settings.sh
+
+# Aplicar tema oscuro completo en KDE Plasma 6 (Breeze Dark + GTK Breeze-Dark)
+kde-theme-dark:
+    ./Setup/kde-settings.sh --dark
+
+# Aplicar tema claro completo en KDE Plasma 6 (Breeze Light)
+kde-theme-light:
+    ./Setup/kde-settings.sh --light
+
+# Diagnóstico y estado de la configuración de KDE Plasma 6
+kde-status:
+    ./Setup/kde-settings.sh --status
+
+# Optimizaciones avanzadas de rendimiento (Btrfs, Sysctl, límites, Baloo, ZRAM, Distrobox para Fedora 44 + KDE Plasma)
 tuning:
     ./Setup/fedora-tuning.sh
 
-# Configuración y activación de Splash Screen visual de arranque (Plymouth: Breeze / BGRT / Spinner)
-plymouth:
-    ./Setup/plymouth-setup.sh
+# Estado actual de las optimizaciones y métricas de rendimiento
+tuning-status:
+    ./Setup/fedora-tuning.sh --status
 
-# Utilidades de terminal y prompt (eza, bat, fzf, zoxide, ripgrep, starship)
+# Configuración y activación de Splash Screen visual de arranque (Plymouth: Breeze / BGRT / Spinner)
+plymouth *args:
+    ./Setup/plymouth-setup.sh {{args}}
+
+# Estado del tema de arranque, paquetes y módulos KMS de Plymouth
+plymouth-status:
+    ./Setup/plymouth-setup.sh --status
+
+# Previsualizar el arranque de Plymouth en una ventana gráfica
+plymouth-preview:
+    ./Setup/plymouth-setup.sh --preview
+
+# Utilidades de terminal y prompt (eza, bat, fzf, zoxide, ripgrep)
 shell:
     ./Setup/shell.sh
 
-# Seguridad y cortafuegos (Firewalld - Zona FedoraWorkstation, DNS-over-TLS, MAC Randomization, Sysctl)
+# Diagnóstico y estado de utilidades CLI de terminal (eza, bat, fzf, zoxide, ripgrep...)
+shell-status:
+    ./Setup/shell.sh --status
+
+# Starship Prompt moderno (Instalar / Activar)
+starship:
+    ./Setup/starship.sh --enable
+
+# Desactivar Starship y restaurar prompt nativo
+starship-disable:
+    ./Setup/starship.sh --disable
+
+# Estado de Starship prompt
+starship-status:
+    ./Setup/starship.sh --status
+
+# Seguridad y cortafuegos (Firewalld - Zona FedoraWorkstation, DNS-over-TLS, Podman, KVM, Sysctl)
 security:
     ./Setup/seguridad.sh
+
+# Estado y diagnóstico de seguridad, cortafuegos y sysctl
+security-status:
+    ./Setup/seguridad.sh --status
 
 # Fuentes de desarrollo (Nerd Fonts: JetBrainsMono, FiraCode, CascadiaCode...)
 fonts:
     ./Setup/fonts.sh
 
-# Apariencia (Temas Breeze Dark, iconos Papirus e integración visual GTK/Qt en KDE Plasma 6)
-apariencia:
-    ./Setup/apariencia.sh
+# Estado y diagnóstico de fuentes de desarrollo (Nerd Fonts)
+fonts-status:
+    ./Setup/fonts.sh --status
 
 # Información estética del sistema (Fastfetch)
-fastfetch:
-    ./Setup/fastfetch.sh
+fastfetch *args:
+    ./Setup/fastfetch.sh {{args}}
 
-# Terminal Kitty acelerada por GPU con tema oscuro y opacidad/blur
+# Estado y diagnóstico de la configuración de Fastfetch
+fastfetch-status:
+    ./Setup/fastfetch.sh --status
+
+# Terminal Kitty acelerada por GPU con tema Catppuccin Mocha, opacidad/blur y atajo Ctrl+Alt+T
 kitty:
     ./Setup/kitty.sh
 
+# Integración y cortafuegos de KDE Connect (Puertos 1714-1764 TCP/UDP)
+kdeconnect *args:
+    ./Setup/kdeconnect.sh {{args}}
+
+# Diagnóstico y estado de KDE Connect y reglas de Firewalld
+kdeconnect-status:
+    ./Setup/kdeconnect.sh --status
+
 # Multimedia (yt-dlp stack, FFmpeg, AtomicParsley, aria2, motor JS Deno)
-yt-dlp:
-    ./Setup/yt-dlp-setup.sh
+yt-dlp *args:
+    ./Setup/yt-dlp-setup.sh {{args}}
+
+# Diagnóstico y estado de yt-dlp y herramientas multimedia
+yt-dlp-status:
+    ./Setup/yt-dlp-setup.sh --status
+
+# Códecs multimedia oficiales de RPM Fusion y aceleración VA-API (mesa-va-drivers-freeworld)
+multimedia:
+    ./Setup/multimedia.sh
+
+# Estado de paquetes multimedia y aceleración VA-API
+multimedia-status:
+    ./Setup/multimedia.sh --status
+
+# Aplicaciones y herramientas desacopladas vía Flatpak (Flatseal, Podman Desktop, Warehouse, VLC...)
+flatpak *args:
+    ./Setup/flatpak.sh {{args}}
+
+# Diagnóstico y estado de Flatpak, repositorio Flathub y aplicaciones instaladas
+flatpak-status:
+    ./Setup/flatpak.sh --status
+
+# Actualizar todas las aplicaciones y runtimes de Flatpak
+flatpak-update:
+    ./Setup/flatpak.sh --update
+
+# Limpiar runtimes huérfanos y dependencias no utilizadas de Flatpak
+flatpak-clean:
+    ./Setup/flatpak.sh --clean
+
+# Navegador Google Chrome oficial (Instalación, actualización u opciones)
+chrome *args:
+    ./Setup/chrome.sh {{args}}
+
+# Diagnóstico y estado de Google Chrome, repositorio oficial y Wayland
+chrome-status:
+    ./Setup/chrome.sh --status
+
+# Steam nativo (RPM Fusion Non-Free), GameMode, MangoHud y drivers 32-bit (i686)
+steam:
+    ./Setup/steam.sh
 
 # Centro Multimedia (Kodi + complementos de streaming)
 kodi:
     sudo dnf5 install -y kodi kodi-inputstream-adaptive kodi-inputstream-rtmp kodi-pvr-iptvsimple
+
+# Actualización estándar de paquetes con DNF5 (dnf5 upgrade --refresh)
+update:
+    sudo dnf5 upgrade --refresh -y
 
 # =============================================================================
 # CONFIGURACIÓN DE RED Y VIRTUALIZACIÓN
@@ -85,9 +213,25 @@ kodi:
 virtualization:
     ./Virtualizacion/virtualization.sh
 
-# Administración Web (Cockpit)
-cockpit:
-    ./Setup/cockpit.sh
+# Diagnóstico y estado de la virtualización KVM/QEMU
+virtualization-status:
+    ./Virtualizacion/virtualization.sh --status
+
+# Administración Web (Cockpit + Podman + Máquinas Virtuales)
+cockpit *args:
+    ./Setup/cockpit.sh {{args}}
+
+# Estado del servicio y módulos de Cockpit
+cockpit-status:
+    ./Setup/cockpit.sh --status
+
+# Abrir Cockpit en el navegador web (https://localhost:9090)
+cockpit-open:
+    ./Setup/cockpit.sh --open
+
+# Lanzar Cockpit Client (si está instalado en el escritorio)
+cockpit-client:
+    ./Setup/cockpit.sh --client
 
 # =============================================================================
 # CONTROL DE VERSIONES
@@ -101,9 +245,13 @@ git-setup:
 # GESTORES DE RUNTIMES
 # =============================================================================
 
-# Gestor de versiones Mise
-mise:
-    ./ProgrammingLanguages/mise.sh
+# Gestor de versiones Mise (Instalación, actualización u opciones)
+mise *args:
+    ./ProgrammingLanguages/mise.sh {{args}}
+
+# Diagnóstico y estado de Mise y runtimes de desarrollo
+mise-status:
+    ./ProgrammingLanguages/mise.sh --status
 
 # =============================================================================
 # LENGUAJES DE PROGRAMACIÓN
