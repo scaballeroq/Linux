@@ -7,7 +7,7 @@
 # Principio de Diseño:
 # - Python NO se instala de forma global a través de gestores de versiones (Mise/Pyenv)
 #   para garantizar la integridad absoluta de las herramientas del sistema Fedora
-#   (DNF5, Firewalld, Libvirt, Cockpit, KDE Plasma).
+#   (DNF5, Firewalld, Libvirt, Cockpit, Snapper/Btrfs, CUPS/HPLIP, KDE Plasma).
 # - Se valida que el sistema tenga instalado y saludable el Python nativo de Fedora.
 # - Para proyectos que requieran versiones específicas de Python (3.11, 3.12, etc.),
 #   se utiliza 'uv' de forma aislada por proyecto (per-project) sin tocar el sistema.
@@ -36,7 +36,7 @@ else
     SUDO=""
 fi
 
-# Variables de entorno para Python & uv (Copy mode esencial para Btrfs)
+# Variables de entorno para Python & uv (Copy mode esencial para Btrfs en NVMe)
 export UV_LINK_MODE="copy"
 export PYTHONUNBUFFERED=1
 
@@ -59,7 +59,7 @@ run_as_user() {
 # ------------------------------------------------------------------------------
 show_help() {
     cat <<EOF
-🐍 Gestor de Entorno Python & uv - Fedora 44 (KDE Plasma 6)
+🐍 Gestor de Entorno Python & uv - Fedora 44 Workstation (KDE Plasma 6)
 
 Filosofía:
   • El sistema operativo utiliza el Python nativo de Fedora (/usr/bin/python3).
@@ -67,7 +67,7 @@ Filosofía:
     (DNF5, Firewalld, Libvirt, Btrfs, CUPS/HPLIP, KDE).
   • Los proyectos que necesiten versiones específicas de Python se gestionan
     de forma aislada mediante 'uv' (ej: 'uv init', 'uv venv --python 3.12').
-  • Optimización Btrfs: UV_LINK_MODE=copy previene errores entre subvolúmenes y snapshots.
+  • Optimización Btrfs: UV_LINK_MODE=copy previene errores de reflinks en snapshots.
 
 Uso:
   $0 [OPCIÓN]
@@ -93,8 +93,8 @@ show_status() {
 
     local py_bin py_ver py_pkg venv_status pip_status mise_py uv_status uvx_status
 
-    py_bin=$(which python3 2>/dev/null || echo "No encontrado")
-    py_ver=$(python3 --version 2>/dev/null || echo "No disponible")
+    py_bin=$(command -v /usr/bin/python3 2>/dev/null || which python3 2>/dev/null || echo "No encontrado")
+    py_ver=$(/usr/bin/python3 --version 2>/dev/null || python3 --version 2>/dev/null || echo "No disponible")
     py_pkg=$(rpm -q python3 2>/dev/null || echo "python3")
 
     if python3 -m venv --help &>/dev/null; then
@@ -111,12 +111,14 @@ show_status() {
         pip_status="⚠️ No instalado a nivel de sistema"
     fi
 
+    # Comprobar que Mise NO tenga un Python global activo (que causaría shadowing)
     if run_as_user mise which python 2>/dev/null >/dev/null; then
         mise_py="⚠️ Detectado shim de Python en Mise (se recomienda eliminar para proteger el sistema)"
     else
         mise_py="✅ Ninguno (Intacto: /usr/bin/python3 protegido)"
     fi
 
+    # Comprobar gestor uv
     if command -v uv &>/dev/null; then
         local uv_v
         uv_v=$(uv --version 2>/dev/null | awk '{print $2}')
@@ -131,7 +133,7 @@ show_status() {
         uvx_status="ℹ️ No disponible"
     fi
 
-    echo "1. Python Nativo del Sistema (Fedora 44):"
+    echo "1. Python Nativo del Sistema (Fedora 44 Workstation):"
     echo "   • Binario:              $py_bin"
     echo "   • Versión:              $py_ver"
     echo "   • Paquete RPM:          $py_pkg"
@@ -150,6 +152,9 @@ show_status() {
     echo "================================================================="
 }
 
+# ------------------------------------------------------------------------------
+# 3. CONTROL DE ARGUMENTOS CLI
+# ------------------------------------------------------------------------------
 case "${1:-}" in
     --status|-s|status)
         show_status
@@ -173,12 +178,14 @@ echo "================================================================="
 echo "🐍 Verificando Python Nativo de Fedora y Gestor 'uv' (Mise)"
 echo "================================================================="
 
-# 1. Comprobar integridad del Python nativo de Fedora
+# ------------------------------------------------------------------------------
+# 4. VERIFICAR PYTHON NATIVO DE FEDORA 44
+# ------------------------------------------------------------------------------
 echo "ℹ️ [1/4] Comprobando integridad del Python nativo de Fedora..."
 MISSING_PKGS=()
 
 check_pkg() {
-    rpm -q "$1" >/dev/null 2>&1
+    rpm -q "$1" &>/dev/null
 }
 
 if ! check_pkg python3; then MISSING_PKGS+=("python3"); fi
@@ -199,7 +206,9 @@ else
     echo "  ✅ Python nativo de Fedora ($(python3 --version 2>/dev/null)) y librerías base intactos."
 fi
 
-# 2. Asegurar que Mise no bloquee el Python del sistema
+# ------------------------------------------------------------------------------
+# 5. GARANTIZAR QUE MISE NO ENMASCARA EL PYTHON DEL SISTEMA
+# ------------------------------------------------------------------------------
 echo "ℹ️ [2/4] Asegurando que Mise no bloquee ni enmascare el Python del sistema..."
 if command -v mise &>/dev/null || [ -x "$USER_HOME/.local/bin/mise" ]; then
     run_as_user mise unuse --global python 2>/dev/null || true
@@ -207,7 +216,9 @@ if command -v mise &>/dev/null || [ -x "$USER_HOME/.local/bin/mise" ]; then
     echo "  ✅ Aislamiento garantizado: ningún shim global de Python interfiere con Fedora."
 fi
 
-# 3. Instalar / verificar gestor 'uv' vía Mise
+# ------------------------------------------------------------------------------
+# 6. INSTALAR / VERIFICAR GESTOR 'uv' VÍA MISE (PARA PROYECTOS AISLADOS)
+# ------------------------------------------------------------------------------
 echo "ℹ️ [3/4] Verificando gestor 'uv' para gestión aislada per-project..."
 if ! command -v mise &> /dev/null && [ ! -x "$USER_HOME/.local/bin/mise" ]; then
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -223,33 +234,76 @@ fi
 run_as_user mise use --global uv@latest
 run_as_user mise reshim 2>/dev/null || true
 
-# 4. Integración con KDE Plasma 6 y Shells
-echo "ℹ️ [4/4] Configurando variables de entorno para Btrfs y autocompletados..."
+# ------------------------------------------------------------------------------
+# 7. INTEGRACIÓN CON KDE PLASMA 6, SHELLS Y AUTOCOMPLETADOS
+# ------------------------------------------------------------------------------
+echo "ℹ️ [4/4] Configurando variables de entorno (Btrfs copy mode) y autocompletados..."
 
-# KDE Plasma 6 (environment.d)
-run_as_user mkdir -p "$USER_HOME/.config/environment.d"
-cat << 'EOF' | run_as_user tee "$USER_HOME/.config/environment.d/10-python.conf" > /dev/null
-# Entorno Python y optimización para Btrfs
-UV_LINK_MODE=copy
+ENV_DIR="$USER_HOME/.config/environment.d"
+BASHRC_D="$USER_HOME/.bashrc.d"
+BASH_COMPLETIONS_DIR="$USER_HOME/.local/share/bash-completion/completions"
+
+run_as_user mkdir -p "$ENV_DIR" "$BASHRC_D" "$BASH_COMPLETIONS_DIR"
+
+# 7.1. Integración con sesión gráfica KDE Plasma 6 (systemd user)
+cat << 'EOF' | run_as_user tee "$ENV_DIR/10-python.conf" > /dev/null
+# Integración de Python & uv para Wayland / KDE Plasma 6 (Btrfs copy mode)
 PYTHONUNBUFFERED=1
+UV_LINK_MODE=copy
 EOF
 
-# Bash completion
-run_as_user mkdir -p "$USER_HOME/.local/share/bash-completion/completions"
-if command -v uv &>/dev/null; then
-    run_as_user uv generate-shell-completion bash > "$USER_HOME/.local/share/bash-completion/completions/uv" 2>/dev/null || true
-    run_as_user uvx --generate-shell-completion bash > "$USER_HOME/.local/share/bash-completion/completions/uvx" 2>/dev/null || true
+# 7.2. Shell Bash (predeterminada)
+cat << 'EOF' | run_as_user tee "$BASHRC_D/python.sh" > /dev/null
+# Python & uv Environment Settings (Fedora 44)
+export PYTHONUNBUFFERED=1
+export UV_LINK_MODE=copy
+EOF
+
+# 7.3. Shell Zsh (compatibilidad condicional)
+if [ -f "$USER_HOME/.zshrc" ]; then
+    ZSHRC_D="$USER_HOME/.zshrc.d"
+    run_as_user mkdir -p "$ZSHRC_D"
+    cat << 'EOF' | run_as_user tee "$ZSHRC_D/python.zsh" > /dev/null
+# Python & uv Environment Settings (Fedora 44)
+export PYTHONUNBUFFERED=1
+export UV_LINK_MODE=copy
+EOF
 fi
 
-# Zsh completion
-run_as_user mkdir -p "$USER_HOME/.zfunc"
+# 7.4. Autocompletados para Bash (uv y uvx)
 if command -v uv &>/dev/null; then
-    run_as_user uv generate-shell-completion zsh > "$USER_HOME/.zfunc/_uv" 2>/dev/null || true
-    run_as_user uvx --generate-shell-completion zsh > "$USER_HOME/.zfunc/_uvx" 2>/dev/null || true
+    uv generate-shell-completion bash > "$BASH_COMPLETIONS_DIR/uv" 2>/dev/null || true
+    uvx --generate-shell-completion bash > "$BASH_COMPLETIONS_DIR/uvx" 2>/dev/null || true
 fi
 
+# 7.5. Autocompletados para Zsh (si existe ~/.zshrc)
+if [ -f "$USER_HOME/.zshrc" ]; then
+    ZSH_COMPLETIONS_DIR="$USER_HOME/.local/share/zsh/site-functions"
+    ZFUNC_DIR="$USER_HOME/.zfunc"
+    run_as_user mkdir -p "$ZSH_COMPLETIONS_DIR" "$ZFUNC_DIR"
+
+    if command -v uv &>/dev/null; then
+        uv generate-shell-completion zsh > "$ZSH_COMPLETIONS_DIR/_uv" 2>/dev/null || true
+        uv generate-shell-completion zsh > "$ZFUNC_DIR/_uv" 2>/dev/null || true
+        uvx --generate-shell-completion zsh > "$ZSH_COMPLETIONS_DIR/_uvx" 2>/dev/null || true
+        uvx --generate-shell-completion zsh > "$ZFUNC_DIR/_uvx" 2>/dev/null || true
+    fi
+fi
+
+# ------------------------------------------------------------------------------
+# 8. RESUMEN FINAL
+# ------------------------------------------------------------------------------
+PYTHON_VER=$(python3 --version 2>/dev/null || echo "Python nativo del sistema")
+UV_VER=$(run_as_user mise exec uv@latest -- uv --version 2>/dev/null || echo "uv instalado")
+PIP_VER=$(python3 -m pip --version 2>/dev/null | awk '{print $2}' || echo "pip del sistema")
+
 echo "================================================================="
-echo "✅ Entorno de Python y gestor 'uv' configurado exitosamente."
-echo "💡 Para crear un proyecto nuevo con entorno aislado: 'just python-uv'"
+echo "✅ Entorno Python & uv listo para Fedora 44 y KDE Plasma 6:"
+echo "  • Python Sistema: $PYTHON_VER (/usr/bin/python3 nativo)"
+echo "  • Gestor pip:     v$PIP_VER (paquetes nativos Fedora)"
+echo "  • Gestor uv:      $UV_VER (para proyectos y entornos aislados)"
+echo "  • Modo Btrfs:     UV_LINK_MODE=copy (optimizado para snapshots Btrfs)"
+echo "  • Entorno KDE:    ~/.config/environment.d/10-python.conf"
+echo "  • Shells:         Bash (predeterminada)$([ -f "$USER_HOME/.zshrc" ] && echo " & Zsh (compatible)") con autocompletados (uv / uvx)"
+echo "  • Proyectos:      Ejecuta './ProgrammingLanguages/python-uv-init.sh' para crear nuevos entornos"
 echo "================================================================="
-show_status

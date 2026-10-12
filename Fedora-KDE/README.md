@@ -50,13 +50,11 @@ Gestión moderna de lenguajes de programación y SDKs:
 - **`gemini.sh`**: CLI de Google Gemini.
 
 ### 💻 [IDEs y Herramientas de Desarrollo](./IDE/)
-- **`neovim.sh`**: Neovim modular con la distribución LazyVim preconfigurada.
-- **`vscode.sh`**: Visual Studio Code nativo mediante el repositorio oficial RPM de Microsoft con DNF5.
-- **`antigravity.sh`**: Google Antigravity Desktop 2.0 (instalador integral con sandbox y lanzador de escritorio).
-- **`antigravity-cli.sh`** & **`antigravity-ide.sh`**: Suite CLI y motor IDE independiente de Antigravity.
-- **`opencode.sh`**: Cliente y editor de IA OpenCode con control de versión.
-- **`git.sh`**: Configuración global de Git, paginador visual Git-Delta (`zdiff3`, `side-by-side`) y Lazygit TUI.
-- **`github-cli.sh`**: Cliente oficial de GitHub CLI (`gh`).
+- **`antigravity.sh`**: Google Antigravity Desktop setup (con sandbox Chromium `4755`, librerías nativas y KIO servicemenu para Dolphin).
+- **`antigravity-cli.sh`**: Google Antigravity CLI (`agy`) setup.
+- **`antigravity-ide.sh`**: Google Antigravity IDE Engine setup (con launcher KDE y servicemenu para Dolphin).
+- **`git.sh`**: Git, Delta, Lazygit y GitHub CLI setup con configuración global.
+- **`opencode.sh`**: OpenCode AI CLI setup integrado en PATH.
 
 ### 🐳 [Podman](./Podman/)
 Ecosistema profesional para contenedores Rootless y Systemd Quadlets:

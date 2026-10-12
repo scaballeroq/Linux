@@ -1,11 +1,11 @@
 [Unit]
 Description=PostgreSQL Global Compartido
-After=podman-network-proxy-net.service
+After=network-online.target
 
 [Container]
 ContainerName=postgres-global
 Image=docker.io/library/postgres:17-alpine
-Network=proxy-net
+Network=proxy-net.network
 Environment=POSTGRES_USER=postgres
 Environment=POSTGRES_PASSWORD=changeme_dev_123
 Volume=postgres-global-data:/var/lib/postgresql/data
@@ -16,8 +16,6 @@ HealthInterval=5s
 HealthRetries=5
 HealthTimeout=5s
 
-[Volume]
-VolumeName=postgres-global-data
-
 [Install]
 WantedBy=default.target
+

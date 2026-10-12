@@ -1,2 +1,3 @@
 [Network]
+NetworkName=__PROJECT__-net
 Driver=bridge

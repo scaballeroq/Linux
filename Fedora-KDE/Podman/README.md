@@ -1,6 +1,17 @@
 # Podman Professional - Quadlets para Desarrollo
 
-Gestion de contenedores con **Podman + Quadlets + systemd** para proyectos Python/PostgreSQL con proxy, autenticacion y servicios compartidos.
+Gestión de contenedores con **Podman Rootless + Quadlets + systemd** en **Fedora 44 Workstation + KDE Plasma 6 (Wayland)**.
+
+Al ser Fedora la distribución comunitaria impulsada por **Red Hat**, Podman es el motor de contenedores nativo de primera clase instalado y soportado de serie. Esta configuración aprovecha su integración profunda con `systemd`, `cgroups v2`, `SELinux`, `Netavark`/`pasta` y el generador de Quadlets.
+
+Optimizado específicamente para la estación de trabajo:
+- **Distribución Base:** Fedora 44 Workstation (KDE Plasma 6 sobre Wayland)
+- **CPU:** AMD Ryzen 7 PRO 4750U (8 núcleos / 16 hilos Zen 2)
+- **GPU:** AMD Radeon Vega 7 Graphics (aceleración hardware VA-API y passthrough `/dev/dri/card0` y `/dev/dri/renderD128`)
+- **Memoria:** 32 GB RAM DDR4 con ZRAM swap activa
+- **Almacenamiento:** SSD NVMe 1 TB (`ext4`/`btrfs`) con driver `overlay` nativo en kernel (sin sobrecarga FUSE)
+- **Red:** Rootless de alto rendimiento con `pasta` (`passt`) y Netavark
+- **Seguridad:** Firewalld con interfaces `podman+` y `cni-podman+` en zona `trusted`, y compatibilidad nativa con SELinux (`:z` / `:Z`)
 
 ---
 
@@ -8,52 +19,68 @@ Gestion de contenedores con **Podman + Quadlets + systemd** para proyectos Pytho
 
 ```
 Podman/
-├── install/                  # Scripts de instalacion
-│   ├── podman-install.sh     # Instala Podman rootless
-│   └── quadlets-setup.sh     # Configura systemd para Quadlets
+├── install/                  # Scripts de instalación y configuración
+│   ├── podman-install.sh     # Configura y optimiza Podman rootless para Fedora y hardware AMD
+│   └── quadlets-setup.sh     # Prepara directorios y servicios systemd Quadlets
 │
-├── lib/
-│   └── podman-utils.sh       # CLI para gestionar proyectos
+├── lib/                      # CLI y autocompletados
+│   ├── podman-utils.sh       # CLI unificado para proyectos, contenedores y Quadlets
+│   ├── podman-utils-completion.bash # Autocompletado oficial para Bash
+│   └── podman-utils-completion.zsh  # Autocompletado oficial para Zsh
 │
-├── templates/                # Plantillas de proyectos
-│   ├── python-postgres/      # Python + PostgreSQL
-│   ├── python-postgres-redis/# Python + PostgreSQL + Redis
-│   └── fullstack/            # Front + Back + PostgreSQL + Traefik + Keycloak
+├── templates/                # Plantillas declarativas de proyectos (Quadlets)
+│   ├── python-postgres/      # Python 3.13 (FastAPI/Flask) + PostgreSQL 17
+│   ├── python-postgres-redis/# Python + PostgreSQL 17 + Redis 7 (Celery/Cache)
+│   └── fullstack/            # Frontend (Node 22) + Backend + Postgres + Traefik + Keycloak 26
 │
-├── services-shared/          # Servicios globales reutilizables
-│   ├── traefik.container     # Proxy inverso
-│   ├── keycloak.container    # OAuth2/OIDC (Google, Microsoft, GitHub)
-│   ├── postgres-global.container  # PostgreSQL compartido
-│   └── redis-global.container     # Redis compartido
+├── services-shared/          # Servicios globales y redes compartidas
+│   ├── proxy-net.network     # Red bridge declarativa para servicios globales
+│   ├── traefik.container     # Proxy inverso global con dashboard
+│   ├── keycloak.container    # Autenticación OAuth2/OIDC centralizada (Keycloak 26)
+│   ├── postgres-global.container  # PostgreSQL multi-base de datos compartido
+│   └── redis-global.container     # Redis compartido para cache global
 │
-└── projects/                 # Tus proyectos (gitignored)
+├── scripts-standalone/       # 18 Contenedores de desarrollo rápido con volúmenes persistentes
+└── projects/                 # Tus proyectos locales generados (gitignored)
 ```
 
 ---
 
-## Configuración y Despliegue en Fedora 44
+## Instalación y Configuración
 
-Podman viene preinstalado de forma nativa en **Fedora 44**. El script de configuración optimiza el entorno Rootless, habilita persistencia (linger), activa el socket de API compatible con Docker y enlaza la CLI `podman-utils`.
+### 1. Configuración Integral de Podman Rootless
 
-### 1. Configuración Completa de Podman Rootless y Quadlets
+Dado que Podman ya viene integrado en Fedora, el script comprueba de forma idempotente las dependencias opcionales (`podman-compose`, `podman-docker`, `passt`, `catatonit`), evitando llamadas a `sudo` si los paquetes ya están instalados.
 
 ```bash
-# Mediante script:
+# Ejecutar el instalador/optimizador:
 ./install/podman-install.sh
 
 # O mediante just:
 just podman-setup
 ```
 
-Esto automatiza:
-- Instalación de complementos (`podman-compose`, `podman-docker`, `passt`).
-- Persistencia de contenedores (`loginctl enable-linger $USER`).
-- Activación del socket de Podman en systemd user (`/run/user/$UID/podman/podman.sock`).
-- Inyección de `DOCKER_HOST` en `~/.config/environment.d/10-podman.conf` para IDEs (VS Code, JetBrains, DevContainers) en la sesión gráfica de KDE Plasma.
-- Despliegue de la estructura de Quadlets (`~/.config/containers/systemd/`).
-- Creación del symlink global `~/.local/bin/podman-utils`.
+**Optimizaciones aplicadas automáticamente:**
+- **Overlay Nativo:** Configura `~/.config/containers/storage.conf` con `metacopy=on` para máximo rendimiento I/O sin FUSE.
+- **Hardware AMD Ryzen & Vega 7:** `~/.config/containers/containers.conf` configurado con 8 copias paralelas para descargas, runtime `crun`, PIDs limit a 4096 y passthrough `/dev/dri`.
+- **Sesión Gráfica KDE Plasma 6 (Wayland):** Inyecta `DOCKER_HOST` y `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE` en `~/.config/environment.d/10-podman.conf`. IDEs (VS Code, JetBrains, DevContainers) y utilidades gráficas reconocen el socket inmediatamente al iniciar sesión.
+- **Shells Modulares:** Inyección en `~/.bashrc.d/podman.sh` y condicional en `~/.zshrc.d/podman.zsh`.
+- **Red y Firewalld:** Interfaz `podman+` añadida a la zona `trusted` en Firewalld.
+- **CLI & Autocompletado:** Symlink en `~/.local/bin/podman-utils` y registros de autocompletado en Bash y Zsh.
 
-### 2. Comprobar Diagnóstico
+### 2. Estructura de Quadlets
+
+```bash
+# Preparar directorios de usuario para systemd Quadlets:
+./install/quadlets-setup.sh
+
+# O instalar también todos los servicios y redes compartidas:
+./install/quadlets-setup.sh --install-shared
+```
+
+### 3. Diagnóstico del Entorno (Doctor)
+
+Comprueba en cualquier momento el estado de la API, sockets, cgroups, SELinux, firewalld y aceleración GPU:
 
 ```bash
 podman-utils doctor
@@ -63,7 +90,7 @@ just podman-status
 
 ---
 
-## Uso Rapido
+## Flujo de Trabajo con Proyectos (Quadlets)
 
 ### Crear un proyecto
 
@@ -71,10 +98,10 @@ just podman-status
 # Python + PostgreSQL
 podman-utils create python-postgres mi-api
 
-# Python + PostgreSQL + Redis (Celery, cache, etc.)
+# Python + PostgreSQL + Redis (Celery, tareas async)
 podman-utils create python-postgres-redis mi-api
 
-# Fullstack con proxy y autenticacion
+# Fullstack con proxy y autenticación OAuth2
 podman-utils create fullstack mi-app
 ```
 
@@ -84,273 +111,136 @@ podman-utils create fullstack mi-app
 nano projects/mi-api/.env
 ```
 
-Cambia las contraseñas por defecto antes de iniciar.
+Modifica las credenciales y puertos por defecto antes de iniciar los servicios.
 
-### Iniciar el proyecto
+### Operaciones del Ciclo de Vida
 
 ```bash
+# Iniciar servicios del proyecto vía systemd
 podman-utils start mi-api
-```
 
-### Ver logs
-
-```bash
-# Todos los servicios
-podman-utils logs mi-api
-
-# Un servicio especifico
-podman-utils logs mi-api backend
-podman-utils logs mi-api postgres
-```
-
-### Ver estado
-
-```bash
+# Ver estado detallado de las unidades systemd y contenedores
 podman-utils status mi-api
-```
 
-### Detener
+# Ver logs en tiempo real vía journalctl
+podman-utils logs mi-api
+podman-utils logs mi-api backend
 
-```bash
+# Detener o reiniciar
 podman-utils stop mi-api
-```
-
-### Reiniciar
-
-```bash
 podman-utils restart mi-api
-```
 
-### Eliminar proyecto (datos incluidos)
-
-```bash
+# Destruir proyecto (elimina archivos, enlaces y contenedores tras confirmación)
 podman-utils destroy mi-api
 ```
 
 ---
 
-## Templates
+## Plantillas Declarativas
 
-### python-postgres
+### 1. `python-postgres`
+- **PostgreSQL 17 (Alpine):** Puerto `5432`, volumen persistente `__PROJECT__-pg-data`.
+- **Backend Python 3.13:** Puerto `8000`, uvicorn con `--reload`, montaje en caliente de `./src` y `./requirements.txt`.
+- **Ideal para:** APIs REST con FastAPI, Flask o Django.
 
-| Servicio | Puerto | Descripcion |
-|----------|--------|-------------|
-| PostgreSQL | 5432 | Base de datos |
-| Backend Python | 8000 | API con uvicorn + hot-reload |
+### 2. `python-postgres-redis`
+- **PostgreSQL 17 (Alpine):** Puerto `5432`.
+- **Redis 7 (Alpine):** Puerto `6379`, persistencia AOF en volumen `__PROJECT__-redis-data`.
+- **Backend Python 3.13:** Puerto `8000`, uvicorn hot-reload.
+- **Ideal para:** APIs con colas Celery/RQ, cacheo y rate-limiting.
 
-**Ideal para:** APIs REST con FastAPI, Flask o Django + PostgreSQL.
-
-### python-postgres-redis
-
-| Servicio | Puerto | Descripcion |
-|----------|--------|-------------|
-| PostgreSQL | 5432 | Base de datos |
-| Redis | 6379 | Cache, Celery, sesiones |
-| Backend Python | 8000 | API con uvicorn + hot-reload |
-
-**Ideal para:** APIs con tareas en segundo plano (Celery), cache, rate limiting.
-
-### fullstack
-
-| Servicio | Puerto | Descripcion |
-|----------|--------|-------------|
-| Traefik | 80, 443, 8080 | Proxy inverso + dashboard |
-| Keycloak | 8083 | Auth OAuth2/OIDC |
-| PostgreSQL | 5432 | Base de datos |
-| Backend Python | 8000 | API |
-| Frontend (Node) | 3000 | Frontend dev server |
-
-**Rutas con Traefik:**
-- `api.mi-app.localhost` -> Backend
-- `app.mi-app.localhost` -> Frontend
-- `auth.mi-app.localhost` -> Keycloak
-- `:8080` -> Dashboard de Traefik
-
-**Ideal para:** Aplicaciones completas con autenticacion OAuth (Google, Microsoft, GitHub).
+### 3. `fullstack`
+- **Traefik v3.2:** Puertos `80`, `443`, `8080` (Dashboard).
+- **Keycloak 26:** Puerto `8083`, soporte OIDC/OAuth2 (`auth.__PROJECT__.localhost`).
+- **PostgreSQL 17:** Base de datos relacional para backend y Keycloak.
+- **Backend Python:** API en `api.__PROJECT__.localhost`.
+- **Frontend Node 22 (Alpine):** Dev server Vite/Next en `app.__PROJECT__.localhost` (puerto `3000`).
 
 ---
 
-## Servicios Globales
+## Servicios Compartidos (Globales)
 
-Servicios compartidos entre multiples proyectos.
-
-### Instalar
+Servicios persistentes que pueden ser consumidos por múltiples proyectos:
 
 ```bash
-# Proxy inverso global (un solo Traefik para todos los proyectos)
+# Instalar todos los servicios y la red proxy-net:
+podman-utils install-global all
+
+# O instalar selectivamente:
 podman-utils install-global traefik
-
-# PostgreSQL compartido (multi-tenant)
 podman-utils install-global postgres-global
-
-# Redis compartido
 podman-utils install-global redis-global
-
-# Keycloak global (un solo servidor de auth)
 podman-utils install-global keycloak
-```
 
-### Iniciar/Detener
-
-```bash
+# Control directo vía systemd:
 systemctl --user start traefik.service
 systemctl --user stop postgres-global.service
-```
 
-### Desinstalar
-
-```bash
+# Desinstalar servicio compartido:
 podman-utils uninstall-global traefik
 ```
 
 ---
 
-## Gestion Directa con systemd
+## Contenedores Rápidos Standalone (`scripts-standalone/`)
 
-Los Quadlets generan servicios systemd automaticamente:
+Para pruebas inmediatas, tareas puntuales de debugging o prototipado sin definir Quadlets completos, dispones de scripts preconfigurados con volúmenes persistentes y red común `dev-net`:
 
-```bash
-# Ver todos los servicios del proyecto
-systemctl --user list-units "mi-api*"
-
-# Iniciar un servicio especifico
-systemctl --user start mi-api-postgres.service
-
-# Habilitar auto-start al boot
-systemctl --user enable mi-api.target
-
-# Ver logs con journalctl
-journalctl --user -u mi-api-backend -f
-journalctl --user -u mi-api-postgres --since "10 minutes ago"
-```
-
----
-
-## Configurar OAuth (Google, Microsoft, GitHub)
-
-### 1. Crear credenciales en el proveedor
-
-**Google:**
-1. Ve a https://console.cloud.google.com/apis/credentials
-2. Crea un proyecto y configura OAuth 2.0
-3. URI de redireccion: `http://auth.mi-app.localhost/auth/realms/master/broker/google/endpoint`
-
-**Microsoft:**
-1. Ve a https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade
-2. Registra una app
-3. URI de redireccion: `http://auth.mi-app.localhost/auth/realms/master/broker/microsoft/endpoint`
-
-**GitHub:**
-1. Ve a https://github.com/settings/developers
-2. Crea un OAuth App
-3. Callback URL: `http://auth.mi-app.localhost/auth/realms/master/broker/github/endpoint`
-
-### 2. Configurar en .env
-
-```bash
-# En projects/mi-app/.env
-GOOGLE_CLIENT_ID=tu-client-id.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=tu-client-secret
-MICROSOFT_CLIENT_ID=tu-client-id
-MICROSOFT_CLIENT_SECRET=tu-client-secret
-GITHUB_CLIENT_ID=tu-client-id
-GITHUB_CLIENT_SECRET=tu-client-secret
-```
-
-### 3. Configurar Identity Providers en Keycloak
-
-1. Abre http://auth.mi-app.localhost/auth/admin/master/console/
-2. Login con admin/admin
-3. Ve a Identity Providers
-4. Anade Google, Microsoft o GitHub con las credenciales del .env
+| Script | Servicio / Puerto | Características |
+|---|---|---|
+| `./scripts-standalone/podman-postgres.sh` | PostgreSQL 17 (`5432`) | Volumen `postgres-standalone-data` |
+| `./scripts-standalone/podman-redis.sh` | Redis 7 (`6379`) | Volumen `redis-standalone-data`, AOF activo |
+| `./scripts-standalone/podman-mysql.sh` | MySQL 8.4 (`3306`) | Volumen `mysql-standalone-data` |
+| `./scripts-standalone/podman-mongodb.sh` | MongoDB 7 (`27017`) | Volumen `mongo-standalone-data` |
+| `./scripts-standalone/podman-nginx.sh` | Nginx (`8082`) | Servidor web estático |
+| `./scripts-standalone/podman-adminer.sh` | Adminer (`8080`) | GUI web para Postgres, MySQL, SQLite |
+| `./scripts-standalone/podman-minio.sh` | MinIO S3 (`9000`/`9001`) | Almacenamiento compatible S3 |
+| `./scripts-standalone/podman-rabbitmq.sh` | RabbitMQ (`5672`/`15672`)| Broker AMQP + Management Web UI |
+| `./scripts-standalone/podman-keycloak.sh` | Keycloak 26 (`8083`) | Servidor de identidades en dev-mode |
+| `./scripts-standalone/podman-mailhog.sh` | MailHog (`1025`/`8025`) | Captura SMTP local + Web UI |
+| `./scripts-standalone/podman-grafana.sh` | Grafana (`3000`) | Dashboards y visualización métricas |
+| `./scripts-standalone/podman-prometheus.sh` | Prometheus (`9090`) | Recolección de métricas y series temporales |
+| `./scripts-standalone/podman-jaeger.sh` | Jaeger Tracing (`16686`) | Trazabilidad distribuida OpenTelemetry |
+| `./scripts-standalone/podman-portainer.sh` | Portainer CE (`9443`) | GUI de gestión vía socket de usuario |
+| `./scripts-standalone/podman-dozzle.sh` | Dozzle (`8888`) | Visor ligero de logs en tiempo real |
+| `./scripts-standalone/podman-browserless.sh` | Chrome Headless (`3000`)| Scraping y automatización Playwright/Puppeteer |
+| `./scripts-standalone/podman-storybook.sh` | Storybook (`6006`) | Entorno visual de componentes frontend |
+| `./scripts-standalone/podman-wordpress.sh` | WordPress (`8085`) | Pila rápida de blogs / CMS |
 
 ---
 
-## Hot Reload (Desarrollo)
+## Consideraciones de Red Hat, Fedora y SELinux
 
-Los contenedores de backend y frontend montan el codigo fuente como volumen:
-
-```
-projects/mi-api/
-├── src/              # Tu codigo Python (montado en /app)
-│   └── main.py       # Se recarga automaticamente con uvicorn --reload
-├── frontend/         # Tu codigo frontend (montado en /app)
-│   └── package.json
-└── requirements.txt  # Dependencias Python
-```
-
-Cualquier cambio en `src/` o `frontend/` se refleja automaticamente sin reiniciar el contenedor.
+1. **SELinux en modo Enforcing:**
+   Fedora ejecuta SELinux de forma activa. Todos los montajes de volúmenes de host en las plantillas utilizan el sufijo `:z` (etiquetado compartido) o `:ro,z` (solo lectura compartido) para permitir que los procesos del contenedor lean y escriban sin violaciones de política SELinux.
+2. **Firewalld:**
+   La interfaz de red virtual `podman+` se asocia a la zona `trusted` para garantizar que las solicitudes DNS (`Netavark`/`Aardvark-dns`) y el reenvío entre contenedores no se vean bloqueados por el cortafuegos del host.
+3. **Cgroups v2:**
+   Fedora utiliza cgroups v2 de forma nativa. Podman se coordina directamente con `systemd` como `cgroup_manager`, asegurando contabilidad de memoria, CPU y límites de PIDs transparentes a nivel de usuario.
+4. **Desarrollo Hot-Reload:**
+   Los volúmenes montados desde `./src` en el backend y `./frontend` en el cliente web permiten reflejar cambios de código instantáneamente sin necesidad de reconstruir las imágenes.
 
 ---
 
-## Troubleshooting
+## Tabla de Comandos `podman-utils`
 
-### Los contenedores no arrancan
-
-```bash
-# Ver logs del servicio
-journalctl --user -u mi-api-backend -e
-
-# Ver logs de Podman
-podman logs mi-api-backend
-
-# Verificar que systemd tiene los archivos
-ls -la ~/.config/containers/systemd/
-```
-
-### Puerto ya en uso
-
-```bash
-# Ver que usa el puerto
-ss -tlnp | grep 5432
-
-# Cambiar el puerto en el archivo .container
-# PublishPort=5433:5432
-
-# Recargar
-podman-utils link mi-api
-podman-utils restart mi-api
-```
-
-### Quadlets no genera servicios
-
-```bash
-# Verificar version de Podman (requiere 4.0+)
-podman --version
-
-# Reinstalar quadlets
-./install/quadlets-setup.sh
-
-# Verificar directorio
-ls ~/.config/containers/systemd/
-```
-
-### Reset completo de un proyecto
-
-```bash
-podman-utils destroy mi-api
-rm -rf projects/mi-api
-rm -f ~/.config/containers/systemd/mi-api*
-systemctl --user daemon-reload
-```
-
----
-
-## Comandos de podman-utils
-
-| Comando | Descripcion |
-|---------|-------------|
-| `create <template> <nombre>` | Crear proyecto desde plantilla |
-| `start <nombre>` | Iniciar proyecto |
-| `stop <nombre>` | Detener proyecto |
-| `restart <nombre>` | Reiniciar proyecto |
-| `logs <nombre> [servicio]` | Ver logs en tiempo real |
-| `status <nombre>` | Ver estado del proyecto |
-| `destroy <nombre>` | Eliminar proyecto (datos incluidos) |
-| `link <nombre>` | Enlazar proyecto a systemd |
-| `unlink <nombre>` | Desenlazar proyecto de systemd |
-| `install-global <servicio>` | Instalar servicio compartido |
-| `uninstall-global <servicio>` | Desinstalar servicio compartido |
-| `list` / `ps` | Listar proyectos y su estado |
-| `list-templates` | Listar plantillas disponibles |
-| `doctor` / `check` | Diagnóstico de salud de Podman, socket, linger y Quadlets |
+| Comando | Descripción |
+|---|---|
+| `create <template> <nombre>` | Crea un nuevo proyecto a partir de una plantilla declarativa |
+| `start <nombre>` | Inicia el proyecto vía unidades `systemd` de usuario |
+| `stop <nombre>` | Detiene los servicios del proyecto |
+| `restart <nombre>` | Reinicia el proyecto |
+| `logs <nombre> [servicio]` | Muestra logs combinados o de un servicio vía `journalctl` |
+| `status <nombre>` | Muestra estado de units systemd y contenedores Podman |
+| `destroy <nombre>` | Detiene, desenlaza de systemd y borra archivos del proyecto |
+| `link <nombre>` | Enlaza los archivos Quadlet del proyecto a `~/.config/containers/systemd/` |
+| `unlink <nombre>` | Desenlaza los archivos Quadlet del proyecto |
+| `install-global <servicio\|all>` | Instala servicio/red global compartido (`postgres-global`, `traefik`, etc.) |
+| `uninstall-global <servicio>` | Desinstala un servicio global compartido |
+| `pps` | Muestra contenedores activos con formato enriquecido (redes, puertos) |
+| `pexec <id> [cmd]` | Abre una shell interactiva `/bin/bash` dentro de un contenedor en ejecución |
+| `quadlet-status` | Inspecciona todos los archivos Quadlet y unidades activas |
+| `quadlet-reload` | Recarga inmediata del generador Quadlet (`systemctl --user daemon-reload`) |
+| `list` | Lista todos los proyectos locales y si tienen contenedores corriendo |
+| `list-templates` | Muestra las plantillas disponibles |
+| `doctor` | Diagnóstico completo de motor, socket, GPU, storage, SELinux, Firewalld y red |

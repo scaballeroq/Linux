@@ -2,6 +2,7 @@
 # ==============================================================================
 # python-uv-init.sh - Creador rápido de proyectos Python aislados con 'uv'
 # Optimizado para Fedora 44 (Zero interferencia con el sistema / Btrfs copy mode)
+# Hardware: HP EliteBook 855 G7 (AMD Ryzen 7 PRO 4750U / Vega 7 / 32 GB RAM)
 # ==============================================================================
 
 set -euo pipefail
@@ -68,7 +69,7 @@ uv init --python "$PYTHON_VERSION" --app "$PROJECT_NAME"
 
 cd "$PROJECT_NAME"
 
-# 5. Crear el entorno virtual .venv (Copy mode para Btrfs)
+# 5. Crear el entorno virtual .venv (Copy mode para compatibilidad con Btrfs en NVMe)
 echo -e "${BLUE}ℹ️ Creando entorno virtual aislado (.venv) con UV_LINK_MODE=copy...${NC}"
 UV_LINK_MODE=copy uv venv --python "$PYTHON_VERSION"
 
@@ -82,7 +83,7 @@ from fastapi import FastAPI
 
 app = FastAPI(
     title="API con FastAPI & uv",
-    description="Proyecto Python aislado creado con uv en Fedora 44",
+    description="Proyecto Python aislado creado con uv en Fedora 44 (KDE Plasma 6)",
     version="1.0.0"
 )
 
@@ -91,7 +92,7 @@ def read_root():
     return {
         "status": "success",
         "message": "¡Hola desde FastAPI gestionado por uv!",
-        "system": "Fedora 44 Linux (KDE Plasma 6)"
+        "system": "Fedora 44 Workstation Linux (KDE Plasma 6 Wayland)"
     }
 
 if __name__ == "__main__":
@@ -105,35 +106,41 @@ EOF
         cat << 'EOF' > main.py
 import typer
 from rich.console import Console
+from rich.panel import Panel
 
 app = typer.Typer(help="CLI moderna creada con uv y Typer")
 console = Console()
 
 @app.command()
-def hello(name: str = "Desarrollador"):
-    """Saluda al usuario con estilo Rich"""
-    console.print(f"[bold green]¡Hola {name}![/bold green] Bienvenido a tu CLI en Fedora 44.")
+def saludo(nombre: str = "Desarrollador"):
+    """Saluda al usuario con estilo Rich."""
+    console.print(Panel.fit(
+        f"[bold green]¡Bienvenido, {nombre}![/bold green]\n"
+        "[cyan]Tu CLI en Python aislado con uv está lista para desarrollo.[/cyan]",
+        title="[bold yellow]Fedora 44 KDE Plasma 6 Python CLI[/bold yellow]"
+    ))
 
 if __name__ == "__main__":
     app()
 EOF
         ;;
     4)
-        echo -e "${BLUE}📦 Instalando dependencias de Data Science...${NC}"
+        echo -e "${BLUE}📦 Instalando librerías de Ciencia de Datos...${NC}"
         UV_LINK_MODE=copy uv add numpy pandas matplotlib
         cat << 'EOF' > main.py
 import numpy as np
 import pandas as pd
 
 def main():
-    print("📊 Entorno de Ciencia de Datos inicializado con 'uv'")
-    data = {
-        "x": np.arange(1, 6),
-        "y": np.random.randint(10, 100, size=5)
+    print("📊 Inicializando análisis con Pandas y NumPy en Fedora 44...")
+    datos = {
+        "Componente": ["CPU (AMD Ryzen 7 PRO 4750U)", "RAM (32 GB DDR4)", "GPU (AMD Radeon Vega 7)", "Almacenamiento (NVMe Btrfs)"],
+        "Topología": ["8 Núcleos / 16 Hilos", "Doble Canal Activo", "Vulkan RADV / VA-API", "UV_LINK_MODE=copy"],
+        "Estado": ["Óptimo", "Disponible", "Acelerada por hardware", "Sin reflinks cruzados"]
     }
-    df = pd.DataFrame(data)
-    print("\nDataFrame de prueba:")
-    print(df)
+    df = pd.DataFrame(datos)
+    print("\nResumen de la Estación de Trabajo:")
+    print(df.to_string(index=False))
 
 if __name__ == "__main__":
     main()
@@ -142,7 +149,8 @@ EOF
     *)
         cat << 'EOF' > main.py
 def main():
-    print("🚀 Proyecto Python gestionado con 'uv' en Fedora 44 (KDE Plasma 6)")
+    print("🚀 Proyecto Python aislado con uv inicializado correctamente en Fedora 44.")
+    print("   El sistema operativo permanece 100% limpio y protegido.")
 
 if __name__ == "__main__":
     main()
@@ -159,12 +167,16 @@ uv run python main.py "$@"
 EOF
 chmod +x run.sh
 
-echo -e "\n${BOLD}${GREEN}=================================================================${NC}"
-echo -e "${BOLD}${GREEN}✅ Proyecto '${PROJECT_NAME}' creado exitosamente con uv${NC}"
-echo -e "${BOLD}${GREEN}=================================================================${NC}"
-echo -e "Para comenzar a trabajar:"
-echo -e "  1) Entra en la carpeta:   ${CYAN}cd ${PROJECT_NAME}${NC}"
-echo -e "  2) Ejecuta la app:        ${CYAN}uv run python main.py${NC} (o ${CYAN}./run.sh${NC})"
-echo -e "  3) Añade librerías:       ${CYAN}uv add <libreria>${NC}"
-echo -e "  4) Ejecuta tests:         ${CYAN}uv run pytest${NC}"
-echo -e "${BOLD}${GREEN}=================================================================${NC}"
+echo -e "\n${BOLD}${CYAN}=================================================================${NC}"
+echo -e "${BOLD}${GREEN}✅ Proyecto '${PROJECT_NAME}' creado exitosamente con uv.${NC}"
+echo -e "${BOLD}${CYAN}=================================================================${NC}"
+echo -e "${BOLD}Para comenzar a trabajar:${NC}"
+echo -e "  1. Entra al proyecto:"
+echo -e "     ${CYAN}cd ${PROJECT_NAME}${NC}"
+echo -e "  2. Ejecuta tu código (uv gestiona el entorno automáticamente):"
+echo -e "     ${CYAN}uv run python main.py${NC} (o ${CYAN}./run.sh${NC})"
+echo -e "  3. O activa el entorno virtual si prefieres el flujo clásico:"
+echo -e "     ${CYAN}source .venv/bin/activate${NC}"
+echo -e "  4. Añadir más paquetes en cualquier momento:"
+echo -e "     ${CYAN}uv add <nombre-paquete>${NC}"
+echo -e "${BOLD}${CYAN}=================================================================${NC}\n"

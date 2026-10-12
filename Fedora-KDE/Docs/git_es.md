@@ -2,17 +2,15 @@
 sidebar_position: 4
 ---
 
-# Configuración de Git y Control de Versiones en Fedora 44
+# Configuración de Git en Fedora 44 (KDE Plasma 6)
 
-Esta guía detalla el entorno de control de versiones y el conjunto de herramientas optimizadas ubicadas en [`IDE/git.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora/IDE/git.sh) e [`IDE/github-cli.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora/IDE/github-cli.sh).
+Esta guía detalla el entorno de control de versiones y el conjunto de herramientas optimizadas mediante [`IDE/git.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora-KDE/IDE/git.sh).
 
-El entorno incluye el cliente clásico **Git**, el formateador visual de diferencias **Git-Delta**, la interfaz de terminal interactiva **Lazygit** y la herramienta oficial **GitHub CLI (gh)**.
+El entorno incluye el cliente **Git**, el formateador visual de diferencias **Git-Delta**, la interfaz de terminal interactiva **Lazygit** y la herramienta oficial **GitHub CLI (gh)**.
 
 ---
 
-## 1. Automatización de Git, Delta y Lazygit (`IDE/git.sh`)
-
-El script principal automatiza la instalación y define las mejores prácticas de control de versiones:
+## 1. Automatización de Git (`git.sh`)
 
 1. **Instalación de Git y Git-Delta**:
    ```bash
@@ -25,13 +23,13 @@ El script principal automatiza la instalación y define las mejores prácticas d
    git config --global user.email "tu_email@ejemplo.com"
    ```
 
-3. **Mejores Prácticas Modernas**:
-   - Rama predeterminada: `develop` (`init.defaultBranch develop`).
-   - Sincronización limpia: Rebase por defecto al hacer pull (`pull.rebase true`).
-   - Editor por defecto: `nvim` (`core.editor nvim`).
+3. **Buenas Prácticas Modernas**:
+   - Rama predeterminada: `main` (`init.defaultBranch main`).
+   - Sincronización limpia: Rebase por defecto (`pull.rebase true`).
+   - Editor: detección inteligente de `nvim`, `kate`, `micro` o `nano`.
+   - Resolución de conflictos avanzada: `merge.conflictstyle zdiff3`.
 
-4. **Resaltado Visual Mejorado (Git-Delta)**:
-   Reemplaza el paginador nativo activando colores semánticos, navegación intuitiva, números de línea, vista lado a lado y visualización mejorada de conflictos (`zdiff3`):
+4. **Resaltado Visual (Git-Delta)**:
    ```bash
    git config --global core.pager "delta"
    git config --global interactive.diffFilter "delta --color-only"
@@ -43,18 +41,13 @@ El script principal automatiza la instalación y define las mejores prácticas d
    ```
 
 5. **Instalación de Lazygit (TUI)**:
-   Instala automáticamente Lazygit mediante el repositorio COPR oficial o desde el binario compilado de GitHub releases:
-   ```bash
-   sudo dnf5 copr enable -y dejan/lazygit
-   sudo dnf5 install -y lazygit
-   ```
+   Instalado mediante los repositorios de Fedora / COPR (`dejan/lazygit`), con fallback automático a la release oficial de GitHub si fuera necesario. Se configura automáticamente con tema KDE Breeze Dark (`~/.config/lazygit/config.yml`).
 
 ---
 
-## 2. Cliente de GitHub en Consola (`IDE/github-cli.sh`)
+## 2. Cliente de GitHub en Consola (`gh`)
 
-Instala la herramienta oficial de GitHub (`gh`) vía DNF5 para gestionar repositorios, Pull Requests, Issues y secretos desde la terminal:
-
+Instalación nativa con repositorios oficiales de Fedora vía DNF5:
 ```bash
 sudo dnf5 install -y gh
 ```
@@ -68,17 +61,16 @@ gh auth login
 
 ## 3. Automatización con Just
 
-Para desplegar todo el entorno de Git en un solo comando:
-
+Para desplegar y verificar todo el entorno de Git en un solo comando:
 ```bash
 just git-setup
-# o ./IDE/git.sh && ./IDE/github-cli.sh
+# o ./IDE/git.sh --status
 ```
 
 ---
 
 ## Verificación
 
-- **Git-Delta**: Ejecuta `git diff` en cualquier repositorio con cambios locales para verificar la vista lado a lado y colores.
-- **Lazygit**: Ejecuta `lazygit` dentro de un repositorio para abrir la interfaz interactiva.
-- **GitHub CLI**: Ejecuta `gh status` o `gh repo list` para verificar tu sesión autenticada.
+- **Git-Delta**: Ejecuta `git diff`.
+- **Lazygit**: Ejecuta `lazygit`.
+- **GitHub CLI**: Ejecuta `gh auth status` o `gh auth login`.

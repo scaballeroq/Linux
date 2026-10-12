@@ -96,7 +96,6 @@ cockpit:
 # Git, Delta, Lazygit, GH CLI
 git-setup:
     ./IDE/git.sh
-    ./IDE/github-cli.sh
 
 # =============================================================================
 # GESTORES DE RUNTIMES
@@ -111,52 +110,44 @@ mise:
 # =============================================================================
 
 # Todos los lenguajes
-languages: node python rust dotnet java angular gemini
+languages: mise node python rust dotnet java angular
     @echo "✅ Lenguajes instalados."
 
 # Node.js LTS
 node:
     ./ProgrammingLanguages/nodejs.sh
 
-# Python
+# Python con UV package manager
 python:
     ./ProgrammingLanguages/python.sh
 
+# Inicializador de proyectos Python con UV
+python-uv:
+    ./ProgrammingLanguages/python-uv-init.sh
+
 # Rust
 rust:
-    ./ProgrammingLanguages/rust.sh
+    @[ -f ./ProgrammingLanguages/rust.sh ] && ./ProgrammingLanguages/rust.sh || ./ProgrammingLanguages/Revisar/rust.sh
 
 # .NET SDK
 dotnet:
-    ./ProgrammingLanguages/dotnet.sh
+    @[ -f ./ProgrammingLanguages/dotnet.sh ] && ./ProgrammingLanguages/dotnet.sh || ./ProgrammingLanguages/Revisar/dotnet.sh
 
 # Java (OpenJDK)
 java:
     ./ProgrammingLanguages/java.sh
 
-# Gemini CLI
-gemini:
-    ./ProgrammingLanguages/gemini.sh
-
 # Angular CLI
 angular:
-    ./ProgrammingLanguages/angular.sh
+    @[ -f ./ProgrammingLanguages/angular.sh ] && ./ProgrammingLanguages/angular.sh || ./ProgrammingLanguages/Revisar/angular.sh
 
 # =============================================================================
 # ENTORNOS DE DESARROLLO (IDEs)
 # =============================================================================
 
 # Todos los IDEs
-ides: nvim vscode antigravity antigravity-cli antigravity-ide opencode
+ides: antigravity antigravity-cli antigravity-ide opencode
     @echo "✅ IDEs instalados."
-
-# Neovim + LazyVim
-nvim:
-    ./IDE/neovim.sh
-
-# Visual Studio Code
-vscode:
-    ./IDE/vscode.sh
 
 # Google Antigravity Desktop 2.0 (Completo)
 antigravity:
