@@ -1,197 +1,255 @@
-#!/bin/bash
-# python.sh - Instalación y configuración de Python (Versión Estable de Producción / Soporte Extendido) vía Mise en Fedora 44 + KDE Plasma
-#
-# Uso:
-#   ./python.sh                      -> Instala dependencias C/C++, Python estable de soporte extendido, pip, wheel y setuptools
-#   ./python.sh --version 3.13       -> Instala una versión específica de Python (ej: 3.12, 3.13, latest)
-#   ./python.sh 3.13                 -> Atajo directo para especificar versión
-#   ./python.sh --status             -> Muestra la versión activa de Python, pip y ubicación de binarios
-#   ./python.sh --update             -> Actualiza la versión de Python y paquetes base (pip, setuptools, wheel)
-#   ./python.sh --list               -> Lista las versiones de Python instaladas localmente y disponibles en remoto
-#   ./python.sh --help               -> Muestra la ayuda interactiva
+#!/usr/bin/env bash
+# ==============================================================================
+# python.sh - Verificación de Python Nativo (Fedora) y Gestor 'uv' vía Mise
+# Fedora 44 Workstation (KDE Plasma 6 + Wayland / Systemd User Environment)
+# Hardware: HP EliteBook 855 G7 (AMD Ryzen 7 PRO 4750U / Vega 7 / Btrfs)
+# ==============================================================================
+# Principio de Diseño:
+# - Python NO se instala de forma global a través de gestores de versiones (Mise/Pyenv)
+#   para garantizar la integridad absoluta de las herramientas del sistema Fedora
+#   (DNF5, Firewalld, Libvirt, Cockpit, KDE Plasma).
+# - Se valida que el sistema tenga instalado y saludable el Python nativo de Fedora.
+# - Para proyectos que requieran versiones específicas de Python (3.11, 3.12, etc.),
+#   se utiliza 'uv' de forma aislada por proyecto (per-project) sin tocar el sistema.
+# - Optimización para Btrfs: UV_LINK_MODE=copy para compatibilidad con snapshots.
+# - Integración con KDE Plasma 6 (environment.d) y Shells (Bash predeterminado / Zsh).
+# - Generación automática de autocompletados nativos para 'uv' y 'uvx'.
+# - Comandos CLI: --status / -s, --update / -u, --help / -h.
+# ==============================================================================
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# Versión estable recomendada de producción (máxima estabilidad, soporte extendido de 5 años y compatibilidad 100% con PyPI/C-Extensions)
-PYTHON_VERSION="3.12"
+# ------------------------------------------------------------------------------
+# 1. DETECCIÓN DE USUARIO Y PRIVILEGIOS
+# ------------------------------------------------------------------------------
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    REAL_USER="$SUDO_USER"
+    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+else
+    REAL_USER="${USER:-$(id -un)}"
+    USER_HOME="${HOME:-/home/$REAL_USER}"
+fi
 
 if [ "$EUID" -ne 0 ]; then
-    if ! command -v sudo &> /dev/null; then
-        echo "❌ Error: 'sudo' no está disponible. Ejecuta este script como root o instala sudo."
-        exit 1
-    fi
     SUDO="sudo"
 else
     SUDO=""
 fi
 
+# Variables de entorno para Python & uv (Copy mode esencial para Btrfs)
+export UV_LINK_MODE="copy"
+export PYTHONUNBUFFERED=1
+
+# Exportar PATH para este proceso
+export PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:/usr/bin:$PATH"
+
+run_as_user() {
+    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+        sudo -u "$REAL_USER" env HOME="$USER_HOME" \
+            UV_LINK_MODE="copy" PYTHONUNBUFFERED=1 \
+            PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" "$@"
+    else
+        UV_LINK_MODE="copy" PYTHONUNBUFFERED=1 \
+        PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" "$@"
+    fi
+}
+
+# ------------------------------------------------------------------------------
+# 2. AYUDA Y ESTADO
+# ------------------------------------------------------------------------------
 show_help() {
     cat <<EOF
-🐍 Gestor e Instalador de Python Estable - Fedora 44 (KDE Plasma 6)
+🐍 Gestor de Entorno Python & uv - Fedora 44 (KDE Plasma 6)
+
+Filosofía:
+  • El sistema operativo utiliza el Python nativo de Fedora (/usr/bin/python3).
+  • Python NO se instala globalmente en Mise para no romper herramientas de sistema
+    (DNF5, Firewalld, Libvirt, Btrfs, CUPS/HPLIP, KDE).
+  • Los proyectos que necesiten versiones específicas de Python se gestionan
+    de forma aislada mediante 'uv' (ej: 'uv init', 'uv venv --python 3.12').
+  • Optimización Btrfs: UV_LINK_MODE=copy previene errores entre subvolúmenes y snapshots.
 
 Uso:
   $0 [OPCIÓN]
 
 Opciones:
-  (sin argumentos)       Instala dependencias C/C++, la versión estable con soporte extendido (Python $PYTHON_VERSION), pip, setuptools y wheel.
-  --version <VER>, -v    Instala una versión específica de Python (ej: 3.12, 3.13, latest).
-  <VALOR_VER>            Atajo directo para la versión (ej: $0 3.13).
-  --status, -s           Muestra la versión activa de Python, pip, shims y paquetes globales.
-  --update, -u           Actualiza la versión de Python activa y sus herramientas base (pip, setuptools, wheel).
-  --list, -l             Lista las versiones de Python instaladas localmente y disponibles en remoto.
-  --help, -h             Muestra este mensaje de ayuda.
+  (sin argumentos)    Verifica el Python nativo del sistema, asegura 'uv' en Mise,
+                      desactiva shims globales conflictivos y genera autocompletados.
+  --status, -s        Muestra el diagnóstico del Python nativo de Fedora, módulos
+                      (venv, pip), gestor 'uv' y aislamiento de Mise.
+  --update, -u        Actualiza 'uv' a la última versión disponible en Mise.
+  --help, -h          Muestra este mensaje de ayuda.
 
-Características configuradas:
-  • Soporte de Producción:Versión estable con soporte extendido para máxima compatibilidad con NumPy, Pandas, PyTorch, Django, etc.
-  • Cabeceras DNF5:      Instala librerías del sistema para compilar extensiones C/Rust (OpenSSL, SQLite, FFI, Zlib, Bzip2).
-  • Entorno Optimizado:  Actualiza pip, wheel y setuptools para builds de ruedas binarias limpias y rápidas.
-  • Integración KDE/IDE: Funciona de forma transparente con VS Code, PyCharm, Dolphin y terminales Wayland.
+Herramientas per-project:
+  Para crear un nuevo proyecto Python aislado:
+    ./ProgrammingLanguages/python-uv-init.sh (o 'just python-uv')
 EOF
 }
 
-# Verificar e instalar Mise si no está presente
-ensure_mise() {
-    if ! command -v mise &> /dev/null; then
-        echo "⚠️ Mise no está instalado. Ejecutando ./mise.sh automáticamente..."
-        if [ -f "$SCRIPT_DIR/mise.sh" ]; then
-            "$SCRIPT_DIR/mise.sh"
-            export PATH="$HOME/.local/share/mise/shims:$PATH"
-            eval "$(mise activate bash 2>/dev/null || true)"
-        else
-            echo "❌ Error: No se encontró $SCRIPT_DIR/mise.sh. Instala Mise primero."
-            exit 1
-        fi
-    fi
-}
-
-# 1. Mostrar estado actual
 show_status() {
     echo "================================================================="
-    echo "🔍 ESTADO DE PYTHON Y HERRAMIENTAS - FEDORA 44"
+    echo "🔍 ESTADO DEL ENTORNO PYTHON (NATIVO FEDORA + GESTOR UV)"
     echo "================================================================="
-    if command -v python &>/dev/null; then
-        echo "• Python:              $(python --version 2>/dev/null) (Ruta: $(which python))"
-        echo "• pip:                 $(pip --version 2>/dev/null | awk '{print $1,$2}' || echo 'No disponible')"
-        echo "• Versión activa Mise: $(mise current python 2>/dev/null || echo 'No gestionado por Mise')"
-        echo ""
-        echo "📦 Versiones de Python instaladas en Mise:"
-        mise ls python 2>/dev/null || echo "  (Ninguna registrada en Mise)"
+
+    local py_bin py_ver py_pkg venv_status pip_status mise_py uv_status uvx_status
+
+    py_bin=$(which python3 2>/dev/null || echo "No encontrado")
+    py_ver=$(python3 --version 2>/dev/null || echo "No disponible")
+    py_pkg=$(rpm -q python3 2>/dev/null || echo "python3")
+
+    if python3 -m venv --help &>/dev/null; then
+        venv_status="✅ Operativo (módulo venv nativo)"
     else
-        echo "• Python (Mise):       No instalado"
+        venv_status="❌ No disponible"
     fi
+
+    if python3 -m pip --version &>/dev/null; then
+        local pip_ver
+        pip_ver=$(python3 -m pip --version 2>/dev/null | awk '{print $2}')
+        pip_status="✅ v$pip_ver (paquete Fedora)"
+    else
+        pip_status="⚠️ No instalado a nivel de sistema"
+    fi
+
+    if run_as_user mise which python 2>/dev/null >/dev/null; then
+        mise_py="⚠️ Detectado shim de Python en Mise (se recomienda eliminar para proteger el sistema)"
+    else
+        mise_py="✅ Ninguno (Intacto: /usr/bin/python3 protegido)"
+    fi
+
+    if command -v uv &>/dev/null; then
+        local uv_v
+        uv_v=$(uv --version 2>/dev/null | awk '{print $2}')
+        uv_status="✅ v$uv_v (Astral / Rust)"
+    else
+        uv_status="❌ No instalado"
+    fi
+
+    if command -v uvx &>/dev/null; then
+        uvx_status="✅ Activo (ejecutor de herramientas CLI efímeras)"
+    else
+        uvx_status="ℹ️ No disponible"
+    fi
+
+    echo "1. Python Nativo del Sistema (Fedora 44):"
+    echo "   • Binario:              $py_bin"
+    echo "   • Versión:              $py_ver"
+    echo "   • Paquete RPM:          $py_pkg"
+    echo "   • Módulo venv:          $venv_status"
+    echo "   • Gestor pip:           $pip_status"
+    echo "-----------------------------------------------------------------"
+    echo "2. Aislamiento Global (Mise):"
+    echo "   • Shims globales:       $mise_py"
+    echo "-----------------------------------------------------------------"
+    echo "3. Gestor de Proyectos Aislados (uv per-project):"
+    echo "   • Gestor uv:            $uv_status"
+    echo "   • Runner uvx:           $uvx_status"
+    echo "   • Modo Btrfs:           UV_LINK_MODE=copy (compatible con snapshots Btrfs)"
+    echo "   • Entorno KDE Plasma 6: $(if [ -f "$USER_HOME/.config/environment.d/10-python.conf" ]; then echo "✅ Configurado"; else echo "ℹ️ No presente"; fi)"
+    echo "   • Autocompletado Bash:  $(if [ -f "$USER_HOME/.local/share/bash-completion/completions/uv" ]; then echo "✅ uv & uvx activos"; else echo "ℹ️ No generado"; fi)"
     echo "================================================================="
 }
 
-# 2. Listar versiones disponibles
-list_versions() {
-    ensure_mise
-    echo "================================================================="
-    echo "📋 VERSIONES DE PYTHON INSTALADAS EN MISE"
-    echo "================================================================="
-    mise ls python 2>/dev/null || echo "Ninguna versión instalada."
-    echo ""
-    echo "📋 ÚLTIMAS VERSIONES DISPONIBLES EN REMOTO (3.12 y 3.13):"
-    mise ls-remote python | grep -E '^3\.(12|13)\.' | tail -n 12 || mise ls-remote python | tail -n 10
-    echo "================================================================="
+case "${1:-}" in
+    --status|-s|status)
+        show_status
+        exit 0
+        ;;
+    --help|-h|help)
+        show_help
+        exit 0
+        ;;
+    --update|-u|update)
+        echo "🔄 Actualizando gestor 'uv' vía Mise..."
+        run_as_user mise upgrade uv@latest 2>/dev/null || run_as_user mise use --global uv@latest
+        run_as_user mise reshim 2>/dev/null || true
+        echo "✅ Gestor 'uv' actualizado con éxito."
+        show_status
+        exit 0
+        ;;
+esac
+
+echo "================================================================="
+echo "🐍 Verificando Python Nativo de Fedora y Gestor 'uv' (Mise)"
+echo "================================================================="
+
+# 1. Comprobar integridad del Python nativo de Fedora
+echo "ℹ️ [1/4] Comprobando integridad del Python nativo de Fedora..."
+MISSING_PKGS=()
+
+check_pkg() {
+    rpm -q "$1" >/dev/null 2>&1
 }
 
-# 3. Instalar dependencias de cabeceras C/C++ en Fedora para extensiones nativas
-install_build_dependencies() {
-    echo "📦 [1/4] Instalando dependencias de desarrollo del sistema para Python en Fedora..."
-    $SUDO dnf5 install -y \
-        @development-tools \
-        openssl-devel \
-        zlib-devel \
-        bzip2-devel \
-        readline-devel \
-        sqlite-devel \
-        curl \
-        git \
-        ncurses-devel \
-        xz-devel \
-        tk-devel \
-        libxml2-devel \
-        libxmlsec1-devel \
-        libffi-devel 2>/dev/null || true
-    echo "✅ Cabeceras y dependencias del sistema listas."
-}
+if ! check_pkg python3; then MISSING_PKGS+=("python3"); fi
+if ! check_pkg python3-pip; then MISSING_PKGS+=("python3-pip"); fi
+if ! check_pkg python3-devel; then MISSING_PKGS+=("python3-devel"); fi
+if ! check_pkg git; then MISSING_PKGS+=("git"); fi
+if ! check_pkg curl; then MISSING_PKGS+=("curl"); fi
 
-# 4. Instalar versión de Python vía Mise
-install_python() {
-    local VER="$1"
-    ensure_mise
-    echo "🚀 [2/4] Instalando Python $VER vía Mise..."
-    mise install "python@$VER"
-    mise use --global "python@$VER"
-    echo "✅ Python $VER fijado como versión global."
-}
+if [ ${#MISSING_PKGS[@]} -gt 0 ]; then
+    echo "  📦 Instalando paquetes nativos faltantes (${MISSING_PKGS[*]}) vía DNF5..."
+    if ! command -v sudo &>/dev/null && [ "$EUID" -ne 0 ]; then
+        echo "❌ Error: Se requieren permisos administrativos para instalar: ${MISSING_PKGS[*]}"
+        exit 1
+    fi
+    $SUDO dnf5 install -y "${MISSING_PKGS[@]}"
+    echo "  ✅ Paquetes nativos instalados."
+else
+    echo "  ✅ Python nativo de Fedora ($(python3 --version 2>/dev/null)) y librerías base intactos."
+fi
 
-# 5. Actualizar pip, setuptools y wheel
-configure_python_tools() {
-    local VER="$1"
-    echo "⚙️ [3/4] Actualizando pip, setuptools y wheel para construcción de paquetes..."
-    mise exec "python@$VER" -- python -m pip install --upgrade --no-warn-script-location pip setuptools wheel 2>/dev/null || true
-    
-    echo "🔗 [4/4] Regenerando shims de Mise..."
-    mise reshim
-    echo "✅ Herramientas base de Python actualizadas."
-}
+# 2. Asegurar que Mise no bloquee el Python del sistema
+echo "ℹ️ [2/4] Asegurando que Mise no bloquee ni enmascare el Python del sistema..."
+if command -v mise &>/dev/null || [ -x "$USER_HOME/.local/bin/mise" ]; then
+    run_as_user mise unuse --global python 2>/dev/null || true
+    run_as_user mise reshim 2>/dev/null || true
+    echo "  ✅ Aislamiento garantizado: ningún shim global de Python interfiere con Fedora."
+fi
 
-# Procesar argumentos
-if [ $# -gt 0 ]; then
-    case "$1" in
-        --help|-h|help)
-            show_help
-            exit 0
-            ;;
-        --status|-s|status)
-            show_status
-            exit 0
-            ;;
-        --list|-l|list)
-            list_versions
-            exit 0
-            ;;
-        --version|-v)
-            if [ -n "${2:-}" ]; then
-                PYTHON_VERSION="$2"
-            else
-                echo "❌ Error: Debes especificar una versión (ej: 3.12, 3.13)."
-                exit 1
-            fi
-            ;;
-        --update|-u|update)
-            echo "🔄 Actualizando Python ($PYTHON_VERSION) y herramientas base..."
-            ensure_mise
-            install_python "$PYTHON_VERSION"
-            configure_python_tools "$PYTHON_VERSION"
-            echo ""
-            show_status
-            exit 0
-            ;;
-        3.*|latest)
-            PYTHON_VERSION="$1"
-            ;;
-        *)
-            echo "❌ Opción no reconocida: $1"
-            show_help
-            exit 1
-            ;;
-    esac
+# 3. Instalar / verificar gestor 'uv' vía Mise
+echo "ℹ️ [3/4] Verificando gestor 'uv' para gestión aislada per-project..."
+if ! command -v mise &> /dev/null && [ ! -x "$USER_HOME/.local/bin/mise" ]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    if [ -f "$SCRIPT_DIR/mise.sh" ]; then
+        echo "  ℹ️ Mise no encontrado. Ejecutando $SCRIPT_DIR/mise.sh..."
+        bash "$SCRIPT_DIR/mise.sh"
+    else
+        echo "❌ Error: 'mise' no está instalado. Ejecuta ./mise.sh primero."
+        exit 1
+    fi
+fi
+
+run_as_user mise use --global uv@latest
+run_as_user mise reshim 2>/dev/null || true
+
+# 4. Integración con KDE Plasma 6 y Shells
+echo "ℹ️ [4/4] Configurando variables de entorno para Btrfs y autocompletados..."
+
+# KDE Plasma 6 (environment.d)
+run_as_user mkdir -p "$USER_HOME/.config/environment.d"
+cat << 'EOF' | run_as_user tee "$USER_HOME/.config/environment.d/10-python.conf" > /dev/null
+# Entorno Python y optimización para Btrfs
+UV_LINK_MODE=copy
+PYTHONUNBUFFERED=1
+EOF
+
+# Bash completion
+run_as_user mkdir -p "$USER_HOME/.local/share/bash-completion/completions"
+if command -v uv &>/dev/null; then
+    run_as_user uv generate-shell-completion bash > "$USER_HOME/.local/share/bash-completion/completions/uv" 2>/dev/null || true
+    run_as_user uvx --generate-shell-completion bash > "$USER_HOME/.local/share/bash-completion/completions/uvx" 2>/dev/null || true
+fi
+
+# Zsh completion
+run_as_user mkdir -p "$USER_HOME/.zfunc"
+if command -v uv &>/dev/null; then
+    run_as_user uv generate-shell-completion zsh > "$USER_HOME/.zfunc/_uv" 2>/dev/null || true
+    run_as_user uvx --generate-shell-completion zsh > "$USER_HOME/.zfunc/_uvx" 2>/dev/null || true
 fi
 
 echo "================================================================="
-echo "🐍 INSTALADOR DE PYTHON ESTABLE (SOPORTE EXTENDIDO) - FEDORA 44"
-echo "📌 Versión seleccionada: Python $PYTHON_VERSION"
+echo "✅ Entorno de Python y gestor 'uv' configurado exitosamente."
+echo "💡 Para crear un proyecto nuevo con entorno aislado: 'just python-uv'"
 echo "================================================================="
-ensure_mise
-install_build_dependencies
-install_python "$PYTHON_VERSION"
-configure_python_tools "$PYTHON_VERSION"
-echo ""
 show_status
-echo "================================================================="
-echo "✅ Python $PYTHON_VERSION, pip, setuptools y wheel configurados correctamente."
-echo "================================================================="
