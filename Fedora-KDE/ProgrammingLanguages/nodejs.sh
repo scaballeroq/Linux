@@ -1,171 +1,286 @@
-#!/bin/bash
-# nodejs.sh - Instalación y configuración de Node.js (Última versión LTS) y Corepack vía Mise en Fedora 44 + KDE Plasma
-#
-# Uso:
-#   ./nodejs.sh                      -> Instala dependencias, la última versión LTS de Node.js y habilita Corepack (pnpm/yarn)
-#   ./nodejs.sh --status             -> Muestra las versiones activas de Node.js, npm, npx, pnpm y yarn
-#   ./nodejs.sh --update             -> Actualiza Node.js a la última versión LTS disponible
-#   ./nodejs.sh --list               -> Lista las versiones de Node.js instaladas y disponibles en Mise
-#   ./nodejs.sh --help               -> Muestra la ayuda interactiva
+#!/usr/bin/env bash
+# ==============================================================================
+# nodejs.sh - Instalación y Optimización de Node.js (Última LTS) vía Mise
+# Fedora 44 Workstation (KDE Plasma 6 + Wayland / Systemd User Environment)
+# Hardware: HP EliteBook 855 G7 (AMD Ryzen 7 PRO 4750U / 32 GB RAM)
+# ==============================================================================
+# Características:
+# - Despliegue idempotente y rootless en espacio de usuario vía Mise.
+# - Detección inteligente de dependencias nativas (gcc-c++, make, curl, python3)
+#   mediante RPM sin llamadas innecesarias a 'sudo' si ya existen.
+# - Optimización multinúcleo para AMD Ryzen 7 PRO (16 hilos paralelos)
+#   en compilación de módulos C++ nativos (node-gyp).
+# - Habilitación de Corepack (pnpm, yarn) con descargas desatendidas.
+# - Integración nativa con KDE Plasma 6 (environment.d) y Shells (Bash / Zsh).
+# - Generación automática de autocompletados nativos para npm y pnpm.
+# - Comandos CLI: --status / -s, --update / -u, --help / -h.
+# ==============================================================================
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# ------------------------------------------------------------------------------
+# 1. DETECCIÓN DE USUARIO Y PRIVILEGIOS
+# ------------------------------------------------------------------------------
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    REAL_USER="$SUDO_USER"
+    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+else
+    REAL_USER="${USER:-$(id -un)}"
+    USER_HOME="${HOME:-/home/$REAL_USER}"
+fi
 
 if [ "$EUID" -ne 0 ]; then
-    if ! command -v sudo &> /dev/null; then
-        echo "❌ Error: 'sudo' no está disponible. Ejecuta este script como root o instala sudo."
-        exit 1
-    fi
     SUDO="sudo"
 else
     SUDO=""
 fi
 
+# Flags de optimización multinúcleo (AMD Ryzen 7 PRO 4750U: 8C / 16T) para node-gyp
+NPROC=$(nproc 2>/dev/null || echo 16)
+export MAKEFLAGS="-j$NPROC"
+export JOBS="$NPROC"
+export npm_config_jobs="$NPROC"
+export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+
+# Exportar PATH para este proceso y funciones
+export PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:/usr/bin:$PATH"
+
+run_as_user() {
+    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+        sudo -u "$REAL_USER" env HOME="$USER_HOME" \
+            MAKEFLAGS="-j$NPROC" JOBS="$NPROC" npm_config_jobs="$NPROC" \
+            COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
+            PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" "$@"
+    else
+        MAKEFLAGS="-j$NPROC" JOBS="$NPROC" npm_config_jobs="$NPROC" \
+        COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
+        PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" "$@"
+    fi
+}
+
+# ------------------------------------------------------------------------------
+# 2. AYUDA Y ESTADO
+# ------------------------------------------------------------------------------
 show_help() {
     cat <<EOF
-📦 Gestor e Instalador de Node.js LTS - Fedora 44 (KDE Plasma 6)
+🟢 Instalador y Optimizador de Node.js (LTS) - Fedora 44 (Mise + KDE Plasma 6)
 
 Uso:
   $0 [OPCIÓN]
 
 Opciones:
-  (sin argumentos)       Instala dependencias nativas de compilación (node-gyp), la última versión LTS de Node.js y habilita Corepack.
-  --status, -s           Muestra el estado de Node.js, npm, pnpm, yarn y la versión activa en el sistema.
-  --update, -u           Actualiza Node.js a la versión LTS más reciente y actualiza Corepack.
-  --list, -l             Lista las versiones de Node.js instaladas localmente y disponibles.
-  --help, -h             Muestra este mensaje de ayuda.
+  (sin argumentos)    Instala/actualiza Node.js LTS, Corepack (pnpm/yarn), optimizaciones
+                      y genera autocompletados e integración con KDE Plasma 6.
+  --status, -s        Muestra el diagnóstico de Node.js, npm, pnpm, yarn, mise y node-gyp.
+  --update, -u        Fuerza la actualización de Node.js LTS y refresca Corepack y shims.
+  --help, -h          Muestra este mensaje de ayuda.
 
 Características configuradas:
-  • Versión Dinámica:    Siempre instala y fija 'node@lts' (última versión Long Term Support activa).
-  • Dependencias DNF5:   Instala @development-tools, gcc-c++, make y cabeceras C/C++ requeridas por node-gyp.
-  • Gestores de Paquetes:Habilita Corepack de forma nativa para soportar pnpm y yarn sin instalaciones globales conflictivas.
-  • Integración KDE/IDE: Funciona de forma transparente con VS Code, JetBrains y terminales bajo Wayland.
+  • Versión Oficial LTS: Siempre instala y fija 'node@lts' vía Mise.
+  • node-gyp optimizado: Compilación paralela configurada para $NPROC hilos (Ryzen 7 PRO).
+  • Corepack activo:     Soporte oficial de pnpm y yarn sin dependencias globales conflictivas.
+  • Sesión KDE Plasma:   ~/.config/environment.d/10-nodejs.conf listo para IDEs (VSCode, JetBrains).
 EOF
 }
 
-# Verificar e instalar Mise si no está presente
-ensure_mise() {
-    if ! command -v mise &> /dev/null; then
-        echo "⚠️ Mise no está instalado. Ejecutando ./mise.sh automáticamente..."
-        if [ -f "$SCRIPT_DIR/mise.sh" ]; then
-            "$SCRIPT_DIR/mise.sh"
-            export PATH="$HOME/.local/share/mise/shims:$PATH"
-            eval "$(mise activate bash 2>/dev/null || true)"
-        else
-            echo "❌ Error: No se encontró $SCRIPT_DIR/mise.sh. Instala Mise primero."
-            exit 1
-        fi
-    fi
-}
-
-# 1. Mostrar estado actual
 show_status() {
     echo "================================================================="
-    echo "🔍 ESTADO DE NODE.JS Y ECOSISTEMA JS - FEDORA 44"
+    echo "🔍 ESTADO DEL ENTORNO NODE.JS (MISE + FEDORA 44)"
     echo "================================================================="
-    if command -v node &>/dev/null; then
-        echo "• Node.js:             $(node --version 2>/dev/null) (Ruta: $(which node))"
-        echo "• npm:                 $(npm --version 2>/dev/null || echo 'No disponible')"
-        echo "• npx:                 $(npx --version 2>/dev/null || echo 'No disponible')"
-        echo "• pnpm:                $(pnpm --version 2>/dev/null || (mise exec node@lts -- pnpm --version 2>/dev/null) || echo 'No activo (usa corepack)')"
-        echo "• yarn:                $(yarn --version 2>/dev/null || (mise exec node@lts -- yarn --version 2>/dev/null) || echo 'No activo (usa corepack)')"
-        echo ""
-        echo "📦 Versiones de Node gestionadas por Mise:"
-        mise ls node 2>/dev/null || echo "  (Ninguna registrada en Mise)"
+
+    local mise_status node_ver npm_ver pnpm_ver yarn_ver nodegyp_status
+
+    if command -v mise &>/dev/null || [ -x "$USER_HOME/.local/bin/mise" ]; then
+        local mise_ver
+        mise_ver=$(run_as_user mise --version 2>/dev/null | head -n1 || echo "Instalado")
+        mise_status="✅ Activo ($mise_ver)"
     else
-        echo "• Node.js:             No instalado"
+        mise_status="❌ No instalado"
     fi
+
+    node_ver=$(run_as_user mise exec node@lts -- node --version 2>/dev/null || echo "No disponible")
+    npm_ver=$(run_as_user mise exec node@lts -- npm --version 2>/dev/null || echo "No disponible")
+    pnpm_ver=$(run_as_user mise exec node@lts -- pnpm --version 2>/dev/null || echo "No disponible")
+    yarn_ver=$(run_as_user mise exec node@lts -- yarn --version 2>/dev/null || echo "No disponible")
+
+    # Comprobar herramientas para compilación de módulos C++ nativos (node-gyp)
+    local gyp_tools=()
+    if rpm -q gcc-c++ &>/dev/null; then gyp_tools+=("g++: ✅"); else gyp_tools+=("g++: ❌"); fi
+    if rpm -q make &>/dev/null; then gyp_tools+=("make: ✅"); else gyp_tools+=("make: ❌"); fi
+    if command -v python3 &>/dev/null; then gyp_tools+=("python3: ✅"); else gyp_tools+=("python3: ❌"); fi
+    nodegyp_status="${gyp_tools[*]}"
+
+    echo "• Gestor de Runtimes:      $mise_status"
+    echo "• Node.js (LTS):           $node_ver"
+    echo "• Gestor npm:              $npm_ver"
+    echo "• Gestor pnpm:             $pnpm_ver"
+    echo "• Gestor yarn:             $yarn_ver"
+    echo "• Entorno nativo node-gyp: $nodegyp_status"
+    echo "• Núcleos para compilar:   $NPROC hilos paralelos (Ryzen 7 PRO 4750U)"
+    echo "• Directorio Shims Mise:   $USER_HOME/.local/share/mise/shims"
+    echo "• Entorno KDE Plasma 6:    $(if [ -f "$USER_HOME/.config/environment.d/10-nodejs.conf" ]; then echo "✅ Configurado"; else echo "ℹ️ No presente"; fi)"
+    echo "• Autocompletado Bash:     $(if [ -f "$USER_HOME/.local/share/bash-completion/completions/npm" ]; then echo "✅ npm & pnpm activos"; else echo "ℹ️ No generado"; fi)"
     echo "================================================================="
 }
 
-# 2. Listar versiones disponibles
-list_versions() {
-    ensure_mise
-    echo "================================================================="
-    echo "📋 VERSIONES DE NODE.JS INSTALADAS EN MISE"
-    echo "================================================================="
-    mise ls node 2>/dev/null || echo "Ninguna versión instalada."
-    echo ""
-    echo "📋 ÚLTIMAS VERSIONES LTS DISPONIBLES EN REMOTO:"
-    mise ls-remote node | grep -E '^2[0-9]\.' | tail -n 10 || mise ls-remote node | tail -n 10
-    echo "================================================================="
-}
-
-# 3. Instalar dependencias de compilación para node-gyp
-install_build_dependencies() {
-    echo "📦 [1/4] Instalando herramientas de compilación C/C++ (necesarias para node-gyp y módulos nativos)..."
-    $SUDO dnf5 install -y \
-        @development-tools \
-        gcc-c++ \
-        make \
-        curl \
-        python3 \
-        libstdc++-devel 2>/dev/null || true
-    echo "✅ Herramientas de compilación listas."
-}
-
-# 4. Instalar última versión Node.js LTS vía Mise
-install_node_lts() {
-    ensure_mise
-    echo "🚀 [2/4] Descargando e instalando la última versión LTS de Node.js..."
-    mise install node@lts
-    mise use --global node@lts
-    echo "✅ Node.js LTS ($(mise current node 2>/dev/null || echo 'lts')) fijado como versión global."
-}
-
-# 5. Habilitar Corepack (pnpm y yarn) y reshim
-configure_package_managers() {
-    echo "⚙️ [3/4] Habilitando Corepack oficial para soporte nativo de pnpm y yarn..."
-    mise exec node@lts -- corepack enable 2>/dev/null || true
-    mise exec node@lts -- corepack prepare pnpm@latest --activate 2>/dev/null || true
-    mise exec node@lts -- corepack prepare yarn@stable --activate 2>/dev/null || true
-
-    echo "🔗 [4/4] Regenerando shims de Mise..."
-    mise reshim
-    echo "✅ Corepack, pnpm y yarn preparados."
-}
-
-# Procesar argumentos
+# ------------------------------------------------------------------------------
+# 3. CONTROL DE ARGUMENTOS CLI
+# ------------------------------------------------------------------------------
 case "${1:-}" in
-    --help|-h|help)
-        show_help
-        exit 0
-        ;;
     --status|-s|status)
         show_status
         exit 0
         ;;
-    --list|-l|list)
-        list_versions
+    --help|-h|help)
+        show_help
         exit 0
         ;;
     --update|-u|update)
-        echo "🔄 Actualizando Node.js a la última versión LTS..."
-        ensure_mise
-        mise install node@lts
-        mise use --global node@lts
-        configure_package_managers
-        echo ""
+        echo "🔄 Actualizando Node.js LTS vía Mise..."
+        run_as_user mise upgrade node@lts 2>/dev/null || run_as_user mise use --global node@lts
+        run_as_user mise exec node@lts -- corepack enable 2>/dev/null || true
+        run_as_user mise exec node@lts -- corepack prepare pnpm@latest --activate 2>/dev/null || true
+        run_as_user mise exec node@lts -- corepack prepare yarn@stable --activate 2>/dev/null || true
+        run_as_user mise reshim 2>/dev/null || true
+        echo "✅ Node.js LTS y Corepack actualizados con éxito."
         show_status
-        ;;
-    "")
-        echo "================================================================="
-        echo "📦 INSTALADOR DE NODE.JS (ÚLTIMA VERSIÓN LTS) - FEDORA 44"
-        echo "================================================================="
-        ensure_mise
-        install_build_dependencies
-        install_node_lts
-        configure_package_managers
-        echo ""
-        show_status
-        echo "================================================================="
-        echo "✅ Node.js LTS, npm, npx, pnpm y yarn configurados correctamente."
-        echo "================================================================="
-        ;;
-    *)
-        echo "❌ Opción no reconocida: $1"
-        show_help
-        exit 1
+        exit 0
         ;;
 esac
+
+echo "================================================================="
+echo "🟢 Instalando y Optimizando Node.js (LTS) para Fedora 44"
+echo "================================================================="
+
+# ------------------------------------------------------------------------------
+# 4. ASEGURAR GESTOR MISE
+# ------------------------------------------------------------------------------
+if ! command -v mise &> /dev/null && [ ! -x "$USER_HOME/.local/bin/mise" ]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    if [ -f "$SCRIPT_DIR/mise.sh" ]; then
+        echo "ℹ️ Mise no encontrado. Ejecutando instalador $SCRIPT_DIR/mise.sh..."
+        bash "$SCRIPT_DIR/mise.sh"
+    else
+        echo "❌ Error: 'mise' no está instalado. Por favor ejecuta ./mise.sh primero."
+        exit 1
+    fi
+fi
+
+# ------------------------------------------------------------------------------
+# 5. DEPENDENCIAS DEL SISTEMA (IDEMPOTENTE Y SIN SUDO INNECESARIO)
+# ------------------------------------------------------------------------------
+echo "ℹ️ [1/4] Verificando dependencias del sistema para módulos nativos (node-gyp)..."
+MISSING_PKGS=()
+check_pkg() {
+    rpm -q "$1" &>/dev/null
+}
+
+if ! check_pkg gcc-c++; then MISSING_PKGS+=("gcc-c++"); fi
+if ! check_pkg make; then MISSING_PKGS+=("make"); fi
+if ! check_pkg curl; then MISSING_PKGS+=("curl"); fi
+if ! command -v python3 &>/dev/null; then MISSING_PKGS+=("python3"); fi
+if ! check_pkg libstdc++-devel; then MISSING_PKGS+=("libstdc++-devel"); fi
+
+if [ ${#MISSING_PKGS[@]} -gt 0 ]; then
+    echo "  📦 Instalando dependencias faltantes (${MISSING_PKGS[*]}) vía DNF5..."
+    if ! command -v sudo &>/dev/null && [ "$EUID" -ne 0 ]; then
+        echo "❌ Error: Se requieren permisos administrativos para instalar: ${MISSING_PKGS[*]}"
+        exit 1
+    fi
+    $SUDO dnf5 install -y "${MISSING_PKGS[@]}"
+    echo "  ✅ Dependencias de sistema instaladas."
+else
+    echo "  ✅ Dependencias de compilación (gcc-c++, make, curl, python3, libstdc++-devel) ya satisfechas."
+fi
+
+# ------------------------------------------------------------------------------
+# 6. INSTALACIÓN / CONFIGURACIÓN DE NODE.JS LTS VÍA MISE
+# ------------------------------------------------------------------------------
+echo "ℹ️ [2/4] Instalando / Verificando Node.js LTS vía Mise..."
+run_as_user mise use --global node@lts
+
+# ------------------------------------------------------------------------------
+# 7. ACTIVAR COREPACK (PNPM & YARN) Y REGENERAR SHIMS
+# ------------------------------------------------------------------------------
+echo "ℹ️ [3/4] Habilitando Corepack (pnpm y yarn) y regenerando shims..."
+run_as_user mise exec node@lts -- corepack enable 2>/dev/null || true
+run_as_user mise exec node@lts -- corepack prepare pnpm@latest --activate 2>/dev/null || true
+run_as_user mise exec node@lts -- corepack prepare yarn@stable --activate 2>/dev/null || true
+run_as_user mise reshim 2>/dev/null || true
+
+# ------------------------------------------------------------------------------
+# 8. INTEGRACIÓN CON KDE PLASMA 6, SHELLS Y AUTOCOMPLETADOS
+# ------------------------------------------------------------------------------
+echo "ℹ️ [4/4] Configurando variables de entorno, sesión KDE y autocompletados..."
+
+ENV_DIR="$USER_HOME/.config/environment.d"
+BASHRC_D="$USER_HOME/.bashrc.d"
+BASH_COMPLETIONS_DIR="$USER_HOME/.local/share/bash-completion/completions"
+
+run_as_user mkdir -p "$ENV_DIR" "$BASHRC_D" "$BASH_COMPLETIONS_DIR"
+
+# 8.1. Integración con sesión gráfica KDE Plasma 6 (systemd user)
+cat << EOF | run_as_user tee "$ENV_DIR/10-nodejs.conf" > /dev/null
+# Node.js Environment Settings (KDE Plasma 6 + Wayland)
+COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+JOBS=$NPROC
+npm_config_jobs=$NPROC
+EOF
+
+# 8.2. Shell Bash (predeterminada)
+cat << EOF | run_as_user tee "$BASHRC_D/nodejs.sh" > /dev/null
+# Node.js & Corepack Environment Settings
+export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+export JOBS=$NPROC
+export npm_config_jobs=$NPROC
+EOF
+
+# 8.3. Shell Zsh (compatibilidad condicional)
+if [ -f "$USER_HOME/.zshrc" ]; then
+    ZSHRC_D="$USER_HOME/.zshrc.d"
+    run_as_user mkdir -p "$ZSHRC_D"
+    cat << EOF | run_as_user tee "$ZSHRC_D/nodejs.zsh" > /dev/null
+# Node.js & Corepack Environment Settings
+export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+export JOBS=$NPROC
+export npm_config_jobs=$NPROC
+EOF
+fi
+
+# 8.4. Autocompletados para Bash
+if command -v mise &>/dev/null || [ -x "$USER_HOME/.local/bin/mise" ]; then
+    run_as_user mise exec node@lts -- npm completion > "$BASH_COMPLETIONS_DIR/npm" 2>/dev/null || true
+    run_as_user mise exec node@lts -- pnpm completion bash > "$BASH_COMPLETIONS_DIR/pnpm" 2>/dev/null || true
+fi
+
+# 8.5. Autocompletados para Zsh (si existe ~/.zshrc)
+if [ -f "$USER_HOME/.zshrc" ]; then
+    ZSH_COMPLETIONS_DIR="$USER_HOME/.local/share/zsh/site-functions"
+    ZFUNC_DIR="$USER_HOME/.zfunc"
+    run_as_user mkdir -p "$ZSH_COMPLETIONS_DIR" "$ZFUNC_DIR"
+
+    if command -v mise &>/dev/null || [ -x "$USER_HOME/.local/bin/mise" ]; then
+        run_as_user mise exec node@lts -- pnpm completion zsh > "$ZSH_COMPLETIONS_DIR/_pnpm" 2>/dev/null || true
+        run_as_user mise exec node@lts -- pnpm completion zsh > "$ZFUNC_DIR/_pnpm" 2>/dev/null || true
+    fi
+fi
+
+# ------------------------------------------------------------------------------
+# 9. RESUMEN FINAL
+# ------------------------------------------------------------------------------
+NODE_VER=$(run_as_user mise exec node@lts -- node --version 2>/dev/null || echo "instalado")
+NPM_VER=$(run_as_user mise exec node@lts -- npm --version 2>/dev/null || echo "instalado")
+PNPM_VER=$(run_as_user mise exec node@lts -- pnpm --version 2>/dev/null || echo "disponible vía corepack")
+YARN_VER=$(run_as_user mise exec node@lts -- yarn --version 2>/dev/null || echo "disponible vía corepack")
+
+echo "================================================================="
+echo "✅ Node.js LTS configurado con éxito para Fedora 44 y KDE 6:"
+echo "  • Node.js:      $NODE_VER (LTS)"
+echo "  • npm:          $NPM_VER"
+echo "  • pnpm:         $PNPM_VER (Corepack)"
+echo "  • yarn:         $YARN_VER (Corepack)"
+echo "  • Compilación:  node-gyp optimizado para $NPROC hilos paralelos"
+echo "  • Entorno KDE:  ~/.config/environment.d/10-nodejs.conf"
+echo "  • Shells:       Bash (predeterminada)$([ -f "$USER_HOME/.zshrc" ] && echo " & Zsh (compatible)") con autocompletados nativos"
+echo "  • Shims Mise:   $USER_HOME/.local/share/mise/shims"
+echo "================================================================="

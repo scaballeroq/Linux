@@ -174,23 +174,20 @@ just cockpit
 
 ---
 
-## 8. Desktop Appearance & Themes (`apariencia.sh`)
+## 8. KDE Plasma 6 Configuration & Appearance (`kde-settings.sh`)
 
-Manages global themes, Kvantum SVG theme engine (Qt5/Qt6), color schemes, and icon packs on KDE Plasma 6 ensuring consistent visual integration with GTK 3/4 applications and Flatpaks:
-- Qt Widget Engine: **Kvantum** (with SVG themes like `KvFlatDark`, `KvMojaveDark`, `MateriaDark`) / **Breeze**
-- Global Theme: **Breeze Dark** / **Breeze Light**
-- Icons: **Papirus-Dark** / **Breeze-Dark**
-- Cursors: `breeze_cursors`
+Configures and personalizes KDE Plasma 6, Dolphin, KWin Wayland (window buttons on the right, Night Color at 4000K), global Ctrl+Alt+T shortcut for Kitty, Dolphin servicemenus (Kitty, Antigravity), and visual themes (Breeze Dark/Light, Kvantum SVG engine, Papirus-Dark / Breeze-Dark icons, and GTK 3/4 sync):
 
 ```bash
-just apariencia
+just kde-setup
 # CLI Options:
-./Setup/apariencia.sh --status              # Show active appearance configuration (KDE, Kvantum, GTK)
-./Setup/apariencia.sh --list                # List installed themes, icons, and Kvantum themes
-./Setup/apariencia.sh --dark                # Apply dark mode with Kvantum (KvFlatDark + Papirus-Dark)
-./Setup/apariencia.sh --light               # Apply light mode with Kvantum (KvFlatLight + Papirus)
-./Setup/apariencia.sh --kvantum-theme KvArcDark  # Apply a custom Kvantum theme
-./Setup/apariencia.sh --breeze-widgets      # Restore native Breeze widgets (no Kvantum)
+./Setup/kde-settings.sh --status              # Show detailed diagnostics (KDE, KWin, Kvantum, GTK)
+./Setup/kde-settings.sh --breeze-dark         # Apply official Breeze Dark theme
+./Setup/kde-settings.sh --breeze-light        # Apply official Breeze Light theme
+./Setup/kde-settings.sh --kvantum             # Enable Kvantum as Qt widget style engine
+./Setup/kde-settings.sh --kvantum-theme KvFlatDark # Apply a custom Kvantum theme
+./Setup/kde-settings.sh --papirus             # Apply Papirus-Dark icon theme
+./Setup/kde-settings.sh --list                # List installed themes, icons, and Kvantum themes
 ```
 
 ---

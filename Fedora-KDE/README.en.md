@@ -25,7 +25,7 @@ Operating system provisioning, visual customization, and performance hardening s
 - **`post-install.sh`**: Smart CPU dispatcher with automatic architecture detection (AMD vs Intel) and CLI flags (`--amd`, `--intel`).
 - **`post-install-amd.sh`**: Post-installation tailored for **AMD Ryzen** CPUs and Radeon Graphics (AMD microcode, GPU firmware, RADV, Mesa, PipeWire, ZRAM, RPM Fusion).
 - **`post-install-intel.sh`**: Post-installation tailored for **Intel Core** desktop PCs (Haswell i7-4790 / HD Graphics 4600) for media center & streaming (Intel microcode, VA-API `i965`/`intel-media-driver`, codecs, Kodi, no virtualization overhead).
-- **`apariencia.sh`**: Theme manager, Kvantum SVG style engine (Qt5/Qt6), Papirus-Dark icons, cursors, and visual synchronization with GTK 3/4 and Flatpaks.
+- **`kde-settings.sh`**: Complete KDE Plasma 6 customization, Dolphin, KWin, Kitty Ctrl+Alt+T shortcut, servicemenus, Kvantum SVG style engine, Breeze themes, and Papirus-Dark icons.
 - **`kitty.sh`**: GPU-accelerated Kitty terminal with customizable opacity (`--opacity`), blur effects, JetBrainsMono Nerd Font, on-the-fly hotkeys, and Dolphin file manager integration.
 - **`laptop-setup.sh`**: Laptop performance and battery optimizations (Touchpad gestures, Bluetooth, hybrid graphics via `switcheroo-control`, energy management via `tuned-ppd`, and 95% brightness persistence service).
 - **`hp-printer-setup.sh`**: HP LaserJet Pro M15w printer configuration via USB/Network (CUPS, HPLIP, KDE Print Manager, and proprietary plugin download).
@@ -50,13 +50,11 @@ Modern programming languages and SDK toolchains:
 - **`gemini.sh`**: Google Gemini command-line interface.
 
 ### 💻 [IDEs & Developer Tools](./IDE/)
-- **`neovim.sh`**: Modular Neovim setup powered by the LazyVim starter distribution.
-- **`vscode.sh`**: Native Visual Studio Code via Microsoft's official DNF5 RPM repository.
-- **`antigravity.sh`**: Google Antigravity Desktop 2.0 (complete installer with sandbox and desktop launcher).
-- **`antigravity-cli.sh`** & **`antigravity-ide.sh`**: Antigravity CLI and standalone IDE engine.
-- **`opencode.sh`**: OpenCode AI client and editor with version management.
-- **`git.sh`**: Global Git configuration, Git-Delta diff visualizer (`zdiff3`, `side-by-side`), and Lazygit TUI.
-- **`github-cli.sh`**: Official GitHub CLI (`gh`).
+- **`antigravity.sh`**: Google Antigravity Desktop setup (Chromium sandbox `4755`, native libraries, and Dolphin KIO servicemenu).
+- **`antigravity-cli.sh`**: Google Antigravity CLI (`agy`) setup.
+- **`antigravity-ide.sh`**: Google Antigravity IDE Engine setup (KDE launcher and Dolphin servicemenu).
+- **`git.sh`**: Git, Delta, Lazygit, and GitHub CLI setup with global configuration.
+- **`opencode.sh`**: OpenCode AI CLI setup integrated into PATH.
 
 ### 🐳 [Podman](./Podman/)
 Professional rootless container ecosystem and Systemd Quadlets:
@@ -91,7 +89,7 @@ Or trigger individual components:
 ```bash
 just post-install-amd    # AMD Ryzen specific post-install
 just post-install-intel  # Intel Media Center post-install
-just apariencia          # Apply themes, Kvantum (KvFlatDark), and Papirus-Dark icons in KDE and GTK
+just kde-setup           # Customize KDE Plasma 6, Dolphin, KWin, shortcuts, and themes
 just kitty               # Setup Kitty terminal with custom opacity & blur
 just tuning              # Apply sysctl, user limits, systemd timeouts, and Baloo
 just plymouth            # Configure and enable graphical boot splash

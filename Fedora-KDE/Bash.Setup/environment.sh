@@ -1,5 +1,5 @@
 # =============================================================================
-# VARIABLES DE ENTORNO (environment.sh) - Adaptado para Fedora 44 (KDE Plasma 6)
+# VARIABLES DE ENTORNO (environment.sh) - Fedora 44 (KDE Plasma 6)
 # =============================================================================
 # Este archivo define variables de entorno globales para la sesión de usuario.
 
@@ -29,9 +29,12 @@ export LESS_TERMCAP_us=$'\E[1;32m'
 export LESS_TERMCAP_ue=$'\E[0m'
 
 # -----------------------------------------------------------------------------
-# 2. INTEGRACIÓN WAYLAND, QT Y APLICACIONES ELECTRON
+# 2. INTEGRACIÓN WAYLAND, KDE PLASMA, QT Y APLICACIONES ELECTRON
 # -----------------------------------------------------------------------------
-# Compatibilidad Qt/Wayland con fallback automático a Xwayland
+# Backend gráfico Wayland prioritario
+export GDK_BACKEND="wayland,x11,*"
+
+# Compatibilidad Qt/Wayland nativo en KDE Plasma 6
 export QT_QPA_PLATFORM="wayland;xcb"
 export QT_AUTO_SCREEN_SCALE_FACTOR=1
 
@@ -61,27 +64,50 @@ if [ -d "$HOME/.cargo/bin" ] && [[ ":$PATH:" != *":$HOME/.cargo/bin:"* ]]; then
     export PATH="$HOME/.cargo/bin:$PATH"
 fi
 
-# Activación de MISE (Gestor de lenguajes)
-if command -v mise &> /dev/null; then
-    eval "$(mise activate bash)"
+# Go
+if [ -d "$HOME/go/bin" ] && [[ ":$PATH:" != *":$HOME/go/bin:"* ]]; then
+    export PATH="$HOME/go/bin:$PATH"
 fi
 
-# Soporte para GPG en la terminal (seguro para subshells y no-TTY)
-export GPG_TTY="$(tty 2>/dev/null || true)"
-
-# Podman Rootless Docker Host compatibility
-if [ -S "$XDG_RUNTIME_DIR/podman/podman.sock" ]; then
-    export DOCKER_HOST="unix://$XDG_RUNTIME_DIR/podman/podman.sock"
+# Shims de Mise
+if [ -d "$HOME/.local/share/mise/shims" ] && [[ ":$PATH:" != *":$HOME/.local/share/mise/shims:"* ]]; then
+    export PATH="$HOME/.local/share/mise/shims:$PATH"
 fi
 
 # -----------------------------------------------------------------------------
-# 5. VARIOS
+# 5. INTEGRACIÓN DE CONTENEDORES Y VIRTUALIZACIÓN
 # -----------------------------------------------------------------------------
-# Rutas para actualización de Antigravity
+# Socket de Podman rootless compatible con Docker CLI y extensiones DevContainers
+if [ -z "${DOCKER_HOST:-}" ]; then
+    if [ -S "/run/user/$UID/podman/podman.sock" ]; then
+        export DOCKER_HOST="unix:///run/user/$UID/podman/podman.sock"
+    elif [ -n "${XDG_RUNTIME_DIR:-}" ] && [ -S "$XDG_RUNTIME_DIR/podman/podman.sock" ]; then
+        export DOCKER_HOST="unix://$XDG_RUNTIME_DIR/podman/podman.sock"
+    fi
+fi
+
+# Conexión por defecto de virsh / virt-manager al hipervisor KVM de sistema
+export LIBVIRT_DEFAULT_URI="qemu:///system"
+
+# Soporte para GPG en la terminal
+export GPG_TTY=$(tty 2>/dev/null || echo "")
+
+# Rutas de actualización para Antigravity
 export UPDATE_ANTIGRAVITY_PATH="/usr/local/bin/update-antigravity"
 export UPDATE_ANTIGRAVITY_IDE_PATH="/usr/local/bin/update-antigravity-ide"
+
+# -----------------------------------------------------------------------------
+# 6. ACTIVACIÓN AUTOMÁTICA DE MISE
+# -----------------------------------------------------------------------------
+if command -v mise &> /dev/null; then
+    if [ -n "${BASH_VERSION:-}" ]; then
+        eval "$(mise activate bash --shims)"
+    elif [ -n "${ZSH_VERSION:-}" ]; then
+        eval "$(mise activate zsh --shims)"
+    fi
+fi
 
 # =============================================================================
 # MENSAJE DE CARGA
 # =============================================================================
-echo "✅ Variables de entorno aplicadas (PATH, EDITOR, LESS, Wayland/Qt...)"
+echo "✅ Variables de entorno cargadas"

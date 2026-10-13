@@ -1,102 +1,75 @@
 #!/bin/bash
 # =============================================================================
-# CONFIGURACIÓN Y ALIASES PARA KDE PLASMA 6 (kde_settings.sh) - Fedora 44
+# CONFIGURACIÓN Y ALIASES PARA KDE PLASMA 6 (kde_settings.sh)
+# Fedora 44 Workstation (KDE Plasma 6 + Wayland)
 # =============================================================================
-# Este archivo contiene configuraciones de entorno para KDE Plasma 6, optimizaciones
-# para portátil/escritorio (Touchpad, VRR, Wayland) y utilidades CLI para KDE.
+# Configuración de sesión y atajos rápidos para KDE Plasma 6 en Zsh y Bash.
+# =============================================================================
+
+# Evitar ejecución en subshells y sesiones no interactivas
+[[ $- != *i* ]] && return 0 2>/dev/null || true
 
 # -----------------------------------------------------------------------------
-# 1. AJUSTES BASE DE KDE PLASMA 6 (Solo si estamos en sesión KDE)
+# 1. GESTIÓN DEL ENTORNO Y SHELL DE PLASMA
 # -----------------------------------------------------------------------------
-if [[ "${XDG_CURRENT_DESKTOP:-}" == *"KDE"* ]]; then
-    # Comando de escritura de configuración de KDE
-    KWRITE=$(command -v kwriteconfig6 2>/dev/null || command -v kwriteconfig5 2>/dev/null || true)
-
-    if [ -n "$KWRITE" ]; then
-        # 1.1. Touchpad: Tap-to-click y desplazamiento natural
-        "$KWRITE" --file kcminputrc --group Touchpad --key tapToClick true 2>/dev/null || true
-        "$KWRITE" --file kcminputrc --group Touchpad --key naturalScroll true 2>/dev/null || true
-        "$KWRITE" --file touchpadrsrc --group General --key tapToClick true 2>/dev/null || true
-        "$KWRITE" --file touchpadrsrc --group General --key naturalScroll true 2>/dev/null || true
-
-        # 1.2. Botones de ventana: Minimizar, Maximizar y Cerrar a la derecha
-        "$KWRITE" --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnRight "IAX" 2>/dev/null || true
-
-        # 1.3. Reloj en formato 24 horas y fecha ISO
-        "$KWRITE" --file kdeglobals --group Locale --key TimeFormat "%H:%M:%S" 2>/dev/null || true
-        "$KWRITE" --file kdeglobals --group Locale --key DateFormat "%Y-%m-%d" 2>/dev/null || true
-    fi
-    unset KWRITE
-fi
+# Reinicio del entorno gráfico / shell de Plasma y KWin
+alias plasma-restart='systemctl --user restart plasma-plasmashell.service 2>/dev/null || (kquitapp6 plasmashell 2>/dev/null; kstart plasmashell 2>/dev/null &)'
+alias kwin-restart='systemctl --user restart plasma-kwin_wayland.service 2>/dev/null || qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || qdbus org.kde.KWin /KWin reconfigure 2>/dev/null || true'
+alias kwin-reload='qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || qdbus org.kde.KWin /KWin reconfigure 2>/dev/null || true'
+alias kwin-support='(qdbus6 org.kde.KWin /KWin supportInformation 2>/dev/null || qdbus org.kde.KWin /KWin supportInformation 2>/dev/null) | less'
 
 # -----------------------------------------------------------------------------
-# 2. GESTIÓN Y CONTROL DE PLASMA Y KWIN
+# 2. ACCESOS DIRECTOS A PREFERENCIAS DEL SISTEMA (KCM / SYSTEMSETTINGS)
 # -----------------------------------------------------------------------------
+alias kde-settings='systemsettings &>/dev/null &'
+alias kde-conf-display='kcmshell6 kcm_kscreen &>/dev/null || systemsettings kcm_kscreen &>/dev/null &'
+alias kde-pantallas='kde-conf-display'
 
-# Reiniciar Shell de Plasma (Plasma 6 en Systemd / Wayland)
-alias plasma-restart="systemctl --user restart plasma-plasmashell.service 2>/dev/null || (kquitapp6 plasmashell 2>/dev/null; kstart plasmashell &>/dev/null &)"
+alias kde-conf-audio='kcmshell6 kcm_pulseaudio &>/dev/null || systemsettings kcm_pulseaudio &>/dev/null &'
+alias kde-audio='kde-conf-audio'
 
-# Recargar configuración del compositor KWin sin reiniciar sesión
-QDBUS_BIN=$(command -v qdbus-qt6 2>/dev/null || command -v qdbus 2>/dev/null || true)
-if [ -n "$QDBUS_BIN" ]; then
-    alias kwin-reload="$QDBUS_BIN org.kde.KWin /KWin reconfigure"
-    alias kwin-support="$QDBUS_BIN org.kde.KWin /KWin supportInformation | less"
-else
-    alias kwin-reload="echo 'qdbus no disponible en el PATH'"
-fi
-unset QDBUS_BIN
+alias kde-conf-bluetooth='kcmshell6 kcm_bluetooth &>/dev/null || systemsettings kcm_bluetooth &>/dev/null &'
+alias kde-bluetooth='kde-conf-bluetooth'
 
-# -----------------------------------------------------------------------------
-# 3. ACCESOS DIRECTOS A MÓDULOS DE CONFIGURACIÓN (KCMSHELL6)
-# -----------------------------------------------------------------------------
+alias kde-conf-network='kcmshell6 kcm_networkmanagement &>/dev/null || systemsettings kcm_networkmanagement &>/dev/null &'
+alias kde-wifi='kde-conf-network'
 
-alias kde-settings="systemsettings &>/dev/null &"
-alias kde-pantallas="kcmshell6 kcm_kscreen &>/dev/null &"
-alias kde-wifi="kcmshell6 kcm_networkmanagement &>/dev/null &"
-alias kde-audio="kcmshell6 kcm_pulseaudio &>/dev/null &"
-alias kde-bluetooth="kcmshell6 kcm_bluetooth &>/dev/null &"
-alias kde-teclado="kcmshell6 kcm_keyboard &>/dev/null &"
-alias kde-atajos="kcmshell6 kcm_keys &>/dev/null &"
-alias kde-touchpad="kcmshell6 kcm_touchpad &>/dev/null &"
-alias kde-energia="kcmshell6 kcm_powerdevilprofilesconfig &>/dev/null &"
-alias kde-luznocturna="kcmshell6 kcm_nightlight &>/dev/null &"
-alias kde-apariencia="kcmshell6 kcm_lookandfeel &>/dev/null &"
-alias kde-colores="kcmshell6 kcm_colors &>/dev/null &"
-alias kde-iconos="kcmshell6 kcm_icons &>/dev/null &"
-alias kde-fondo="kcmshell6 kcm_wallpaper &>/dev/null &"
-alias kde-bloqueo="kcmshell6 kcm_screenlocker &>/dev/null &"
-alias kde-autostart="kcmshell6 kcm_autostart &>/dev/null &"
-alias kde-notificaciones="kcmshell6 kcm_notifications &>/dev/null &"
-alias kde-info="kinfocenter &>/dev/null &"
+alias kde-conf-power='kcmshell6 powerdevilprofilesconfig &>/dev/null || systemsettings powerdevilprofilesconfig &>/dev/null &'
+alias kde-energia='kde-conf-power'
+
+alias kde-conf-shortcuts='kcmshell6 kcm_keys &>/dev/null || systemsettings kcm_keys &>/dev/null &'
+alias kde-atajos='kde-conf-shortcuts'
+
+alias kde-conf-touchpad='kcmshell6 kcm_touchpad &>/dev/null || systemsettings kcm_touchpad &>/dev/null &'
+alias kde-touchpad='kde-conf-touchpad'
+
+alias kde-conf-appearance='kcmshell6 kcm_lookandfeel &>/dev/null || systemsettings kcm_lookandfeel &>/dev/null &'
+alias kde-apariencia='kde-conf-appearance'
+
+alias kde-info='kinfocenter &>/dev/null &'
 
 # -----------------------------------------------------------------------------
-# 4. GESTIÓN DE PLASMOIDS, WIDGETS Y TEMAS CLI
+# 3. GESTIÓN DE TEMAS Y LUZ NOCTURNA DESDE LA TERMINAL
 # -----------------------------------------------------------------------------
 
-# Listar Plasmoids / Widgets y scripts de KWin instalados
-alias plasmoids-list="kpackagetool6 --type Plasma/Applet --list 2>/dev/null || kpackagetool5 --type Plasma/Applet --list 2>/dev/null"
-alias kwin-scripts-list="kpackagetool6 --type KWin/Script --list 2>/dev/null || kpackagetool5 --type KWin/Script --list 2>/dev/null"
-
-# Cambiar entre Tema Oscuro y Claro desde la terminal
+# Alternar a modo oscuro completo (Breeze Dark)
 kde-theme-dark() {
-    if command -v plasma-apply-lookandfeel &>/dev/null; then
-        plasma-apply-lookandfeel -a org.kde.breezedark.desktop 2>/dev/null || true
-    fi
-    if command -v plasma-apply-colorscheme &>/dev/null; then
-        plasma-apply-colorscheme BreezeDark 2>/dev/null || true
-    fi
-    echo "🌙 Tema Breeze Dark aplicado en KDE Plasma."
+    plasma-apply-lookandfeel -a org.kde.breezedark.desktop 2>/dev/null || \
+    plasma-apply-lookandfeel -a org.kde.breeze.dark.desktop 2>/dev/null || \
+    plasma-apply-colorscheme BreezeDark 2>/dev/null || true
+    echo "🌙 Modo oscuro aplicado en KDE Plasma (Breeze Dark)."
 }
 
+# Alternar a modo claro (Breeze Light)
 kde-theme-light() {
-    if command -v plasma-apply-lookandfeel &>/dev/null; then
-        plasma-apply-lookandfeel -a org.kde.breeze.desktop 2>/dev/null || true
-    fi
-    if command -v plasma-apply-colorscheme &>/dev/null; then
-        plasma-apply-colorscheme BreezeLight 2>/dev/null || true
-    fi
-    echo "☀️ Tema Breeze Light aplicado en KDE Plasma."
+    plasma-apply-lookandfeel -a org.kde.breeze.desktop 2>/dev/null || \
+    plasma-apply-colorscheme BreezeLight 2>/dev/null || true
+    echo "☀️ Modo claro aplicado en KDE Plasma (Breeze Light)."
 }
+
+# Luz Nocturna (Night Color)
+alias kde-night-light-on='(kwriteconfig6 --file kwinrc --group NightColor --key Active true 2>/dev/null || true); qdbus6 org.kde.KWin /ColorCorrect org.kde.kwin.ColorCorrect.setNightColorActive true 2>/dev/null || qdbus org.kde.KWin /ColorCorrect org.kde.kwin.ColorCorrect.setNightColorActive true 2>/dev/null || qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true; echo "🌙 Luz nocturna activada."'
+alias kde-night-light-off='(kwriteconfig6 --file kwinrc --group NightColor --key Active false 2>/dev/null || true); qdbus6 org.kde.KWin /ColorCorrect org.kde.kwin.ColorCorrect.setNightColorActive false 2>/dev/null || qdbus org.kde.KWin /ColorCorrect org.kde.kwin.ColorCorrect.setNightColorActive false 2>/dev/null || qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true; echo "☀️ Luz nocturna desactivada."'
 
 # Fijar fondo de escritorio por CLI
 kde-set-wallpaper() {
@@ -114,16 +87,30 @@ kde-set-wallpaper() {
 }
 
 # -----------------------------------------------------------------------------
-# 5. INTEGRACIÓN CON SPECTACLE (CAPTURAS Y GRABACIÓN)
+# 4. APLICACIONES NATIVAS DE KDE Y WAYLAND
 # -----------------------------------------------------------------------------
+alias dolphin='dolphin . &>/dev/null &'
+alias files='dolphin . &>/dev/null &'
+alias kate='kate &>/dev/null &'
+alias kwrite='kwrite &>/dev/null &'
+alias spectacle='spectacle &>/dev/null &'
+alias captura='spectacle -r &>/dev/null &'
+alias capture='spectacle -r &>/dev/null &'
+alias grabacion='spectacle -R &>/dev/null &'
+alias sysmon='plasma-systemmonitor &>/dev/null &'
+alias monitor='plasma-systemmonitor &>/dev/null &'
 
-# Captura de región rectangular directa al portapapeles sin abrir ventana
-alias captura="spectacle -r -b -c &>/dev/null &"
+# Plasmoids y scripts KWin
+alias plasmoids-list='kpackagetool6 --type Plasma/Applet --list 2>/dev/null || kpackagetool5 --type Plasma/Applet --list 2>/dev/null'
+alias kwin-scripts-list='kpackagetool6 --type KWin/Script --list 2>/dev/null || kpackagetool5 --type KWin/Script --list 2>/dev/null'
 
-# Grabación de pantalla con Spectacle
-alias grabacion="spectacle -R &>/dev/null &"
+# Wayland clipboards
+if command -v wl-copy &> /dev/null; then
+    alias clipcopy='wl-copy'
+    alias clippaste='wl-paste'
+fi
 
 # =============================================================================
 # MENSAJE DE CARGA
 # =============================================================================
-echo "✅ Configuración y utilidades de KDE Plasma 6 cargadas"
+echo "✅ Configuración y utilidades de KDE Plasma cargadas"

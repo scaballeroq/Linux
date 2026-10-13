@@ -1,39 +1,38 @@
+#!/bin/bash
 # =============================================================================
-# ALIASES PARA YT-DLP (yt-dlp_aliases.sh) - Adaptado para Fedora 44 (KDE Plasma 6)
+# ALIASES PARA YT-DLP (yt-dlp_aliases.sh) - Fedora 44 (KDE Plasma 6)
 # =============================================================================
 
-# Motor de JS para yt-dlp (Soportado a partir de la versión 2025.11.12)
-JS_RUNTIME=""
-if command -v yt-dlp &> /dev/null; then
-    if command -v deno &> /dev/null; then
-        JS_RUNTIME="--js-runtimes deno"
-    elif command -v mise &> /dev/null && mise where deno &>/dev/null; then
-        JS_RUNTIME="--js-runtimes deno:$(mise where deno)/bin/deno"
-    elif command -v node &> /dev/null; then
-        JS_RUNTIME="--js-runtimes node"
-    fi
+# Evitar ejecución en subshells y sesiones no interactivas
+[[ $- != *i* ]] && return 0 2>/dev/null || true
+
+# 1. Navegador predeterminado para cookies de sesión (evita bloqueos y límites)
+if command -v google-chrome-stable &>/dev/null || command -v google-chrome &>/dev/null; then
+    YT_BROWSER="chrome"
+elif command -v firefox &>/dev/null; then
+    YT_BROWSER="firefox"
+else
+    YT_BROWSER="chrome"
 fi
 
-# Navegador predeterminado para cookies
-YT_BROWSER="firefox"
+# -----------------------------------------------------------------------------
+# 2. ALIASES DE TERMINAL (Aprovechan ~/.config/yt-dlp/config)
+# -----------------------------------------------------------------------------
 
-# 1. DESCARGA DE VÍDEO
-# Descargar el mejor vídeo (hasta 1080p)
-alias ytvideo="yt-dlp -f 'bestvideo[height<=1080]+bestaudio/best[height<=1080]' --merge-output-format mp4 $JS_RUNTIME --rm-cache-dir"
+# Descarga de vídeo óptimo hasta 1080p Full HD (MP4/MKV)
+alias ytvideo="yt-dlp -f 'bestvideo[height<=1080]+bestaudio/best[height<=1080]' --merge-output-format mp4"
 
-# 2. DESCARGA DE AUDIO
-# Descargar audio en MP3
-alias ytaudio="yt-dlp -f 'ba' -x --audio-format mp3 --audio-quality 0 $JS_RUNTIME --rm-cache-dir"
+# Descarga de audio en MP3 de máxima calidad (320k VBR/CBR)
+alias ytaudio="yt-dlp -f 'ba' -x --audio-format mp3 --audio-quality 0"
 
-# 3. LISTAS DE REPRODUCCIÓN
-# Descargar lista en MP4 (Mantiene cookies para evitar bloqueos)
-alias ytlista="yt-dlp -f 'bestvideo[height<=1080]+bestaudio/best[height<=1080]' --merge-output-format mp4 --cookies-from-browser $YT_BROWSER -o '%(playlist_index)s - %(title)s.%(ext)s' --yes-playlist $JS_RUNTIME --rm-cache-dir"
+# Descarga de listas de reproducción de vídeo
+alias ytlista="yt-dlp -f 'bestvideo[height<=1080]+bestaudio/best[height<=1080]' --merge-output-format mp4 --cookies-from-browser $YT_BROWSER -o '%(playlist_index)02d - %(title)s.%(ext)s' --yes-playlist"
 
-# Descargar lista en MP3
-alias ytlista-audio="yt-dlp -f 'ba' -x --audio-format mp3 --audio-quality 0 --cookies-from-browser $YT_BROWSER -o '%(playlist_index)s - %(title)s.%(ext)s' --yes-playlist $JS_RUNTIME --rm-cache-dir"
+# Descarga de listas de reproducción en audio MP3
+alias ytlista-audio="yt-dlp -f 'ba' -x --audio-format mp3 --audio-quality 0 --cookies-from-browser $YT_BROWSER -o '%(playlist_index)02d - %(title)s.%(ext)s' --yes-playlist"
 
-# 4. SUBTÍTULOS Y AVANZADO
-# Descarga video con subtítulos (Optimizado para español)
-alias ytdl-subs="yt-dlp -f 'bestvideo[height<=1080]+bestaudio/best[height<=1080]' --merge-output-format mp4 $JS_RUNTIME --impersonate chrome --write-auto-subs --embed-subs --sub-langs 'es.*' --convert-subs srt --cookies-from-browser $YT_BROWSER --sleep-subtitles 15 --rm-cache-dir"
+# Descarga con subtítulos automáticos en español e inglés
+alias ytdl-subs="yt-dlp -f 'bestvideo[height<=1080]+bestaudio/best[height<=1080]' --merge-output-format mp4 --write-auto-subs --embed-subs --sub-langs 'es.*,en.*' --convert-subs srt --cookies-from-browser $YT_BROWSER --sleep-subtitles 5"
 
-echo "✅ Aliases de yt-dlp cargados ($YT_BROWSER, $JS_RUNTIME)"
+# Limpieza manual de caché de yt-dlp
+alias ytclean="yt-dlp --rm-cache-dir"

@@ -2,17 +2,15 @@
 sidebar_position: 4
 ---
 
-# Git & Version Control Setup on Fedora 44
+# Git & Version Control Setup on Fedora 44 (KDE Plasma 6)
 
-This guide details the version control environment and tools located in [`IDE/git.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora/IDE/git.sh) and [`IDE/github-cli.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora/IDE/github-cli.sh).
+This guide details the version control environment and tools optimized via [`IDE/git.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora-KDE/IDE/git.sh).
 
 The toolchain includes **Git**, **Git-Delta** visual diff pager, **Lazygit** interactive TUI, and the official **GitHub CLI (gh)**.
 
 ---
 
-## 1. Automated Git, Delta & Lazygit Setup (`IDE/git.sh`)
-
-Automates installation and best-practice configurations:
+## 1. Automated Git Setup (`git.sh`)
 
 1. **Git & Git-Delta Installation**:
    ```bash
@@ -26,12 +24,12 @@ Automates installation and best-practice configurations:
    ```
 
 3. **Modern Best Practices**:
-   - Default initial branch: `develop` (`init.defaultBranch develop`).
+   - Default initial branch: `main` (`init.defaultBranch main`).
    - Clean syncing: Default pull rebase (`pull.rebase true`).
-   - Default core editor: `nvim` (`core.editor nvim`).
+   - Editor: intelligent detection of `nvim`, `kate`, `micro`, or `nano`.
+   - Advanced conflict styling: `merge.conflictstyle zdiff3`.
 
 4. **Enhanced Visual Highlighting (Git-Delta)**:
-   Replaces the native diff pager with semantic syntax highlighting, side-by-side view, line numbers, and 3-way conflict styling (`zdiff3`):
    ```bash
    git config --global core.pager "delta"
    git config --global interactive.diffFilter "delta --color-only"
@@ -43,18 +41,13 @@ Automates installation and best-practice configurations:
    ```
 
 5. **Lazygit TUI Installation**:
-   Installs Lazygit via Fedora COPR or precompiled GitHub releases:
-   ```bash
-   sudo dnf5 copr enable -y dejan/lazygit
-   sudo dnf5 install -y lazygit
-   ```
+   Installs Lazygit via Fedora / COPR repositories (`dejan/lazygit`) with automatic fallback to GitHub releases. It automatically configures the KDE Breeze Dark theme (`~/.config/lazygit/config.yml`).
 
 ---
 
-## 2. GitHub Command-Line Interface (`IDE/github-cli.sh`)
+## 2. GitHub Command-Line Interface (`gh`)
 
-Installs the official GitHub CLI (`gh`) via DNF5 to manage repositories, Pull Requests, Issues, and secrets from the terminal:
-
+Native installation via Fedora official repositories using DNF5:
 ```bash
 sudo dnf5 install -y gh
 ```
@@ -68,17 +61,16 @@ gh auth login
 
 ## 3. Automation with Just
 
-To deploy the entire Git setup in a single step:
-
+To deploy and verify the entire Git toolchain in a single step:
 ```bash
 just git-setup
-# or ./IDE/git.sh && ./IDE/github-cli.sh
+# or ./IDE/git.sh --status
 ```
 
 ---
 
 ## Verification
 
-- **Git-Delta**: Run `git diff` on any repository with unstaged changes to verify the side-by-side visual diff.
-- **Lazygit**: Run `lazygit` inside a repository to open the terminal GUI.
-- **GitHub CLI**: Run `gh status` or `gh repo list` to check your authenticated session.
+- **Git-Delta**: Run `git diff`.
+- **Lazygit**: Run `lazygit`.
+- **GitHub CLI**: Run `gh auth status` or `gh auth login`.

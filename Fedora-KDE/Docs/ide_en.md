@@ -2,95 +2,104 @@
 sidebar_position: 5
 ---
 
-# Development Environments (IDEs) & Developer Tools on Fedora 44
+# Development Environments & IDEs on Fedora 44 (KDE Plasma 6)
 
-This guide details the installation and setup of editors, AI assistants, and developer tools located in the `IDE` directory.
+This guide details the developer tools, Artificial Intelligence coding platforms, and version control utilities managed in the `IDE` directory.
 
-The suite includes **Neovim** (powered by LazyVim), **Visual Studio Code**, **OpenCode AI**, version control utilities (**Git, Delta, GitHub CLI**), and the full **Google Antigravity Desktop 2.0 / CLI / IDE Engine** ecosystem.
-
----
-
-## 1. Neovim & LazyVim (`IDE/neovim.sh`)
-
-Installs and configures a modular, fast terminal development environment using Neovim and the LazyVim starter distribution:
-
-```bash
-./IDE/neovim.sh
-# Or using just:
-just nvim
-```
-
-Installs essential build dependencies (`gcc`, `make`, `g++`, `ripgrep`, `fd-find`, `wl-copy`), clones LazyVim into `~/.config/nvim`, and initializes plugins.
+All tools are optimized for **Fedora 44**, the **DNF5** package manager, the **Wayland** display server, the **KDE Plasma 6** desktop environment, and the **Bash** shell (with modular support via `~/.bashrc.d/` and `~/.config/environment.d/`).
 
 ---
 
-## 2. Visual Studio Code (`IDE/vscode.sh`)
+## 1. Google Antigravity Suite
 
-Configures Microsoft's official DNF5 RPM repository and installs native Visual Studio Code:
+Google Antigravity is the next-generation AI-assisted developer environment and agent orchestration platform.
 
-```bash
-./IDE/vscode.sh
-# Or using just:
-just vscode
-```
+### Google Antigravity Desktop (`antigravity.sh`)
+Installs the Google Antigravity desktop application:
+- Deploys into `/opt/antigravity` with `4755` permissions for the Chromium/Electron sandbox (`chrome-sandbox`).
+- Verifies native Fedora package dependencies (`nss`, `libdrm`, `mesa-libgbm`, `libsecret`, `python3`).
+- Creates desktop launcher (`antigravity.desktop`) and icon in `/usr/share/pixmaps/antigravity.png`.
+- Configures contextual integration with **Dolphin** via KIO Servicemenus to open folders with right-click:
+  `~/.local/share/kio/servicemenus/open-in-antigravity.desktop`.
+- Includes atomic updater `/usr/local/bin/update-antigravity` with `--status`, `--check`, `--force`, and `--uninstall` options.
+
+### Google Antigravity CLI (`antigravity-cli.sh`)
+Installs the Antigravity command-line interface (`agy`):
+- Rootless installation in `~/.local/bin/agy`.
+- Modular shell integration in `~/.bashrc.d/antigravity-cli.sh` and graphical session in `~/.config/environment.d/10-antigravity-cli.conf`.
+- CLI commands: `--status`, `--check`, `--update`, `--force`, `--uninstall`.
+
+### Google Antigravity IDE Engine (`antigravity-ide.sh`)
+Installs the standalone Antigravity IDE engine:
+- Links binaries to `/usr/local/bin/antigravity-ide`.
+- KDE Plasma 6 desktop shortcut and Dolphin contextual servicemenu (`~/.local/share/kio/servicemenus/open-in-antigravity-ide.desktop`).
+- Configures Nerd Fonts (`JetBrainsMono Nerd Font Mono`) in `settings.json`.
 
 ---
 
-## 3. Google Antigravity Desktop 2.0, CLI & IDE (`antigravity.sh`, `antigravity-cli.sh`, `antigravity-ide.sh`)
+## 2. Git & Version Control Tools (`git.sh`)
 
-Complete suite for installing and updating Google Antigravity:
+Installs and optimizes modern Git developer tools on Fedora 44:
+- **git**: Core version control system via DNF5.
+- **delta** (`git-delta`): Syntax-highlighted diff pager for `git diff` and `git show`.
+- **lazygit**: Fast terminal UI (TUI) with Delta pager integration and KDE Breeze Dark theme.
+- **github-cli** (`gh`): Official GitHub command-line interface.
 
-- **Google Antigravity Desktop 2.0 (`antigravity.sh`)**: Full installer configuring Google CDN downloads, `/opt/antigravity`, update helper `/usr/local/bin/update-antigravity`, desktop launcher, high-resolution icon, and SUID `4755` Chromium sandbox.
-- **Google Antigravity CLI (`antigravity-cli.sh`)**: Terminal CLI interface installer.
-- **Google Antigravity IDE Engine (`antigravity-ide.sh`)**: Standalone IDE engine installer with `/usr/local/bin/update-antigravity-ide`.
-
+Configures recommended global Git settings:
 ```bash
-just antigravity      # Install Antigravity Desktop 2.0
-just antigravity-cli  # Install Antigravity CLI
-just antigravity-ide  # Install Antigravity IDE
-```
-
----
-
-## 4. OpenCode AI CLI/Editor (`IDE/opencode.sh`)
-
-Automated installer for OpenCode AI assistant with support for explicit version pinning or latest stable release:
-
-```bash
-./IDE/opencode.sh
-# Or specify a version:
-./IDE/opencode.sh 1.18.13
-# Or using just:
-just opencode
+git config --global core.pager "delta"
+git config --global interactive.diffFilter "delta --color-only"
+git config --global init.defaultBranch "main"
+git config --global merge.conflictstyle "zdiff3"
 ```
 
 ---
 
-## 5. Version Control with Git & GitHub CLI (`git.sh`, `github-cli.sh`)
+## 3. OpenCode AI CLI (`opencode.sh`)
 
-Configures Git with Git-Delta diff visualizer (`zdiff3`, side-by-side view), Lazygit, and official GitHub CLI:
-
-```bash
-just git-setup
-# or ./IDE/git.sh && ./IDE/github-cli.sh
-```
+Installs the OpenCode AI CLI developer assistant for terminal:
+- 100% rootless installation in `~/.opencode/bin/` and symlink in `~/.local/bin/opencode`.
+- Modular PATH integration in `~/.bashrc.d/opencode.sh` and Wayland session in `~/.config/environment.d/10-opencode.conf`.
+- Supports specific versions (`-v 1.18.32`), latest release (`-l`), and system diagnostics (`--status`).
 
 ---
 
-## 6. Automating All IDEs with Just
+## 4. Native KDE Plasma Text Editors
 
-To deploy all development environments in a single command:
+- **Kate**: Feature-rich advanced text editor with syntax highlighting, embedded terminal, and project management.
+- **KWrite**: Fast and lightweight editor for quick edits.
+- **Dolphin Integration**: Context menus to open projects directly in Google Antigravity and Antigravity IDE.
+
+---
+
+## 5. IDE Automation with Just
+
+To deploy or manage environments using `just`:
 
 ```bash
-just ides
+just ides             # Deploys Antigravity, Antigravity CLI, Antigravity IDE, and OpenCode
+just git-setup        # Deploys and configures Git, Delta, Lazygit, and GitHub CLI
+just antigravity      # Installs/updates Antigravity Desktop
+just antigravity-cli  # Installs/updates Antigravity CLI
+just antigravity-ide  # Installs/updates Antigravity IDE Engine
+just opencode         # Installs/updates OpenCode AI CLI
 ```
 
 ---
 
 ## Verification
 
-- **Neovim**: Run `nvim` in your terminal. On first launch, LazyVim plugins will download automatically.
-- **VS Code**: Run `code` or find it in the KDE Plasma application menu.
-- **Google Antigravity**: Run `antigravity` in the terminal or search for "Antigravity" in the application launcher.
-- **OpenCode**: Run `opencode --version`.
-- **GitHub CLI**: Run `gh --version` and `gh auth login`.
+To verify all installed tools:
+
+```bash
+# Git, Delta, Lazygit, and GitHub CLI
+./IDE/git.sh --status
+
+# Antigravity Suite
+./IDE/antigravity.sh --status
+./IDE/antigravity-cli.sh --status
+./IDE/antigravity-ide.sh --status
+
+# OpenCode
+./IDE/opencode.sh --status
+```

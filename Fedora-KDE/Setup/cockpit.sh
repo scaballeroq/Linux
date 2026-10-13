@@ -1,27 +1,232 @@
-#!/bin/bash
-# cockpit.sh - Instalación, configuración y gestión de la consola web Cockpit en Fedora 44 + KDE Plasma
-#
-# Uso:
-#   ./cockpit.sh                     -> Instala Cockpit, módulos avanzados, activa el socket y configura el firewall
-#   ./cockpit.sh --status            -> Muestra el estado del socket, servicio, reglas de firewall y módulos instalados
-#   ./cockpit.sh --open              -> Abre la consola web de Cockpit en el navegador predeterminado
-#   ./cockpit.sh --start             -> Inicia el socket de Cockpit
-#   ./cockpit.sh --stop              -> Detiene el socket y servicio de Cockpit
-#   ./cockpit.sh --disable           -> Deshabilita el socket de Cockpit y retira la regla de firewall
-#   ./cockpit.sh --no-install        -> Habilita el servicio y firewall omitiendo la descarga de paquetes DNF5
-#   ./cockpit.sh --help              -> Muestra la ayuda interactiva
+#!/usr/bin/env bash
+# ==============================================================================
+# cockpit.sh - Instalación, Gestión y Diagnóstico de Consola Web Cockpit
+# Sistema: Fedora 44 Workstation | Escritorio: KDE Plasma 6 (Wayland)
+# Hardware: HP EliteBook 855 G7 (AMD Ryzen 7 PRO 4750U / Radeon Vega 7 / Btrfs)
+# ==============================================================================
+# Características:
+# - Activación bajo demanda mediante cockpit.socket (0 MB de RAM en reposo).
+# - Módulos: Podman (contenedores), Machines (KVM/QEMU), Storaged (NVMe/Btrfs),
+#   NetworkManager, SELinux, Files (explorador web) y Sosreport.
+# - Configuración automática de Firewalld (puerto 9090 TCP en zona activa).
+# - Control granular del ciclo de vida: --start, --stop, --disable, --open, --client, --files.
+# ==============================================================================
 
 set -euo pipefail
 
+# ------------------------------------------------------------------------------
+# 1. DETECCIÓN DE USUARIO Y PRIVILEGIOS
+# ------------------------------------------------------------------------------
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    REAL_USER="$SUDO_USER"
+    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+else
+    REAL_USER="${USER:-$(id -un)}"
+    USER_HOME="${HOME:-/home/$REAL_USER}"
+fi
+
+REAL_UID=$(id -u "$REAL_USER" 2>/dev/null || echo "1000")
+
 if [ "$EUID" -ne 0 ]; then
-    if ! command -v sudo &> /dev/null; then
-        echo "❌ Error: 'sudo' no está disponible. Ejecuta este script como root o instala sudo."
-        exit 1
-    fi
     SUDO="sudo"
 else
     SUDO=""
 fi
+
+require_root() {
+    if [ "$EUID" -ne 0 ] && ! command -v sudo &>/dev/null; then
+        echo "❌ Error: Se requieren privilegios de superusuario (root/sudo)."
+        exit 1
+    fi
+}
+
+run_as_user() {
+    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+        sudo -u "$REAL_USER" env \
+            HOME="$USER_HOME" \
+            USER="$REAL_USER" \
+            XDG_RUNTIME_DIR="/run/user/$REAL_UID" \
+            DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$REAL_UID/bus}" \
+            "$@"
+    else
+        "$@"
+    fi
+}
+
+is_pkg_installed() {
+    rpm -q "$1" >/dev/null 2>&1
+}
+
+# ------------------------------------------------------------------------------
+# 2. INSTALACIÓN DE PAQUETES Y MÓDULOS (DNF5)
+# ------------------------------------------------------------------------------
+ensure_installed() {
+    local core_pkgs=(
+        "cockpit"
+        "cockpit-bridge"
+        "cockpit-system"
+        "cockpit-ws"
+        "cockpit-podman"
+        "cockpit-machines"
+        "cockpit-storaged"
+        "cockpit-networkmanager"
+        "cockpit-selinux"
+        "cockpit-files"
+        "cockpit-sosreport"
+    )
+    local missing=()
+    for pkg in "${core_pkgs[@]}"; do
+        if ! is_pkg_installed "$pkg"; then
+            missing+=("$pkg")
+        fi
+    done
+
+    if [ ${#missing[@]} -gt 0 ]; then
+        echo "📦 [1/3] Instalando paquetes y módulos de Cockpit vía DNF5: ${missing[*]}..."
+        require_root
+        $SUDO dnf5 install -y "${missing[@]}" 2>/dev/null || \
+        $SUDO dnf5 install -y cockpit cockpit-podman cockpit-machines cockpit-storaged cockpit-networkmanager 2>/dev/null || true
+        echo "  ✅ Módulos de Cockpit instalados con éxito."
+    else
+        echo "  ✅ Todos los módulos de Cockpit ya están instalados."
+    fi
+}
+
+install_files_module() {
+    echo "📂 Instalando módulo opcional 'cockpit-files' vía DNF5..."
+    require_root
+    $SUDO dnf5 install -y cockpit-files
+    echo "  ✅ Módulo 'cockpit-files' instalado."
+}
+
+# ------------------------------------------------------------------------------
+# 3. GESTIÓN DE SOCKET SYSTEMD Y FIREWALLD
+# ------------------------------------------------------------------------------
+ensure_socket_and_firewall() {
+    require_root
+    echo "⚡ [2/3] Habilitando cockpit.socket bajo demanda (consumo 0 MB en reposo)..."
+    $SUDO systemctl enable --now cockpit.socket
+    echo "  ✅ Socket activo y escuchando en https://localhost:9090"
+
+    echo "🛡️  [3/3] Configurando permisos de red en Firewalld (puerto 9090 TCP)..."
+    if command -v firewall-cmd &>/dev/null && systemctl is-active --quiet firewalld 2>/dev/null; then
+        local active_zone
+        active_zone=$(firewall-cmd --get-default-zone 2>/dev/null || echo "FedoraWorkstation")
+        if ! firewall-cmd --zone="$active_zone" --list-services 2>/dev/null | grep -qw "cockpit"; then
+            $SUDO firewall-cmd --permanent --zone="$active_zone" --add-service=cockpit 2>/dev/null || \
+            $SUDO firewall-cmd --permanent --add-service=cockpit 2>/dev/null || true
+            $SUDO firewall-cmd --reload 2>/dev/null || true
+        fi
+        echo "  ✅ Servicio 'cockpit' permitido en Firewalld (zona: $active_zone)."
+    else
+        echo "  ℹ️ Firewalld no está activo; omitiendo regla de red."
+    fi
+}
+
+start_cockpit() {
+    require_root
+    echo "⚡ Iniciando cockpit.socket..."
+    $SUDO systemctl enable --now cockpit.socket
+    echo "  ✅ Cockpit activo en https://localhost:9090"
+}
+
+stop_cockpit() {
+    require_root
+    echo "🛑 Deteniendo cockpit.socket y cockpit.service..."
+    $SUDO systemctl stop cockpit.service cockpit.socket 2>/dev/null || true
+    echo "  ✅ Cockpit detenido."
+}
+
+disable_cockpit() {
+    require_root
+    echo "🛑 Deshabilitando Cockpit de Systemd y retirando regla de Firewalld..."
+    $SUDO systemctl disable --now cockpit.socket cockpit.service 2>/dev/null || true
+    if command -v firewall-cmd &>/dev/null && systemctl is-active --quiet firewalld 2>/dev/null; then
+        local active_zone
+        active_zone=$(firewall-cmd --get-default-zone 2>/dev/null || echo "FedoraWorkstation")
+        $SUDO firewall-cmd --permanent --zone="$active_zone" --remove-service=cockpit 2>/dev/null || \
+        $SUDO firewall-cmd --permanent --remove-service=cockpit 2>/dev/null || true
+        $SUDO firewall-cmd --reload 2>/dev/null || true
+    fi
+    echo "  ✅ Cockpit deshabilitado completamente."
+}
+
+# ------------------------------------------------------------------------------
+# 4. ACCESO WEB Y CLIENTE DE ESCRITORIO
+# ------------------------------------------------------------------------------
+open_browser() {
+    local url="https://localhost:9090"
+    if ! systemctl is-active --quiet cockpit.socket 2>/dev/null; then
+        echo "ℹ️ El socket no estaba activo. Iniciando cockpit.socket..."
+        require_root
+        $SUDO systemctl start cockpit.socket
+    fi
+    echo "🌐 Abriendo Cockpit en el navegador predeterminado ($url)..."
+    if command -v xdg-open &>/dev/null; then
+        run_as_user xdg-open "$url" &>/dev/null & disown
+    elif command -v kioclient &>/dev/null; then
+        run_as_user kioclient exec "$url" &>/dev/null & disown
+    else
+        echo "💡 Abre manualmente en tu navegador: $url"
+    fi
+}
+
+open_client() {
+    echo "🖥️  Lanzando cliente de escritorio Cockpit Client..."
+    if command -v cockpit-client &>/dev/null; then
+        run_as_user cockpit-client &>/dev/null & disown
+        echo "  ✅ Cockpit Client nativo iniciado."
+    elif command -v flatpak &>/dev/null && flatpak info org.cockpit_project.CockpitClient &>/dev/null; then
+        run_as_user flatpak run org.cockpit_project.CockpitClient &>/dev/null & disown
+        echo "  ✅ Cockpit Client (Flatpak) iniciado."
+    else
+        echo "⚠️ Cockpit Client no está instalado. Abriendo interfaz web en su lugar..."
+        open_browser
+    fi
+}
+
+# ------------------------------------------------------------------------------
+# 5. DIAGNÓSTICO Y ESTADO (--status)
+# ------------------------------------------------------------------------------
+show_status() {
+    local sock_stat serv_stat enab_stat
+    sock_stat=$(systemctl is-active cockpit.socket 2>/dev/null || echo "inactivo")
+    serv_stat=$(systemctl is-active cockpit.service 2>/dev/null || echo "inactivo")
+    enab_stat=$(systemctl is-enabled cockpit.socket 2>/dev/null || echo "deshabilitado")
+
+    echo "================================================================="
+    echo "🔍 ESTADO DE CONSOLA WEB COCKPIT - FEDORA 44 (KDE PLASMA 6)"
+    echo "================================================================="
+    echo "• Socket de Systemd:    $sock_stat"
+    echo "• Servicio Web:         $serv_stat (se activa bajo demanda al abrir la web)"
+    echo "• Habilitado al inicio: $enab_stat"
+    echo "• Puerto de escucha:    9090 (HTTPS)"
+    echo "• URL de acceso:        https://localhost:9090"
+
+    if command -v firewall-cmd &>/dev/null && systemctl is-active --quiet firewalld 2>/dev/null; then
+        local active_zone
+        active_zone=$(firewall-cmd --get-default-zone 2>/dev/null || echo "FedoraWorkstation")
+        if firewall-cmd --zone="$active_zone" --list-services 2>/dev/null | grep -qw "cockpit"; then
+            echo "• Regla en Firewalld:   ✅ Permitido (zona: $active_zone)"
+        else
+            echo "• Regla en Firewalld:   ⚠️ No registrado en zona '$active_zone'"
+        fi
+    else
+        echo "• Regla en Firewalld:   ℹ️ Firewalld inactivo"
+    fi
+
+    echo "-----------------------------------------------------------------"
+    echo "📦 Módulos de Cockpit instalados (RPM):"
+    if rpm -qa "cockpit*" 2>/dev/null | grep -q "cockpit"; then
+        rpm -qa --qf "  ✓ %{NAME} (%{VERSION})\n" "cockpit*" 2>/dev/null | sort
+    else
+        echo "  ❌ Ningún módulo de Cockpit instalado."
+    fi
+    echo "-----------------------------------------------------------------"
+    echo "🌐 Acceso navegador:  ./Setup/cockpit.sh --open"
+    echo "🖥️  Acceso escritorio: ./Setup/cockpit.sh --client"
+    echo "================================================================="
+}
 
 show_help() {
     cat <<EOF
@@ -31,184 +236,84 @@ Uso:
   $0 [OPCIÓN]
 
 Opciones:
-  (sin argumentos)       Instala Cockpit con módulos avanzados, activa cockpit.socket y configura Firewalld.
-  --status, -s           Muestra el estado de ejecución, puertos, reglas de firewall y módulos disponibles.
-  --open, -o             Abre la interfaz web de Cockpit en el navegador predeterminado (https://localhost:9090).
-  --start                Inicia cockpit.socket en systemd.
-  --stop                 Detiene cockpit.socket y cockpit.service.
-  --disable              Deshabilita el socket y retira el servicio de Firewalld.
-  --no-install           Habilita socket y firewall omitiendo la descarga de paquetes DNF5.
-  --help, -h             Muestra este mensaje de ayuda.
+  (sin argumentos)       Instala Cockpit con sus módulos, activa cockpit.socket y configura Firewalld.
+  -s, --status           Muestra el estado del socket, puerto, firewall y módulos instalados.
+  -o, --open             Abre la interfaz web de Cockpit en el navegador (https://localhost:9090).
+  -c, --client           Lanza Cockpit Client (escritorio nativo o Flatpak).
+      --start            Inicia e instala cockpit.socket en systemd.
+      --stop             Detiene el socket y servicio de Cockpit.
+      --disable          Deshabilita el socket y retira reglas de Firewalld.
+      --files            Instala el módulo 'cockpit-files' (explorador de archivos web).
+      --no-install       Activa socket y firewall omitiendo la descarga de paquetes DNF5.
+  -h, --help             Muestra esta ayuda.
 
-Módulos integrados:
-  • Podman (cockpit-podman):          Gestión visual de contenedores, pods e imágenes.
+Módulos integrados en Fedora 44:
+  • Podman (cockpit-podman):          Gestión visual de contenedores rootless y pods.
   • Máquinas Virtuales (machines):    Gestión de VMs en KVM / QEMU y libvirt.
-  • Almacenamiento (storaged):        Salud SMART de SSDs/NVMe, particionado, LVM y RAID.
-  • Redes (networkmanager):           Monitoreo de interfaces de red, IP y tráfico.
+  • Almacenamiento (storaged):        Salud SMART NVMe, subvolúmenes Btrfs, LVM y RAID.
+  • Redes (networkmanager):           Monitoreo de interfaces de red, IP y Firewalld.
   • Seguridad (selinux):              Análisis de políticas y solución guiada de alertas SELinux.
   • Archivos (files):                 Explorador y gestor de archivos web.
   • Diagnóstico (sosreport):          Generación de reportes técnicos del sistema.
 EOF
 }
 
-# 1. Mostrar estado de Cockpit
-show_status() {
-    local SOCK_STAT SERV_STAT ENAB_STAT
-    SOCK_STAT=$(systemctl is-active cockpit.socket 2>/dev/null || true)
-    [ -z "$SOCK_STAT" ] && SOCK_STAT="inactivo"
-    SERV_STAT=$(systemctl is-active cockpit.service 2>/dev/null || true)
-    [ -z "$SERV_STAT" ] && SERV_STAT="inactivo"
-    ENAB_STAT=$(systemctl is-enabled cockpit.socket 2>/dev/null || true)
-    [ -z "$ENAB_STAT" ] && ENAB_STAT="deshabilitado"
-
-    echo "================================================================="
-    echo "🔍 ESTADO DE CONSOLA WEB COCKPIT - FEDORA 44 (KDE PLASMA)"
-    echo "================================================================="
-    echo "• Socket de Systemd:    $SOCK_STAT"
-    echo "• Servicio Web:         $SERV_STAT"
-    echo "• Habilitado al inicio: $ENAB_STAT"
-    echo "• Puerto de escucha:    9090 (HTTPS)"
-    echo "• URL de acceso:        https://localhost:9090"
-    
-    if command -v firewall-cmd &>/dev/null && systemctl is-active firewalld &>/dev/null; then
-        local FW_STATUS="No"
-        if firewall-cmd --list-services 2>/dev/null | grep -qw "cockpit"; then
-            FW_STATUS="Habilitado (Zona activa)"
-        elif firewall-cmd --zone=FedoraWorkstation --list-services 2>/dev/null | grep -qw "cockpit"; then
-            FW_STATUS="Habilitado (FedoraWorkstation)"
-        fi
-        echo "• Regla en Firewalld:  $FW_STATUS"
-    else
-        echo "• Regla en Firewalld:  Firewalld no está activo"
-    fi
-
-    echo ""
-    echo "📦 Módulos de Cockpit instalados:"
-    rpm -qa "cockpit*" 2>/dev/null | sort | sed 's/^/  ✓ /' || echo "  Ningún módulo instalado."
-    echo "================================================================="
-}
-
-# 2. Instalación de paquetes de Cockpit y módulos avanzados
-install_cockpit() {
-    echo "📦 [1/3] Instalando Cockpit y módulos avanzados vía DNF5..."
-    $SUDO dnf5 install -y \
-        cockpit \
-        cockpit-bridge \
-        cockpit-system \
-        cockpit-ws \
-        cockpit-podman \
-        cockpit-machines \
-        cockpit-storaged \
-        cockpit-networkmanager \
-        cockpit-selinux \
-        cockpit-files \
-        cockpit-sosreport 2>/dev/null || $SUDO dnf5 install -y cockpit cockpit-podman cockpit-machines cockpit-storaged
-    echo "✅ Paquetes y módulos de Cockpit instalados con éxito."
-}
-
-# 3. Habilitar socket bajo demanda en Systemd
-enable_socket() {
-    echo "⚡ [2/3] Habilitando cockpit.socket bajo demanda (consumo 0 en reposo)..."
-    $SUDO systemctl enable --now cockpit.socket
-    echo "✅ Socket de Cockpit habilitado y escuchando en el puerto 9090."
-}
-
-# 4. Configurar reglas de firewall
-configure_firewall() {
-    echo "🛡️ [3/3] Configurando permisos de red en Firewalld para el puerto 9090..."
-    if command -v firewall-cmd &>/dev/null && systemctl is-active firewalld &>/dev/null; then
-        $SUDO firewall-cmd --permanent --zone=FedoraWorkstation --add-service=cockpit 2>/dev/null || \
-        $SUDO firewall-cmd --permanent --add-service=cockpit 2>/dev/null || true
-        $SUDO firewall-cmd --reload 2>/dev/null || true
-        echo "✅ Reglas de Firewalld aplicadas."
-    else
-        echo "ℹ️ Firewalld no está activo; omitiendo configuración de reglas de red."
-    fi
-}
-
-# 5. Abrir Cockpit en el navegador
-open_cockpit() {
-    local URL="https://localhost:9090"
-    echo "🌐 Abriendo Cockpit en tu navegador predeterminado ($URL)..."
-    if ! systemctl is-active cockpit.socket &>/dev/null; then
-        echo "ℹ️ El socket no estaba activo. Iniciando cockpit.socket..."
-        $SUDO systemctl start cockpit.socket
-    fi
-    if command -v xdg-open &>/dev/null; then
-        xdg-open "$URL" &>/dev/null &
-    elif command -v kioexec &>/dev/null; then
-        kioexec "$URL" &>/dev/null &
-    else
-        echo "💡 Abre manualmente en tu navegador: $URL"
-    fi
-}
-
-# 6. Detener servicio y socket
-stop_cockpit() {
-    echo "🛑 Deteniendo cockpit.socket y cockpit.service..."
-    $SUDO systemctl stop cockpit.service cockpit.socket 2>/dev/null || true
-    echo "✅ Cockpit detenido."
-}
-
-# 7. Deshabilitar por completo
-disable_cockpit() {
-    echo "🛑 Deshabilitando Cockpit de Systemd y Firewalld..."
-    $SUDO systemctl disable --now cockpit.socket cockpit.service 2>/dev/null || true
-    if command -v firewall-cmd &>/dev/null && systemctl is-active firewalld &>/dev/null; then
-        $SUDO firewall-cmd --permanent --zone=FedoraWorkstation --remove-service=cockpit 2>/dev/null || \
-        $SUDO firewall-cmd --permanent --remove-service=cockpit 2>/dev/null || true
-        $SUDO firewall-cmd --reload 2>/dev/null || true
-    fi
-    echo "✅ Cockpit deshabilitado."
-}
-
-# Procesar argumentos
+# ------------------------------------------------------------------------------
+# 6. DESPACHADOR DE COMANDOS
+# ------------------------------------------------------------------------------
 case "${1:-}" in
-    --help|-h|help)
-        show_help
-        exit 0
-        ;;
-    --status|-s|status)
+    -s|--status|status)
         show_status
         exit 0
         ;;
-    --open|-o|open)
-        open_cockpit
+    -o|--open|open)
+        open_browser
+        exit 0
+        ;;
+    -c|--client|client)
+        open_client
         exit 0
         ;;
     --start|start)
-        echo "⚡ Iniciando cockpit.socket..."
-        $SUDO systemctl start cockpit.socket
-        echo "✅ Cockpit iniciado. Accede a: https://localhost:9090"
+        start_cockpit
+        exit 0
         ;;
     --stop|stop)
         stop_cockpit
+        exit 0
         ;;
     --disable|disable)
         disable_cockpit
+        exit 0
+        ;;
+    --files)
+        install_files_module
+        exit 0
         ;;
     --no-install)
         echo "================================================================="
         echo "🌐 ACTIVANDO COCKPIT EN FEDORA 44 [SIN DESCARGA DE PAQUETES]"
         echo "================================================================="
-        enable_socket
-        configure_firewall
+        ensure_socket_and_firewall
         echo ""
         show_status
+        exit 0
+        ;;
+    -h|--help|help)
+        show_help
+        exit 0
         ;;
     "")
         echo "================================================================="
-        echo "🌐 CONFIGURADOR DE CONSOLA WEB COCKPIT - FEDORA 44 (KDE PLASMA)"
+        echo "🌐 CONFIGURADOR DE CONSOLA WEB COCKPIT - FEDORA 44 (KDE PLASMA 6)"
         echo "================================================================="
-        install_cockpit
-        enable_socket
-        configure_firewall
+        ensure_installed
+        ensure_socket_and_firewall
         echo ""
-        echo "================================================================="
+        show_status
         echo "✅ Cockpit instalado y configurado correctamente."
-        echo "🌐 Accede desde tu navegador en: https://localhost:9090"
-        echo "💡 Inicia sesión con tu usuario de Fedora ($USER) y contraseña."
-        echo "================================================================="
+        echo "💡 Inicia sesión en https://localhost:9090 con tu usuario ($REAL_USER) y contraseña."
+        exit 0
         ;;
     *)
         echo "❌ Opción no reconocida: $1"
