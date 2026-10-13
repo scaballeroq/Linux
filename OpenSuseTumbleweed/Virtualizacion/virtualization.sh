@@ -578,23 +578,31 @@ EOF
 fi
 
 # ---------------------------------------------------------------------------
-# 11. Optimización de Memoria (KSM) y Perfil Tuned
+# 11. Optimización de Memoria (KSM) y Perfiles de Energía
 # ---------------------------------------------------------------------------
-echo "ℹ️ [11/13] Configurando deduplicación de memoria RAM (KSM) y Tuned..."
+echo "ℹ️ [11/13] Configurando deduplicación de memoria RAM (KSM) y gestión de energía..."
 sudo mkdir -p /etc/tmpfiles.d
+
+# KSM en portátiles con 32 GB RAM: intervalo balanceado (500ms) para no consumir batería innecesaria
 cat <<EOF | sudo tee /etc/tmpfiles.d/ksm.conf > /dev/null
 # Deduplicación de páginas de memoria RAM compartidas entre VMs KVM
+# Intervalo moderado para balancear consumo de CPU y memoria en portátiles
 w /sys/kernel/mm/ksm/run - - - - 1
-w /sys/kernel/mm/ksm/sleep_millisecs - - - - 100
+w /sys/kernel/mm/ksm/sleep_millisecs - - - - 500
+w /sys/kernel/mm/ksm/pages_to_scan - - - - 100
 EOF
 
 if [ -d /sys/kernel/mm/ksm ]; then
     echo 1 | sudo tee /sys/kernel/mm/ksm/run > /dev/null 2>&1 || true
-    echo 100 | sudo tee /sys/kernel/mm/ksm/sleep_millisecs > /dev/null 2>&1 || true
+    echo 500 | sudo tee /sys/kernel/mm/ksm/sleep_millisecs > /dev/null 2>&1 || true
 fi
-echo "  ✅ KSM activado."
+echo "  ✅ KSM activado con intervalo equilibrado para portátil."
 
-if [ -x "$TUNED_ADM_BIN" ]; then
+# Detección inteligente de gestor de energía: Respetar power-profiles-daemon de KDE Plasma 6 en portátiles
+if systemctl is-active --quiet power-profiles-daemon 2>/dev/null; then
+    echo "  ⚡ power-profiles-daemon detectado y activo (KDE Plasma 6): se mantiene como gestor primario para preservar la batería del portátil."
+    echo "  ℹ️ Omitiendo activación de Tuned 'virtual-host' para evitar sobreescritura de gobernadores y consumo excesivo en batería."
+elif [ -x "$TUNED_ADM_BIN" ]; then
     sudo systemctl enable --now tuned.service 2>/dev/null || true
     sudo "$TUNED_ADM_BIN" profile virtual-host 2>/dev/null || true
     echo "  ✅ Perfil Tuned 'virtual-host' aplicado."
@@ -666,11 +674,12 @@ echo "   • Ideal para: Máxima aceleración gráfica 3D (VirGL en AMD Radeon V
 echo "     carpetas compartidas VirtIO-FS, redirección USB y sonido de baja latencia."
 echo ""
 echo "💡 RECOMENDACIONES DE RENDIMIENTO PARA VMS LINUX (Virt-Manager):"
-echo "  • Procesador: Modelo 'host-passthrough' (rendimiento nativo AMD Zen 2)."
+echo "  • Procesador: Modelo 'host-passthrough' con topología adecuada (ej: 4 u 6 vCPUs AMD Zen 2 Renoir)."
 echo "  • Gráficos: Pantalla SPICE + Aceleración OpenGL activada."
-echo "  • Tarjeta de Video: 'VirtIO' con 'Aceleración 3D' marcada (GPU AMD Vega 7)."
-echo "  • Almacenamiento: Bus 'VirtIO', caché 'writeback', descartar 'unmap' (TRIM)."
-echo "  • Compartir Carpetas: Hardware -> Sistema de archivos -> 'virtiofs'."
+echo "  • Tarjeta de Video: 'VirtIO' con 'Aceleración 3D' marcada (VirGL sobre AMD Radeon Vega 7 vía /dev/dri/renderD128)."
+echo "  • Almacenamiento: Bus 'VirtIO', formato 'qcow2' (o 'raw'), caché 'none' (E/S directa NVMe sin doble buffer) o 'writeback', descartar 'unmap' (TRIM nativo NVMe)."
+echo "  • Red: Dispositivo 'virtio' conectado a red NAT 'default' (virbr0)."
+echo "  • Compartir Carpetas: Hardware -> Sistema de archivos -> 'virtiofs' (virtiofsd de alta velocidad)."
 echo "================================================================="
 echo "⚠️ IMPORTANTE: Cierra sesión y vuelve a iniciarla (o reinicia el equipo)"
 echo "   para que se apliquen los nuevos grupos: libvirt, kvm, render."

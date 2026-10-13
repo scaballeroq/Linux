@@ -78,12 +78,23 @@ fi
 # 5. INTEGRACIÓN DE CONTENEDORES Y VIRTUALIZACIÓN
 # -----------------------------------------------------------------------------
 # Socket de Podman rootless compatible con Docker CLI y extensiones DevContainers
-if [ -z "${DOCKER_HOST:-}" ] && [ -S "/run/user/$UID/podman/podman.sock" ]; then
-    export DOCKER_HOST="unix:///run/user/$UID/podman/podman.sock"
+if [ -z "${DOCKER_HOST:-}" ]; then
+    if [ -S "/run/user/$UID/podman/podman.sock" ]; then
+        export DOCKER_HOST="unix:///run/user/$UID/podman/podman.sock"
+    elif [ -n "${XDG_RUNTIME_DIR:-}" ] && [ -S "$XDG_RUNTIME_DIR/podman/podman.sock" ]; then
+        export DOCKER_HOST="unix://$XDG_RUNTIME_DIR/podman/podman.sock"
+    fi
 fi
 
 # Conexión por defecto de virsh / virt-manager al hipervisor KVM de sistema
 export LIBVIRT_DEFAULT_URI="qemu:///system"
+
+# Soporte para GPG en la terminal
+export GPG_TTY=$(tty 2>/dev/null || echo "")
+
+# Rutas de actualización para Antigravity
+export UPDATE_ANTIGRAVITY_PATH="/usr/local/bin/update-antigravity"
+export UPDATE_ANTIGRAVITY_IDE_PATH="/usr/local/bin/update-antigravity-ide"
 
 # -----------------------------------------------------------------------------
 # 6. ACTIVACIÓN AUTOMÁTICA DE MISE

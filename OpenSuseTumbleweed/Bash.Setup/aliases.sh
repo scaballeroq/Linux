@@ -16,8 +16,7 @@ alias repo='cd ~/Workspace/Repositorios'
 alias repos='cd ~/Workspace/Repositorios'
 alias opensuse='cd ~/Workspace/Repositorios/Linux/OpenSuseTumbleweed'
 alias tumbleweed='cd ~/Workspace/Repositorios/Linux/OpenSuseTumbleweed'
-alias fedora='cd ~/Workspace/Repositorios/Linux/Fedora-Workstation'
-alias cachyos='cd ~/Workspace/Repositorios/Linux/CachyOS'
+alias linux='cd ~/Workspace/Repositorios/Linux'
 
 # 2. INTEGRACIÓN CON KDE PLASMA Y ESCRITORIO
 alias open='xdg-open'
@@ -100,7 +99,33 @@ alias edit-bashrc='${EDITOR:-nano} ~/.bashrc'
 alias edit-shell='[ -n "$ZSH_VERSION" ] && ${EDITOR:-nano} ~/.zshrc || ${EDITOR:-nano} ~/.bashrc'
 alias edit-aliases='[ -n "$ZSH_VERSION" ] && (${EDITOR:-nano} ~/.zshrc.d/aliases.sh 2>/dev/null || ${EDITOR:-nano} ~/.zshrc.d/aliases.zsh) || ${EDITOR:-nano} ~/.bashrc.d/aliases.sh'
 alias ff='fastfetch'
-alias sysinfo='ff'
+# Comprobar versión de kernel activo vs última versión en kernel.org
+check-kernel-update() {
+    local active_kernel
+    active_kernel=$(uname -r)
+    local latest_kernel
+    latest_kernel=$(curl -s --connect-timeout 3 https://www.kernel.org/releases.json 2>/dev/null | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('latest_link', {}).get('version', 'Desconocido'))" 2>/dev/null || echo "Desconocido")
+    echo "================================================================="
+    echo "🐧 Kernel activo en el sistema:  $active_kernel"
+    echo "📌 Última versión en Kernel.org: v$latest_kernel"
+    echo "================================================================="
+    if [[ "$active_kernel" != *"$latest_kernel"* ]]; then
+        echo "💡 Hay una versión de kernel más reciente disponible en kernel.org."
+    else
+        echo "✅ Tu kernel coincide con la última versión estable."
+    fi
+}
+alias check-kernel='check-kernel-update'
 
-# 8. MENSAJE DE CARGA
+# 8. VIRTUALIZACIÓN (Libvirt/KVM)
+alias vms='virsh list --all'
+alias vmstart='virsh start'
+alias vmstop='virsh shutdown'
+alias vminfo='virsh dominfo'
+
+# 9. IDEs
+alias update-antigravity='sudo "$UPDATE_ANTIGRAVITY_PATH"'
+alias update-antigravity-ide='sudo "$UPDATE_ANTIGRAVITY_IDE_PATH"'
+
+# 10. MENSAJE DE CARGA
 echo "✅ Aliases cargados"
