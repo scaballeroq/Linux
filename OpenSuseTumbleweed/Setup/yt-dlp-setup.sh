@@ -191,6 +191,7 @@ ${BOLD}Opciones:${NC}
   -c, --config           Genera o actualiza la configuración (~/.config/yt-dlp/config) en modo usuario.
   -s, --status           Muestra el estado detallado de herramientas multimedia y motor JavaScript.
   -u, --update           Actualiza yt-dlp, FFmpeg, aria2 y el motor JavaScript Deno a la última versión.
+  --clean-cache          Limpia la caché de yt-dlp en disco de forma segura.
   -h, --help             Muestra este mensaje de ayuda.
 
 ${BOLD}Características configuradas:${NC}
@@ -314,7 +315,18 @@ generate_config() {
     echo -e "${BLUE}⚙️ Generando configuración optimizada en $CONFIG_FILE...${NC}"
     run_as_user mkdir -p "$CONFIG_DIR"
 
-    cat << 'EOF' | run_as_user tee "$CONFIG_FILE" > /dev/null
+    # Determinar preferencia de runtimes JS
+    local js_opt="--js-runtimes deno,node,quickjs"
+    local mise_deno="$USER_HOME/.local/share/mise/shims/deno"
+    local mise_node="$USER_HOME/.local/share/mise/shims/node"
+
+    if [ -x "$mise_deno" ]; then
+        js_opt="--js-runtimes deno:$mise_deno,deno,node,quickjs"
+    elif [ -x "$mise_node" ]; then
+        js_opt="--js-runtimes node:$mise_node,node,deno,quickjs"
+    fi
+
+    cat << EOF | run_as_user tee "$CONFIG_FILE" > /dev/null
 # =============================================================================
 # CONFIGURACIÓN GLOBAL DE YT-DLP - OPENSUSE TUMBLEWEED (KDE PLASMA 6)
 # =============================================================================
@@ -322,6 +334,7 @@ generate_config() {
 # --- Metadatos, Portadas y Capítulos ---
 --embed-metadata
 --embed-thumbnail
+--convert-thumbnails jpg
 --embed-chapters
 
 # --- Descargas y Rendimiento Concurrente ---
@@ -329,19 +342,36 @@ generate_config() {
 --no-overwrites
 --continue
 
-# --- Integración y Compatibilidad de Formatos ---
---prefer-free-formats
---compat-options no-youtube-prefer-utc-upload-date
+# --- Formato y Contenedor Predeterminado ---
+--merge-output-format mp4/mkv
+
+# --- Integración con Dolphin / Gestor de Archivos KDE ---
+--no-mtime
+--windows-filenames
+
+# --- SponsorBlock (Marcadores de Capítulos para Patrocinios/Intros) ---
+--sponsorblock-mark all
 
 # --- Subtítulos ---
 --sub-langs "es.*,en.*"
 --embed-subs
+--compat-options no-keep-subs
 
-# --- Limpieza de Caché Residual ---
---rm-cache-dir
+# --- Motor JavaScript para retos n-token / n-sig ---
+$js_opt
 EOF
 
-    echo -e "${GREEN}✔${NC} Configuración ~/.config/yt-dlp/config lista."
+    echo -e "${GREEN}✔${NC} Configuración ~/.config/yt-dlp/config lista y optimizada."
+}
+
+clean_cache() {
+    echo -e "${BLUE}🧹 Limpiando caché residual de yt-dlp...${NC}"
+    if command -v yt-dlp &>/dev/null; then
+        run_as_user yt-dlp --rm-cache-dir 2>/dev/null || true
+        echo -e "${GREEN}✔${NC} Caché de yt-dlp limpiada con éxito."
+    else
+        echo -e "${YELLOW}⚠️ Aviso:${NC} yt-dlp no está instalado todavía."
+    fi
 }
 
 update_components() {
@@ -394,6 +424,10 @@ case "${1:-}" in
         ;;
     --update|-u|update)
         update_components
+        exit 0
+        ;;
+    --clean-cache|clean-cache)
+        clean_cache
         exit 0
         ;;
     --install|-i|install|"")

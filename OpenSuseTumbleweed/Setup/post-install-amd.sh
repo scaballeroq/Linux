@@ -4,6 +4,14 @@
 
 set -euo pipefail
 
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    REAL_USER="$SUDO_USER"
+    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+else
+    REAL_USER="${USER:-$(id -un)}"
+    USER_HOME="${HOME:-/home/$REAL_USER}"
+fi
+
 echo "================================================================="
 echo "🚀 INICIANDO POST-INSTALACIÓN: OPENSUSE TUMBLEWEED - AMD RYZEN"
 echo "================================================================="
@@ -79,7 +87,11 @@ sudo zypper --non-interactive install -y \
     pipewire-jack \
     wireplumber 2>/dev/null || true
 
-systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    sudo -u "$SUDO_USER" systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
+else
+    systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
+fi
 
 # 8. Entorno de Escritorio KDE Plasma 6 y Aplicaciones Base
 echo "ℹ️ Instalando componentes y utilidades base de KDE Plasma 6..."
@@ -96,7 +108,7 @@ sudo zypper --non-interactive install -y \
     plasma-systemmonitor \
     partitionmanager \
     kinfocenter \
-    konsole \
+    kitty \
     power-profiles-daemon \
     switcheroo-control \
     ffmpegthumbnailer \
@@ -109,10 +121,14 @@ sudo zypper --non-interactive install -y \
 echo "ℹ️ Configurando Flatpak y Flathub para KDE Discover..."
 sudo zypper --non-interactive install -y flatpak discover plasma-discover-backend-flatpak 2>/dev/null || true
 sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
-flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    sudo -u "$SUDO_USER" flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+else
+    flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+fi
 
 # 10. Software Esencial de Sistema y Multimedia Flatpak
-echo "ℹ️ Instalando utilidades esenciales para OpenSUSE Tumbleweed..."
+echo "ℹ️ Instalando utilidades esenciales para openSUSE Tumbleweed..."
 sudo zypper --non-interactive install -y -t pattern devel_basis 2>/dev/null || true
 sudo zypper --non-interactive install -y \
     cmake \
@@ -121,7 +137,7 @@ sudo zypper --non-interactive install -y \
     btop \
     htop \
     inxi \
-    fuse \
+    fuse3 \
     exfatprogs \
     gimp \
     gparted \
@@ -134,13 +150,26 @@ sudo zypper --non-interactive install -y \
     fastfetch 2>/dev/null || true
 
 echo "ℹ️ Instalando reproductor multimedia desacoplado (VLC) vía Flatpak..."
-flatpak install -y --noninteractive flathub org.videolan.VLC 2>/dev/null || true
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    sudo -u "$SUDO_USER" flatpak install -y --noninteractive flathub org.videolan.VLC 2>/dev/null || true
+else
+    flatpak install -y --noninteractive flathub org.videolan.VLC 2>/dev/null || true
+fi
 
-# 11. Limpieza de Paquetes Antiguos
+# 11. Desinstalación y limpieza de bloatware de KDE PIM (KMail, Kontact, Akonadi)
+echo "🧹 Desinstalando bloatware de KDE PIM (KMail, Kontact, Akonadi)..."
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    sudo -u "$SUDO_USER" akonadictl stop 2>/dev/null || true
+else
+    akonadictl stop 2>/dev/null || true
+fi
+sudo zypper --non-interactive remove -u -y kmail kontact korganizer kaddressbook akonadi-server 2>/dev/null || true
+
+# 12. Limpieza de Paquetes Antiguos
 echo "ℹ️ Limpiando paquetes huérfanos y caché de Zypper..."
 sudo zypper --non-interactive clean -a
 
 echo "================================================================="
-echo "✅ OpenSUSE Tumbleweed + KDE Plasma 6 (AMD Ryzen) configurado con éxito."
+echo "✅ openSUSE Tumbleweed + KDE Plasma 6 (AMD Ryzen) configurado con éxito."
 echo "💡 Se recomienda reiniciar el equipo para arrancar con el nuevo Kernel Linux, drivers AMD y ZRAM."
 echo "================================================================="

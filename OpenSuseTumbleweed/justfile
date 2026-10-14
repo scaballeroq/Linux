@@ -45,6 +45,14 @@ fingerprint-status:
 fingerprint-sddm-bypass:
     ./Setup/fingerprint-setup.sh --sddm-bypass
 
+# Registrar huella dactilar en la terminal (sensor táctil de 9 etapas)
+fingerprint-enroll *finger:
+    ./Setup/fingerprint-setup.sh --enroll {{finger}}
+
+# Probar verificación biométrica en el lector
+fingerprint-verify *finger:
+    ./Setup/fingerprint-setup.sh --verify {{finger}}
+
 # Configuración de impresoras HP (CUPS, HPLIP, plugin propietario para LaserJet M15w)
 printer:
     ./Setup/hp-printer-setup.sh
@@ -105,6 +113,14 @@ security:
 security-status:
     ./Setup/seguridad.sh --status
 
+# Integración de KDE Connect y reglas de Firewalld (1714-1764 TCP/UDP)
+kdeconnect *args:
+    ./Setup/kdeconnect.sh {{args}}
+
+# Estado y diagnóstico de KDE Connect, reglas de red y dispositivos emparejados
+kdeconnect-status:
+    ./Setup/kdeconnect.sh --status
+
 # Fuentes de desarrollo (Nerd Fonts: JetBrainsMono, FiraCode, CascadiaCode, Meslo, Hack)
 fonts:
     ./Setup/fonts.sh
@@ -133,6 +149,10 @@ yt-dlp *args:
 # Diagnóstico y estado de yt-dlp y herramientas multimedia
 yt-dlp-status:
     ./Setup/yt-dlp-setup.sh --status
+
+# Limpieza de caché residual de yt-dlp
+yt-dlp-clean-cache:
+    ./Setup/yt-dlp-setup.sh --clean-cache
 
 # Códecs multimedia oficiales (OpenH264 Cisco) y entorno multimedia Flatpak (sin Packman)
 multimedia:

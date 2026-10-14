@@ -9,7 +9,7 @@ Image=quay.io/keycloak/keycloak:26
 EnvironmentFile=__PROJECT_DIR__/.env
 Network=__PROJECT__.network
 PublishPort=8083:8080
-Command=start-dev --http-relative-path=/auth
+Exec=start-dev --http-relative-path=/auth
 Label=traefik.enable=true
 Label=traefik.http.routers.__PROJECT__-keycloak.rule=Host(`auth.__PROJECT__.localhost`)
 Label=traefik.http.routers.__PROJECT__-keycloak.entrypoints=web

@@ -111,6 +111,45 @@ remove_sddm_bypass() {
     fi
 }
 
+KDE_PAM_FILE="/etc/pam.d/kde"
+KDE_FP_PAM_FILE="/etc/pam.d/kde-fingerprint"
+
+configure_kde_lockscreen() {
+    require_root
+    echo "🔒 Configurando pantalla de bloqueo (KScreenLocker: huella y contraseña simultáneas)..."
+    cat <<'EOF' | $SUDO tee "$KDE_PAM_FILE" >/dev/null
+#%PAM-1.0
+# KDE Plasma 6 KScreenLocker - Servicio de Contraseña (Interactivo)
+auth     requisite      pam_nologin.so
+auth     optional       pam_kwallet5.so
+auth     required       pam_unix.so      try_first_pass
+
+account  substack       common-account
+password substack       common-password
+session  substack       common-session
+EOF
+    $SUDO chmod 644 "$KDE_PAM_FILE"
+
+    cat <<'EOF' | $SUDO tee "$KDE_FP_PAM_FILE" >/dev/null
+#%PAM-1.0
+# KDE Plasma 6 KScreenLocker - Servicio Biométrico (No interactivo)
+auth     requisite      pam_nologin.so
+auth     required       pam_fprintd.so
+auth     optional       pam_kwallet5.so
+
+account  substack       common-account
+session  substack       common-session
+EOF
+    $SUDO chmod 644 "$KDE_FP_PAM_FILE"
+    echo "  ✅ KScreenLocker configurado: Huella y contraseña concurrentes."
+}
+
+remove_kde_lockscreen() {
+    require_root
+    [ -f "$KDE_PAM_FILE" ] && $SUDO rm -f "$KDE_PAM_FILE"
+    [ -f "$KDE_FP_PAM_FILE" ] && $SUDO rm -f "$KDE_FP_PAM_FILE"
+}
+
 enable_pam() {
     require_root
     echo "🔐 Habilitando módulo de autenticación por huella (pam_fprintd.so) en PAM..."
@@ -126,6 +165,9 @@ enable_pam() {
 
     # Configurar bypass de SDDM para login rápido y KWallet automático
     configure_sddm_bypass
+
+    # Configurar doble autenticación concurrente en pantalla de bloqueo
+    configure_kde_lockscreen
 }
 
 disable_pam() {
@@ -134,6 +176,7 @@ disable_pam() {
     $SUDO /usr/sbin/pam-config -d --fprintd 2>/dev/null || true
     $SUDO /usr/sbin/pam-config -d --fp 2>/dev/null || true
     remove_sddm_bypass
+    remove_kde_lockscreen
     echo "  ✅ Autenticación biométrica desactivada de PAM."
 }
 

@@ -1,5 +1,5 @@
 # =============================================================================
-# OPCIONES DE LA SHELL (options.sh) - Adaptado para Bash y Zsh en Fedora 44 Workstation
+# OPCIONES DE LA SHELL (options.sh) - Adaptado para Bash y Zsh en openSUSE Tumbleweed
 # =============================================================================
 # Configura el comportamiento interno de la shell (navegación, globbing y completado).
 

@@ -99,7 +99,7 @@ APPS_CATALOG=(
 ensure_flatpak_installed() {
     if ! command -v flatpak &>/dev/null; then
         echo -e "${YELLOW}📦 Flatpak no está instalado en el sistema. Instalando vía Zypper...${NC}"
-        $SUDO zypper --non-interactive install -y flatpak
+        $SUDO zypper --non-interactive install -y flatpak plasma-discover-backend-flatpak 2>/dev/null || $SUDO zypper --non-interactive install -y flatpak
     fi
 }
 

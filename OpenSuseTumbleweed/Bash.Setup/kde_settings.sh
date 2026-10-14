@@ -14,7 +14,7 @@
 # -----------------------------------------------------------------------------
 # Reinicio del entorno gráfico / shell de Plasma y KWin
 alias plasma-restart='systemctl --user restart plasma-plasmashell.service 2>/dev/null || (kquitapp6 plasmashell 2>/dev/null; kstart plasmashell 2>/dev/null &)'
-alias kwin-restart='systemctl --user restart plasma-kwin_wayland.service 2>/dev/null || qdbus org.kde.KWin /KWin reconfigure'
+alias kwin-restart='systemctl --user restart plasma-kwin_wayland.service 2>/dev/null || qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || qdbus org.kde.KWin /KWin reconfigure 2>/dev/null || true'
 
 # -----------------------------------------------------------------------------
 # 2. ACCESOS DIRECTOS A PREFERENCIAS DEL SISTEMA (KCM / SYSTEMSETTINGS)
@@ -49,8 +49,8 @@ kde-theme-light() {
 }
 
 # Luz Nocturna (Night Color)
-alias kde-night-light-on='(kwriteconfig6 --file kwinrc --group NightColor --key Active true 2>/dev/null || true); qdbus org.kde.KWin /ColorCorrect org.kde.kwin.ColorCorrect.setNightColorActive true 2>/dev/null || qdbus org.kde.KWin /KWin reconfigure 2>/dev/null || true; echo "🌙 Luz nocturna activada."'
-alias kde-night-light-off='(kwriteconfig6 --file kwinrc --group NightColor --key Active false 2>/dev/null || true); qdbus org.kde.KWin /ColorCorrect org.kde.kwin.ColorCorrect.setNightColorActive false 2>/dev/null || qdbus org.kde.KWin /KWin reconfigure 2>/dev/null || true; echo "☀️ Luz nocturna desactivada."'
+alias kde-night-light-on='(kwriteconfig6 --file kwinrc --group NightColor --key Active true 2>/dev/null || true); qdbus6 org.kde.KWin /ColorCorrect org.kde.kwin.ColorCorrect.setNightColorActive true 2>/dev/null || qdbus org.kde.KWin /ColorCorrect org.kde.kwin.ColorCorrect.setNightColorActive true 2>/dev/null || qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true; echo "🌙 Luz nocturna activada."'
+alias kde-night-light-off='(kwriteconfig6 --file kwinrc --group NightColor --key Active false 2>/dev/null || true); qdbus6 org.kde.KWin /ColorCorrect org.kde.kwin.ColorCorrect.setNightColorActive false 2>/dev/null || qdbus org.kde.KWin /ColorCorrect org.kde.kwin.ColorCorrect.setNightColorActive false 2>/dev/null || qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true; echo "☀️ Luz nocturna desactivada."'
 
 # -----------------------------------------------------------------------------
 # 4. APLICACIONES NATIVAS DE KDE Y WAYLAND
