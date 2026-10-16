@@ -66,6 +66,10 @@ alias list='zypper list-updates'
 alias installed='zypper search -i'
 alias pkg-info='zypper info'
 alias snapshots='snapper list'
+alias snap-status='sudo snapper status'
+alias snap-diff='sudo snapper diff'
+alias snap-create='sudo snapper create --description'
+alias snap-rollback='sudo snapper rollback'
 
 # 6. UTILIDADES MODERNAS (RUST-BASED)
 if command -v batcat &> /dev/null; then
@@ -91,6 +95,15 @@ alias grep='grep --color=auto'
 alias ports='sudo ss -tulanp'
 alias myip='curl -s --connect-timeout 2 ifconfig.me'
 alias localip='ip -4 addr show | grep -oP "(?<=inet\s)\d+(\.\d+){3}"'
+
+# Cortafuegos (Firewalld)
+alias fw='sudo firewall-cmd'
+alias fw-status='sudo firewall-cmd --state'
+alias fw-active='sudo firewall-cmd --get-active-zones'
+alias fw-ports='sudo firewall-cmd --list-ports'
+alias fw-services='sudo firewall-cmd --list-services'
+alias fw-all='sudo firewall-cmd --list-all'
+alias fw-reload='sudo firewall-cmd --reload'
 
 # Recarga dinámica según la shell activa
 alias reload='[ -n "$ZSH_VERSION" ] && source ~/.zshrc || source ~/.bashrc'
