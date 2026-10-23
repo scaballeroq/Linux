@@ -31,9 +31,9 @@ fi
 
 export PATH="$USER_HOME/.local/bin:/usr/local/bin:/usr/bin:$PATH"
 
-GIT_USER_NAME="Sergio Caballero"
-GIT_USER_EMAIL="scaballeroq@gmail.com"
-
+# Identidad Git (se toman de variables de entorno si se definen; de lo contrario se preserva ~/.gitconfig)
+GIT_USER_NAME="${GIT_USER_NAME:-}"
+GIT_USER_EMAIL="${GIT_USER_EMAIL:-}"
 
 run_as_user() {
     if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
@@ -158,6 +158,12 @@ fi
 
 # 4. Configuración Global de Git y Delta
 echo "ℹ️ [4/4] Aplicando configuración global recomendada..."
+if [ -n "${GIT_USER_NAME:-}" ]; then
+    run_as_user git config --global user.name "$GIT_USER_NAME"
+fi
+if [ -n "${GIT_USER_EMAIL:-}" ]; then
+    run_as_user git config --global user.email "$GIT_USER_EMAIL"
+fi
 run_as_user git config --global init.defaultBranch main
 run_as_user git config --global pull.rebase true
 run_as_user git config --global rebase.autoStash true
@@ -179,6 +185,12 @@ if command -v delta &>/dev/null; then
     run_as_user git config --global delta.light false
     run_as_user git config --global delta.line-numbers true
     run_as_user git config --global delta.side-by-side false
+fi
+
+if [ -z "$(run_as_user git config --global user.name 2>/dev/null || true)" ]; then
+    echo "💡 Recuerda configurar tu identidad en Git si no lo has hecho:"
+    echo "   git config --global user.name \"Tu Nombre\""
+    echo "   git config --global user.email \"tu_email@ejemplo.com\""
 fi
 
 echo "================================================================="
