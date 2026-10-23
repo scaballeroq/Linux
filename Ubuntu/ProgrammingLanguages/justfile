@@ -1,21 +1,37 @@
-# Gestor de runtimes Mise
+# ProgrammingLanguages Sub-Justfile - Ubuntu Workstation
+
+# Instalar todos los lenguajes y runtimes
+languages: mise node python rust dotnet java angular
+    @echo "✅ Todos los lenguajes han sido instalados correctamente."
+
+# Gestor de versiones Mise
 mise:
     ./mise.sh
 
-# Node
+# Node.js LTS & pnpm vía Mise
 node:
     ./nodejs.sh
 
-# Python
+# Python con UV package manager
 python:
     ./python.sh
 
-# Rust
+# Inicializador de proyectos Python con UV
+python-uv *args:
+    ./python-uv-init.sh {{args}}
+
+# Rust toolchain
 rust:
-    ./rust.sh
+    ./Revisar/rust.sh
 
-# AI
+# .NET SDK
+dotnet:
+    ./Revisar/dotnet.sh
 
-gemini:
-    ./gemini.sh
+# OpenJDK Java LTS
+java:
+    ./java.sh
 
+# Angular CLI
+angular:
+    ./Revisar/angular.sh

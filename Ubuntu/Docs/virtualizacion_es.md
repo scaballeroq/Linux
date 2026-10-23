@@ -2,110 +2,64 @@
 sidebar_position: 7
 ---
 
-# Entorno de Virtualización (KVM/QEMU) en Debian 13
+# Entorno de Virtualización (KVM/QEMU) en Ubuntu Linux (GNOME Shell)
 
-Esta guía detalla la instalación, configuración y optimización del entorno de virtualización nativo presente en la carpeta `Virtualizacion`.
+Esta guía detalla la instalación, configuración y optimización del entorno de virtualización nativo presente en la carpeta `Virtualizacion/`, diseñado para **Ubuntu Linux** y **GNOME Shell**.
 
-El esquema utiliza el hipervisor **KVM** y el emulador **QEMU**, gestionados a través del demonio del sistema `libvirtd`, con soporte para entornos modernos y optimizaciones de rendimiento de red y disco.
+El esquema utiliza el hipervisor **KVM** y el emulador **QEMU**, gestionados a través de **Libvirt**, ofreciendo dos interfaces principales:
+1. **Consola Web Cockpit** (`cockpit-machines` en `https://localhost:9090`).
+2. **Virt-Manager** para control avanzado de hardware y aceleración 3D VirGL en GNOME Shell Wayland.
 
 ---
 
-## 1. Instalación de Paquetes (`virtualization.sh`)
+## 1. Instalación y Pila de Paquetes (`virtualization.sh`)
 
-Se instalan el hipervisor KVM, QEMU, el gestor de interfaz gráfica Virt-Manager y utilidades de soporte (incluyendo compatibilidad con UEFI/TPM necesario para instalar Windows 11):
+Instala KVM, QEMU, Virt-Manager, Cockpit Machines, herramientas UEFI/TPM y dependencias de aceleración:
 
 ```bash
-sudo apt update
-sudo apt install -y qemu-system-x86 qemu-kvm libvirt-daemon-system libvirt-clients \
-    bridge-utils virtinst virt-manager virt-viewer virt-top libguestfs-tools \
-    qemu-utils ovmf swtpm guestfs-tools libosinfo-bin tuned
+just virtualization
 ```
 
 ---
 
-## 2. Controladores VirtIO para Windows
+## 2. Aceleración por Hardware y Virtualización Anidada (Nested KVM)
 
-Las máquinas virtuales Windows requieren controladores específicos (`VirtIO`) para un óptimo rendimiento en almacenamiento y red virtual. El script descarga automáticamente la ISO oficial del proyecto Fedora:
-
-- Ruta de descarga: `~/Descargas/virtio-drivers/virtio-win-0.1.271.iso`
-- Esta ISO debe montarse como una unidad de CD-ROM secundaria en las máquinas virtuales Windows para instalar los controladores de disco (`viostor`) y red (`NetKVM`).
-
----
-
-## 3. Configuración y Optimización de Red
-
-El script de virtualización automatiza la conectividad en red:
-
-1. **Red por Defecto (NAT)**:
-   Activa e inicia automáticamente la red virtual nativa `default`:
-   ```bash
-   sudo virsh net-start default
-   sudo virsh net-autostart default
-   ```
-
-2. **Puente de Red Físico (`br0` / Bridged)**:
-   Para que las máquinas virtuales tengan su propia dirección IP dentro de la misma red local del host (LAN), se configura un puente de red usando `NetworkManager` (`nmcli`) sobre la interfaz física activa. Además, se registra en Libvirt como `host-bridge`:
-   ```bash
-   # Definición XML registrada en Libvirt
-   <network>
-     <name>host-bridge</name>
-     <forward mode='bridge'/>
-     <bridge name='br0'/>
-   </network>
-   ```
+El script detecta la CPU del equipo y aplica flags de rendimiento en `/etc/modprobe.d/`:
+- **AMD Ryzen (`kvm_amd.conf`)**: `options kvm_amd nested=1 avic=1 npt=1`
+- **Intel Core (`kvm_intel.conf`)**: `options kvm_intel nested=1 ept=1 vpid=1 pml=1`
+- **Módulos de red en el Kernel**: `vhost_net`, `vhost_vsock`, `tun` cargados automáticamente.
 
 ---
 
-## 4. Ajustes de Rendimiento y Permisos de Usuario
+## 3. Almacenamiento Optimizado (Btrfs NoCoW y ACLs)
 
-Para simplificar la administración diaria y potenciar el rendimiento del host:
-
-1. **Perfil de Tuning del Host (`tuned`)**:
-   Activa el perfil `virtual-host` de la herramienta `tuned` para optimizar la planificación de CPU y memoria de cara a las máquinas virtuales:
-   ```bash
-   sudo systemctl enable --now tuned
-   sudo tuned-adm profile virtual-host
-   ```
-
-2. **Permisos sin Sudo**:
-   Añade tu usuario al grupo `libvirt` para crear y gestionar máquinas virtuales desde tu entorno sin necesidad de anteponer `sudo`:
-   ```bash
-   sudo usermod -aG libvirt "$USER"
-   ```
-
-3. **Acceso al Almacenamiento mediante Listas de Control de Acceso (ACL)**:
-   Para que el usuario pueda mover, crear o modificar archivos de discos virtuales directamente en la ruta protegida `/var/lib/libvirt/images`, se configuran reglas ACL seguras:
-   ```bash
-   sudo apt install -y acl
-   sudo setfacl -R -b /var/lib/libvirt/images
-   sudo setfacl -R -m u:"$USER":rwX /var/lib/libvirt/images
-   sudo setfacl -d -m u:"$USER":rwX /var/lib/libvirt/images
-   ```
-
-4. **Variables de Entorno de Shell**:
-   Se define en `~/.bashrc.d/virtualization.sh` el destino por defecto de la shell para que apunte directamente al hipervisor del sistema:
-   ```bash
-   export LIBVIRT_DEFAULT_URI="qemu:///system"
-   ```
+- **Btrfs NoCoW (`+C`)**: Si `/var/lib/libvirt/images` reside en un sistema de archivos Btrfs, aplica automáticamente el atributo `chattr +C` para evitar la fragmentación severa y maximizar los IOPS de los discos virtuales `qcow2`.
+- **Listas de Control de Acceso (ACL)**: Permiten al usuario gestionar imágenes de disco sin requerir `sudo`.
 
 ---
 
-## Verificación
+## 4. Redes y Protección Inalámbrica (Wi-Fi)
 
-Para comprobar que el entorno es completamente funcional:
+- **Red NAT `default` (virbr0)**: Red virtual estándar protegida con Firewalld (zona `trusted` y mascarada activa).
+- **Detección Segura de Wi-Fi**: En portátiles con conexión inalámbrica, se previene la creación de puentes `br0` para evitar la rotura de la conexión a internet (limitación del estándar 802.11). Si la interfaz activa es Ethernet cableada, se aprovisiona `br0` automáticamente.
 
-- **Validación del Host**:
-  ```bash
-  virt-host-validate qemu
-  ```
-  *(Debe mostrar resultados satisfactorios en la mayoría de sus módulos. Si fallan los módulos KVM, comprueba que la virtualización VT-x/AMD-V esté habilitada en la BIOS/UEFI de tu ordenador).*
-- **Destino predeterminado de Libvirt**:
-  ```bash
-  virsh uri
-  # Debería devolver: qemu:///system
-  ```
-- **Listado de Redes Virtuales**:
-  ```bash
-  virsh net-list --all
-  ```
-  *(Debe mostrar activas tanto 'default' como 'host-bridge').*
+---
+
+## 5. Regla Polkit sin Contraseñas
+
+Crea `/etc/polkit-1/rules.d/50-libvirt.rules` para que los miembros del grupo `libvirt` puedan arrancar, pausar y crear máquinas virtuales desde Virt-Manager o Cockpit sin solicitar contraseña de root.
+
+---
+
+## 6. Deduplicación de Memoria (KSM)
+
+Activa la compartición de páginas idénticas de memoria RAM entre máquinas virtuales mediante `/etc/tmpfiles.d/ksm.conf`, optimizado para balancear consumo de CPU y memoria en portátiles.
+
+---
+
+## 7. Diagnóstico y Estado con Just
+
+```bash
+# Diagnosticar estado del hipervisor, módulos KVM, sockets y red
+just virtualization-status
+```
