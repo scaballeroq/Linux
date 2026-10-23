@@ -16,6 +16,7 @@ alias ....='cd ../../..'
 alias ~='cd ~'
 alias repo='cd ~/Workspace/Repositorios'
 alias workspace='cd ~/Workspace'
+alias ub='cd ~/Workspace/Repositorios/Linux/Ubuntu'
 
 # -----------------------------------------------------------------------------
 # 2. LISTADO DE ARCHIVOS (MODERNO CON FALLBACK)
@@ -23,7 +24,7 @@ alias workspace='cd ~/Workspace'
 if command -v eza &> /dev/null; then
     alias ls='eza --icons --git --group-directories-first'
     alias ll='eza -l --icons --git --group-directories-first'
-    alias la='eza -la --icons --git --group-directories-first'
+    alias la='eza -la --icons --git --group-directoriesf-first'
     alias lt='eza -l --sort=modified --icons --git --group-directories-first'
     alias tree='eza --tree --icons'
 elif command -v lsd &> /dev/null; then
