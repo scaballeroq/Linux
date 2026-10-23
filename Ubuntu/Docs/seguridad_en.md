@@ -16,6 +16,7 @@ Per monorepo master rules, **UFW is permanently disabled** and **Firewalld** (`f
    ```bash
    sudo ufw disable
    sudo systemctl disable --now ufw
+   sudo systemctl mask ufw
    sudo systemctl enable --now firewalld
    ```
 
@@ -25,7 +26,7 @@ Per monorepo master rules, **UFW is permanently disabled** and **Firewalld** (`f
    - **Remote Access (`ssh`)**: Maintains secure SSH access.
    - **Virtual Machines & Containers**:
      - Rootless Podman subnets (`podman+` and `cni-podman+`) in the `trusted` zone.
-     - KVM virtualization bridge (`virbr0`) in the `trusted` zone with active IP Masquerade.
+     - KVM virtualization bridge (`virbr0` and `virbr+`) in the `trusted` zone with active IP Masquerade.
 
 ---
 
@@ -40,6 +41,10 @@ Applies Kernel settings in `/etc/sysctl.d/99-development-network.conf` to guaran
 net.ipv4.ip_forward = 1
 net.ipv6.conf.all.forwarding = 1
 
+# Preserve IPv6 Router Advertisements (SLAAC) with forwarding enabled
+net.ipv6.conf.all.accept_ra = 2
+net.ipv6.conf.default.accept_ra = 2
+
 # Allow Rootless Podman to bind standard HTTP/HTTPS ports (>=80) without root
 net.ipv4.ip_unprivileged_port_start = 80
 
@@ -48,7 +53,7 @@ net.ipv4.ping_group_range = 0 2147483647
 
 # Full support for user namespaces
 kernel.unprivileged_userns_clone = 1
-user.max_user_namespaces = 65536
+user.max_user_namespaces = 262144
 ```
 
 ---

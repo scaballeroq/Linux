@@ -16,6 +16,7 @@ En cumplimiento de las políticas del monorepo, **UFW queda permanentemente desa
    ```bash
    sudo ufw disable
    sudo systemctl disable --now ufw
+   sudo systemctl mask ufw
    sudo systemctl enable --now firewalld
    ```
 
@@ -25,7 +26,7 @@ En cumplimiento de las políticas del monorepo, **UFW queda permanentemente desa
    - **Acceso Remoto (`ssh`)**: Mantiene el acceso seguro por SSH.
    - **Máquinas Virtuales y Contenedores**:
      - Subredes de Podman Rootless (`podman+` y `cni-podman+`) en la zona `trusted`.
-     - Puente de virtualización KVM (`virbr0`) en la zona `trusted` con IP Masquerade activo.
+     - Puente de virtualización KVM (`virbr0` y `virbr+`) en la zona `trusted` con IP Masquerade activo.
 
 ---
 
@@ -40,6 +41,10 @@ Aplica configuraciones del Kernel en `/etc/sysctl.d/99-development-network.conf`
 net.ipv4.ip_forward = 1
 net.ipv6.conf.all.forwarding = 1
 
+# Preservar recepción de Router Advertisements (SLAAC) con forwarding activo
+net.ipv6.conf.all.accept_ra = 2
+net.ipv6.conf.default.accept_ra = 2
+
 # Permitir a Podman Rootless enlazar puertos HTTP/HTTPS estándar (>=80) sin root
 net.ipv4.ip_unprivileged_port_start = 80
 
@@ -48,7 +53,7 @@ net.ipv4.ping_group_range = 0 2147483647
 
 # Soporte completo de espacios de nombres de usuario (user namespaces)
 kernel.unprivileged_userns_clone = 1
-user.max_user_namespaces = 65536
+user.max_user_namespaces = 262144
 ```
 
 ---
