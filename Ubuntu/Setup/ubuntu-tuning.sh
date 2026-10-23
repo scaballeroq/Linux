@@ -71,7 +71,7 @@ Opciones principales:
 
 Optimizaciones incluidas:
   1. Sysctl Kernel:      Inotify ampliado (1M watches), max_map_count (16M),
-                         vm.page-cluster=0 (optimizado para ZRAM/NVMe), swappiness=10,
+                         vm.page-cluster=0 (optimizado para ZRAM/NVMe), swappiness=60,
                          vm.watermark_boost_factor=0 (elimina microtirones), TCP BBR + FQ.
   2. Límites de Proceso: Descriptores de archivo (1M nofile), memlock unlimited,
                          systemd system/user DefaultTasksMax=infinity.
@@ -91,7 +91,7 @@ show_status() {
     echo "• Sysctl Kernel & Memoria:"
     echo "  - fs.inotify.max_user_watches: $(sysctl -n fs.inotify.max_user_watches 2>/dev/null || echo 'n/a') (Objetivo: >= 1048576)"
     echo "  - vm.max_map_count:            $(sysctl -n vm.max_map_count 2>/dev/null || echo 'n/a') (Objetivo: >= 16777216)"
-    echo "  - vm.swappiness:               $(sysctl -n vm.swappiness 2>/dev/null || echo 'n/a') (Objetivo: 10 con ZRAM)"
+    echo "  - vm.swappiness:               $(sysctl -n vm.swappiness 2>/dev/null || echo 'n/a') (Objetivo: 60-100 con ZRAM)"
     echo "  - vm.page-cluster:             $(sysctl -n vm.page-cluster 2>/dev/null || echo 'n/a') (Objetivo: 0 para ZRAM/NVMe)"
     echo "  - vm.watermark_boost_factor:   $(sysctl -n vm.watermark_boost_factor 2>/dev/null || echo 'n/a') (Objetivo: 0)"
     echo "  - net.ipv4.tcp_congestion:     $(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo 'n/a') (Objetivo: bbr)"
@@ -108,9 +108,10 @@ show_status() {
         echo "  - zramctl no instalado"
     fi
     echo "-----------------------------------------------------------------"
-    echo "• Servicios del Sistema:"
-    echo "  - fstrim.timer (SSD TRIM):     $(systemctl is-active fstrim.timer 2>/dev/null || echo 'inactivo')"
-    echo "  - irqbalance (Multi-core IRQ): $(systemctl is-active irqbalance 2>/dev/null || echo 'inactivo')"
+    echo "• Servicios del Sistema y Hardware AMD:"
+    echo "  - Driver CPU (amd-pstate):     $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver 2>/dev/null || echo 'n/a') [$(cat /sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference 2>/dev/null || echo 'n/a')]"
+    echo "  - fstrim.timer (SSD TRIM):     $(if systemctl is-active --quiet fstrim.timer 2>/dev/null; then echo '✅ activo'; else echo '❌ inactivo'; fi)"
+    echo "  - irqbalance (Multi-core IRQ): $(if systemctl is-active --quiet irqbalance 2>/dev/null; then echo '✅ activo'; else echo '❌ inactivo'; fi)"
     echo "================================================================="
 }
 
@@ -136,7 +137,7 @@ vm.max_map_count = 16777216
 
 # Optimización para ZRAM y almacenamiento NVMe
 vm.page-cluster = 0
-vm.swappiness = 10
+vm.swappiness = 60
 vm.vfs_cache_pressure = 50
 vm.dirty_ratio = 10
 vm.dirty_background_ratio = 5
@@ -217,9 +218,16 @@ apply_tracker() {
 
 apply_zram() {
     echo "⚙️ [4/6] Verificando memoria ZRAM con compresión ZSTD..."
-    if [ -f "$(dirname "$0")/zram-setup.sh" ]; then
-        bash "$(dirname "$0")/zram-setup.sh"
+    if ! command -v zramctl &>/dev/null || ! dpkg -l zram-tools &>/dev/null; then
+        $SUDO apt update -qq 2>/dev/null || true
+        $SUDO apt install -y zram-tools 2>/dev/null || true
     fi
+    if [ -f /etc/default/zramswap ]; then
+        $SUDO sed -i 's/^#*ALGORITHM=.*/ALGORITHM=zstd/' /etc/default/zramswap
+        $SUDO sed -i 's/^#*PERCENT=.*/PERCENT=50/' /etc/default/zramswap
+        $SUDO systemctl restart zramswap.service 2>/dev/null || true
+    fi
+    echo "  ✅ Configuración de ZRAM (algoritmo zstd, 50% de RAM) asegurada."
 }
 
 apply_services() {

@@ -115,8 +115,12 @@ show_status() {
     echo "  - Logind lid docked: $(if [ -f /etc/systemd/logind.conf.d/lid-docked.conf ]; then echo "✅ Configurado (Docked=ignore)"; else echo "❌ Predeterminado"; fi)"
 
     echo "-----------------------------------------------------------------"
-    echo "• Mutter Experimental Features (VRR):"
-    echo "  - Features:         $(run_as_user gsettings get org.gnome.mutter experimental-features 2>/dev/null || echo '[]')"
+    echo "• Mutter Wayland & Tasa de Refresco:"
+    if run_as_user gsettings list-keys org.gnome.mutter 2>/dev/null | grep -q "^experimental-features$"; then
+        echo "  - Features:         $(run_as_user gsettings get org.gnome.mutter experimental-features 2>/dev/null || echo '[]')"
+    else
+        echo "  - Features:         ✅ Integrado nativamente en GNOME Shell 51 (Mutter Wayland)"
+    fi
     echo "================================================================="
 }
 
@@ -132,7 +136,7 @@ case "${1:-}" in
 esac
 
 echo "================================================================="
-echo "💻 CONFIGURANDO OPTIMIZACIONES DE PORTÁTIL (HP ELITEBOOK / GNOME 51)"
+echo "💻 CONFIGURANDO OPTIMIZACIONES DE PORTÁTIL (HP PROBOOK 455 G10 / GNOME 51)"
 echo "================================================================="
 
 # 1. Instalar servicios de hardware y energía
@@ -189,8 +193,10 @@ run_as_user gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive
 run_as_user gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing' 2>/dev/null || true
 run_as_user gsettings set org.gnome.settings-daemon.plugins.power power-button-action 'interactive' 2>/dev/null || true
 
-# Mutter VRR y escalado fraccional de monitores
-run_as_user gsettings set org.gnome.mutter experimental-features "['variable-refresh-rate', 'scale-monitor-framebuffer']" 2>/dev/null || true
+# Mutter VRR y escalado fraccional de monitores (si está soportado por la versión de Mutter)
+if run_as_user gsettings list-keys org.gnome.mutter 2>/dev/null | grep -q "^experimental-features$"; then
+    run_as_user gsettings set org.gnome.mutter experimental-features "['variable-refresh-rate', 'scale-monitor-framebuffer']" 2>/dev/null || true
+fi
 
 echo "================================================================="
 echo "✅ Optimización de portátil completada con éxito en Ubuntu."
