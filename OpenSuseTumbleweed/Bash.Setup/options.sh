@@ -2,6 +2,7 @@
 # OPCIONES DE LA SHELL (options.sh) - Adaptado para Bash y Zsh en openSUSE Tumbleweed
 # =============================================================================
 # Configura el comportamiento interno de la shell (navegación, globbing y completado).
+[[ $- != *i* ]] && return 0 2>/dev/null || true
 
 if [ -n "${BASH_VERSION:-}" ]; then
     # -------------------------------------------------------------------------

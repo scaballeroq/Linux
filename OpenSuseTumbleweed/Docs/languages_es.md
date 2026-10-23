@@ -103,8 +103,8 @@ Rust se gestiona mediante su herramienta oficial estándar e independiente **Rus
 ## 4. OpenJDK Java (`java.sh`)
 
 Instalación y optimización de OpenJDK LTS para openSUSE Tumbleweed vía Zypper:
-* **Paquetes**: `java-21-openjdk`, `java-21-openjdk-devel` junto con `pcsc-lite`, `mozilla-nss-tools`, `ca-certificates-cacerts` y `maven` (soporte completo para AutoFirma, FNMT, DNIe y lectores de tarjetas inteligentes).
-* **Gestión JVM**: Detección y resolución dinámica del entorno en `/usr/lib64/jvm/java-21-openjdk` (o `/usr/lib64/jvm/java`).
+* **Paquetes**: `java-21-openjdk`, `java-21-openjdk-devel` junto con `pcsc-lite`, `mozilla-nss-tools`, `ca-certificates`, `ca-certificates-mozilla` y `maven` (soporte completo para AutoFirma, FNMT, DNIe y lectores de tarjetas inteligentes).
+* **Gestión JVM**: Detección y resolución dinámica del entorno en `/usr/lib64/jvm/java-21-openjdk*` y despacho mediante `libalternatives` (`alts`).
 * **Optimización Multihilo (AMD Ryzen 7 PRO 4750U)**:
   - **Maven**: `MAVEN_ARGS="-T 1C"` (1 hilo por núcleo) y `MAVEN_OPTS="-Xms512m -Xmx4096m -XX:+UseG1GC"`.
   - **Gradle**: Configuración automatizada de `~/.gradle/gradle.properties` con `workers.max=16`, `parallel=true`, `caching=true` y `vfs.watch=true`.
@@ -112,7 +112,7 @@ Instalación y optimización de OpenJDK LTS para openSUSE Tumbleweed vía Zypper
   - `_JAVA_AWT_WM_NONREPARENTING=1` para prevenir pantallas grises en aplicaciones Java Swing/AWT en KWin Wayland.
   - Suavizado de tipografías subpixel LCD (`-Dawt.useSystemAAFontSettings=on -Dswing.aatext=true`).
   - Variables exportadas en `~/.config/environment.d/10-java.conf` y `~/.bashrc.d/java.sh`.
-* **Comandos CLI**: Soporte completo para `--status`, `--update`, `--alternatives` y `--help`.
+* **Comandos CLI**: Soporte completo para `--status`, `--update`, `--alternatives` (gestionado con `alts`) y `--help`.
 
 ---
 

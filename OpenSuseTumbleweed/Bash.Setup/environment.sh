@@ -107,7 +107,15 @@ if command -v mise &> /dev/null; then
     fi
 fi
 
+# -----------------------------------------------------------------------------
+# 7. OPTIMIZACIONES DE SISTEMA Y HERRAMIENTAS (BTRFS / UV)
+# -----------------------------------------------------------------------------
+# En openSUSE Tumbleweed (Btrfs por defecto), uv utiliza reflinks (clones CoW)
+# de forma instantánea sin duplicar almacenamiento físico
+export UV_LINK_MODE="clone"
+
 # =============================================================================
 # MENSAJE DE CARGA
 # =============================================================================
-echo "✅ Variables de entorno cargadas"
+[[ $- == *i* ]] && echo "✅ Variables de entorno cargadas"
+

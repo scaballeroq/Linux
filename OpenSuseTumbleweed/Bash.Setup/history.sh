@@ -2,6 +2,7 @@
 # CONFIGURACIÓN DEL HISTORIAL (history.sh) - Adaptado para Bash y Zsh
 # =============================================================================
 # Controla cómo la shell recuerda los comandos ejecutados.
+[[ $- != *i* ]] && return 0 2>/dev/null || true
 
 if [ -n "${BASH_VERSION:-}" ]; then
     # -------------------------------------------------------------------------

@@ -150,7 +150,7 @@ hg() {
 iso2sd() {
   if [ $# -ne 2 ]; then
     echo "Uso: iso2sd <archivo_iso> <dispositivo_salida>"
-    echo "Ejemplo: iso2sd ~/Debian.iso /dev/sda"
+    echo "Ejemplo: iso2sd ~/openSUSE-Tumbleweed.iso /dev/sda"
     echo -e "\nDispositivos disponibles:"
     lsblk -d -o NAME | grep -E '^sd[a-z]' | awk '{print "/dev/"$1}'
     return 1
@@ -298,9 +298,5 @@ img2png() {
 # =============================================================================
 # MENSAJE DE CARGA
 # =============================================================================
-#echo "✅ Funciones cargadas:"  
-#echo "   📂 Navegación: mkcd, up, extract, backup, compress"
-#echo "   💻 Sistema: psgrep, duh, hg"
-#echo "   💾 Disco: iso2sd, format-drive"
-#echo "   🎬 Multimedia: webm2mp4, transcode-video-*, img2*"
-echo "✅ Funciones cargadas"
+[[ $- == *i* ]] && echo "✅ Funciones cargadas"
+
