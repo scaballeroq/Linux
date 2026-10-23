@@ -6,7 +6,7 @@ description: >-
 
 # Arch Linux System Maintenance & Telemetry Skill
 
-Procedimientos operativos y diagnósticos estándar para Arch Linux en la estación de trabajo HP EliteBook 855 G7.
+Procedimientos operativos y diagnósticos estándar para Arch Linux en la estación de trabajo HP ProBook 455 G10.
 
 ## 1. Mantenimiento de Paquetes
 ```bash

@@ -1,6 +1,6 @@
 # 🦎 openSUSE Tumbleweed Environment Configuration (KDE Plasma 6)
 
-Este repositorio contiene una colección organizada, modular y automatizada de scripts de configuración para sistemas **openSUSE Tumbleweed (Rolling Release)** con el entorno de escritorio **KDE Plasma 6** sobre **Wayland** (optimizado para portátiles HP EliteBook y estaciones de trabajo de desarrollo en modo oscuro).
+Este repositorio contiene una colección organizada, modular y automatizada de scripts de configuración para sistemas **openSUSE Tumbleweed (Rolling Release)** con el entorno de escritorio **KDE Plasma 6** sobre **Wayland** (optimizado para portátiles HP ProBook 455 G10 y estaciones de trabajo de desarrollo en modo oscuro).
 
 ---
 

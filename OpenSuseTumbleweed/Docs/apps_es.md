@@ -87,7 +87,7 @@ Para mantener el sistema base de openSUSE Tumbleweed 100% puro contra los reposi
   - `Warehouse` (`io.github.flattool.Warehouse`): Mantenimiento de Flatpaks, visualizador de propiedades y limpiador de restos/datos huérfanos.
 - **Multimedia y Creación (con códecs completos y VA-API)**:
   - `VLC Media Player` (`org.videolan.VLC`): Reproductor universal desacoplado.
-  - `Celluloid` (`io.github.celluloid_player.Celluloid`): Reproductor basado en MPV acelerado por hardware con GPU AMD Radeon Vega 7.
+  - `Celluloid` (`io.github.celluloid_player.Celluloid`): Reproductor basado en MPV acelerado por hardware con GPU AMD Radeon Graphics (Vega 8).
   - `OBS Studio` (`com.obsproject.Studio`): Grabación y streaming con soporte PipeWire/Wayland nativo.
   - `Kdenlive` (`org.kde.kdenlive`): Editor de vídeo profesional no lineal con códecs completos integrados.
   - `Kodi` (`tv.kodi.Kodi`): Centro multimedia avanzado para streaming y reproducción en alta definición.

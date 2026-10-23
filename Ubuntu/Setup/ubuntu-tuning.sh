@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==============================================================================
 # ubuntu-tuning.sh - Optimizador de Rendimiento para Ubuntu Workstation (GNOME)
-# Hardware: AMD Ryzen 7 PRO 4750U / NVMe SSD / 32 GB RAM / ZRAM
+# Hardware: AMD Ryzen 7 7730U / NVMe SSD / 32 GB RAM / ZRAM
 # ==============================================================================
 # Características:
 #   - Kernel Linux moderno y gestión de memoria optimizada (vm.page-cluster = 0)

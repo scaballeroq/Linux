@@ -1,6 +1,6 @@
 # 🟠 Ubuntu Linux Environment Configuration (GNOME Shell Wayland)
 
-This repository contains an organized, modular, and automated collection of configuration scripts for **Ubuntu Linux** systems featuring the **GNOME Shell (Wayland / Mutter)** desktop environment, optimized for development workstations and HP EliteBook laptops in dark mode.
+This repository contains an organized, modular, and automated collection of configuration scripts for **Ubuntu Linux** systems featuring the **GNOME Shell (Wayland / Mutter)** desktop environment, optimized for development workstations and HP ProBook 455 G10 laptops in dark mode.
 
 ---
 

@@ -2,7 +2,7 @@
 # ==============================================================================
 # steam.sh - Instalación de Steam, GameMode, MangoHud y Drivers 32-bit
 # Ubuntu Linux | GNOME Shell (Wayland)
-# Hardware: AMD Ryzen 7 PRO 4750U / Radeon Vega 7 (RADV)
+# Hardware: AMD Ryzen 7 7730U / Radeon Graphics (Vega 8) (RADV)
 # ==============================================================================
 
 set -euo pipefail

@@ -133,7 +133,7 @@ import pandas as pd
 def main():
     print("📊 Inicializando análisis con Pandas y NumPy...")
     datos = {
-        "Métrica": ["CPU (Ryzen 7)", "RAM (32 GB)", "GPU (Vega 7)"],
+        "Métrica": ["CPU (Ryzen 7)", "RAM (32 GB)", "GPU (Vega 8)"],
         "Estado": ["Óptimo", "Disponible", "Acelerada"]
     }
     df = pd.DataFrame(datos)

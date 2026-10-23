@@ -2,7 +2,7 @@
 # ==============================================================================
 # gsconnect.sh - Integración de GSConnect (KDE Connect para GNOME) y Firewalld
 # Sistema: Ubuntu Workstation | Escritorio: GNOME Shell 51 (Wayland)
-# Hardware: HP EliteBook 855 G7 (AMD Ryzen 7 PRO 4750U / Radeon Vega 7)
+# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Graphics (Vega 8))
 # ==============================================================================
 # Características:
 # - Implementación 100% nativa de GNOME (GJS) del protocolo KDE Connect (cero KDE/Qt).

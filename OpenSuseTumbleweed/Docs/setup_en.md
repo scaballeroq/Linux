@@ -80,7 +80,7 @@ just kde-status
 
 ## 3. Laptop Optimization (`laptop-setup.sh`)
 
-Tailored for the **HP EliteBook 855 G7** laptop (AMD Ryzen 7 PRO 4750U):
+Tailored for the **HP ProBook 455 G10** laptop (AMD Ryzen 7 7730U):
 
 - **Power Profiles Daemon**: Native integration with KDE Plasma 6 battery applet (Performance, Balanced, and Power-saver profiles).
 - **KDE Touchpad (Wayland)**: Native tap-to-click by default on Plasma 6, with natural scrolling dynamically configured via KWin D-Bus and `kcminputrc`.

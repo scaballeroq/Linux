@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==============================================================================
 # laptop-setup.sh - Optimización de Portátil para Ubuntu Workstation (GNOME Shell 51)
-# Optimizado para HP EliteBook 855 G7 (AMD Ryzen 7 PRO 4750U / Vega 7)
+# Optimizado para HP ProBook 455 G10 (AMD Ryzen 7 7730U / Vega 8)
 # ==============================================================================
 # Características:
 #   - GNOME Shell 51 + Wayland nativo (GSettings)

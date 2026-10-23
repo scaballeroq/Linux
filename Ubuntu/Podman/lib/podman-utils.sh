@@ -549,7 +549,7 @@ cmd_quadlet_reload() {
 cmd_doctor() {
     echo "================================================================="
     echo "🩺 DIAGNÓSTICO DE PODMAN ROOTLESS - UBUNTU LINUX (GNOME SHELL)"
-    echo "   AMD Ryzen 7 PRO 4750U | Vega 7 GPU | NVMe"
+    echo "   AMD Ryzen 7 7730U | Radeon Vega 8 GPU | NVMe"
     echo "================================================================="
 
     # 1. Podman CLI
@@ -619,9 +619,9 @@ cmd_doctor() {
         fi
     fi
 
-    # 9. Aceleración Gráfica (AMD Radeon Vega 7)
+    # 9. Aceleración Gráfica (AMD Radeon Graphics (Vega 8))
     if [ -e /dev/dri/renderD128 ]; then
-        log_ok "Aceleración GPU: AMD Vega 7 accesible (/dev/dri/renderD128)"
+        log_ok "Aceleración GPU: AMD Vega 8 accesible (/dev/dri/renderD128)"
     fi
 
     # 10. Generador Quadlet
@@ -640,7 +640,7 @@ cmd_doctor() {
 usage() {
     cat <<EOF
 🐳 podman-utils - Gestor de Proyectos y Contenedores Quadlets (Ubuntu Linux)
-   Optimizado para: AMD Ryzen 7 PRO (8C/16T) | Vega 7 GPU | GNOME Shell
+   Optimizado para: AMD Ryzen 7 PRO (8C/16T) | Radeon Vega 8 GPU | GNOME Shell
 
 Uso:
   podman-utils <comando> [argumentos]

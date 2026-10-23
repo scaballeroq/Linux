@@ -1,4 +1,4 @@
-# Reglas del Agente: Experto en Linux Monorepo & Hardware HP EliteBook
+# Reglas del Agente: Experto en Linux Monorepo & Hardware HP ProBook 455 G10
 
 ## Directrices de Entorno y Arquitectura Monorepo
 1. **Comandos Idempotentes, Seguros y Adaptados a la Distribución**:
@@ -24,7 +24,7 @@
    - Configuración física del puesto:
      - **DP-3**: Monitor de trabajo principal (1920x1080 @ 60Hz, posición `0,0`)
      - **DP-4**: Monitor secundario / lateral (1920x1080 @ 60Hz, posición `1920,0`)
-     - **eDP-1**: Pantalla integrada del portátil HP EliteBook (1920x1080 @ 60Hz, posición `0,1080`)
+     - **eDP-1**: Pantalla integrada del portátil HP ProBook 455 G10 (1920x1080 @ 60Hz, posición `0,1080`)
    - Respeta esta disposición al sugerir configuraciones en KScreen, monitors.xml o KDL.
 
 4. **Cortafuegos y Seguridad de Red (Firewalld Obligatorio)**:

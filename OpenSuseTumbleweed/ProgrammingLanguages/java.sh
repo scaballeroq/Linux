@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # java.sh - Instalación y Optimización de OpenJDK para openSUSE Tumbleweed
-# Arquitectura: AMD Ryzen 7 PRO 4750U (16 hilos) | 32 GB RAM | KDE Plasma 6 Wayland
+# Arquitectura: AMD Ryzen 7 7730U (16 hilos) | 32 GB RAM | KDE Plasma 6 Wayland
 # ==============================================================================
 # Características:
 # - Despliegue idempotente de OpenJDK (java-21-openjdk y java-21-openjdk-devel LTS)
@@ -44,7 +44,7 @@ else
     SUDO=""
 fi
 
-# Topología de CPU para optimización paralela (AMD Ryzen 7 PRO 4750U: 8C/16T)
+# Topología de CPU para optimización paralela (AMD Ryzen 7 7730U: 8C/16T)
 NPROC=$(nproc 2>/dev/null || echo 16)
 
 run_as_user() {
@@ -361,7 +361,7 @@ _JAVA_AWT_WM_NONREPARENTING=1
 # Suavizado de tipografías subpixel para pantallas 1080p
 _JAVA_OPTIONS="-Dawt.useSystemAAFontSettings=on -Dswing.aatext=true"
 
-# Optimización multihilo para Apache Maven (AMD Ryzen 7 PRO 4750U: 16 hilos)
+# Optimización multihilo para Apache Maven (AMD Ryzen 7 7730U: 16 hilos)
 MAVEN_ARGS="-T 1C"
 MAVEN_OPTS="-Xms512m -Xmx4096m -XX:+UseG1GC"
 EOF

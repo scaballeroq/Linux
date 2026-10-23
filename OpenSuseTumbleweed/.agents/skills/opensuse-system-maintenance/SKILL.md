@@ -1,12 +1,12 @@
 ---
 name: opensuse-system-maintenance
 description: >-
-  Use this skill when performing system updates with Zypper dup, managing Snapper Btrfs snapshots/rollbacks, package management with Zypper & Flatpak, hardware telemetry (Ryzen 7 PRO 4750U, amdgpu Vega 7), Firewalld network rules, or checking systemd services on openSUSE Tumbleweed Linux.
+  Use this skill when performing system updates with Zypper dup, managing Snapper Btrfs snapshots/rollbacks, package management with Zypper & Flatpak, hardware telemetry (Ryzen 7 7730U, amdgpu Vega 8), Firewalld network rules, or checking systemd services on openSUSE Tumbleweed Linux.
 ---
 
 # openSUSE Tumbleweed Linux System Maintenance & Telemetry Skill
 
-Esta skill contiene los procedimientos y diagnósticos estándar para la estación de trabajo HP EliteBook 855 G7 con openSUSE Tumbleweed (Rolling Release), KDE Plasma 6 y AMD Ryzen.
+Esta skill contiene los procedimientos y diagnósticos estándar para la estación de trabajo HP ProBook 455 G10 con openSUSE Tumbleweed (Rolling Release), KDE Plasma 6 y AMD Ryzen.
 
 ## 1. Mantenimiento y Gestión de Paquetes (Zypper & Flatpak)
 Operaciones estándar con `zypper` y Flatpak:
@@ -58,7 +58,7 @@ sudo snapper cleanup number
 
 ---
 
-## 3. Telemetría y Salud del Hardware (AMD Ryzen 7 PRO 4750U + Vega)
+## 3. Telemetría y Salud del Hardware (AMD Ryzen 7 7730U + Vega)
 Monitoreo de frecuencia, temperaturas y carga de la GPU integrada:
 
 ```bash
@@ -75,7 +75,7 @@ radeontop
 free -h
 zramctl
 
-# Estado del almacenamiento y subvolúmenes Btrfs (1 TB)
+# Estado del almacenamiento y subvolúmenes Btrfs (512 GB Kioxia KBG50ZNV512G)
 lsblk -o NAME,FSTYPE,SIZE,MOUNTPOINTS,MODEL
 btrfs filesystem usage /
 ```

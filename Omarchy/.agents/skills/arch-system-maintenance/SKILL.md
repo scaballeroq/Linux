@@ -6,7 +6,7 @@ description: >-
 
 # Arch Linux Maintenance Skill (Omarchy)
 
-Operaciones estándar para Arch Linux en la estación de trabajo HP EliteBook 855 G7.
+Operaciones estándar para Arch Linux en la estación de trabajo HP ProBook 455 G10.
 
 ## 1. Mantenimiento y Actualizaciones
 ```bash

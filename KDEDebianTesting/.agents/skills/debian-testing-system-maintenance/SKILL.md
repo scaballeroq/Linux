@@ -1,12 +1,12 @@
 ---
 name: debian-testing-system-maintenance
 description: >-
-  Use this skill when performing system updates with APT (full-upgrade/dist-upgrade), package management with APT & Flatpak, checking kernel/boot health, NVMe ext4 storage and ZRAM maintenance, hardware telemetry (Ryzen 7 PRO 4750U, amdgpu Vega 7), Firewalld network rules, or checking systemd services on Debian Testing (forky/sid) with KDE Plasma 6.
+  Use this skill when performing system updates with APT (full-upgrade/dist-upgrade), package management with APT & Flatpak, checking kernel/boot health, NVMe ext4 storage and ZRAM maintenance, hardware telemetry (Ryzen 7 7730U, amdgpu Vega 8), Firewalld network rules, or checking systemd services on Debian Testing (forky/sid) with KDE Plasma 6.
 ---
 
 # Debian Testing (forky/sid) Linux System Maintenance & Telemetry Skill
 
-Esta skill contiene los procedimientos operativos y diagnósticos estándar para la estación de trabajo HP EliteBook 855 G7 con **Debian Testing (forky/sid)**, **KDE Plasma 6 (Wayland)** y procesador **AMD Ryzen 7 PRO 4750U**.
+Esta skill contiene los procedimientos operativos y diagnósticos estándar para la estación de trabajo HP ProBook 455 G10 con **Debian Testing (forky/sid)**, **KDE Plasma 6 (Wayland)** y procesador **AMD Ryzen 7 7730U**.
 
 ---
 
@@ -69,7 +69,7 @@ tail -n 50 /var/log/dpkg.log
 
 ## 2. Almacenamiento, Particiones NVMe y Memoria ZRAM
 
-El almacenamiento del sistema reside en un SSD NVMe de 1 TB formateado en **ext4** (con particiones independientes para `/boot/efi` y `/boot`), complementado con paginación comprimida **ZRAM** y swap en disco.
+El almacenamiento del sistema reside en un SSD NVMe de 512 GB (Kioxia KBG50ZNV512G) formateado en **ext4** (con particiones independientes para `/boot/efi` y `/boot`), complementado con paginación comprimida **ZRAM** y swap en disco.
 
 ```bash
 # Comprobar espacio disponible en los sistemas de archivos montados
@@ -91,18 +91,18 @@ journalctl --disk-usage
 sudo journalctl --vacuum-time=14d
 sudo journalctl --vacuum-size=500M
 
-# Estado de salud SMART del disco NVMe (WD Blue SN570 / SanDisk)
+# Estado de salud SMART del disco NVMe (Kioxia KBG50ZNV512G (512 GB))
 sudo nvme smart-log /dev/nvme0n1 2>/dev/null || sudo smartctl -a /dev/nvme0n1
 ```
 
 ---
 
-## 3. Telemetría y Salud del Hardware (AMD Ryzen 7 PRO 4750U + Radeon Vega)
+## 3. Telemetría y Salud del Hardware (AMD Ryzen 7 7730U + Radeon Vega)
 
 Supervisión de temperaturas, gobernadores de frecuencia y carga de la GPU integrada Renoir:
 
 ```bash
-# Frecuencias en tiempo real de los 8 núcleos / 16 hilos (Zen 2)
+# Frecuencias en tiempo real de los 8 núcleos / 16 hilos (Zen 3)
 cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq | awk '{printf "CPU%02d: %.1f MHz\n", NR-1, $1/1000}'
 cpupower frequency-info 2>/dev/null
 

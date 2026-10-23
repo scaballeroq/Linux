@@ -6,7 +6,7 @@ description: >-
 
 # CachyOS System Maintenance Skill
 
-Operaciones de mantenimiento y optimización para CachyOS x86-64-v3/v4 en HP EliteBook 855 G7.
+Operaciones de mantenimiento y optimización para CachyOS x86-64-v3/v4 en HP ProBook 455 G10.
 
 ## 1. Mantenimiento de Paquetes
 ```bash
@@ -27,7 +27,7 @@ flatpak uninstall --unused -y
 
 ## 2. Telemetría y Rendimiento
 ```bash
-# Monitoreo de CPU Zen 2 y GPU Vega
+# Monitoreo de CPU Zen 3 y GPU Vega
 sensors
 radeontop 2>/dev/null || true
 

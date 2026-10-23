@@ -2,7 +2,7 @@
 # ==============================================================================
 # virtualization.sh - Instalación y Optimización Avanzada de Virtualización (KVM/QEMU)
 # Sistema: Ubuntu Linux | Escritorio: GNOME Shell (Wayland)
-# Hardware: AMD Ryzen 7 PRO 4750U / Vega 7 (VA-API / 3D VirGL) | Intel
+# Hardware: AMD Ryzen 7 7730U / Vega 8 (VA-API / 3D VirGL) | Intel
 # ==============================================================================
 
 set -euo pipefail

@@ -1,25 +1,25 @@
 ---
 name: linux-workstation-telemetry-hardware
 description: >-
-  Use this skill when checking HP EliteBook 855 G7 workstation telemetry (AMD Ryzen 7 PRO 4750U, Vega 7 GPU), NVMe ext4/btrfs storage, ZRAM memory usage, multi-monitor topology (DP-3, DP-4, eDP-1), PipeWire/WirePlumber audio status, or Firewalld network firewall rules across Linux distributions.
+  Use this skill when checking HP ProBook 455 G10 workstation telemetry (AMD Ryzen 7 7730U, Radeon Graphics / Vega 8), NVMe ext4/btrfs storage (Kioxia KBG50ZNV512G 512 GB), ZRAM memory usage, multi-monitor topology (DP-3, DP-4, eDP-1), PipeWire/WirePlumber audio status, or Firewalld network firewall rules across Linux distributions.
 ---
 
 # Workstation Telemetry & Hardware Diagnostics Skill
 
-Esta skill contiene los comandos unificados para inspeccionar y diagnosticar la salud de la estación de trabajo **HP EliteBook 855 G7** con procesador **AMD Ryzen 7 PRO 4750U**, gráficos **Radeon Vega 7** y triple monitor.
+Esta skill contiene los comandos unificados para inspeccionar y diagnosticar la salud de la estación de trabajo **HP ProBook 455 G10** con procesador **AMD Ryzen 7 7730U** (Zen 3 / Barcelo-R), gráficos **Radeon Graphics** (Vega 8) y triple monitor.
 
 ---
 
-## 1. Telemetría de CPU y GPU (AMD Renoir)
+## 1. Telemetría de CPU y GPU (AMD Zen 3 / Barcelo-R)
 
 ```bash
-# Frecuencias en tiempo real de los 8 núcleos / 16 hilos Zen 2
+# Frecuencias en tiempo real de los 8 núcleos / 16 hilos Zen 3
 cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq | awk '{printf "CPU%02d: %.1f MHz\n", NR-1, $1/1000}'
 
 # Sensores térmicos (temperatura CPU k10temp, batería, ventiladores)
 sensors
 
-# Monitor en tiempo real de la GPU AMD Radeon Vega (si está disponible)
+# Monitor en tiempo real de la GPU AMD Radeon (si está disponible)
 radeontop 2>/dev/null || cat /sys/class/drm/card*/device/gpu_busy_percent 2>/dev/null
 
 # Perfil energético activo (power-profiles-daemon)
@@ -39,13 +39,13 @@ free -h
 zramctl 2>/dev/null || true
 swapon --show
 
-# Espacio disponible en disco y puntos de montaje
+# Espacio disponible en disco y puntos de montaje (Kioxia KBG50ZNV512G)
 df -h / /boot /boot/efi 2>/dev/null || df -h
 
 # Particionamiento y tipo de sistema de archivos
 lsblk -o NAME,FSTYPE,LABEL,SIZE,FSUSE%,MOUNTPOINTS,MODEL
 
-# Salud SMART del disco NVMe
+# Salud SMART del disco NVMe Kioxia
 sudo nvme smart-log /dev/nvme0n1 2>/dev/null || sudo smartctl -a /dev/nvme0n1 2>/dev/null || true
 ```
 
@@ -56,7 +56,8 @@ sudo nvme smart-log /dev/nvme0n1 2>/dev/null || sudo smartctl -a /dev/nvme0n1 2>
 La estación cuenta con tres pantallas a 1080p:
 1. **DP-3**: Monitor principal de trabajo (1920x1080 @ 60Hz, posición `0,0`)
 2. **DP-4**: Monitor secundario extendido (1920x1080 @ 60Hz, posición `1920,0`)
-3. **eDP-1**: Pantalla integrada del portátil (1920x1080 @ 60Hz, posición `0,1080`)
+3. **eDP-1**: Pantalla integrada del portátil HP ProBook 455 G10 (1920x1080 @ 60Hz, posición `0,1080`)
+
 
 ```bash
 # En entornos KDE Plasma 6:

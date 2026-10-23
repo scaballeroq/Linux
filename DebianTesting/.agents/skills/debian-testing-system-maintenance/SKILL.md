@@ -6,7 +6,7 @@ description: >-
 
 # Debian Testing System Maintenance & Telemetry Skill
 
-Procedimientos operativos y diagnósticos estándar para Debian Testing (Trixie/Forky) en HP EliteBook 855 G7.
+Procedimientos operativos y diagnósticos estándar para Debian Testing (Trixie/Forky) en HP ProBook 455 G10.
 
 ## 1. Mantenimiento y Actualizaciones de APT
 ```bash

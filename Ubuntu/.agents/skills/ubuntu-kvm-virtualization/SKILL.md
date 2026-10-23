@@ -6,7 +6,7 @@ description: >-
 
 # KVM/QEMU Virtualization Skill (Ubuntu Workstation + AMD Ryzen)
 
-Esta skill proporciona las directrices operativas, comandos y configuraciones de alto rendimiento para el hipervisor **KVM/QEMU** y **Libvirt** en la estación de trabajo HP EliteBook 855 G7 con Ubuntu Workstation, GNOME Shell 51 y procesador AMD Ryzen 7 PRO 4750U.
+Esta skill proporciona las directrices operativas, comandos y configuraciones de alto rendimiento para el hipervisor **KVM/QEMU** y **Libvirt** en la estación de trabajo HP ProBook 455 G10 con Ubuntu Workstation, GNOME Shell 51 y procesador AMD Ryzen 7 7730U.
 
 ---
 
@@ -23,7 +23,7 @@ bash Virtualizacion/virtualization.sh --status
 # Validar capacidades completas del host con virt-host-validate
 virt-host-validate qemu
 
-# Comprobar aceleración por hardware AVIC en AMD Ryzen (Zen 2)
+# Comprobar aceleración por hardware AVIC en AMD Ryzen (Zen 3)
 cat /sys/module/kvm_amd/parameters/avic   # Debe ser Y o 1
 
 # Comprobar virtualización anidada (Nested KVM)

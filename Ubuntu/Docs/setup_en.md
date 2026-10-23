@@ -13,7 +13,7 @@ Configurations are automated via scripts in the `Setup/` folder and orchestrated
 ## 1. Base Post-Installation (`post-install.sh`)
 
 Prepares the base system by detecting host CPU architecture and executing the tailored installer:
-- **`post-install-amd.sh`**: For AMD Ryzen 7 PRO 4750U / Radeon Vega 7 (Mesa RADV, VA-API hardware acceleration, PipeWire, ZRAM, Flatpak Flathub).
+- **`post-install-amd.sh`**: For AMD Ryzen 7 7730U / Radeon Graphics (Vega 8) (Mesa RADV, VA-API hardware acceleration, PipeWire, ZRAM, Flatpak Flathub).
 - **`post-install-intel.sh`**: For Intel Core processors (i965/iHD VA-API, Kodi, PipeWire).
 
 Command:

@@ -2,7 +2,7 @@
 # ==============================================================================
 # chrome.sh - Instalación, Optimización y Diagnóstico de Google Chrome
 # Sistema: Ubuntu Linux | Escritorio: GNOME Shell (Wayland)
-# Hardware: AMD Ryzen 7 PRO 4750U / Radeon Vega 7 (VA-API)
+# Hardware: AMD Ryzen 7 7730U / Radeon Graphics (Vega 8) (VA-API)
 # ==============================================================================
 # Características:
 # - Gestión idempotente del repositorio APT oficial firmado por Google.

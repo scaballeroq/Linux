@@ -2,7 +2,7 @@
 # ==============================================================================
 # fingerprint-setup.sh - Autenticación y Desbloqueo por Huella Dactilar (fprintd + PAM)
 # Sistema: openSUSE Tumbleweed | Escritorio: KDE Plasma 6 (Wayland)
-# Hardware: HP EliteBook 855 G7 (Sensor Synaptics 06cb:00df)
+# Hardware: HP ProBook 455 G10 (Sensor Synaptics 06cb:00df)
 # ==============================================================================
 # Características:
 # - Integración oficial y segura en PAM mediante pam-config (--fprintd).
@@ -293,7 +293,7 @@ Uso: $(basename "$0") [OPCIONES]
 Configuración, diagnóstico y gestión de autenticación biométrica por huella dactilar
 (fprintd + PAM + KDE Plasma 6 Wayland) en openSUSE Tumbleweed.
 
-Hardware: HP EliteBook 855 G7 (Sensor Synaptics 06cb:00df)
+Hardware: HP ProBook 455 G10 (Sensor Synaptics 06cb:00df)
 
 OPCIONES:
   -s, --status         Muestra el estado detallado del hardware, paquetes, PAM y huellas.
@@ -403,7 +403,7 @@ esac
 # Flujo por defecto: Verificación e instalación de PAM
 echo "================================================================="
 echo "🚀 Configurando autenticación por huella dactilar en openSUSE Tumbleweed"
-echo "   Entorno: KDE Plasma 6 (Wayland) | Hardware: HP EliteBook 855 G7"
+echo "   Entorno: KDE Plasma 6 (Wayland) | Hardware: HP ProBook 455 G10"
 echo "================================================================="
 
 ensure_dependencies

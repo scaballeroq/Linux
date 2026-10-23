@@ -15,7 +15,7 @@ Esta skill proporciona los comandos, utilidades CLI y directrices para inspeccio
 La estación de trabajo cuenta con una topología multi-monitor de tres salidas Full HD (1920x1080):
 1. **DP-3 (Principal / Trabajo)**: Salida DisplayPort a 1920x1080 @ 60Hz (Posición `0,0`, Prioridad 1).
 2. **DP-4 (Secundaria / Lateral)**: Salida DisplayPort a 1920x1080 @ 60Hz (Posición `1920,0`, Prioridad 3).
-3. **eDP-1 (Pantalla Integrada Portátil)**: Pantalla interna 15.6" HP EliteBook a 1920x1080 @ 60Hz (Posición `0,1080`, Prioridad 2).
+3. **eDP-1 (Pantalla Integrada Portátil)**: Pantalla interna 15.6" HP ProBook 455 G10 a 1920x1080 @ 60Hz (Posición `0,1080`, Prioridad 2).
 
 ### Consultas y Control de Pantallas con `kscreen-doctor`:
 ```bash
@@ -156,7 +156,7 @@ wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
 
 ---
 
-## 8. Gestión de Energía y Cierre de Tapa (Laptop HP EliteBook)
+## 8. Gestión de Energía y Cierre de Tapa (Laptop HP ProBook 455 G10)
 
 Evitar que el portátil se suspenda al cerrar la tapa cuando hay monitores externos conectados:
 

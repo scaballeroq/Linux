@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
 # fingerprint-setup.sh - Configuración de Huella Dactilar en Ubuntu (GNOME 51)
-# Optimizado para HP EliteBook 855 G7 (Sensor Synaptics / fprintd)
+# Optimizado para HP ProBook 455 G10 (Sensor Synaptics / fprintd)
 # =============================================================================
 # Características:
 #   - Autenticación en pantalla de bloqueo (GDM y GNOME Shell)

@@ -1,4 +1,4 @@
-# Reglas del Agente: Experto en Linux & Hardware HP EliteBook (openSUSE Tumbleweed + KDE Plasma 6)
+# Reglas del Agente: Experto en Linux & Hardware HP ProBook 455 G10 (openSUSE Tumbleweed + KDE Plasma 6)
 
 ## Directrices de Entorno
 1. **Comandos Idempotentes y Modernos**:

@@ -2,7 +2,7 @@
 # ==============================================================================
 # chrome.sh - Instalación, Optimización y Diagnóstico de Google Chrome
 # Sistema: openSUSE Tumbleweed | Escritorio: KDE Plasma 6 (Wayland)
-# Hardware: AMD Ryzen 7 PRO 4750U / Radeon Vega 7 (VA-API)
+# Hardware: AMD Ryzen 7 7730U / Radeon Graphics (Vega 8) (VA-API)
 # ==============================================================================
 # Características:
 # - Gestión idempotente del repositorio RPM oficial firmado por Google.
@@ -184,7 +184,7 @@ show_status() {
         echo -e "  - Sugerencia:          Ejecuta '$0 --wayland' para activar Wayland nativo y aceleración VA-API."
     fi
 
-    # 5. Aceleración por Hardware VA-API (AMD Radeon Vega 7)
+    # 5. Aceleración por Hardware VA-API (AMD Radeon Graphics (Vega 8))
     if command -v vainfo &>/dev/null; then
         if vainfo 2>&1 | grep -qi "Driver version.*AMD"; then
             echo -e "• ${BOLD}Aceleración VA-API:${NC}    ${GREEN}✅ Hardware AMD Radeon Vega activo (Mesa RADV/radeonsi)${NC}"
