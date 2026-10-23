@@ -113,6 +113,13 @@ show_status() {
     echo "-----------------------------------------------------------------"
     echo "• Gestión de Tapa y Multimonitor:"
     echo "  - Logind lid docked: $(if [ -f /etc/systemd/logind.conf.d/lid-docked.conf ]; then echo "✅ Configurado (Docked=ignore)"; else echo "❌ Predeterminado"; fi)"
+    local gnome_lid_ext
+    gnome_lid_ext=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.power lid-close-suspend-with-external-monitor 2>/dev/null || echo 'n/a')
+    if [ "$gnome_lid_ext" = "false" ]; then
+        echo "  - GNOME lid docked:  ✅ No suspender con monitores externos (false)"
+    else
+        echo "  - GNOME lid docked:  ⚠️ Suspende con monitores ($gnome_lid_ext)"
+    fi
 
     echo "-----------------------------------------------------------------"
     echo "• Mutter Wayland & Tasa de Refresco:"
@@ -173,7 +180,12 @@ HandleLidSwitch=suspend
 HandleLidSwitchExternalPower=suspend
 HandleLidSwitchDocked=ignore
 EOF
-$SUDO systemctl restart systemd-logind 2>/dev/null || true
+# IMPORTANTE: NUNCA usar 'restart systemd-logind' en un entorno gráfico (Wayland/X11).
+# Reiniciar logind destruye las sesiones activas de usuario, revoca los descriptores DRM
+# y de dispositivos de entrada (evdev) a Mutter/GNOME Shell, provocando el cierre abrupto
+# de sesión y el bloqueo completo (deadlock) de la máquina al intentar reingresar.
+# Se utiliza 'reload' (SIGHUP) que recarga la configuración sin terminar procesos ni sesiones.
+$SUDO systemctl reload systemd-logind 2>/dev/null || true
 
 # 4. Configurar Touchpad nativo en GNOME
 echo "ℹ️ [4/5] Configurando gestos y comportamiento del Touchpad en GNOME..."
@@ -192,6 +204,9 @@ run_as_user gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive
 run_as_user gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout 0 2>/dev/null || true
 run_as_user gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing' 2>/dev/null || true
 run_as_user gsettings set org.gnome.settings-daemon.plugins.power power-button-action 'interactive' 2>/dev/null || true
+
+# Evitar suspender con tapa cerrada si hay monitor externo conectado (a nivel de GNOME Shell)
+run_as_user gsettings set org.gnome.settings-daemon.plugins.power lid-close-suspend-with-external-monitor false 2>/dev/null || true
 
 # Mutter VRR y escalado fraccional de monitores (si está soportado por la versión de Mutter)
 if run_as_user gsettings list-keys org.gnome.mutter 2>/dev/null | grep -q "^experimental-features$"; then
