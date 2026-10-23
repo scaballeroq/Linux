@@ -90,6 +90,7 @@ apply_dark() {
     echo "🌙 Aplicando tema oscuro persistente..."
     run_as_user gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null || true
     run_as_user gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' 2>/dev/null || \
+        run_as_user gsettings set org.gnome.desktop.interface gtk-theme 'Yaru-dark' 2>/dev/null || \
         run_as_user gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark' 2>/dev/null || true
     echo "✅ Modo oscuro activado."
 }
@@ -97,7 +98,8 @@ apply_dark() {
 apply_light() {
     echo "☀️ Aplicando modo claro..."
     run_as_user gsettings set org.gnome.desktop.interface color-scheme 'default' 2>/dev/null || true
-    run_as_user gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita' 2>/dev/null || true
+    run_as_user gsettings set org.gnome.desktop.interface gtk-theme 'Yaru' 2>/dev/null || \
+        run_as_user gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita' 2>/dev/null || true
     echo "✅ Modo claro activado."
 }
 
@@ -129,11 +131,9 @@ echo "ℹ️ [1/6] Verificando utilidades de soporte en GNOME..."
 $SUDO apt update
 $SUDO apt install -y \
     gnome-tweaks \
-    adw-gtk3-theme \
     gnome-browser-connector \
     gnome-shell-extension-gsconnect \
-    gnome-shell-extension-appindicator \
-    gnome-shell-extension-dash-to-dock \
+    gnome-shell-ubuntu-extensions \
     wl-clipboard 2>/dev/null || true
 
 # 2. Apariencia y Tema Oscuro

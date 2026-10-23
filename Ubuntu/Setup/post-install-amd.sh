@@ -50,7 +50,7 @@ sudo apt install -y \
     vlc \
     gimp \
     gparted \
-    p7zip-full \
+    7zip \
     unrar \
     zip \
     unzip \
@@ -63,7 +63,6 @@ sudo apt install -y \
     flatpak \
     gnome-software-plugin-flatpak \
     gnome-tweaks \
-    adw-gtk3-theme \
     wl-clipboard
 
 # 5. Microcódigo y Firmware AMD
@@ -100,8 +99,12 @@ sudo DEBIAN_FRONTEND=noninteractive apt install -y \
     gstreamer1.0-plugins-good \
     gstreamer1.0-plugins-bad \
     gstreamer1.0-plugins-ugly \
-    gstreamer1.0-libav \
-    gstreamer1.0-vaapi 2>/dev/null || true
+    gstreamer1.0-libav
+
+# gstreamer1.0-vaapi (solo en versiones que mantengan el paquete separado; en GStreamer moderno viene integrado en plugins-bad)
+if apt-cache show gstreamer1.0-vaapi &>/dev/null; then
+    sudo apt install -y gstreamer1.0-vaapi 2>/dev/null || true
+fi
 
 # 8. Memoria ZRAM
 echo "ℹ️ [8/10] Configurando swap comprimida en RAM (ZRAM)..."

@@ -31,6 +31,10 @@ fi
 
 export PATH="$USER_HOME/.local/bin:/usr/local/bin:/usr/bin:$PATH"
 
+GIT_USER_NAME="Sergio Caballero"
+GIT_USER_EMAIL="scaballeroq@gmail.com"
+
+
 run_as_user() {
     if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
         sudo -u "$REAL_USER" env HOME="$USER_HOME" PATH="$USER_HOME/.local/bin:/usr/local/bin:/usr/bin:$PATH" "$@"

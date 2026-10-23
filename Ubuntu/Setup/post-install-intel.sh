@@ -54,9 +54,8 @@ sudo apt install -y \
     flatpak \
     gnome-software-plugin-flatpak \
     gnome-tweaks \
-    adw-gtk3-theme \
     wl-clipboard \
-    p7zip-full \
+    7zip \
     unrar \
     zip \
     unzip

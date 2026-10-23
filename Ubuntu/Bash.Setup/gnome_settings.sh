@@ -46,6 +46,7 @@ alias gnome-conf-printers='gnome-control-center printers &>/dev/null &'
 gnome-theme-dark() {
     gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null || true
     gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' 2>/dev/null || \
+        gsettings set org.gnome.desktop.interface gtk-theme 'Yaru-dark' 2>/dev/null || \
         gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark' 2>/dev/null || true
     echo "🌙 Modo oscuro aplicado en GNOME (prefer-dark)."
 }
@@ -53,7 +54,8 @@ gnome-theme-dark() {
 # Alternar a modo claro (Default)
 gnome-theme-light() {
     gsettings set org.gnome.desktop.interface color-scheme 'default' 2>/dev/null || true
-    gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita' 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface gtk-theme 'Yaru' 2>/dev/null || \
+        gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita' 2>/dev/null || true
     echo "☀️ Modo claro aplicado en GNOME (default)."
 }
 

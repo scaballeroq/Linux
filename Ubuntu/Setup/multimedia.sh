@@ -42,7 +42,7 @@ show_status() {
     echo "================================================================="
     echo "• ubuntu-restricted-extras: $(if dpkg -s ubuntu-restricted-extras &>/dev/null; then echo "✅ Instalado"; else echo "❌ No instalado"; fi)"
     echo "• FFmpeg:                   $(if command -v ffmpeg &>/dev/null; then echo "✅ FFmpeg ($(ffmpeg -version 2>/dev/null | head -n1 | awk '{print $3}'))"; else echo "❌ No instalado"; fi)"
-    echo "• GStreamer VA-API:         $(if dpkg -s gstreamer1.0-vaapi &>/dev/null; then echo "✅ Instalado"; else echo "❌ No instalado"; fi)"
+    echo "• GStreamer VA-API:         $(if dpkg -s gstreamer1.0-vaapi &>/dev/null || dpkg -s gstreamer1.0-plugins-bad &>/dev/null; then echo "✅ Integrado / Activo"; else echo "❌ No instalado"; fi)"
     echo "• GStreamer Libav:          $(if dpkg -s gstreamer1.0-libav &>/dev/null; then echo "✅ Instalado"; else echo "❌ No instalado"; fi)"
     echo "• GStreamer Plugins Ugly:   $(if dpkg -s gstreamer1.0-plugins-ugly &>/dev/null; then echo "✅ Instalado"; else echo "❌ No instalado"; fi)"
     echo "• VA-API utils (vainfo):    $(if command -v vainfo &>/dev/null; then echo "✅ Instalado"; else echo "❌ No instalado"; fi)"
@@ -78,9 +78,13 @@ $SUDO apt-get install -y \
     gstreamer1.0-plugins-bad \
     gstreamer1.0-plugins-ugly \
     gstreamer1.0-libav \
-    gstreamer1.0-vaapi \
     vainfo \
     vulkan-tools 2>/dev/null || true
+
+# En Ubuntu anteriores a 24.10, gstreamer1.0-vaapi existía como paquete separado
+if apt-cache show gstreamer1.0-vaapi &>/dev/null; then
+    $SUDO apt-get install -y gstreamer1.0-vaapi 2>/dev/null || true
+fi
 
 # Intentar instalar ubuntu-restricted-extras sin prompts bloqueantes de EULA
 echo "📦 [2/3] Instalando extras restringidos (códecs de audio/video)..."
