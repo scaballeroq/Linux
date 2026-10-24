@@ -1,6 +1,5 @@
 [Unit]
 Description=Traefik Proxy para __PROJECT__
-After=__PROJECT__.network
 
 [Container]
 ContainerName=__PROJECT__-traefik

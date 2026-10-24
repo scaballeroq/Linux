@@ -1,6 +1,5 @@
 [Unit]
 Description=PostgreSQL para __PROJECT__
-After=__PROJECT__.network
 
 [Container]
 ContainerName=__PROJECT__-postgres

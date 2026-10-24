@@ -601,30 +601,50 @@ cmd_doctor() {
         log_ok "Almacenamiento: $driver"
     fi
 
-    # 7. Red Rootless (Pasta)
-    if command -v pasta &>/dev/null; then
-        log_ok "Red Rootless: pasta disponible ($(pasta --version 2>&1 | head -1))"
-    else
-        log_info "Red Rootless: passt/pasta no detectado en PATH"
+    # 7. Runtime OCI (crun)
+    if command -v crun &>/dev/null; then
+        log_ok "Runtime OCI: crun ($(crun --version 2>&1 | head -1 | awk '{print $3}'))"
+    elif command -v runc &>/dev/null; then
+        log_info "Runtime OCI: runc (se recomienda crun para mejor rendimiento C/cgroups-v2)"
     fi
 
-    # 8. Cortafuegos (Firewalld)
-    if command -v firewall-cmd &>/dev/null && firewall-cmd --state &>/dev/null; then
-        local trusted_ifaces
-        trusted_ifaces=$(firewall-cmd --zone=trusted --list-interfaces 2>/dev/null || echo "")
-        if [[ "$trusted_ifaces" =~ "podman+" ]]; then
+    # 8. Red Rootless (Pasta)
+    if command -v pasta &>/dev/null; then
+        log_ok "Red Rootless: pasta disponible ($(pasta --version 2>&1 | head -1 | awk '{print $1,$2}'))"
+    else
+        log_info "Red Rootless: passt/pasta no detectado en PATH (degradando a slirp4netns)"
+    fi
+
+    # 9. Cortafuegos (Firewalld de forma no bloqueante)
+    if systemctl is-active firewalld.service &>/dev/null; then
+        if timeout 1s firewall-cmd --zone=trusted --query-interface=podman+ &>/dev/null; then
             log_ok "Cortafuegos: Firewalld activo y podman+ asignado a zona trusted"
         else
-            log_error "Cortafuegos: Firewalld activo pero podman+ NO está en zona trusted"
+            log_info "Cortafuegos: Firewalld activo (podman+ pendiente de asociar a trusted)"
+        fi
+    else
+        log_info "Cortafuegos: Firewalld inactivo o no instalado"
+    fi
+
+    # 10. Aceleración Gráfica (AMD Radeon Graphics (Vega 8))
+    if [ -e /dev/dri/renderD128 ]; then
+        if id -nG "$USER" 2>/dev/null | grep -qw "render"; then
+            log_ok "Aceleración GPU: AMD Vega 8 (/dev/dri/renderD128) - Grupo 'render' activo"
+        else
+            log_info "Aceleración GPU: /dev/dri/renderD128 presente pero usuario no está en grupo 'render'"
         fi
     fi
 
-    # 9. Aceleración Gráfica (AMD Radeon Graphics (Vega 8))
-    if [ -e /dev/dri/renderD128 ]; then
-        log_ok "Aceleración GPU: AMD Vega 8 accesible (/dev/dri/renderD128)"
+    # 11. Puertos No Privilegiados
+    local unpriv_port
+    unpriv_port=$(sysctl -n net.ipv4.ip_unprivileged_port_start 2>/dev/null || echo "1024")
+    if [ "$unpriv_port" -le 80 ]; then
+        log_ok "Puertos Rootless: Permite enlazar puertos 80 y 443 (start: $unpriv_port)"
+    else
+        log_info "Puertos Rootless: Inicio en $unpriv_port (requiere <= 80 para Traefik)"
     fi
 
-    # 10. Generador Quadlet
+    # 12. Generador Quadlet
     if [ -f /usr/lib/systemd/user-generators/podman-user-generator ]; then
         log_ok "Generador Quadlet: Integrado en Systemd"
     else

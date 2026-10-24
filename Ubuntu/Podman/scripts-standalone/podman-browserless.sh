@@ -11,16 +11,20 @@ if ! command -v podman &>/dev/null; then
 fi
 
 NETWORK="dev-net"
-if podman network exists devfed-net 2>/dev/null; then
-    NETWORK="devfed-net"
-elif ! podman network exists "$NETWORK" 2>/dev/null; then
+if ! podman network exists "$NETWORK" 2>/dev/null; then
     podman network create "$NETWORK"
 fi
 
-echo "ℹ️ Iniciando Browserless (Chrome)..."
+GPU_FLAG=""
+if [ -e /dev/dri/renderD128 ]; then
+    GPU_FLAG="--device /dev/dri"
+fi
+
+echo "ℹ️ Iniciando Browserless (Chrome con aceleración GPU si disponible)..."
 podman run -d --replace \
     --name browserless-dev \
     --network "$NETWORK" \
+    $GPU_FLAG \
     -p 3003:3000 \
     docker.io/browserless/chrome:latest
 echo "✅ Browserless iniciado en puerto 3003"

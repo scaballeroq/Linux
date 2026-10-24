@@ -6,7 +6,7 @@ _podman_utils_completions() {
     local cur prev words cword
     _init_completion || return
 
-    local commands="create start stop restart logs status destroy link unlink install-global uninstall-global list list-templates doctor help"
+    local commands="create start stop restart logs status destroy link unlink install-global uninstall-global list list-templates pps pexec quadlet-status quadlet-reload doctor help"
 
     local script_target
     script_target=$(command -v podman-utils 2>/dev/null)

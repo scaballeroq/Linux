@@ -1,6 +1,6 @@
 [Unit]
 Description=Backend Python para __PROJECT__
-After=__PROJECT__.network __PROJECT__-postgres.service
+After=__PROJECT__-postgres.service
 Requires=__PROJECT__-postgres.service
 
 [Container]

@@ -105,7 +105,10 @@ podman-utils install-global postgres-global
 
 Toda exposición de puertos hacia la red local debe gestionarse exclusivamente con `firewall-cmd`:
 ```bash
-# Permitir acceso al contenedor en la red local
-sudo firewall-cmd --permanent --zone=FedoraWorkstation --add-port=8080/tcp
+# Asegurar tráfico entre contenedores y resolución DNS interna
+sudo firewall-cmd --permanent --zone=trusted --add-interface=podman+
+
+# Permitir acceso al contenedor en la red local (zona public predeterminada en Ubuntu)
+sudo firewall-cmd --permanent --zone=public --add-port=8080/tcp
 sudo firewall-cmd --reload
 ```
