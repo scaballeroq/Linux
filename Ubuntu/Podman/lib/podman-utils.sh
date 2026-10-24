@@ -615,9 +615,14 @@ cmd_doctor() {
         log_info "Red Rootless: passt/pasta no detectado en PATH (degradando a slirp4netns)"
     fi
 
-    # 9. Cortafuegos (Firewalld de forma no bloqueante)
+    # 9. Cortafuegos (Firewalld vía D-Bus sin invocar polkit ni pedir contraseña)
     if systemctl is-active firewalld.service &>/dev/null; then
-        if timeout 1s firewall-cmd --zone=trusted --query-interface=podman+ &>/dev/null; then
+        local trusted_ifaces=""
+        if command -v busctl &>/dev/null; then
+            trusted_ifaces=$(busctl call org.fedoraproject.FirewallD1 /org/fedoraproject/FirewallD1 org.fedoraproject.FirewallD1.zone getInterfaces s "trusted" 2>/dev/null || echo "")
+        fi
+
+        if [[ "$trusted_ifaces" =~ "podman+" ]]; then
             log_ok "Cortafuegos: Firewalld activo y podman+ asignado a zona trusted"
         else
             log_info "Cortafuegos: Firewalld activo (podman+ pendiente de asociar a trusted)"

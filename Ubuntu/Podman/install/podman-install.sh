@@ -124,9 +124,14 @@ show_status() {
         gpu_status="ℹ️ /dev/dri/renderD128 no detectado"
     fi
 
-    # Comprobar Firewalld de forma no bloqueante
+    # Comprobar Firewalld vía D-Bus (busctl) sin invocar agentes polkit ni solicitar contraseña
     if systemctl is-active firewalld.service &>/dev/null; then
-        if timeout 1s firewall-cmd --zone=trusted --query-interface=podman+ &>/dev/null; then
+        local trusted_ifaces=""
+        if command -v busctl &>/dev/null; then
+            trusted_ifaces=$(busctl call org.fedoraproject.FirewallD1 /org/fedoraproject/FirewallD1 org.fedoraproject.FirewallD1.zone getInterfaces s "trusted" 2>/dev/null || echo "")
+        fi
+
+        if [[ "$trusted_ifaces" =~ "podman+" ]]; then
             firewall_status="✅ Firewalld activo y podman+ en zona trusted"
         else
             firewall_status="ℹ️ Firewalld activo (interfaz podman+ pendiente de asociar a trusted)"
@@ -343,11 +348,22 @@ configure_privileges_and_gpu() {
 configure_firewall() {
     log_info "Verificando reglas de cortafuegos (Firewalld)..."
     if systemctl is-active firewalld.service &>/dev/null; then
-        if command -v sudo &>/dev/null; then
-            log_step "Asegurando interfaz podman+ en zona trusted de Firewalld..."
-            sudo firewall-cmd --permanent --zone=trusted --add-interface=podman+ 2>/dev/null || true
-            sudo firewall-cmd --reload 2>/dev/null || true
-            log_ok "Interfaz podman+ asociada a zona trusted en Firewalld."
+        local in_trusted=0
+        if command -v busctl &>/dev/null; then
+            if busctl call org.fedoraproject.FirewallD1 /org/fedoraproject/FirewallD1 org.fedoraproject.FirewallD1.zone getInterfaces s "trusted" 2>/dev/null | grep -q "podman+"; then
+                in_trusted=1
+            fi
+        fi
+
+        if [ "$in_trusted" -eq 1 ]; then
+            log_ok "Interfaz podman+ ya está asignada a la zona trusted."
+        else
+            if command -v sudo &>/dev/null; then
+                log_step "Asignando interfaz podman+ a la zona trusted en Firewalld..."
+                sudo firewall-cmd --permanent --zone=trusted --add-interface=podman+ 2>/dev/null || true
+                sudo firewall-cmd --reload 2>/dev/null || true
+                log_ok "Interfaz podman+ asociada a zona trusted en Firewalld."
+            fi
         fi
     else
         log_info "Firewalld no está activo, omitiendo configuración de interfaz de cortafuegos."
