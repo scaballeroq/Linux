@@ -306,7 +306,6 @@ PKGS_TO_INSTALL=(
     # Hipervisor base y emulación
     qemu-system-x86
     qemu-utils
-    qemu-kvm
     # Daemons de libvirt y herramientas CLI
     libvirt-daemon-system
     libvirt-clients

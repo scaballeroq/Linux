@@ -7,7 +7,7 @@ Instalamos KVM, libvirt, virt-manager, y utilidades asociadas.
 
 ```bash
 sudo apt update
-sudo apt install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virtinst virt-manager virt-viewer virt-top libguestfs-tools
+sudo apt install -y qemu-system-x86 qemu-utils libvirt-daemon-system libvirt-clients bridge-utils virtinst virt-manager virt-viewer virt-top libguestfs-tools
 ```
 
 ## 2. Controladores de Windows (VirtIO)
