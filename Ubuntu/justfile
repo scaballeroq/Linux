@@ -261,7 +261,7 @@ python-uv:
 
 # Rust
 rust:
-    ./ProgrammingLanguages/Revisar/rust.sh
+    ./ProgrammingLanguages/rust.sh
 
 # .NET SDK
 dotnet:
