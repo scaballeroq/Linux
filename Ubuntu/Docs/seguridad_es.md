@@ -2,87 +2,85 @@
 sidebar_position: 1
 ---
 
-# Configuración de Seguridad en Debian 13
+# Endurecimiento de Seguridad y Cortafuegos en Ubuntu Linux (GNOME Shell)
 
-Esta guía detalla el proceso de endurecimiento de seguridad (hardening) aplicado a un sistema Debian 13, tal y como se automatiza en el script de seguridad.
+Esta guía detalla el proceso de seguridad, red y endurecimiento del sistema (hardening) automatizado en [`Setup/seguridad.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Ubuntu/Setup/seguridad.sh), optimizado específicamente para una estación de trabajo y desarrollo local con **Ubuntu Linux** y **GNOME Shell (Wayland)**.
 
-El proceso cubre la configuración del firewall, privacidad DNS y auditoría de permisos.
+---
 
-## 1. Configuración de Firewall (UFW)
+## 1. Cortafuegos Nativo Obligatorio (Firewalld)
 
-Se utiliza Uncomplicated Firewall (UFW) para definir políticas estrictas de red.
+En cumplimiento de las políticas del monorepo, **UFW queda permanentemente desactivado** y se utiliza exclusivamente **Firewalld** (`firewall-cmd`):
 
-1. Instala UFW si no está presente:
+1. **Desactivación de UFW e Inicio de Firewalld**:
    ```bash
-   sudo apt update
-   sudo apt install -y ufw
+   sudo ufw disable
+   sudo systemctl disable --now ufw
+   sudo systemctl mask ufw
+   sudo systemctl enable --now firewalld
    ```
 
-2. Establece las políticas por defecto (bloquear entrada, permitir salida):
-   ```bash
-   sudo ufw default deny incoming
-   sudo ufw default allow outgoing
-   ```
+2. **Reglas para GNOME Shell, GSConnect y Desarrollo**:
+   - **GSConnect (`kdeconnect` service en Firewalld)**: Permite la sincronización de notificaciones, control multimedia, portapapeles compartido y transferencia de archivos entre tu teléfono y tu PC sin dependencias de KDE/Qt.
+   - **Descubrimiento Local (`mdns`)**: Permite detectar impresoras (HP LaserJet), dispositivos multimedia y servicios locales.
+   - **Acceso Remoto (`ssh`)**: Mantiene el acceso seguro por SSH.
+   - **Máquinas Virtuales y Contenedores**:
+     - Subredes de Podman Rootless (`podman+` y `cni-podman+`) en la zona `trusted`.
+     - Puente de virtualización KVM (`virbr0` y `virbr+`) en la zona `trusted` con IP Masquerade activo.
 
-3. Permite conexiones SSH **solo** desde la red local y con límite de intentos para prevenir ataques de fuerza bruta:
-   ```bash
-   sudo ufw limit from 192.168.1.0/24 to any port ssh
-   ```
-   *(Nota: Ajusta `192.168.1.0/24` según la configuración de tu red local.)*
+---
 
-4. Activa el firewall:
-   ```bash
-   sudo ufw --force enable
-   ```
+## 2. Optimización de Red y Kernel (Sysctl) para Desarrollo
 
-## 2. Privacidad DNS (DNS-over-TLS)
+Aplica configuraciones del Kernel en `/etc/sysctl.d/99-development-network.conf` para garantizar compatibilidad completa con Podman Rootless y máquinas virtuales KVM sin necesidad de ejecutar contenedores como root:
 
-Para evitar que tu proveedor de internet espíe tus consultas web, se cifra el tráfico DNS mediante `systemd-resolved` utilizando Cloudflare.
+```ini
+# /etc/sysctl.d/99-development-network.conf
 
-1. Instala `systemd-resolved`:
-   ```bash
-   sudo apt install -y systemd-resolved
-   ```
+# Reenvío de paquetes para contenedores y VMs
+net.ipv4.ip_forward = 1
+net.ipv6.conf.all.forwarding = 1
 
-2. Configura los servidores de Cloudflare con DNS-over-TLS creando el archivo `/etc/systemd/resolved.conf.d/dot.conf`:
-   ```bash
-   sudo mkdir -p /etc/systemd/resolved.conf.d/
-   sudo tee /etc/systemd/resolved.conf.d/dot.conf > /dev/null <<'EOF'
-   [Resolve]
-   DNS=1.1.1.1 1.0.0.1
-   DNSSEC=yes
-   DNSOverTLS=yes
-   FallbackDNS=8.8.8.8
-   EOF
-   ```
+# Preservar recepción de Router Advertisements (SLAAC) con forwarding activo
+net.ipv6.conf.all.accept_ra = 2
+net.ipv6.conf.default.accept_ra = 2
 
-3. Reinicia el servicio para aplicar los cambios:
-   ```bash
-   sudo systemctl enable --now systemd-resolved
-   sudo systemctl restart systemd-resolved
-   ```
+# Permitir a Podman Rootless enlazar puertos HTTP/HTTPS estándar (>=80) sin root
+net.ipv4.ip_unprivileged_port_start = 80
 
-4. Redirige el tráfico local al DNS cifrado:
-   ```bash
-   sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
-   ```
+# Permitir operaciones ICMP (ping) en contenedores sin privilegios
+net.ipv4.ping_group_range = 0 2147483647
 
-## 3. Auditoría de Permisos Críticos
+# Soporte completo de espacios de nombres de usuario (user namespaces)
+kernel.unprivileged_userns_clone = 1
+user.max_user_namespaces = 262144
+```
 
-Se restringen los permisos de archivos y carpetas vitales del sistema operativo para evitar que programas o usuarios sin privilegios los modifiquen.
+---
 
-1. Protege la carpeta del administrador y los archivos de contraseñas:
-   ```bash
-   sudo chmod 700 /root
-   sudo chmod 644 /etc/passwd
-   sudo chmod 644 /etc/group
-   sudo chmod 600 /etc/shadow
-   sudo chmod 600 /etc/gshadow
-   ```
+## 3. Saneamiento para Red Local Doméstica
 
-## Verificación
+Para una estación de trabajo de desarrollo en red local de hogar:
+- **Estabilidad DHCP y Reservas de IP**: Se evita la aleatorización de MAC para prevenir que el router cambie la dirección IP local del equipo y rompa reservas estáticas.
+- **Sin sobrecarga de Fail2ban**: Desactivado en LAN privada donde no hay servicios expuestos directamente a internet pública.
 
-Para comprobar que el DNS cifrado funciona correctamente, ejecuta:
+---
+
+## 4. Auditoría de Permisos Críticos
+
+Asegura que directorios sensibles del sistema no tengan permisos de lectura abiertos:
 ```bash
-resolvectl status
+sudo chmod 700 /root
+```
+
+---
+
+## 5. Ejecución y Diagnóstico con Just
+
+```bash
+# Aplicar configuración de seguridad y red
+just security
+
+# Diagnosticar estado de cortafuegos, interfaces y parámetros sysctl
+just security-status
 ```

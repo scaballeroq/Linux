@@ -6,7 +6,7 @@ description: >-
 
 # KVM/QEMU Virtualization Skill (Debian Testing + AMD Ryzen)
 
-Esta skill proporciona las directrices operativas, comandos y configuraciones de alto rendimiento para el hipervisor **KVM/QEMU** y **Libvirt** en la estación de trabajo HP EliteBook 855 G7 con Debian Testing, KDE Plasma 6 y procesador AMD Ryzen 7 PRO 4750U.
+Esta skill proporciona las directrices operativas, comandos y configuraciones de alto rendimiento para el hipervisor **KVM/QEMU** y **Libvirt** en la estación de trabajo HP ProBook 455 G10 con Debian Testing, KDE Plasma 6 y procesador AMD Ryzen 7 7730U.
 
 ---
 
@@ -23,7 +23,7 @@ bash Virtualizacion/virtualization.sh --status
 # Validar capacidades completas del host con virt-host-validate
 virt-host-validate qemu
 
-# Comprobar aceleración por hardware AVIC en AMD Ryzen (Zen 2)
+# Comprobar aceleración por hardware AVIC en AMD Ryzen (Zen 3)
 cat /sys/module/kvm_amd/parameters/avic   # Debe ser Y o 1
 
 # Comprobar virtualización anidada (Nested KVM)
@@ -61,7 +61,7 @@ virsh dominfo <nombre_vm>
 
 ---
 
-## 3. Aceleración Gráfica 3D (VirGL en AMD Radeon Vega 7)
+## 3. Aceleración Gráfica 3D (VirGL en AMD Radeon Graphics (Vega 8))
 
 KVM/QEMU soporta renderizado 3D acelerado directamente en la GPU integrada del host (`/dev/dri/renderD128`) para guests Linux con KDE o GNOME.
 
@@ -78,7 +78,7 @@ KVM/QEMU soporta renderizado 3D acelerado directamente en la GPU integrada del h
 
 ## 4. Almacenamiento de Alto Rendimiento (ext4 en SSD NVMe)
 
-El almacenamiento del host es un disco SSD NVMe de 1 TB en **ext4**. Para máxima velocidad de E/S y protección de la vida útil del disco:
+El almacenamiento del host es un disco SSD NVMe de 512 GB (Kioxia KBG50ZNV512G) en **ext4**. Para máxima velocidad de E/S y protección de la vida útil del disco:
 
 - **Bus de disco**: `VirtIO` (en lugar de SATA o IDE).
 - **Modo de caché**: `none` (E/S directa que evita doble búfer en los 32 GB de RAM del host) o `writeback`.

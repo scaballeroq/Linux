@@ -1,80 +1,322 @@
-# Ubuntu Environment Configuration Justfile
+# =============================================================================
+# Ubuntu Linux Environment Configuration Justfile
+# (Ubuntu Linux Workstation + GNOME Shell Wayland)
+# =============================================================================
 
-# Instala todo el entorno (Post-install, Shell, Virtualización, Mise, Cockpit, etc.)
-setup-all: post-install shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome
-    echo "🚀 Entorno completo configurado. Por favor, reinicia el sistema."
+# Instala todo el entorno por defecto (Auto-detección de CPU / Portátil AMD)
+setup-all: post-install multimedia flatpak chrome steam laptop tuning gnome-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+    @echo "🚀 Entorno completo de Ubuntu Linux (GNOME Shell Wayland) configurado. Por favor, reinicia el sistema."
 
-# Administración Web
-cockpit:
-    ./Setup/cockpit.sh
+# Perfil completo para Portátil de desarrollo (AMD Ryzen + Virtualización + Contenedores)
+setup-laptop-amd: post-install-amd multimedia flatpak chrome steam laptop tuning gnome-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+    @echo "🚀 Entorno Portátil AMD Ryzen (GNOME Shell) configurado con éxito. Por favor, reinicia el sistema."
 
-# Configuración base del sistema
+# Perfil para Sobremesa Centro Multimedia (Intel Core / Media Center - Sin virtualización ni batería)
+setup-media-desktop: post-install-intel multimedia chrome tuning gnome-setup shell security fonts fastfetch kitty yt-dlp kodi
+    @echo "🚀 Entorno Sobremesa Intel (GNOME Shell) configurado con éxito. Por favor, reinicia el sistema."
+
+# =============================================================================
+# CONFIGURACIÓN BASE DEL SISTEMA
+# =============================================================================
+
+# Configuración base post-instalación (Auto-detección inteligente: AMD Ryzen vs Intel Core)
 post-install:
     ./Setup/post-install.sh
 
-# Utilidades de terminal y prompt
+# Configuración post-instalación para AMD Ryzen (Kernel, Mesa RADV, VA-API, PipeWire, Flatpak, GNOME Shell, ZRAM)
+post-install-amd:
+    ./Setup/post-install-amd.sh
+
+# Configuración post-instalación para Intel Haswell/Core (Microcódigo Intel, i965/iHD VA-API, Kodi, PipeWire, GNOME Shell)
+post-install-intel:
+    ./Setup/post-install-intel.sh
+
+# Optimización para portátiles de desarrollo (power-profiles-daemon, Bluetooth FastConnectable, cierre de tapa con multimonitor, Touchpad Wayland y Mutter VRR)
+laptop:
+    ./Setup/laptop-setup.sh
+
+# Autenticación y desbloqueo por huella dactilar (fprintd, PAM)
+fingerprint *args:
+    ./Setup/fingerprint-setup.sh {{args}}
+
+# Estado y diagnóstico de la autenticación por huella dactilar
+fingerprint-status:
+    ./Setup/fingerprint-setup.sh --status
+
+# Registrar huella dactilar en la terminal (sensor táctil)
+fingerprint-enroll *finger:
+    ./Setup/fingerprint-setup.sh --enroll {{finger}}
+
+# Probar verificación biométrica en el lector
+fingerprint-verify *finger:
+    ./Setup/fingerprint-setup.sh --verify {{finger}}
+
+# Configuración de impresoras HP (CUPS, HPLIP, plugin propietario para LaserJet M15w)
+printer:
+    ./Setup/hp-printer-setup.sh
+
+# Estado del sistema de impresión HP
+printer-status:
+    ./Setup/hp-printer-setup.sh --status
+
+# Personalización y configuración de GNOME Shell (Modo oscuro, botones de ventana, scripts de Nautilus, atajos)
+gnome-setup:
+    ./Setup/gnome-settings.sh
+
+# Aplicar tema oscuro completo en GNOME Shell (prefer-dark + adw-gtk3-dark)
+gnome-theme-dark:
+    ./Setup/gnome-settings.sh --dark
+
+# Aplicar tema claro completo en GNOME Shell (prefer-light)
+gnome-theme-light:
+    ./Setup/gnome-settings.sh --light
+
+# Diagnóstico y estado de la configuración de GNOME Shell
+gnome-status:
+    ./Setup/gnome-settings.sh --status
+
+# Optimizaciones avanzadas de rendimiento (Sysctl, límites, inotify 1M, max_map_count 16M, TCP BBR, exclusiones Tracker)
+tuning:
+    ./Setup/ubuntu-tuning.sh
+
+# Estado actual de las optimizaciones y métricas de rendimiento
+tuning-status:
+    ./Setup/ubuntu-tuning.sh --status
+
+# Utilidades de terminal modernas (eza, bat, fzf, zoxide, ripgrep, fd, duf, dust, btop)
 shell:
     ./Setup/shell.sh
 
-# Configuración de KVM/QEMU
-virtualization:
-    ./Virtualizacion/virtualization.sh
+# Diagnóstico y estado de utilidades CLI de terminal (eza, bat, fzf, zoxide, ripgrep...)
+shell-status:
+    ./Setup/shell.sh --status
 
-# Gestor de runtimes Mise
-mise:
-    ./ProgrammingLanguages/mise.sh
+# Starship Prompt moderno (Instalar / Activar)
+starship:
+    ./Setup/starship.sh --enable
 
-# Seguridad y Endurecimiento
+# Desactivar Starship y restaurar prompt nativo
+starship-disable:
+    ./Setup/starship.sh --disable
+
+# Estado de Starship prompt
+starship-status:
+    ./Setup/starship.sh --status
+
+# Seguridad y cortafuegos obligatorio (Firewalld con servicios gsconnect/kdeconnect, mdns, ssh, KVM virbr0, Podman rootless, Sysctl)
 security:
     ./Setup/seguridad.sh
 
-# Fuentes de desarrollo
+# Estado y diagnóstico de seguridad, cortafuegos Firewalld y sysctl
+security-status:
+    ./Setup/seguridad.sh --status
+
+# Integración de GSConnect (KDE Connect para GNOME) y reglas de Firewalld (1714-1764 TCP/UDP)
+gsconnect *args:
+    ./Setup/gsconnect.sh {{args}}
+
+# Estado y diagnóstico de GSConnect, reglas de red y dispositivos emparejados
+gsconnect-status:
+    ./Setup/gsconnect.sh --status
+
+# Fuentes de desarrollo (Nerd Fonts: JetBrainsMono, FiraCode, CascadiaCode, Meslo, Hack)
 fonts:
     ./Setup/fonts.sh
 
-# Personalización de GNOME
-gnome:
-    ./Setup/gnome-settings.sh
+# Estado y diagnóstico de fuentes de desarrollo (Nerd Fonts)
+fonts-status:
+    ./Setup/fonts.sh --status
 
-# Información estética del sistema
-fastfetch:
-    ./Setup/fastfetch.sh
+# Información estética del sistema (Fastfetch)
+fastfetch *args:
+    ./Setup/fastfetch.sh {{args}}
 
-# Instalación de IDEs (Neovim, VS Code, Antigravity)
-ides: nvim vscode antigravity
-    echo "✅ IDEs instalados."
+# Estado y diagnóstico de la configuración de Fastfetch
+fastfetch-status:
+    ./Setup/fastfetch.sh --status
 
-# Control de versiones (Git, Delta, Lazygit, GH CLI)
+# Terminal Kitty acelerada por GPU con tema Catppuccin Mocha, opacidad/blur y atajo Ctrl+Alt+T
+kitty:
+    ./Setup/kitty.sh
+
+# Multimedia (yt-dlp stack, FFmpeg, aria2, motor JS Deno vía Mise)
+yt-dlp *args:
+    ./Setup/yt-dlp-setup.sh {{args}}
+
+# Diagnóstico y estado de yt-dlp y herramientas multimedia
+yt-dlp-status:
+    ./Setup/yt-dlp-setup.sh --status
+
+# Limpieza de caché residual de yt-dlp
+yt-dlp-clean-cache:
+    ./Setup/yt-dlp-setup.sh --clean-cache
+
+# Códecs multimedia oficiales (ubuntu-restricted-extras, FFmpeg, GStreamer) y Flatpak VLC
+multimedia:
+    ./Setup/multimedia.sh
+
+# Estado de repositorios multimedia, códecs oficiales y Flatpak
+multimedia-status:
+    ./Setup/multimedia.sh --status
+
+# Aplicaciones y herramientas desacopladas vía Flatpak (Flatseal, Podman Desktop, Warehouse, VLC...)
+flatpak *args:
+    ./Setup/flatpak.sh {{args}}
+
+# Diagnóstico y estado de Flatpak, repositorio Flathub y aplicaciones instaladas
+flatpak-status:
+    ./Setup/flatpak.sh --status
+
+# Actualizar todas las aplicaciones y runtimes de Flatpak
+flatpak-update:
+    ./Setup/flatpak.sh --update
+
+# Limpiar runtimes huérfanos y dependencias no utilizadas de Flatpak
+flatpak-clean:
+    ./Setup/flatpak.sh --clean
+
+# Navegador Google Chrome oficial (Instalación, actualización u optimización Wayland)
+chrome *args:
+    ./Setup/chrome.sh {{args}}
+
+# Diagnóstico y estado de Google Chrome, repositorio oficial y Wayland
+chrome-status:
+    ./Setup/chrome.sh --status
+
+# Steam nativo, GameMode, MangoHud y drivers Vulkan 32-bit (i386 multiarch)
+steam:
+    ./Setup/steam.sh
+
+# Centro Multimedia (Kodi + complementos de streaming)
+kodi:
+    sudo apt-get install -y kodi kodi-inputstream-adaptive kodi-inputstream-rtmp kodi-pvr-iptvsimple
+
+# Actualización completa del sistema Ubuntu vía APT
+update:
+    sudo apt-get update && sudo apt-get dist-upgrade -y && sudo apt-get autoremove --purge -y
+
+# =============================================================================
+# CONFIGURACIÓN DE RED Y VIRTUALIZACIÓN
+# =============================================================================
+
+# Configuración de KVM/QEMU y Libvirt (Optimizado para GNOME Wayland y Virt-Manager)
+virtualization:
+    ./Virtualizacion/virtualization.sh
+
+# Diagnóstico y estado de la virtualización KVM/QEMU
+virtualization-status:
+    ./Virtualizacion/virtualization.sh --status
+
+# Administración Web (Cockpit + Podman + Máquinas Virtuales)
+cockpit *args:
+    ./Setup/cockpit.sh {{args}}
+
+# Estado del servicio y módulos de Cockpit
+cockpit-status:
+    ./Setup/cockpit.sh --status
+
+# Abrir Cockpit en el navegador web (https://localhost:9090)
+cockpit-open:
+    ./Setup/cockpit.sh --open
+
+# =============================================================================
+# CONTROL DE VERSIONES
+# =============================================================================
+
+# Git, Delta, Lazygit, GH CLI
 git-setup:
-    ./Git/git.sh
-    ./Git/github-cli.sh
+    ./IDE/git.sh
 
-nvim:
-    ./IDE/neovim.sh
+# =============================================================================
+# GESTORES DE RUNTIMES
+# =============================================================================
 
-vscode:
-    ./IDE/vscode.sh
+# Gestor de versiones Mise (Instalación, actualización u opciones)
+mise *args:
+    ./ProgrammingLanguages/mise.sh {{args}}
 
-antigravity:
-    ./IDE/antigravity.sh
+# Diagnóstico y estado de Mise y runtimes de desarrollo
+mise-status:
+    ./ProgrammingLanguages/mise.sh --status
 
-# Multimedia (yt-dlp, ffmpeg)
-yt-dlp:
-    ./Setup/yt-dlp-setup.sh
+# =============================================================================
+# LENGUAJES DE PROGRAMACIÓN
+# =============================================================================
 
-# Instalación de Lenguajes (Node, Python)
-languages: node python
-    echo "✅ Lenguajes instalados."
+# Todos los lenguajes
+languages: mise node python rust dotnet java angular
+    @echo "✅ Lenguajes instalados."
 
+# Node.js LTS
 node:
     ./ProgrammingLanguages/nodejs.sh
 
+# Python con UV package manager
 python:
     ./ProgrammingLanguages/python.sh
 
-gemini:
-    ./ProgrammingLanguages/gemini.sh
+# Inicializador de proyectos Python con UV
+python-uv:
+    ./ProgrammingLanguages/python-uv-init.sh
 
-# Desplegar servicios comunes (Podman)
+# Rust
+rust:
+    ./ProgrammingLanguages/rust.sh
+
+# .NET SDK
+dotnet:
+    ./ProgrammingLanguages/Revisar/dotnet.sh
+
+# Java (OpenJDK)
+java:
+    ./ProgrammingLanguages/java.sh
+
+# Angular CLI
+angular:
+    ./ProgrammingLanguages/Revisar/angular.sh
+
+
+# =============================================================================
+# ENTORNOS DE DESARROLLO (IDEs)
+# =============================================================================
+
+# Todos los IDEs
+ides: antigravity antigravity-cli antigravity-ide opencode
+    @echo "✅ IDEs instalados."
+
+# Google Antigravity Desktop 2.0 (Completo)
+antigravity:
+    ./IDE/antigravity.sh
+
+# Google Antigravity CLI
+antigravity-cli:
+    ./IDE/antigravity-cli.sh
+
+# Google Antigravity IDE Engine
+antigravity-ide:
+    ./IDE/antigravity-ide.sh
+
+# OpenCode AI CLI/Editor
+opencode:
+    ./IDE/opencode.sh
+
+# =============================================================================
+# PODMAN Y CONTENEDORES QUADLETS
+# =============================================================================
+
+# Configuración completa de Podman Rootless y Quadlets
+podman-setup:
+    ./Podman/install/podman-install.sh
+
+# Configuración base de Podman Rootless
 podman-base:
-    ./Podman/podman.sh
+    ./Podman/install/podman-install.sh
+
+# Configuración de servicios Quadlets de Podman
+podman-quadlets:
+    ./Podman/install/quadlets-setup.sh
+
+# Estado y diagnóstico de Podman y Quadlets
+podman-status:
+    ./Podman/install/podman-install.sh --status
+    ./Podman/lib/podman-utils.sh doctor

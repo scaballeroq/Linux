@@ -1,6 +1,6 @@
 # 🐚 Bash.Setup - Configuración Modular de Bash para openSUSE Tumbleweed
 
-Este directorio contiene la configuración modular de Bash para **openSUSE Tumbleweed + KDE Plasma 6 (Wayland)**, optimizada para la estación de trabajo HP EliteBook 855 G7 (AMD Ryzen 7 PRO 4750U, Vega 7 GPU, Btrfs + Snapper, Firewalld y Podman rootless).
+Este directorio contiene la configuración modular de Bash para **openSUSE Tumbleweed + KDE Plasma 6 (Wayland)**, optimizada para la estación de trabajo HP ProBook 455 G10 (AMD Ryzen 7 7730U, Radeon Vega 8 GPU, Btrfs + Snapper, Firewalld y Podman rootless).
 
 ---
 

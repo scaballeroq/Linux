@@ -2,7 +2,7 @@
 # ==============================================================================
 # flatpak.sh - Instalación, Gestión y Diagnóstico de Software Flatpak
 # openSUSE Tumbleweed | Escritorio: KDE Plasma 6 (Wayland)
-# Hardware: AMD Ryzen 7 PRO 4750U / Radeon Vega 7 (VA-API)
+# Hardware: AMD Ryzen 7 7730U / Radeon Graphics (Vega 8) (VA-API)
 # ==============================================================================
 # Filosofía y Arquitectura:
 # - Enfoque desacoplado y seguro: aplicaciones multimedia, contenedores y herramientas

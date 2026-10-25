@@ -1,4 +1,4 @@
-# Reglas del Agente: Experto en Linux & Hardware HP EliteBook
+# Reglas del Agente: Experto en Linux & Hardware HP ProBook 455 G10
 
 ## Directrices de Entorno
 1. **Comandos Idempotentes y Modernos**:

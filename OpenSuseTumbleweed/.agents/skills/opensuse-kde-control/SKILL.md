@@ -15,7 +15,7 @@ Esta skill proporciona los comandos y directrices para inspeccionar, configurar 
 La estación de trabajo cuenta con una topología de tres pantallas Full HD (1920x1080):
 1. **Pantalla LG 32"**: Monitor principal / extendido de trabajo.
 2. **TV Sony 32"**: Monitor secundario / multimedia.
-3. **Pantalla Integrada Portátil 15.6"**: Pantalla del HP EliteBook (eDP-1).
+3. **Pantalla Integrada Portátil 15.6"**: Pantalla del HP ProBook 455 G10 (eDP-1).
 
 ### Consultas y configuración de pantallas:
 KDE Plasma gestiona las salidas mediante KScreen y KWin Wayland:

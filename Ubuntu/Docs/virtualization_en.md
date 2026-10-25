@@ -2,110 +2,64 @@
 sidebar_position: 7
 ---
 
-# Virtualization Environment (KVM/QEMU) on Debian 13
+# Virtualization Environment (KVM/QEMU) in Ubuntu Linux (GNOME Shell)
 
-This guide details the installation, configuration, and optimization of the native virtualization environment managed in the `Virtualizacion` folder.
+This guide details the installation, configuration, and optimization of the virtualization stack located in `Virtualizacion/`, tailored for **Ubuntu Linux** and **GNOME Shell**.
 
-The schema uses the **KVM** hypervisor and the **QEMU** emulator, managed through the system daemon `libvirtd`, featuring support for modern setups, network bridging, and host performance optimizations.
+The environment uses the **KVM** hypervisor and **QEMU** emulator, managed through **Libvirt**, providing two primary interfaces:
+1. **Cockpit Web Console** (`cockpit-machines` at `https://localhost:9090`).
+2. **Virt-Manager** for advanced hardware control and 3D VirGL acceleration in GNOME Shell Wayland.
 
 ---
 
-## 1. Package Installation (`virtualization.sh`)
+## 1. Installation & Package Stack (`virtualization.sh`)
 
-Installs the KVM hypervisor, QEMU, the Virt-Manager graphical interface, and supporting utilities (including UEFI/TPM support needed for Windows 11 VMs):
+Installs KVM, QEMU, Virt-Manager, Cockpit Machines, UEFI/TPM utilities, and acceleration dependencies:
 
 ```bash
-sudo apt update
-sudo apt install -y qemu-system-x86 qemu-kvm libvirt-daemon-system libvirt-clients \
-    bridge-utils virtinst virt-manager virt-viewer virt-top libguestfs-tools \
-    qemu-utils ovmf swtpm guestfs-tools libosinfo-bin tuned
+just virtualization
 ```
 
 ---
 
-## 2. VirtIO Drivers for Windows
+## 2. Hardware Acceleration & Nested KVM
 
-Windows virtual machines require specialized drivers (`VirtIO`) for optimal disk storage and network performance. The script automatically downloads the official ISO from the Fedora project:
-
-- Download location: `~/Descargas/virtio-drivers/virtio-win-0.1.271.iso`
-- This ISO should be mounted as a secondary CD-ROM drive in Windows virtual machines to install disk (`viostor`) and network (`NetKVM`) drivers.
-
----
-
-## 3. Network Configuration and Optimization
-
-The virtualization script automates network connectivity setups:
-
-1. **Default Network (NAT)**:
-   Enables and starts the native `default` virtual network automatically:
-   ```bash
-   sudo virsh net-start default
-   sudo virsh net-autostart default
-   ```
-
-2. **Physical Network Bridge (`br0` / Bridged)**:
-   To allow virtual machines to receive their own IP addresses on the host's local area network (LAN), a network bridge is configured via `NetworkManager` (`nmcli`) over the active physical interface. This is also registered in Libvirt as `host-bridge`:
-   ```bash
-   # XML definition registered in Libvirt
-   <network>
-     <name>host-bridge</name>
-     <forward mode='bridge'/>
-     <bridge name='br0'/>
-   </network>
-   ```
+The script detects the host CPU vendor and sets performance flags in `/etc/modprobe.d/`:
+- **AMD Ryzen (`kvm_amd.conf`)**: `options kvm_amd nested=1 avic=1 npt=1`
+- **Intel Core (`kvm_intel.conf`)**: `options kvm_intel nested=1 ept=1 vpid=1 pml=1`
+- **Kernel Network Modules**: `vhost_net`, `vhost_vsock`, `tun` loaded automatically.
 
 ---
 
-## 4. Performance Tuning and User Permissions
+## 3. Storage Optimization (Btrfs NoCoW & ACLs)
 
-To simplify daily virtual machine management and enhance host resource consumption:
-
-1. **Host Tuning Profile (`tuned`)**:
-   Enables the `virtual-host` performance profile in the `tuned` daemon to optimize CPU scheduling and memory allocation for virtual machines:
-   ```bash
-   sudo systemctl enable --now tuned
-   sudo tuned-adm profile virtual-host
-   ```
-
-2. **Non-Root VM Management**:
-   Adds your user to the `libvirt` group to create and manage virtual machines without needing `sudo` privileges:
-   ```bash
-   sudo usermod -aG libvirt "$USER"
-   ```
-
-3. **Storage Access using Access Control Lists (ACL)**:
-   Configures secure ACL rules so the user can modify, copy, or create virtual disk files directly in the protected `/var/lib/libvirt/images` directory:
-   ```bash
-   sudo apt install -y acl
-   sudo setfacl -R -b /var/lib/libvirt/images
-   sudo setfacl -R -m u:"$USER":rwX /var/lib/libvirt/images
-   sudo setfacl -d -m u:"$USER":rwX /var/lib/libvirt/images
-   ```
-
-4. **Shell Environment Variables**:
-   Defines the default Libvirt connection endpoint in `~/.bashrc.d/virtualization.sh`:
-   ```bash
-   export LIBVIRT_DEFAULT_URI="qemu:///system"
-   ```
+- **Btrfs NoCoW (`+C`)**: If `/var/lib/libvirt/images` is on a Btrfs filesystem, `chattr +C` is applied to prevent fragmentation and maximize IOPS for `qcow2` virtual disks.
+- **Access Control Lists (ACLs)**: Allows the user to manage VM disk images without requiring `sudo`.
 
 ---
 
-## Verification
+## 4. Networking & Safe Wi-Fi Detection
 
-To verify that the virtualization environment is fully operational:
+- **Default NAT Network (`virbr0`)**: Standard virtual network protected by Firewalld (`trusted` zone and active masquerade).
+- **Safe Wi-Fi Detection**: On laptops using wireless connections, bridge creation (`br0`) is intentionally skipped to prevent breaking the Wi-Fi link (802.11 standard limitation). If the active connection is wired Ethernet, `br0` is provisioned automatically.
 
-- **Host Capabilities Check**:
-  ```bash
-  virt-host-validate qemu
-  ```
-  *(Most modules should return PASS. If KVM modules fail, check that hardware virtualization is enabled in your BIOS/UEFI).*
-- **Default Libvirt URI**:
-  ```bash
-  virsh uri
-  # Should return: qemu:///system
-  ```
-- **Virtual Network Listing**:
-  ```bash
-  virsh net-list --all
-  # Should show both 'default' and 'host-bridge' active.
-  ```
+---
+
+## 5. Passwordless Polkit Rule
+
+Generates `/etc/polkit-1/rules.d/50-libvirt.rules` allowing members of the `libvirt` group to start, stop, and manage VMs without password prompts.
+
+---
+
+## 6. Memory Deduplication (KSM)
+
+Enables sharing identical RAM pages across virtual machines via `/etc/tmpfiles.d/ksm.conf`, balanced for laptop battery life.
+
+---
+
+## 7. Diagnostics with Just
+
+```bash
+# Check status of KVM hypervisor, modules, sockets, and networks
+just virtualization-status
+```

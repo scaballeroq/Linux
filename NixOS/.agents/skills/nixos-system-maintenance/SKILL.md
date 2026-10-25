@@ -6,7 +6,7 @@ description: >-
 
 # NixOS System Maintenance & Flakes Skill
 
-Procedimientos y operaciones declarativas para NixOS en HP EliteBook 855 G7.
+Procedimientos y operaciones declarativas para NixOS en HP ProBook 455 G10.
 
 ## 1. Reconstrucción y Flakes
 ```bash

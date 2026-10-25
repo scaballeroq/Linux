@@ -80,7 +80,7 @@ just kde-status
 
 ## 3. Optimización para Portátiles (`laptop-setup.sh`)
 
-Diseñado específicamente para el portátil **HP EliteBook 855 G7** (AMD Ryzen 7 PRO 4750U):
+Diseñado específicamente para el portátil **HP ProBook 455 G10** (AMD Ryzen 7 7730U):
 
 - **Power Profiles Daemon**: Integración nativa con el applet de batería de KDE Plasma 6 (perfiles Rendimiento, Equilibrado y Ahorro).
 - **KDE Touchpad (Wayland)**: Tap-to-click nativo por defecto en Plasma 6 y desplazamiento natural configurado dinámicamente vía KWin D-Bus y `kcminputrc`.

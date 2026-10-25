@@ -1,12 +1,12 @@
 ---
 name: cachy-system-maintenance
 description: >-
-  Use this skill when performing system updates, package cleaning, AUR management with yay/paru, hardware telemetry (Ryzen 7 PRO 4750U, amdgpu Vega 7), Firewalld network security rules/ports, or checking systemd services on CachyOS Linux.
+  Use this skill when performing system updates, package cleaning, AUR management with yay/paru, hardware telemetry (Ryzen 7 7730U, amdgpu Vega 8), Firewalld network security rules/ports, or checking systemd services on CachyOS Linux.
 ---
 
 # CachyOS Linux System Maintenance & Telemetry Skill
 
-Esta skill contiene los procedimientos y diagnósticos estándar para la estación de trabajo HP EliteBook 855 G7 con CachyOS Linux y AMD Ryzen.
+Esta skill contiene los procedimientos y diagnósticos estándar para la estación de trabajo HP ProBook 455 G10 con CachyOS Linux y AMD Ryzen.
 
 ## 1. Mantenimiento y Gestión de Paquetes
 Operaciones con `pacman` y el helper AUR (`yay` / `paru`):
@@ -27,7 +27,7 @@ pacman -Qe
 
 ---
 
-## 2. Telemetría y Salud del Hardware (AMD Ryzen 7 PRO 4750U + Vega)
+## 2. Telemetría y Salud del Hardware (AMD Ryzen 7 7730U + Vega)
 Monitoreo de frecuencia, temperaturas y carga de la GPU integrada:
 
 ```bash
@@ -45,7 +45,7 @@ amdgpu_top --gui=tui
 # Resumen de memoria RAM (32 GB) y swap/zram
 free -h
 
-# Estado del almacenamiento y particiones (1 TB)
+# Estado del almacenamiento y particiones (512 GB Kioxia KBG50ZNV512G)
 lsblk -o NAME,FSTYPE,SIZE,MOUNTPOINTS,MODEL
 ```
 

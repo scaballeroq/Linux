@@ -1,117 +1,127 @@
-# 🔧 Ubuntu Environment Configuration
+# 🟠 Ubuntu Linux Environment Configuration (GNOME Shell Wayland)
 
-Este repositorio contiene una colección organizada y modular de scripts de configuración para sistemas **Ubuntu** (enfocado en 26.04 LTS y posteriores). El objetivo es automatizar la puesta a punto de un entorno de desarrollo profesional, optimizado y estéticamente agradable.
+Este repositorio contiene una colección organizada, modular y automatizada de scripts de configuración para sistemas **Ubuntu Linux** con el entorno de escritorio **GNOME Shell (Wayland / Mutter)**, optimizado para estaciones de trabajo y portátiles HP ProBook 455 G10 en modo oscuro.
 
 ---
 
 ## 📂 Organización del Repositorio
 
-La configuración se ha reestructurado de forma modular para facilitar el mantenimiento y la legibilidad:
+La configuración se ha estructurado de forma modular para garantizar máxima mantenibilidad y legibilidad:
 
 ### 🐚 [Bash.Setup](./Bash.Setup/)
-El núcleo de la configuración de la terminal Bash.
-- **`aliases.sh`**: Atajos comunes para comandos frecuentemente utilizados.
-- **`environment.sh`**: Variables globales que afectan el comportamiento de la shell.
-- **`functions.sh`**: Colección de funciones avanzadas y utilidades.
-- **`gnome_settings.sh`**: Configuraciones de entorno para GNOME y aliases.
-- **`history.sh`**: Controla cómo bash recuerda los comandos.
-- **`options.sh`**: Configura el comportamiento interno de Bash mediante 'shopt' y 'bind'.
-- **`podman-functions.sh`**: Funciones para gestión simplificada de contenedores.
-- **`rclone_aliases.sh`**: Atajos para facilitar la sincronización en la nube.
-- **`yt-dlp_aliases.sh`**: Descargas multimedia optimizadas.
+El núcleo de la configuración de la terminal, optimizado para **Bash** (con soporte modular en `~/.bashrc.d`) y compatible con **Zsh** (en `~/.zshrc.d`).
+- **`aliases.sh`**: Atajos comunes para navegación, utilidades Rust (`eza`, `bat`, `duf`, `dust`), Git, gestor de paquetes **APT** (`update`, `upgrade`, `install`, `clean`), Firewalld (`fw*`), Libvirt y Podman.
+- **`environment.sh`**: Variables globales (`EDITOR`, `PATH`, Wayland, `QT_QPA_PLATFORMTHEME="gnome"`, `ELECTRON_OZONE_PLATFORM_HINT="auto"`, `DOCKER_HOST`, `LIBVIRT_DEFAULT_URI`) y activación automática de Mise shims.
+- **`functions.sh`**: Colección de funciones avanzadas (`mkcd`, `up`, `extract`, `duh`, `backup_file`, `monitors`) con guardas interactivas.
+- **`gnome_settings.sh`**: Configuraciones de entorno y atajos para GNOME Shell Wayland (Yaru-dark, Luz nocturna 4000K, reinicio de Shell, accesos directos de GNOME Control Center).
+- **`history.sh`**: Control de historial optimizado (deduplicación, sincronización inmediata, capacidad expandida a 20k comandos).
+- **`options.sh`**: Opciones avanzadas de shell (`autocd`, corrección de typos con `cdspell`, globbing extendido).
+- **`podman-functions.sh`**: Funciones y atajos para contenedores Podman y Quadlets rootless compatibles con ambas shells.
+- **`rclone_aliases.sh`**: Atajos completos para sincronización, copia y dry-run en la nube con Google Drive y OneDrive.
+- **`yt-dlp_aliases.sh`**: Descargas multimedia optimizadas con yt-dlp y FFmpeg.
 
 ### 🐳 [Podman](./Podman/)
-Scripts para instalar y desplegar servicios en contenedores Podman de forma aislada:
-- **Core**: `podman.sh` (Instalación principal en Ubuntu 26.04)
-- **Bases de Datos**: `podman-postgres.sh`, `podman-mysql.sh`, `podman-mongodb.sh`, `podman-redis.sh`
-- **Gestión y Monitoreo**: `podman-portainer.sh`, `podman-adminer.sh`, `podman-dozzle.sh`, `podman-grafana.sh`, `podman-prometheus.sh`, `podman-jaeger.sh`
-- **Infraestructura**: `podman-nginx.sh`, `podman-keycloak.sh`, `podman-rabbitmq.sh`, `podman-minio.sh`, `podman-mailhog.sh`, `podman-browserless.sh`
-- **Frameworks/CMS**: `podman-wordpress.sh`, `podman-storybook.sh`
+Ecosistema de contenedores rootless con Quadlets nativos de systemd:
+- **`install/podman-install.sh`**: Instalación y configuración de Podman rootless, socket de usuario, linger, registries y CLI (`--status`, `--help`).
+- **`install/quadlets-setup.sh`**: Configuración de directorios y servicios systemd Quadlets (`--status`, `--install-shared`).
+- **`lib/podman-utils.sh`**: CLI completo para gestión de proyectos (`create`, `start`, `stop`, `restart`, `logs`, `status`, `destroy`, `doctor`).
+- **`projects/`**: Directorio para proyectos activos.
+- **`services-shared/`**: Servicios globales compartidos (PostgreSQL, Redis, Traefik, Keycloak).
+- **`templates/`**: Plantillas de proyectos (`python-postgres`, `python-postgres-redis`, `fullstack`).
 
 ### 🖥️ [Virtualizacion](./Virtualizacion/)
-- **`virtualization.sh`**: Sincronización y configuración de Virtualización (KVM/QEMU, libvirtd) optimizada para Ubuntu.
+- **`virtualization.sh`**: Configuración de virtualización (KVM/QEMU, Libvirt, virt-manager, virtio-win, Btrfs NoCoW, Polkit sin contraseña para grupo `libvirt`, detección segura de Wi-Fi, Firewalld) con CLI completa (`--status`, `--with-windows`, `--help`).
 
 ### ⚙️ [Setup](./Setup/)
-Scripts de configuración del sistema operativo, personalización y endurecimiento:
-- **`post-install.sh`**: Script maestro de post-instalación para Ubuntu.
-- **`apariencia.sh`**: Instalación de temas e iconos.
-- **`cockpit.sh`**: Instalación y configuración de Cockpit (administración web).
-- **`fastfetch.sh`**: Información estética del sistema al inicio (Fastfetch).
-- **`firefox.sh`**: Instalación y configuración de Mozilla Firefox.
-- **`fonts.sh`**: Instalación automatizada de fuentes de desarrollo (Nerd Fonts).
-- **`ptyxis.sh`**: Instalación del emulador de terminal moderno Ptyxis.
-- **`seguridad.sh`**: Endurecimiento (hardening), configuración de UFW y Fail2ban.
-- **`shell.sh`**: Herramientas modernas de terminal y prompt (Starship).
-- **`yt-dlp-setup.sh`**: Dependencias para manejo multimedia (yt-dlp, ffmpeg).
+Scripts de configuración del sistema operativo, personalización de GNOME Shell y endurecimiento:
+- **`post-install.sh`**: Despachador inteligente con auto-detección de CPU (AMD Ryzen vs Intel Core).
+- **`post-install-amd.sh`**: Post-instalación optimizada para AMD Ryzen (ZRAM zstd, Mesa RADV, VA-API hardware, PipeWire, Flatpak Flathub, GNOME Software Flatpak plugin).
+- **`post-install-intel.sh`**: Post-instalación optimizada para Intel Core / Media Center (VA-API Intel i965/iHD, PipeWire, Kodi).
+- **`laptop-setup.sh`**: Optimización para portátiles de desarrollo (power-profiles-daemon, Bluetooth FastConnectable, cierre de tapa inteligente con multimonitor, Touchpad Wayland gestures y Mutter VRR, `--status`).
+- **`fingerprint-setup.sh`**: Autenticación y desbloqueo biométrico (fprintd + PAM, sensor Synaptics, `--status`, `--enroll`, `--verify`, `--disable`).
+- **`hp-printer-setup.sh`**: Pila de impresión para impresoras HP (CUPS, HPLIP, plugin propietario para LaserJet M15w, Firewalld USB/Wi-Fi, `--status`).
+- **`gnome-settings.sh`**: Configuración de GNOME Shell (Modo oscuro Yaru-dark, botones minimizar/maximizar, scripts de Nautilus para Kitty/Antigravity/VS Code, Night Light a 4000K, reloj 24h, `--status`, `--dark`, `--light`).
+- **`gnome-extensions.sh`**: Instalación y configuración de extensiones GNOME (GSConnect, Dash to Dock, AppIndicator, Blur my Shell, Tiling Shell, `--status`).
+- **`gsconnect.sh`**: Integración nativa de GSConnect (KDE Connect para GNOME con cero librerías KDE/Qt) y reglas de Firewalld (1714-1764 TCP/UDP, `--status`, `--setup-firewall`, `--daemon`).
+- **`ubuntu-tuning.sh`**: Ajustes de Kernel (`sysctl` inotify 1M, max_map_count 16M, TCP BBR, ZRAM), límites del sistema (`limits.d`), exclusiones de GNOME Tracker Miner en directorios pesados (`~/Workspace`, `node_modules`, `.git`, `.venv`, `.cargo`) y compresión ZRAM (`--status`, `--sysctl`, `--limits`, `--tracker`, `--zram`).
+- **`zram-setup.sh`**: Configuración de swap comprimida en RAM mediante `zram-tools` con algoritmo zstd.
+- **`cockpit.sh`**: Consola web Cockpit y gestión de servidores (Podman, KVM, almacenamiento, Firewalld exclusivo, `--status`, `--open`, `--start`, `--stop`, `--disable`).
+- **`fastfetch.sh`**: Resumen estético del sistema con soporte de temas (`ubuntu` oficial, `compact` FastCat, `--status`, `--theme`, `--diff`, `--force`).
+- **`fonts.sh`**: Instalación automatizada y diagnóstico de fuentes de desarrollo (JetBrainsMono, FiraCode, CascadiaCode, Meslo y Hack Nerd Fonts, `--status`, `--list`, `--clean`).
+- **`kitty.sh`**: Terminal Kitty acelerada por GPU con opacidad 75%, blur 32, tema Catppuccin Mocha, atajo Ctrl+Alt+T e integración en menú contextual de Nautilus (`--status`).
+- **`ptyxis.sh`**: Terminal moderna Ptyxis con transparencia y modo oscuro.
+- **`seguridad.sh`**: Endurecimiento con Firewalld exclusivo (desactivación obligatoria de UFW, servicios `kdeconnect`/GSConnect, `mdns`, `ssh`, zona `libvirt` para virbr0, zona `trusted` para `podman+`, sysctl de puertos no privilegiados).
+- **`shell.sh`**: Herramientas modernas de terminal (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`, `dust`, `btop`, `jq`) y sincronización modular.
+- **`starship.sh` & `starship.toml`**: Prompt Starship moderno con configuración modular (`--enable`, `--disable`, `--status`).
+- **`multimedia.sh`**: Codecs multimedia oficiales (`ubuntu-restricted-extras`, FFmpeg, GStreamer completo con VA-API) y VLC desacoplado vía Flatpak (`--status`).
+- **`flatpak.sh`**: Suite de aplicaciones de escritorio desacopladas vía Flatpak/Flathub (Flatseal, Podman Desktop, Warehouse, VLC, Celluloid, OBS Studio, Shotcut, Spotify, Vesktop...) sin tocar el sistema base (`--status`, `--all`, `--essential`, `--multimedia`, `--clean`, `--update`).
+- **`chrome.sh`**: Activación del repositorio oficial de Google Chrome e instalación de `google-chrome-stable` con optimización Ozone Wayland (`--status`, `--wayland`).
+- **`firefox.sh`**: Instalación de Firefox nativo (.deb) desde el repositorio oficial de Mozilla con APT Pin-Priority 1000 eliminando el wrapper Snap (`--status`).
+- **`steam.sh`**: Instalación de Steam nativo con multiarch i386, GameMode, MangoHud, Proton-GE y drivers Mesa Vulkan de 32 bits (`--status`).
+- **`yt-dlp-setup.sh`**: Stack multimedia avanzado (yt-dlp, FFmpeg, Mutagen, aria2, motor JS Deno vía Mise, `--status`, `--config`, `--update`, `--clean-cache`).
 
 ### 💻 [IDE](./IDE/)
-- **`antigravity.sh`**: Instalación de la herramienta de Google Antigravity.
-- **`neovim.sh`**: Instalación de Neovim y LazyVim.
-- **`vscode.sh`**: Instalación de Visual Studio Code.
-
-### 🛠️ [Git](./Git/)
-- **`git.sh`**: Instalación y configuración de Git, Delta y Lazygit.
-- **`github-cli.sh`**: Instalación de GitHub CLI.
+- **`antigravity.sh`**: Google Antigravity Desktop setup (sandbox Chromium, iconos e integración en Nautilus).
+- **`antigravity-cli.sh`**: Google Antigravity CLI (`agy`) setup rootless.
+- **`antigravity-ide.sh`**: Google Antigravity IDE Engine setup (launcher GNOME y script para Nautilus).
+- **`git.sh`**: Git, Delta, Lazygit y GitHub CLI setup con configuración global.
+- **`opencode.sh`**: OpenCode AI CLI setup integrado en PATH.
+- **`vscode.sh`**: Visual Studio Code setup.
+- **`neovim.sh`**: Neovim moderno con `wl-clipboard` (sin utilidades X11).
 
 ### ⚡ [ProgrammingLanguages](./ProgrammingLanguages/)
-Gestión de entornos y runtimes de lenguajes usando **mise**.
-- **`mise.sh`**: Instalador del gestor de versiones Mise.
-- **`angular.sh`**: Angular CLI.
-- **`dotnet.sh`**: .NET SDK.
-- **`gemini.sh`**: Gemini CLI.
-- **`java.sh`**: OpenJDK (compatible con AutoFirma).
-- **`nodejs.sh`**: Node.js.
-- **`python.sh`**: Python.
-- **`rust.sh`**: Rust.
-
-### 📦 [Apps](./Apps/) y 🎮 [Juegos](./Juegos/)
-- **`meld.sh`**: Herramienta de diff/merge visual.
-- **`steam.sh`**: Instalación de la plataforma de juegos Steam.
+Gestión moderna de runtimes con **Mise** y **uv**:
+- **`mise.sh`**: Gestor de versiones Mise con integración `environment.d`.
+- **`python.sh` & `python-uv-init.sh`**: Protección del Python del sistema, `uv@latest` vía Mise y CLI `py-project` para scaffolding de proyectos (FastAPI, CLI, Data Science).
+- **`nodejs.sh`**: Node.js LTS activo con Corepack (`pnpm`, `yarn`).
+- **`rust.sh`**: Rustup canal Stable con `rust-analyzer`, `clippy`, `rustfmt` y `cargo-binstall`.
+- **`dotnet.sh`**: .NET SDK LTS con `DOTNET_ROOT` en `environment.d`.
+- **`java.sh`**: OpenJDK LTS (Java 21) con certificados digitales (AutoFirma / DNIe) y Maven.
+- **`angular.sh`**: Angular CLI última versión vía npm administrado por Mise.
 
 ---
 
-## 🚀 Cómo empezar
+## 🚀 Despliegue Rápido con Just
 
-### 1. Clonar el repositorio
+Para ejecutar el despliegue automático según el perfil de tu equipo:
+
 ```bash
 git clone https://github.com/scaballeroq/Environment-Configuration.git
 cd Repos-Linux/Ubuntu
+chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/install/*.sh Podman/lib/*.sh
+
+# Portátil de Desarrollo (AMD Ryzen + GNOME Shell Wayland + Virtualización + Podman):
+just setup-laptop-amd
+
+# Sobremesa Centro Multimedia (Intel Haswell / Media Center + Kodi - Sin virtualización):
+just setup-media-desktop
+
+# O instalación completa por defecto:
+just setup-all
 ```
 
-### 2. Configurar la Shell (Bash)
-Se recomienda el uso de un directorio `.bashrc.d/` para cargar los scripts de forma modular.
-
+O ejecutar componentes de forma individual:
 ```bash
-mkdir -p ~/.bashrc.d
-ln -s $(pwd)/Bash.Setup/*.sh ~/.bashrc.d/
+just post-install        # Post-instalación base con auto-detección de CPU
+just gnome-setup         # Aplica configuración de GNOME Shell, Yaru-dark y atajos
+just gnome-status        # Verifica estado de configuración de GNOME Shell
+just gnome-extensions    # Instala y activa extensiones esenciales de GNOME
+just gsconnect           # Configura GSConnect y reglas de Firewalld
+just laptop              # Optimización para portátiles (Touchpad, Bluetooth, Mutter VRR)
+just tuning              # Aplica sysctl, límites, inotify y exclusiones Tracker
+just tuning-status       # Diagnóstico de optimizaciones del sistema
+just kitty               # Configura terminal Kitty con opacidad, blur y tema Catppuccin
+just virtualization      # Configura KVM/QEMU, Libvirt y Btrfs NoCoW
+just virtualization-status # Diagnóstico del hipervisor KVM
+just multimedia          # Configura codecs multimedia oficiales y Flatpak VLC
+just flatpak             # Instala suite recomendada Flatpak (Flatseal, Podman Desktop, Warehouse, VLC...)
+just flatpak-status      # Diagnóstico de repositorios Flathub y aplicaciones instaladas
+just chrome              # Instala Google Chrome oficial con flags Wayland
+just firefox             # Instala Firefox nativo (.deb) de Mozilla (Pin-Priority 1000)
+just steam               # Instala Steam nativo y librerías Mesa 32-bit (i386)
+just languages           # Instala Node, Python (uv), Rust, .NET, Java y Angular
+just python-uv           # Asistente interactivo py-project para crear proyectos Python
+just podman-setup        # Configura Podman rootless y Quadlets
+just podman-status       # Diagnóstico completo de Podman y Quadlets
+just update              # Actualiza el sistema completamente vía APT
 ```
-
-Y añade lo siguiente a tu `~/.bashrc`:
-```bash
-# Carga modular de scripts de Bash.Setup
-if [ -d "$HOME/.bashrc.d" ]; then
-    for script in "$HOME/.bashrc.d"/*.sh; do
-        [ -r "$script" ] && source "$script"
-    done
-    unset script
-fi
-```
-
-### 3. Ejecutar Scripts de System Setup
-Puedes ejecutar scripts específicos según tu necesidad (asegúrate de darles permisos de ejecución):
-```bash
-chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/*.sh Git/*.sh
-./Setup/fonts.sh       # Instala Fuentes
-./ProgrammingLanguages/mise.sh # Instala Mise
-```
-
----
-
-## ✨ Características Principales
-- **Modularidad**: Cada componente y script es independiente.
-- **Estándares de Ubuntu**: Uso de repositorios oficiales, `apt` y configuraciones nativas.
-- **Productividad**: Multiples alias y funciones precargadas (Podman, Git, Rclone).
-- **Actualizado**: Herramientas modernas como Fastfetch, Starship, Lazygit y Mise.
-
----
-*Mantenido por [caballero](https://github.com/scaballeroq)*

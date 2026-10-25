@@ -105,7 +105,7 @@ Rust se gestiona mediante su herramienta oficial estándar e independiente **Rus
 Instalación y optimización de OpenJDK LTS para openSUSE Tumbleweed vía Zypper:
 * **Paquetes**: `java-21-openjdk`, `java-21-openjdk-devel` junto con `pcsc-lite`, `mozilla-nss-tools`, `ca-certificates`, `ca-certificates-mozilla` y `maven` (soporte completo para AutoFirma, FNMT, DNIe y lectores de tarjetas inteligentes).
 * **Gestión JVM**: Detección y resolución dinámica del entorno en `/usr/lib64/jvm/java-21-openjdk*` y despacho mediante `libalternatives` (`alts`).
-* **Optimización Multihilo (AMD Ryzen 7 PRO 4750U)**:
+* **Optimización Multihilo (AMD Ryzen 7 7730U)**:
   - **Maven**: `MAVEN_ARGS="-T 1C"` (1 hilo por núcleo) y `MAVEN_OPTS="-Xms512m -Xmx4096m -XX:+UseG1GC"`.
   - **Gradle**: Configuración automatizada de `~/.gradle/gradle.properties` con `workers.max=16`, `parallel=true`, `caching=true` y `vfs.watch=true`.
 * **Integración KDE Plasma 6 sobre Wayland**:

@@ -6,7 +6,7 @@ description: >-
 
 # Kubuntu System Maintenance & Telemetry Skill
 
-Procedimientos operativos y diagnósticos estándar para Kubuntu en HP EliteBook 855 G7.
+Procedimientos operativos y diagnósticos estándar para Kubuntu en HP ProBook 455 G10.
 
 ## 1. Mantenimiento y Actualizaciones
 ```bash

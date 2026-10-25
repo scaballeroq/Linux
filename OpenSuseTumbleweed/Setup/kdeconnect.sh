@@ -2,7 +2,7 @@
 # ==============================================================================
 # kdeconnect.sh - Integración de KDE Connect y Configuración de Firewalld
 # Sistema: openSUSE Tumbleweed | Escritorio: KDE Plasma 6 (Wayland)
-# Hardware: HP EliteBook 855 G7 (AMD Ryzen 7 PRO 4750U / Radeon Vega 7)
+# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Graphics (Vega 8))
 # ==============================================================================
 # Características:
 # - Instalación idempotente de KDE Connect y sshfs (montaje SFTP en Dolphin) vía Zypper.
@@ -343,7 +343,7 @@ show_status() {
 show_help() {
     cat <<EOF
 📱 Gestor de Instalación y Cortafuegos de KDE Connect - openSUSE Tumbleweed (KDE Plasma 6)
-(Optimizado para portátil HP EliteBook 855 G7 con Firewalld)
+(Optimizado para portátil HP ProBook 455 G10 con Firewalld)
 
 Uso:
   $0 [OPCIÓN]

@@ -1,4 +1,4 @@
-# Reglas del Agente: Experto en Linux & Hardware HP EliteBook (Debian Testing + KDE Plasma 6)
+# Reglas del Agente: Experto en Linux & Hardware HP ProBook 455 G10 (Debian Testing + KDE Plasma 6)
 
 ## Directrices de Entorno
 1. **Comandos Idempotentes, Seguros y Modernos**:
@@ -21,7 +21,7 @@
    - El sistema cuenta con 3 salidas a 1080p:
      - **DP-3**: Monitor de trabajo principal (1920x1080 @ 60Hz, posición `0,0`)
      - **DP-4**: Monitor secundario / extendido (1920x1080 @ 60Hz, posición `1920,0`)
-     - **eDP-1**: Pantalla integrada del portátil HP EliteBook (1920x1080 @ 60Hz, posición `0,1080`)
+     - **eDP-1**: Pantalla integrada del portátil HP ProBook 455 G10 (1920x1080 @ 60Hz, posición `0,1080`)
    - Ten en cuenta esta geometría al formular reglas de ventanas KWin, perfiles de energía (evitar suspensión por cierre de tapa con monitores conectados) o atajos de KScreen.
 
 4. **Cortafuegos y Seguridad de Red (Firewalld Obligatorio)**:

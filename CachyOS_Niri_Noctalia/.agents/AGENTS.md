@@ -5,7 +5,7 @@ Eres un **Ingeniero de Sistemas Senior y Desarrollador Experto en Linux**, con e
 - **CachyOS Linux**: Rendimiento extremo optimizado para x86-64-v3/v4, repositorios de CachyOS, kernel BORE/EEVDF, gestión de paquetes con Pacman y Paru.
 - **Wayland & Niri**: Compositor scrollable-tiling moderno con desplazamiento horizontal infinito, arquitectura modular y configuración en KDL.
 - **Noctalia Shell**: Entorno de shell de escritorio moderno para Wayland (IPC vía `noctalia msg`).
-- **Hardware AMD**: Arquitectura AMD Ryzen Zen 2 (Renoir) y gráficos integrados Radeon Vega (driver `amdgpu`, Mesa RADV, aceleración VA-API activa).
+- **Hardware AMD**: Arquitectura AMD Ryzen Zen 3 (Barcelo-R) y gráficos integrados Radeon Vega (driver `amdgpu`, Mesa RADV, aceleración VA-API activa).
 - **Contenedores y Runtimes**: Podman Rootless con Systemd Quadlets y gestor de herramientas Mise (`~/.local/bin/mise`).
 
 ### Directrices Operativas:
@@ -18,15 +18,15 @@ Eres un **Ingeniero de Sistemas Senior y Desarrollador Experto en Linux**, con e
 ---
 
 ## 💻 Especificaciones de la Estación de Trabajo
-- **Equipo:** Portátil HP EliteBook 855 G7
-- **Procesador (CPU):** AMD Ryzen 7 PRO 4750U (8 núcleos / 16 hilos, reloj base 1.7 GHz, boost hasta 4.1 GHz)
-- **Gráficos (GPU):** AMD Radeon Vega 7 Graphics integrada (Vulkan RADV, OpenGL Mesa, aceleración VA-API activa)
+- **Equipo:** Portátil HP ProBook 455 G10
+- **Procesador (CPU):** AMD Ryzen 7 7730U (8 núcleos / 16 hilos, reloj base 2.0 GHz, boost hasta 4.5 GHz, arquitectura Zen 3 / Barcelo-R)
+- **Gráficos (GPU):** AMD Radeon Graphics integrada (Vega 8 / Barcelo, Vulkan RADV, OpenGL Mesa, aceleración VA-API activa)
 - **Memoria RAM:** 32 GB DDR4
-- **Almacenamiento:** 1 TB (SSD NVMe con ZRAM swap activa)
+- **Almacenamiento:** 512 GB (SSD NVMe Kioxia KBG50ZNV512G con ZRAM swap activa)
 - **Topología Multi-Monitor (Triple Pantalla Full HD 1080p):**
   1. **DP-3 (Principal / Trabajo):** Pantalla 1920x1080 @ 60Hz (Posición `0,0`)
   2. **DP-4 (Secundaria / Lateral):** Pantalla 1920x1080 @ 60Hz (Posición `1920,0`)
-  3. **eDP-1 (Pantalla Integrada Portátil):** Pantalla interna 15.6" HP EliteBook (1920x1080 @ 60Hz, Posición `0,1080`)
+  3. **eDP-1 (Pantalla Integrada Portátil):** Pantalla interna 15.6" HP ProBook 455 G10 (1920x1080 @ 60Hz, Posición `0,1080`)
 
 ---
 

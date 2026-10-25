@@ -1,7 +1,7 @@
 #!/bin/bash
 # virtualization.sh - Instalación y Optimización Avanzada de Virtualización (KVM/QEMU) para openSUSE Tumbleweed
 # Optimizado para openSUSE Tumbleweed con KDE Plasma 6 Wayland y Cockpit Web Console
-# (Kernel 6.x/7.x, AMD Ryzen 7 PRO 4750U / Intel, GPU AMD Radeon Vega / Intel, 3D VirGL, Btrfs NoCoW, Firewalld nftables, Modular Daemons, Tuned)
+# (Kernel 6.x/7.x, AMD Ryzen 7 7730U / Intel, GPU AMD Radeon Vega / Intel, 3D VirGL, Btrfs NoCoW, Firewalld nftables, Modular Daemons, Tuned)
 
 set -euo pipefail
 
@@ -45,7 +45,7 @@ CARACTERÍSTICAS Y OPTIMIZACIONES PARA OPENSUSE TUMBLEWEED:
   - Aceleración de red del kernel (vhost_net, vhost_vsock, tun) y sockets modulares Libvirt.
   - Backend nativo nftables en libvirt coordinado con Firewalld (zonas 'libvirt' y 'public' con masquerade).
   - Deduplicación de memoria RAM (KSM vía tmpfiles.d) y perfil Tuned virtual-host.
-  - Detección segura de interfaces Wi-Fi para evitar desconexiones en portátiles (HP EliteBook).
+  - Detección segura de interfaces Wi-Fi para evitar desconexiones en portátiles (HP ProBook 455 G10).
 EOF
 }
 
@@ -676,7 +676,7 @@ echo ""
 echo "💡 RECOMENDACIONES DE RENDIMIENTO PARA VMS LINUX (Virt-Manager):"
 echo "  • Procesador: Modelo 'host-passthrough' con topología adecuada (ej: 4 u 6 vCPUs AMD Zen 2 Renoir)."
 echo "  • Gráficos: Pantalla SPICE + Aceleración OpenGL activada."
-echo "  • Tarjeta de Video: 'VirtIO' con 'Aceleración 3D' marcada (VirGL sobre AMD Radeon Vega 7 vía /dev/dri/renderD128)."
+echo "  • Tarjeta de Video: 'VirtIO' con 'Aceleración 3D' marcada (VirGL sobre AMD Radeon Graphics (Vega 8) vía /dev/dri/renderD128)."
 echo "  • Almacenamiento: Bus 'VirtIO', formato 'qcow2' (o 'raw'), caché 'none' (E/S directa NVMe sin doble buffer) o 'writeback', descartar 'unmap' (TRIM nativo NVMe)."
 echo "  • Red: Dispositivo 'virtio' conectado a red NAT 'default' (virbr0)."
 echo "  • Compartir Carpetas: Hardware -> Sistema de archivos -> 'virtiofs' (virtiofsd de alta velocidad)."

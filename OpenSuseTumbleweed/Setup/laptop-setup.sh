@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==============================================================================
 # laptop-setup.sh - Optimización para portátiles de desarrollo en openSUSE Tumbleweed
-# Entorno: KDE Plasma 6 (Wayland) + AMD Ryzen (HP EliteBook 855 G7)
+# Entorno: KDE Plasma 6 (Wayland) + AMD Ryzen (HP ProBook 455 G10)
 # ==============================================================================
 
 set -euo pipefail
@@ -43,7 +43,7 @@ run_as_user() {
 show_help() {
     cat <<EOF
 💻 Optimización para Portátiles - openSUSE Tumbleweed (KDE Plasma 6)
-Especialmente adaptado para HP EliteBook 855 G7 (AMD Ryzen 7 PRO 4750U)
+Especialmente adaptado para HP ProBook 455 G10 (AMD Ryzen 7 7730U)
 
 Uso:
   $0 [OPCIÓN]

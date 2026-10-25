@@ -6,7 +6,7 @@ description: >-
 
 # Soplos Linux Tyson System Maintenance Skill
 
-Procedimientos operativos y diagnósticos estándar para Soplos Linux Tyson en HP EliteBook 855 G7.
+Procedimientos operativos y diagnósticos estándar para Soplos Linux Tyson en HP ProBook 455 G10.
 
 ## 1. Mantenimiento y Actualizaciones de APT
 ```bash

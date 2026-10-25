@@ -143,4 +143,4 @@ El repositorio incorpora herramientas preconfiguradas en `Podman/`:
   - `pexec <id>` : Acceso interactivo a un contenedor.
   - `quadlet-status` : Diagnóstico de todos los Quadlets instalados.
   - `quadlet-reload` : Recarga rápida de systemd de usuario.
-  - `doctor` : Diagnóstico integral (Overlay, Pasta, Firewalld, GPU AMD Vega 7).
+  - `doctor` : Diagnóstico integral (Overlay, Pasta, Firewalld, GPU AMD Vega 8).

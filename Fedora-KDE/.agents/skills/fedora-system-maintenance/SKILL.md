@@ -6,7 +6,7 @@ description: >-
 
 # Fedora 44 System Maintenance & Telemetry Skill
 
-Procedimientos operativos y diagnósticos estándar para Fedora 44 Workstation en HP EliteBook 855 G7.
+Procedimientos operativos y diagnósticos estándar para Fedora 44 Workstation en HP ProBook 455 G10.
 
 ## 1. Mantenimiento y Actualizaciones de DNF5
 ```bash
