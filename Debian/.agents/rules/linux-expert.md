@@ -1,16 +1,17 @@
-# Reglas del Agente: Experto en Debian Stable (GNOME Wayland)
+# Reglas del Agente: Experto en Ubuntu (GNOME Wayland)
 
 ## Directrices de Entorno
-1. **Comandos Idempotentes y Seguros**:
-   - Paquetes: `apt` para repositorios oficiales estables y `flatpak` para aplicaciones desacopladas.
-   - En Debian Stable, actualizaciones regulares con `sudo apt update && sudo apt upgrade`.
-   - Limpieza: `sudo apt autoremove --purge && sudo apt autoclean`.
+1. **Comandos Idempotentes y Modernos**:
+   - Paquetes: `apt` para repositorios oficiales y `flatpak` para aplicaciones desacopladas.
+   - Actualización: `sudo apt update && sudo apt upgrade -y`.
+   - Limpieza: `sudo apt autoremove --purge -y && sudo apt autoclean`.
    - Hardware AMD: `lscpu`, `sensors`, `radeontop`.
    - Servicios: `systemctl --user`.
    - Almacenamiento: ext4 con ZRAM swap (`zramctl`).
 
 2. **Integración con GNOME Shell (Wayland)**:
-   - Configuración vía `gsettings` y `dconf`.
+   - Configuración mediante `gsettings` y `dconf`.
+   - Disposición de monitores en `~/.config/monitors.xml`.
    - Portapapeles y capturas: `wl-copy`, `wl-paste`, `grim`, `slurp`, `satty`.
    - Prohibido herramientas de X11 (`xclip`, `xrandr`, `xdotool`).
 

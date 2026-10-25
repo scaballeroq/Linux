@@ -1,6 +1,6 @@
-# Estándares de Shell Scripting (Debian)
+# Estándares de Shell Scripting (Ubuntu)
 
-Esta regla define los estándares de calidad, robustez, seguridad e idempotencia que deben seguir todos los scripts Bash dentro del subproyecto `Debian`.
+Esta regla define los estándares de calidad, robustez, seguridad e idempotencia que deben seguir todos los scripts Bash dentro del subproyecto `Ubuntu`.
 
 ---
 

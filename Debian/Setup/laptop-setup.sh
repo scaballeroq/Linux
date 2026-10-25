@@ -1,79 +1,218 @@
 #!/bin/bash
-# laptop-setup.sh - Optimización para portátiles de desarrollo en Debian Testing + GNOME
+# ==============================================================================
+# laptop-setup.sh - Optimización de Portátil para Debian Workstation (GNOME Shell)
+# Optimizado para HP ProBook 455 G10 (AMD Ryzen 7 7730U / Vega 8)
+# ==============================================================================
+# Características:
+#   - GNOME Shell 51 + Wayland nativo (GSettings)
+#   - power-profiles-daemon integrado (gestión de energía nativa)
+#   - switcheroo-control para conmutación dinámica de gráficos
+#   - Touchpad multitáctil Wayland (tap-to-click, natural scroll, two-finger tap)
+#   - Gestión de tapa con multimonitor (HandleLidSwitchDocked=ignore)
+#   - Bluetooth FastConnectable para emparejamiento inmediato
+#   - Mutter VRR (Variable Refresh Rate) y escalado fraccional
+#   - Opciones CLI: --status / -s, --help / -h
+# ==============================================================================
 
 set -euo pipefail
 
-echo "🚀 Iniciando optimización para portátil de desarrollo en Debian Testing + GNOME..."
+if [ "$EUID" -ne 0 ]; then
+    if command -v sudo &> /dev/null; then
+        SUDO="sudo"
+    else
+        echo "❌ Error: Este script requiere privilegios de superusuario."
+        exit 1
+    fi
+else
+    SUDO=""
+fi
 
-# 1. Herramientas de Hardware y Conectividad
-echo "ℹ️ Instalando servicios de energía, bluetooth y gráficos híbridos..."
-sudo apt update
-sudo apt install -y \
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    REAL_USER="$SUDO_USER"
+    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+else
+    REAL_USER="${USER:-$(id -un)}"
+    USER_HOME="${HOME:-/home/$REAL_USER}"
+fi
+
+REAL_UID=$(id -u "$REAL_USER" 2>/dev/null || echo "1000")
+
+run_as_user() {
+    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+        sudo -u "$REAL_USER" env \
+            HOME="$USER_HOME" \
+            USER="$REAL_USER" \
+            XDG_RUNTIME_DIR="/run/user/$REAL_UID" \
+            DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$REAL_UID/bus}" \
+            "$@"
+    else
+        "$@"
+    fi
+}
+
+show_help() {
+    cat <<EOF
+💻 Optimizador de Portátiles - Debian Workstation (GNOME Shell Wayland)
+
+Uso:
+  $0 [OPCIÓN]
+
+Opciones:
+  (sin argumentos)       Aplica todas las configuraciones de energía, touchpad, VRR y servicios.
+  --status, -s           Muestra el estado de batería, perfiles de energía, touchpad y Mutter.
+  --help, -h             Muestra este mensaje de ayuda.
+
+Optimizaciones incluidas:
+  1. Servicios de Energía y Hardware:
+     - power-profiles-daemon (gestor nativo integrado en el panel de GNOME).
+     - switcheroo-control (conmutación dinámica de GPUs en Wayland).
+     - brightnessctl y bluez (Bluetooth FastConnectable).
+  2. Touchpad Nativo (GNOME Wayland):
+     - Tap-to-click (toque para pulsar).
+     - Natural scrolling (desplazamiento natural).
+     - Two-finger tap para clic secundario.
+  3. Políticas de Energía y Tapa:
+     - No suspender al cerrar la tapa si hay monitores externos conectados (Docked=ignore).
+     - Suspensión: 20 min en batería / No suspender conectado a la corriente (AC).
+  4. Pantalla y Gráficos (Mutter):
+     - VRR (Tasa de refresco variable) y escalado de framebuffer en Wayland.
+EOF
+}
+
+show_status() {
+    echo "================================================================="
+    echo "🔍 ESTADO DE CONFIGURACIÓN DE PORTÁTIL - DEBIAN WORKSTATION"
+    echo "================================================================="
+
+    echo "• Batería del Sistema:"
+    if [ -d /sys/class/power_supply ]; then
+        for bat in /sys/class/power_supply/BAT*; do
+            [ -d "$bat" ] || continue
+            local name status cap
+            name=$(basename "$bat")
+            status=$(cat "$bat/status" 2>/dev/null || echo "n/a")
+            cap=$(cat "$bat/capacity" 2>/dev/null || echo "n/a")
+            echo "  - $name: $status ($cap%)"
+        done
+    fi
+
+    echo "-----------------------------------------------------------------"
+    echo "• Perfiles de Energía (power-profiles-daemon):"
+    if command -v powerprofilesctl &>/dev/null; then
+        echo "  - Perfil activo: $(powerprofilesctl get 2>/dev/null || echo 'n/a')"
+    else
+        echo "  - powerprofilesctl no instalado"
+    fi
+
+    echo "-----------------------------------------------------------------"
+    echo "• Touchpad (GNOME GSettings):"
+    echo "  - Tap-to-click:     $(run_as_user gsettings get org.gnome.desktop.peripherals.touchpad tap-to-click 2>/dev/null || echo 'n/a')"
+    echo "  - Natural Scroll:   $(run_as_user gsettings get org.gnome.desktop.peripherals.touchpad natural-scroll 2>/dev/null || echo 'n/a')"
+    echo "  - Click Method:     $(run_as_user gsettings get org.gnome.desktop.peripherals.touchpad click-method 2>/dev/null || echo 'n/a')"
+
+    echo "-----------------------------------------------------------------"
+    echo "• Gestión de Tapa y Multimonitor:"
+    echo "  - Logind lid docked: $(if [ -f /etc/systemd/logind.conf.d/lid-docked.conf ]; then echo "✅ Configurado (Docked=ignore)"; else echo "❌ Predeterminado"; fi)"
+    local gnome_lid_ext
+    gnome_lid_ext=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.power lid-close-suspend-with-external-monitor 2>/dev/null || echo 'n/a')
+    if [ "$gnome_lid_ext" = "false" ]; then
+        echo "  - GNOME lid docked:  ✅ No suspender con monitores externos (false)"
+    else
+        echo "  - GNOME lid docked:  ⚠️ Suspende con monitores ($gnome_lid_ext)"
+    fi
+
+    echo "-----------------------------------------------------------------"
+    echo "• Mutter Wayland & Tasa de Refresco:"
+    if run_as_user gsettings list-keys org.gnome.mutter 2>/dev/null | grep -q "^experimental-features$"; then
+        echo "  - Features:         $(run_as_user gsettings get org.gnome.mutter experimental-features 2>/dev/null || echo '[]')"
+    else
+        echo "  - Features:         ✅ Integrado nativamente en GNOME Shell 51 (Mutter Wayland)"
+    fi
+    echo "================================================================="
+}
+
+case "${1:-}" in
+    --status|-s|status)
+        show_status
+        exit 0
+        ;;
+    --help|-h|help)
+        show_help
+        exit 0
+        ;;
+esac
+
+echo "================================================================="
+echo "💻 CONFIGURANDO OPTIMIZACIONES DE PORTÁTIL (HP PROBOOK 455 G10 / GNOME 51)"
+echo "================================================================="
+
+# 1. Instalar servicios de hardware y energía
+echo "ℹ️ [1/5] Instalando utilidades de energía y hardware..."
+$SUDO apt update
+$SUDO apt install -y \
     power-profiles-daemon \
     switcheroo-control \
     bluez \
-    bluez-tools \
     brightnessctl
 
-# Habilitar servicios clave de portátil
-echo "ℹ️ Habilitando servicios systemd para portátil..."
-sudo systemctl enable --now bluetooth.service || true
-sudo systemctl enable --now power-profiles-daemon.service || true
-sudo systemctl enable --now switcheroo-control.service || true
+$SUDO systemctl enable --now power-profiles-daemon switcheroo-control
 
-# 2. Configuración de Brillo de Pantalla al 95% en cada arranque
-echo "ℹ️ Configurando servicio systemd para fijar el brillo de pantalla al 95% al arrancar..."
-sudo tee /etc/systemd/system/set-screen-brightness.service > /dev/null << 'EOF'
-[Unit]
-Description=Fijar brillo de pantalla al 95% al iniciar el sistema
-After=systemd-backlight@*.service systemd-udevd.service
-Wants=systemd-udevd.service
+# 2. Configurar Bluetooth FastConnectable
+echo "ℹ️ [2/5] Optimizando Bluetooth FastConnectable..."
+if [ -f /etc/bluetooth/main.conf ]; then
+    if grep -q "^FastConnectable" /etc/bluetooth/main.conf 2>/dev/null; then
+        $SUDO sed -i 's/^FastConnectable.*/FastConnectable = true/' /etc/bluetooth/main.conf
+    elif grep -q "^#FastConnectable" /etc/bluetooth/main.conf 2>/dev/null; then
+        $SUDO sed -i 's/^#FastConnectable.*/FastConnectable = true/' /etc/bluetooth/main.conf
+    else
+        echo -e "\n[General]\nFastConnectable = true" | $SUDO tee -a /etc/bluetooth/main.conf > /dev/null
+    fi
+    $SUDO systemctl restart bluetooth 2>/dev/null || true
+fi
 
-[Service]
-Type=oneshot
-ExecStart=/bin/sh -c 'for dev in /sys/class/backlight/*; do if [ -e "$dev/max_brightness" ]; then max=$(cat "$dev/max_brightness"); val=$(( max * 95 / 100 )); echo "$val" > "$dev/brightness" 2>/dev/null || true; fi; done'
-RemainAfterExit=yes
-
-[Install]
-WantedBy=graphical.target multi-user.target
+# 3. Configurar comportamiento de cierre de tapa en multimonitor
+echo "ℹ️ [3/5] Configurando systemd-logind para estaciones con monitores externos..."
+$SUDO mkdir -p /etc/systemd/logind.conf.d
+cat <<'EOF' | $SUDO tee /etc/systemd/logind.conf.d/lid-docked.conf > /dev/null
+[Login]
+# Evita suspender el portátil al cerrar la tapa si hay pantallas externas conectadas
+HandleLidSwitch=suspend
+HandleLidSwitchExternalPower=suspend
+HandleLidSwitchDocked=ignore
 EOF
+# IMPORTANTE: NUNCA usar 'restart systemd-logind' en un entorno gráfico (Wayland/X11).
+# Reiniciar logind destruye las sesiones activas de usuario, revoca los descriptores DRM
+# y de dispositivos de entrada (evdev) a Mutter/GNOME Shell, provocando el cierre abrupto
+# de sesión y el bloqueo completo (deadlock) de la máquina al intentar reingresar.
+# Se utiliza 'reload' (SIGHUP) que recarga la configuración sin terminar procesos ni sesiones.
+$SUDO systemctl reload systemd-logind 2>/dev/null || true
 
-sudo systemctl daemon-reload
-sudo systemctl enable --now set-screen-brightness.service || true
+# 4. Configurar Touchpad nativo en GNOME
+echo "ℹ️ [4/5] Configurando gestos y comportamiento del Touchpad en GNOME..."
+run_as_user gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true 2>/dev/null || true
+run_as_user gsettings set org.gnome.desktop.peripherals.touchpad natural-scroll true 2>/dev/null || true
+run_as_user gsettings set org.gnome.desktop.peripherals.touchpad two-finger-scrolling-enabled true 2>/dev/null || true
+run_as_user gsettings set org.gnome.desktop.peripherals.touchpad click-method 'fingers' 2>/dev/null || true
 
-# 3. Autostart de GNOME para asegurar el 95% de brillo al iniciar sesión
-mkdir -p "${HOME}/.config/autostart"
-cat << 'EOF' > "${HOME}/.config/autostart/set-screen-brightness.desktop"
-[Desktop Entry]
-Type=Application
-Name=Set Brightness 95%
-Exec=/bin/sh -c 'brightnessctl set 95% 2>/dev/null || for dev in /sys/class/backlight/*; do if [ -e "$dev/max_brightness" ]; then max=$(cat "$dev/max_brightness"); val=$(( max * 95 / 100 )); echo "$val" > "$dev/brightness" 2>/dev/null || true; fi; done'
-Hidden=false
-NoDisplay=false
-X-GNOME-Autostart-enabled=true
-Comment=Ajusta el brillo de la pantalla al 95% al iniciar sesión
-EOF
+# 5. Políticas de pantalla y energía en GNOME
+echo "ℹ️ [5/5] Configurando políticas de ahorro y Mutter VRR..."
+# Tiempo de inactividad de pantalla: 15 min (900 seg)
+run_as_user gsettings set org.gnome.desktop.session idle-delay 900 2>/dev/null || true
 
-# 4. Configuraciones de GSettings para Portátil (Touchpad, Pantalla y Energía)
-if [[ "${XDG_CURRENT_DESKTOP:-}" == *"GNOME"* ]] || command -v gsettings &>/dev/null; then
-    echo "ℹ️ Aplicando configuraciones de Touchpad y pantalla para GNOME..."
+# Suspensión: 20 min en batería / nunca en corriente AC
+run_as_user gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 1200 2>/dev/null || true
+run_as_user gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout 0 2>/dev/null || true
+run_as_user gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing' 2>/dev/null || true
+run_as_user gsettings set org.gnome.settings-daemon.plugins.power power-button-action 'interactive' 2>/dev/null || true
 
-    # Gestos y Touchpad
-    gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true 2>/dev/null || true
-    gsettings set org.gnome.desktop.peripherals.touchpad natural-scroll true 2>/dev/null || true
-    gsettings set org.gnome.desktop.peripherals.touchpad two-finger-scrolling-enabled true 2>/dev/null || true
+# Evitar suspender con tapa cerrada si hay monitor externo conectado (a nivel de GNOME Shell)
+run_as_user gsettings set org.gnome.settings-daemon.plugins.power lid-close-suspend-with-external-monitor false 2>/dev/null || true
 
-    # Escalado Fraccional y Tasa de Refresco Variable (VRR)
-    gsettings set org.gnome.mutter experimental-features "['scale-monitor-framebuffer', 'variable-refresh-rate']" 2>/dev/null || true
-
-    # Comportamiento de energía en batería
-    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'suspend' 2>/dev/null || true
-    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 1200 2>/dev/null || true
-    gsettings set org.gnome.desktop.privacy idle-delay 600 2>/dev/null || true
+# Mutter VRR y escalado fraccional de monitores (si está soportado por la versión de Mutter)
+if run_as_user gsettings list-keys org.gnome.mutter 2>/dev/null | grep -q "^experimental-features$"; then
+    run_as_user gsettings set org.gnome.mutter experimental-features "['variable-refresh-rate', 'scale-monitor-framebuffer']" 2>/dev/null || true
 fi
 
 echo "================================================================="
-echo "✅ Configuración de portátil para Debian Testing + GNOME aplicada correctamente."
-echo "💡 El brillo de la pantalla se fijará al 95% automáticamente en cada arranque."
-echo "💡 Recuerda reiniciar la sesión para que todos los cambios de GNOME entren en vigor."
+echo "✅ Optimización de portátil completada con éxito en Debian."
 echo "================================================================="

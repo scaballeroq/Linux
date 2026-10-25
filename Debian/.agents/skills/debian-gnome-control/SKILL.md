@@ -1,16 +1,16 @@
 ---
 name: debian-gnome-control
 description: >-
-  Use this skill when managing GNOME Shell, Mutter window manager, GNOME extensions, display/monitor settings, or Wayland desktop settings on Debian Stable.
+  Use this skill when managing GNOME Shell, Mutter window manager, extensions, display/monitor settings, or Wayland desktop settings on Debian.
 ---
 
-# GNOME Shell & Mutter Control Skill (Debian Stable)
+# GNOME Shell & Mutter Control Skill (Debian)
 
-Instrucciones y comandos para inspeccionar y configurar GNOME Shell y Mutter sobre Wayland en Debian Stable.
+Instrucciones y comandos para inspeccionar y configurar GNOME Shell y Mutter sobre Wayland en Debian.
 
 ## 1. Configuración de Apariencia
 ```bash
-# Activar tema oscuro
+# Modo oscuro
 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 
 # Tipografía Mono
@@ -20,11 +20,11 @@ gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Ner
 gsettings set org.gnome.desktop.wm.preferences button-layout ':minimize,maximize,close'
 ```
 
-## 2. Gestión de Monitores y Extensiones
+## 2. Gestión de Pantallas y Capturas
 ```bash
 # Abrir panel de pantallas
 gnome-control-center display &
 
-# Listar extensiones activas
-gnome-extensions list --enabled 2>/dev/null || true
+# Captura con grim y satty
+grim -g "$(slurp)" - | satty --filename - &
 ```

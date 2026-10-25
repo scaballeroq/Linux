@@ -1,85 +1,76 @@
-# Manual de Virtualización de Alto Rendimiento (KVM/QEMU) en Debian 13 (Trixie)
+# Instalación y Configuración de Virtualización (KVM/QEMU) en Debian
 
-Este manual detalla la configuración y optimización de **KVM / QEMU / virt-manager** para **Debian 13** con kernel optimizado `x86_64-v3`, audio nativo PipeWire y aceleración de hardware.
-
----
+Este manual está optimizado para versiones modernas de Debian (como Debian 26.04 LTS). Utiliza el esquema estándar de `libvirtd` integrado con el sistema.
 
 ## 1. Instalación de Paquetes
-Instalamos QEMU, libvirt, virt-manager, firmware UEFI (OVMF) con soporte TPM 2.0 y herramientas de aceleración:
+Instalamos KVM, libvirt, virt-manager, y utilidades asociadas.
 
 ```bash
 sudo apt update
-sudo apt install -y \
-    qemu-system-x86 qemu-utils libvirt-daemon-system libvirt-clients \
-    virt-manager virt-viewer virtinst dnsmasq dmidecode vde2 \
-    bridge-utils netcat-openbsd iptables nftables ovmf swtpm \
-    libosinfo-bin guestfs-tools tuned
+sudo apt install -y qemu-system-x86 qemu-utils libvirt-daemon-system libvirt-clients bridge-utils virtinst virt-manager virt-viewer virt-top libguestfs-tools
 ```
 
----
+## 2. Controladores de Windows (VirtIO)
+En Debian, los controladores VirtIO no están en el repositorio oficial como un paquete RPM/DEB precompilado por defecto. Debes descargar la ISO manualmente desde el proyecto Fedora:
 
-## 2. Aceleración del Kernel y Virtualización Anidada (Nested KVM)
+- [Descargar virtio-win.iso](https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso)
 
-### Virtualización Anidada:
-- **Intel**: `/etc/modprobe.d/kvm_intel.conf` -> `options kvm_intel nested=1`
-- **AMD**: `/etc/modprobe.d/kvm_amd.conf` -> `options kvm_amd nested=1`
+Adunta esta ISO a tu máquina virtual Windows como un segundo CD-ROM para instalar los drivers.
 
-### Aceleración de Red y Sockets del Kernel (`vhost_net` y `vhost_vsock`):
-```bash
-cat <<EOF | sudo tee /etc/modules-load.d/kvm-vhost.conf
-vhost_net
-vhost_vsock
-EOF
-sudo modprobe vhost_net
-sudo modprobe vhost_vsock
-```
-
----
-
-## 3. Integración de Sonido Nativo PipeWire (`/etc/libvirt/qemu.conf`)
-Para que las máquinas virtuales (Windows, macOS o Linux) reproduzcan audio directamente por el servidor PipeWire de tu usuario:
-```ini
-user = "caballero"
-group = "kvm"
-```
-
----
-
-## 4. Backend de Firewall Nftables en Debian 13 (`/etc/libvirt/network.conf`)
-Configurado para usar `nftables` nativo en lugar de legacy iptables:
-```ini
-firewall_backend = "nftables"
-```
-
----
-
-## 5. Controladores VirtIO para Windows (`virtio-win.iso`)
-Descarga automática de la ISO estable más reciente del proyecto Fedora:
-```bash
-curl -fsSL -o ~/Descargas/virtio-drivers/virtio-win.iso https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso
-```
-
----
-
-## 6. Sockets Modulares y Perfil Tuned (`virtual-host`)
-```bash
-sudo systemctl enable --now virtqemud.socket virtnetworkd.socket virtstoraged.socket
-sudo systemctl enable --now libvirtd.service
-sudo systemctl enable --now tuned.service
-sudo tuned-adm profile virtual-host
-```
-
----
-
-## 7. Permisos de Usuario y Directorio de Imágenes (ACL)
+## 3. Configuración de Servicios
+Debian utiliza el demonio `libvirtd` monolítico por defecto. Asegúrate de que esté activo:
 
 ```bash
+sudo systemctl enable --now libvirtd
+```
+
+## 4. Permisos de Grupo y Entorno de Terminal
+Añadimos tu usuario a los grupos clave para gestionar las máquinas virtuales sin depender de `sudo`.
+
+```bash
+# Añadir al grupo libvirt (gestión de VMs) y kvm (rendimiento hardware)
 sudo usermod -aG libvirt,kvm $USER
+
+# Configurar QEMU del host como destino automático en tu shell
+if ! grep -q "LIBVIRT_DEFAULT_URI" ~/.bashrc; then
+    echo "export LIBVIRT_DEFAULT_URI='qemu:///system'" >> ~/.bashrc
+fi
+source ~/.bashrc
+```
+
+## 5. Accesibilidad de Directorio (ACL)
+Asignamos listas de control de acceso (ACLs) al directorio principal de imágenes para facilitar la administración directa.
+
+```bash
+sudo apt install -y acl
+
+# Eliminar cualquier configuración ACL antigua
+sudo setfacl -R -b /var/lib/libvirt/images
+
+# Otorgar permisos completos al usuario sobre el contenido existente
 sudo setfacl -R -m u:$USER:rwX /var/lib/libvirt/images
+
+# Imponer una regla por defecto para que los nuevos ficheros creados mantengan tus permisos
 sudo setfacl -d -m u:$USER:rwX /var/lib/libvirt/images
-export LIBVIRT_DEFAULT_URI="qemu:///system"
+
+# Comprobar el resultado
+getfacl /var/lib/libvirt/images
+```
+
+## 6. Verificación Final
+Valida tu entorno con los siguientes comandos.
+
+```bash
+# Verificar configuraciones de hardware y kernel
+sudo virt-host-validate qemu
+
+# Comprobar que la red por defecto ("default") esté activa
+sudo virsh net-list --all
+
+# Confirmar la conexión predeterminada (debería decir "qemu:///system")
+virsh uri
 ```
 
 ---
 > [!IMPORTANT]
-> Recuerda reiniciar la sesión o el equipo tras la instalación para aplicar los grupos `libvirt` y `kvm` a tu usuario.
+> La asignación de grupos de tu usuario (**paso 4**) entrará en vigor sólo tras cerrar sesión y volver a entrar, o tras reiniciar el sistema.

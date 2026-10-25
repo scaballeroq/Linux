@@ -18,11 +18,5 @@ HealthInterval=10s
 HealthRetries=3
 HealthTimeout=5s
 
-[Volume]
-VolumeName=traefik-config
-
-[Network]
-NetworkName=proxy-net
-
 [Install]
 WantedBy=default.target

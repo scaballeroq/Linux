@@ -16,8 +16,5 @@ HealthInterval=5s
 HealthRetries=5
 HealthTimeout=5s
 
-[Volume]
-VolumeName=postgres-global-data
-
 [Install]
 WantedBy=default.target

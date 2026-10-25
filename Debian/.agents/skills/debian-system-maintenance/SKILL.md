@@ -1,37 +1,34 @@
 ---
 name: debian-system-maintenance
 description: >-
-  Use this skill when managing packages with APT, performing system updates, cleaning package caches, verifying systemd services, or checking hardware telemetry on Debian Stable.
+  Use this skill when performing system updates with APT, cleaning package caches, verifying systemd services, or checking hardware telemetry on Debian.
 ---
 
-# Debian Stable System Maintenance & Telemetry Skill
+# Debian System Maintenance & Telemetry Skill
 
-Procedimientos operativos y diagnósticos estándar para Debian GNU/Linux Stable en HP EliteBook 855 G7.
+Procedimientos operativos y diagnósticos estándar para Debian en HP ProBook 455 G10.
 
 ## 1. Mantenimiento y Actualizaciones de APT
 ```bash
-# 1. Refrescar repositorios
+# Refrescar repositorios
 sudo apt update
 
-# 2. Actualizar sistema
+# Actualizar paquetes
 sudo apt upgrade -y
 
-# 3. Limpieza de paquetes
+# Limpiar paquetes huérfanos
 sudo apt autoremove --purge -y
 sudo apt autoclean
 
-# 4. Actualización Flatpak
+# Actualizar Flatpak
 flatpak update -y
 flatpak uninstall --unused -y
 ```
 
 ## 2. Telemetría y Salud
 ```bash
-# Espacio en disco y ZRAM
-df -h / /boot /boot/efi
+df -h
 free -h
-zramctl 2>/dev/null || true
-
-# Sensores
+zramctl
 sensors
 ```

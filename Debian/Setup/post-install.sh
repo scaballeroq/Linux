@@ -1,6 +1,8 @@
 #!/bin/bash
-# post-install.sh - Despachador y selector inteligente de post-instalación para Debian Testing (Trixie) + GNOME
+# ==============================================================================
+# post-install.sh - Despachador y selector inteligente de post-instalación para Debian
 # Detecta automáticamente la arquitectura de CPU (AMD Ryzen vs Intel Core) o permite selección manual
+# ==============================================================================
 
 set -euo pipefail
 
@@ -8,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 show_help() {
     cat <<EOF
-🚀 Despachador de Post-Instalación para Debian Testing (Trixie) + GNOME
+🚀 Despachador de Post-Instalación para Debian Workstation (GNOME Shell Wayland)
 
 Uso:
   $0 [OPCIÓN]
@@ -16,16 +18,15 @@ Uso:
 Opciones:
   (sin argumentos)   Auto-detecta el procesador (AMD o Intel) y ejecuta el instalador correspondiente.
   --amd, -a          Ejecuta la configuración optimizada para AMD Ryzen y Radeon Graphics.
-  --intel, -i        Ejecuta la configuración optimizada para Intel Core (Haswell/i7-4790) + Multimedia (Kodi/Streaming).
+  --intel, -i        Ejecuta la configuración optimizada para Intel Core + Multimedia (Kodi/Streaming).
   --help, -h         Muestra este mensaje de ayuda.
 
 Scripts independientes disponibles:
-  • Setup/post-install-amd.sh   -> Optimizado para AMD Ryzen (microcódigo AMD, RADV, Mesa)
-  • Setup/post-install-intel.sh -> Optimizado para Intel Core / HD Graphics (microcódigo Intel, i965 VA-API, Kodi, sin virtualización)
+  • Setup/post-install-amd.sh   -> Optimizado para AMD Ryzen (microcódigo, Mesa RADV, VA-API, ZRAM, GNOME Flatpak)
+  • Setup/post-install-intel.sh -> Optimizado para Intel Core / HD Graphics (microcódigo Intel, VA-API i965, Kodi)
 EOF
 }
 
-# Procesar argumentos de línea de comandos
 if [ $# -gt 0 ]; then
     case "$1" in
         --amd|-a|amd)
@@ -48,7 +49,6 @@ if [ $# -gt 0 ]; then
     esac
 fi
 
-# Auto-detección de procesador
 echo "🔍 Analizando procesador y arquitectura del sistema..."
 CPU_VENDOR=$(grep -m1 'vendor_id' /proc/cpuinfo | awk '{print $3}' || true)
 CPU_MODEL=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs || echo "Desconocido")
