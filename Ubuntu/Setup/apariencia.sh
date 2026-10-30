@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # apariencia.sh - Instalación y Configuración de Temas, Iconos y Cursores
-# Ubuntu Workstation (Ubuntu 24.04 / GNOME Shell 50 + Wayland)
+# Ubuntu Workstation (Ubuntu 24.04 / 26.04 - GNOME Shell 46 / 50 + Wayland)
 # Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8)
 # ==============================================================================
 # Características:
-#  - Gestión de temas de iconos: Papirus (Papirus, Papirus-Dark) y Yaru suite completa.
-#  - Temas de cursor modernos: Bibata (Bibata-Modern-Classic / Ice) y Yaru cursor.
-#  - Tema GTK y Shell: Modo oscuro armonizado (prefer-dark + Yaru-dark / Adwaita).
+#  - Instalación de temas de iconos: Papirus y Yaru suite completa.
+#  - Instalación de cursores modernos: Bibata y Yaru cursor.
+#  - Por defecto: SOLO instala los paquetes disponibles sin alterar la personalización del usuario.
+#  - Cambio de temas bajo demanda explícita: --papirus, --yaru, --bibata, --dark, --light.
 #  - Instalación idempotente: solo invoca APT si los paquetes no están presentes.
 #  - Soporte CLI completo: --status / -s, --dark / -d, --light / -l, --papirus,
 #                          --yaru, --bibata, --install / -i, --help / -h.
@@ -59,19 +60,19 @@ run_as_user() {
 # ------------------------------------------------------------------------------
 show_help() {
     cat <<EOF
-🎨 Gestor de Apariencia, Temas e Iconos - Ubuntu Workstation (GNOME 50 Wayland)
+🎨 Gestor de Apariencia, Temas e Iconos - Ubuntu Workstation (GNOME Wayland)
 
 Uso:
   $0 [OPCIÓN]
 
 Opciones:
-  (sin argumentos)    Instala temas e iconos y asegura el tema oscuro armónico.
+  (sin argumentos)    Instala paquetes estéticos (Papirus, Bibata, Yaru) sin modificar la configuración activa.
   --status, -s        Muestra el estado detallado de temas, iconos, cursores y paquetes.
-  --dark, -d          Aplica el modo oscuro completo (prefer-dark + tema oscuro).
-  --light, -l         Aplica el modo claro estándar (default + tema claro).
-  --papirus           Aplica Papirus como tema de iconos activo (Papirus-Dark en modo oscuro).
-  --yaru              Restablece los iconos nativos de Ubuntu (Yaru / Yaru-dark).
-  --bibata            Aplica el cursor moderno Bibata-Modern-Classic.
+  --dark, -d          Aplica el modo oscuro en el sistema (prefer-dark + tema GTK oscuro, sin alterar iconos).
+  --light, -l         Aplica el modo claro en el sistema (default + tema GTK claro, sin alterar iconos).
+  --papirus           Aplica explícitamente Papirus como tema de iconos activo.
+  --yaru              Restablece explícitamente los iconos nativos de Ubuntu (Yaru).
+  --bibata            Aplica explícitamente el cursor moderno Bibata-Modern-Classic.
   --install, -i       Instala únicamente los paquetes estéticos sin actualizar el sistema ni repositorios.
   --help, -h          Muestra este mensaje de ayuda.
 
@@ -123,10 +124,10 @@ install_packages() {
 }
 
 # ------------------------------------------------------------------------------
-# 4. APLICACIÓN DE TEMAS, ICONOS Y CURSORES
+# 4. APLICACIÓN DE TEMAS, ICONOS Y CURSORES (SOLO BAJO DEMANDA EXPLÍCITA)
 # ------------------------------------------------------------------------------
 apply_dark() {
-    echo "🌙 Aplicando modo oscuro armonizado..."
+    echo "🌙 Aplicando modo oscuro en GTK y color-scheme..."
     run_as_user gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null || true
 
     local gtk_target="Yaru-dark"
@@ -137,28 +138,15 @@ apply_dark() {
     fi
     run_as_user gsettings set org.gnome.desktop.interface gtk-theme "$gtk_target" 2>/dev/null || true
 
-    # Si Papirus está instalado, usar Papirus-Dark; si no, Yaru-dark
-    if [ -d "/usr/share/icons/Papirus-Dark" ]; then
-        run_as_user gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark' 2>/dev/null || true
-    elif [ -d "/usr/share/icons/Yaru-dark" ]; then
-        run_as_user gsettings set org.gnome.desktop.interface icon-theme 'Yaru-dark' 2>/dev/null || true
-    fi
-
-    echo "  ✅ Modo oscuro activado (GTK: $gtk_target)."
+    echo "  ✅ Modo oscuro activado (GTK: $gtk_target). Iconos conservados sin cambios."
 }
 
 apply_light() {
-    echo "☀️ Aplicando modo claro..."
+    echo "☀️ Aplicando modo claro en GTK y color-scheme..."
     run_as_user gsettings set org.gnome.desktop.interface color-scheme 'default' 2>/dev/null || true
     run_as_user gsettings set org.gnome.desktop.interface gtk-theme 'Yaru' 2>/dev/null || true
 
-    if [ -d "/usr/share/icons/Papirus" ]; then
-        run_as_user gsettings set org.gnome.desktop.interface icon-theme 'Papirus' 2>/dev/null || true
-    else
-        run_as_user gsettings set org.gnome.desktop.interface icon-theme 'Yaru' 2>/dev/null || true
-    fi
-
-    echo "  ✅ Modo claro activado."
+    echo "  ✅ Modo claro activado. Iconos conservados sin cambios."
 }
 
 apply_icons_papirus() {
@@ -177,16 +165,9 @@ apply_icons_papirus() {
 }
 
 apply_icons_yaru() {
-    echo "🎨 Aplicando iconos Yaru..."
-    local cs
-    cs=$(run_as_user gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null || echo "'default'")
-    if [ "$cs" = "'prefer-dark'" ] && [ -d "/usr/share/icons/Yaru-dark" ]; then
-        run_as_user gsettings set org.gnome.desktop.interface icon-theme 'Yaru-dark' 2>/dev/null || true
-        echo "  ✅ Iconos configurados: Yaru-dark."
-    else
-        run_as_user gsettings set org.gnome.desktop.interface icon-theme 'Yaru' 2>/dev/null || true
-        echo "  ✅ Iconos configurados: Yaru."
-    fi
+    echo "🎨 Restableciendo iconos nativos Yaru de Ubuntu..."
+    run_as_user gsettings set org.gnome.desktop.interface icon-theme 'Yaru' 2>/dev/null || true
+    echo "  ✅ Iconos configurados: Yaru (predeterminado de Ubuntu)."
 }
 
 apply_cursor_bibata() {
@@ -240,14 +221,13 @@ case "${1:-}" in
         ;;
     "")
         echo "================================================================="
-        echo "🎨 CONFIGURANDO APARIENCIA Y TEMAS (UBUNTU WORKSTATION)"
+        echo "📦 INSTALACIÓN DE PAQUETES DE APARIENCIA (UBUNTU WORKSTATION)"
         echo "================================================================="
         install_packages
-        apply_dark
         echo ""
         show_status
         echo "================================================================="
-        echo "✅ Configuración estética completada con éxito."
+        echo "✅ Paquetes instalados con éxito sin modificar la configuración activa de temas ni iconos."
         echo "================================================================="
         ;;
     *)
