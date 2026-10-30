@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# fingerprint-setup.sh - Configuración de Huella Dactilar en Ubuntu (GNOME 51)
+# fingerprint-setup.sh - Configuración de Huella Dactilar en Ubuntu (GNOME)
 # Optimizado para HP ProBook 455 G10 (Sensor Synaptics / fprintd)
 # =============================================================================
 # Características:

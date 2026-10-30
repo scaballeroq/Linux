@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==============================================================================
 # python.sh - Verificación de Python Nativo (Ubuntu) y Gestor 'uv' vía Mise
-# Ubuntu Workstation (GNOME Shell 51 + Wayland / Systemd User Environment)
+# Ubuntu Workstation (GNOME Shell + Wayland / Systemd User Environment)
 # ==============================================================================
 # Principio de Diseño:
 # - Python NO se instala de forma global a través de gestores de versiones (Mise/Pyenv)
