@@ -1,16 +1,17 @@
 #!/bin/bash
 # ==============================================================================
-# laptop-setup.sh - Optimización de Portátil para Ubuntu Workstation (GNOME Shell 51)
+# laptop-setup.sh - Optimización de Portátil para Ubuntu Workstation (GNOME Shell 46 / 50 / 51)
 # Optimizado para HP ProBook 455 G10 (AMD Ryzen 7 7730U / Vega 8)
+# Compatible con Ubuntu 24.04 LTS (GNOME 46), Ubuntu 26.04 LTS (GNOME 50) y superiores
 # ==============================================================================
 # Características:
-#   - GNOME Shell 51 + Wayland nativo (GSettings)
-#   - power-profiles-daemon integrado (gestión de energía nativa)
+#   - GNOME Shell (46/50/51) + Wayland nativo (GSettings)
+#   - power-profiles-daemon integrado (gestor de energía oficial de GNOME)
 #   - switcheroo-control para conmutación dinámica de gráficos
 #   - Touchpad multitáctil Wayland (tap-to-click, natural scroll, two-finger tap)
 #   - Gestión de tapa con multimonitor (HandleLidSwitchDocked=ignore)
 #   - Bluetooth FastConnectable para emparejamiento inmediato
-#   - Mutter VRR (Variable Refresh Rate) y escalado fraccional
+#   - Detección dinámica de Mutter: VRR, escalado fraccional y escalado nativo XWayland
 #   - Opciones CLI: --status / -s, --help / -h
 # ==============================================================================
 
@@ -50,17 +51,39 @@ run_as_user() {
     fi
 }
 
+get_gnome_version() {
+    local ver
+    ver=$(gnome-shell --version 2>/dev/null | awk '{print $3}')
+    if [ -z "$ver" ]; then
+        ver=$(run_as_user gnome-shell --version 2>/dev/null | awk '{print $3}' || echo "")
+    fi
+    echo "${ver:-Desconocida}"
+}
+
+get_os_description() {
+    if [ -f /etc/os-release ]; then
+        grep "^PRETTY_NAME=" /etc/os-release | cut -d= -f2 | tr -d '"'
+    else
+        echo "Ubuntu Linux"
+    fi
+}
+
 show_help() {
     cat <<EOF
-💻 Optimizador de Portátiles - Ubuntu Workstation (GNOME Shell 51 Wayland)
+💻 Optimizador de Portátiles - Ubuntu Workstation (GNOME Shell 46 / 50 / 51 Wayland)
 
 Uso:
   $0 [OPCIÓN]
 
 Opciones:
-  (sin argumentos)       Aplica todas las configuraciones de energía, touchpad, VRR y servicios.
+  (sin argumentos)       Aplica todas las configuraciones de energía, touchpad, Mutter y servicios.
   --status, -s           Muestra el estado de batería, perfiles de energía, touchpad y Mutter.
   --help, -h             Muestra este mensaje de ayuda.
+
+Compatibilidad de Versiones:
+  • Ubuntu 24.04 LTS (GNOME Shell 46 Wayland)
+  • Ubuntu 26.04 LTS (GNOME Shell 50 Wayland)
+  • Ubuntu Rolling / GNOME Shell 51 Wayland
 
 Optimizaciones incluidas:
   1. Servicios de Energía y Hardware:
@@ -70,63 +93,122 @@ Optimizaciones incluidas:
   2. Touchpad Nativo (GNOME Wayland):
      - Tap-to-click (toque para pulsar).
      - Natural scrolling (desplazamiento natural).
-     - Two-finger tap para clic secundario.
+     - Two-finger tap para clic secundario (click-method 'fingers').
   3. Políticas de Energía y Tapa:
      - No suspender al cerrar la tapa si hay monitores externos conectados (Docked=ignore).
      - Suspensión: 20 min en batería / No suspender conectado a la corriente (AC).
+     - Perfil de ahorro automático (power-saver) con batería baja.
   4. Pantalla y Gráficos (Mutter):
-     - VRR (Tasa de refresco variable) y escalado de framebuffer en Wayland.
+     - Detección dinámica y aplicación según capacidades de la versión de GNOME / Mutter:
+       * VRR (variable-refresh-rate) en GNOME 46
+       * Escalado fraccional (scale-monitor-framebuffer) en GNOME 46 / 50 / 51
+       * Escalado nativo XWayland (xwayland-native-scaling) en GNOME 50 / 51
 EOF
 }
 
+configure_mutter_features() {
+    if run_as_user gsettings list-keys org.gnome.mutter 2>/dev/null | grep -q "^experimental-features$"; then
+        local range features=()
+        range=$(run_as_user gsettings range org.gnome.mutter experimental-features 2>/dev/null || true)
+
+        # scale-monitor-framebuffer (escalado fraccional en Wayland: GNOME 46 / 50 / 51)
+        if echo "$range" | grep -q "scale-monitor-framebuffer"; then
+            features+=("'scale-monitor-framebuffer'")
+        fi
+
+        # variable-refresh-rate (VRR: presente como experimental en GNOME 46)
+        if echo "$range" | grep -q "variable-refresh-rate"; then
+            features+=("'variable-refresh-rate'")
+        fi
+
+        # xwayland-native-scaling (escalado nítido para apps X11 en Wayland: GNOME 50 / 51)
+        if echo "$range" | grep -q "xwayland-native-scaling"; then
+            features+=("'xwayland-native-scaling'")
+        fi
+
+        if [ ${#features[@]} -gt 0 ]; then
+            local features_str
+            features_str=$(IFS=, ; echo "[${features[*]}]")
+            run_as_user gsettings set org.gnome.mutter experimental-features "$features_str" 2>/dev/null || true
+            echo "  - Mutter experimental-features aplicadas: $features_str"
+        else
+            echo "  - Mutter no requiere experimental-features adicionales en esta versión."
+        fi
+    else
+        echo "  - Esquema experimental-features no disponible en esta versión de Mutter."
+    fi
+}
+
 show_status() {
+    local gnome_ver os_name
+    gnome_ver=$(get_gnome_version)
+    os_name=$(get_os_description)
+
     echo "================================================================="
     echo "🔍 ESTADO DE CONFIGURACIÓN DE PORTÁTIL - UBUNTU WORKSTATION"
     echo "================================================================="
-
+    echo "• Sistema Operativo:     $os_name"
+    echo "• GNOME Shell:           $gnome_ver (Wayland)"
+    echo "• Hardware:              HP ProBook 455 G10 (AMD Ryzen 7 7730U / Vega 8)"
+    echo "-----------------------------------------------------------------"
     echo "• Batería del Sistema:"
     if [ -d /sys/class/power_supply ]; then
+        local found_bat=false
         for bat in /sys/class/power_supply/BAT*; do
             [ -d "$bat" ] || continue
+            found_bat=true
             local name status cap
             name=$(basename "$bat")
             status=$(cat "$bat/status" 2>/dev/null || echo "n/a")
             cap=$(cat "$bat/capacity" 2>/dev/null || echo "n/a")
             echo "  - $name: $status ($cap%)"
         done
+        if [ "$found_bat" = "false" ]; then
+            echo "  - No se detectaron baterías físicas en el sistema"
+        fi
     fi
 
     echo "-----------------------------------------------------------------"
     echo "• Perfiles de Energía (power-profiles-daemon):"
     if command -v powerprofilesctl &>/dev/null; then
-        echo "  - Perfil activo: $(powerprofilesctl get 2>/dev/null || echo 'n/a')"
+        echo "  - Perfil activo:        $(powerprofilesctl get 2>/dev/null || echo 'n/a')"
     else
         echo "  - powerprofilesctl no instalado"
+    fi
+    if run_as_user gsettings list-keys org.gnome.settings-daemon.plugins.power 2>/dev/null | grep -q "^power-saver-profile-on-low-battery$"; then
+        local ps_low
+        ps_low=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.power power-saver-profile-on-low-battery 2>/dev/null || echo 'n/a')
+        echo "  - Ahorro en baja bat.:  $ps_low"
     fi
 
     echo "-----------------------------------------------------------------"
     echo "• Touchpad (GNOME GSettings):"
-    echo "  - Tap-to-click:     $(run_as_user gsettings get org.gnome.desktop.peripherals.touchpad tap-to-click 2>/dev/null || echo 'n/a')"
-    echo "  - Natural Scroll:   $(run_as_user gsettings get org.gnome.desktop.peripherals.touchpad natural-scroll 2>/dev/null || echo 'n/a')"
-    echo "  - Click Method:     $(run_as_user gsettings get org.gnome.desktop.peripherals.touchpad click-method 2>/dev/null || echo 'n/a')"
+    echo "  - Tap-to-click:         $(run_as_user gsettings get org.gnome.desktop.peripherals.touchpad tap-to-click 2>/dev/null || echo 'n/a')"
+    echo "  - Natural Scroll:       $(run_as_user gsettings get org.gnome.desktop.peripherals.touchpad natural-scroll 2>/dev/null || echo 'n/a')"
+    echo "  - Click Method:         $(run_as_user gsettings get org.gnome.desktop.peripherals.touchpad click-method 2>/dev/null || echo 'n/a')"
+    echo "  - Two-Finger Scroll:    $(run_as_user gsettings get org.gnome.desktop.peripherals.touchpad two-finger-scrolling-enabled 2>/dev/null || echo 'n/a')"
 
     echo "-----------------------------------------------------------------"
     echo "• Gestión de Tapa y Multimonitor:"
-    echo "  - Logind lid docked: $(if [ -f /etc/systemd/logind.conf.d/lid-docked.conf ]; then echo "✅ Configurado (Docked=ignore)"; else echo "❌ Predeterminado"; fi)"
+    echo "  - Logind lid docked:    $(if [ -f /etc/systemd/logind.conf.d/lid-docked.conf ]; then echo "✅ Configurado (Docked=ignore)"; else echo "❌ Predeterminado"; fi)"
     local gnome_lid_ext
     gnome_lid_ext=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.power lid-close-suspend-with-external-monitor 2>/dev/null || echo 'n/a')
     if [ "$gnome_lid_ext" = "false" ]; then
-        echo "  - GNOME lid docked:  ✅ No suspender con monitores externos (false)"
+        echo "  - GNOME lid docked:     ✅ No suspender con monitores externos (false)"
     else
-        echo "  - GNOME lid docked:  ⚠️ Suspende con monitores ($gnome_lid_ext)"
+        echo "  - GNOME lid docked:     ⚠️ Suspende con monitores ($gnome_lid_ext)"
     fi
 
     echo "-----------------------------------------------------------------"
-    echo "• Mutter Wayland & Tasa de Refresco:"
+    echo "• Mutter Wayland & Características Gráficas:"
     if run_as_user gsettings list-keys org.gnome.mutter 2>/dev/null | grep -q "^experimental-features$"; then
-        echo "  - Features:         $(run_as_user gsettings get org.gnome.mutter experimental-features 2>/dev/null || echo '[]')"
+        local cur_feat range_feat
+        cur_feat=$(run_as_user gsettings get org.gnome.mutter experimental-features 2>/dev/null || echo '[]')
+        range_feat=$(run_as_user gsettings range org.gnome.mutter experimental-features 2>/dev/null | grep -v "^flags$" | tr '\n' ' ' || echo 'n/a')
+        echo "  - Features activas:     $cur_feat"
+        echo "  - Features soportadas:  $range_feat"
     else
-        echo "  - Features:         ✅ Integrado nativamente en GNOME Shell 51 (Mutter Wayland)"
+        echo "  - Features:             ✅ Integrado nativamente en Mutter Wayland"
     fi
     echo "================================================================="
 }
@@ -142,8 +224,13 @@ case "${1:-}" in
         ;;
 esac
 
+GNOME_CUR_VER=$(get_gnome_version)
+OS_CUR_NAME=$(get_os_description)
+
 echo "================================================================="
-echo "💻 CONFIGURANDO OPTIMIZACIONES DE PORTÁTIL (HP PROBOOK 455 G10 / GNOME 51)"
+echo "💻 CONFIGURANDO OPTIMIZACIONES DE PORTÁTIL"
+echo "   $OS_CUR_NAME | GNOME Shell $GNOME_CUR_VER"
+echo "   Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8)"
 echo "================================================================="
 
 # 1. Instalar servicios de hardware y energía
@@ -154,6 +241,13 @@ $SUDO apt install -y \
     switcheroo-control \
     bluez \
     brightnessctl
+
+# Si tlp estuviese instalado, desactivarlo para evitar conflictos con power-profiles-daemon
+if systemctl is-active --quiet tlp 2>/dev/null || systemctl is-enabled --quiet tlp 2>/dev/null; then
+    echo "⚠️ Desactivando TLP para permitir que power-profiles-daemon gestione la energía..."
+    $SUDO systemctl stop tlp 2>/dev/null || true
+    $SUDO systemctl mask tlp 2>/dev/null || true
+fi
 
 $SUDO systemctl enable --now power-profiles-daemon switcheroo-control
 
@@ -188,14 +282,14 @@ EOF
 $SUDO systemctl reload systemd-logind 2>/dev/null || true
 
 # 4. Configurar Touchpad nativo en GNOME
-echo "ℹ️ [4/5] Configurando gestos y comportamiento del Touchpad en GNOME..."
+echo "ℹ️ [4/5] Configurando gestos y comportamiento del Touchpad en GNOME Shell ($GNOME_CUR_VER)..."
 run_as_user gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true 2>/dev/null || true
 run_as_user gsettings set org.gnome.desktop.peripherals.touchpad natural-scroll true 2>/dev/null || true
 run_as_user gsettings set org.gnome.desktop.peripherals.touchpad two-finger-scrolling-enabled true 2>/dev/null || true
 run_as_user gsettings set org.gnome.desktop.peripherals.touchpad click-method 'fingers' 2>/dev/null || true
 
 # 5. Políticas de pantalla y energía en GNOME
-echo "ℹ️ [5/5] Configurando políticas de ahorro y Mutter VRR..."
+echo "ℹ️ [5/5] Configurando políticas de ahorro de energía y características de Mutter..."
 # Tiempo de inactividad de pantalla: 15 min (900 seg)
 run_as_user gsettings set org.gnome.desktop.session idle-delay 900 2>/dev/null || true
 
@@ -208,11 +302,14 @@ run_as_user gsettings set org.gnome.settings-daemon.plugins.power power-button-a
 # Evitar suspender con tapa cerrada si hay monitor externo conectado (a nivel de GNOME Shell)
 run_as_user gsettings set org.gnome.settings-daemon.plugins.power lid-close-suspend-with-external-monitor false 2>/dev/null || true
 
-# Mutter VRR y escalado fraccional de monitores (si está soportado por la versión de Mutter)
-if run_as_user gsettings list-keys org.gnome.mutter 2>/dev/null | grep -q "^experimental-features$"; then
-    run_as_user gsettings set org.gnome.mutter experimental-features "['variable-refresh-rate', 'scale-monitor-framebuffer']" 2>/dev/null || true
+# Activar modo de bajo consumo automático cuando la batería esté baja (si soportado)
+if run_as_user gsettings list-keys org.gnome.settings-daemon.plugins.power 2>/dev/null | grep -q "^power-saver-profile-on-low-battery$"; then
+    run_as_user gsettings set org.gnome.settings-daemon.plugins.power power-saver-profile-on-low-battery true 2>/dev/null || true
 fi
 
+# Configuración adaptativa de Mutter (VRR, escalado fraccional y escalado XWayland)
+configure_mutter_features
+
 echo "================================================================="
-echo "✅ Optimización de portátil completada con éxito en Ubuntu."
+echo "✅ Optimización de portátil completada con éxito en $OS_CUR_NAME (GNOME $GNOME_CUR_VER)."
 echo "================================================================="
