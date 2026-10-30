@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
 # quadlets-setup.sh - Preparador y Desplegador de Quadlets de Podman
-# Ubuntu Workstation (GNOME Shell 51 + Wayland)
+# Ubuntu Workstation (GNOME Shell + Wayland)
 # =============================================================================
 # Uso:
 #   ./quadlets-setup.sh              -> Prepara los directorios de Quadlets e instala los servicios compartidos

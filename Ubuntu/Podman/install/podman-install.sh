@@ -48,7 +48,7 @@ require_non_root() {
 
 show_help() {
     cat <<EOF
-🐳 Optimizador y Configurador de Podman Rootless - Ubuntu Workstation 26.10
+🐳 Optimizador y Configurador de Podman Rootless - Ubuntu Workstation
    Hardware: AMD Ryzen 7 7730U | Radeon Vega 8 | NVMe Kioxia 512GB | GNOME Shell
 
 Uso:
@@ -63,8 +63,8 @@ Opciones:
   --help, -h             Muestra este mensaje de ayuda.
 
 Características configuradas:
-  • Paquetes Ubuntu 26:  podman, podman-docker, passt (pasta), crun, catatonit, uidmap, dbus-user-session.
-  • Almacenamiento NVMe: Overlay nativo del Kernel 7.3 (sin sobrecarga FUSE) con ignore_chown_errors.
+  • Paquetes Ubuntu:     podman, podman-docker, passt (pasta), crun, catatonit, uidmap, dbus-user-session.
+  • Almacenamiento NVMe: Overlay nativo del Kernel (sin sobrecarga FUSE) con ignore_chown_errors.
   • Red Rootless:        Stack de red nativo 'pasta' de alto rendimiento y baja latencia.
   • Aceleración GPU AMD: Acceso a /dev/dri/renderD128 mediante grupos render y video.
   • Cortafuegos:         Interfaz podman+ asociada a la zona trusted en Firewalld.
@@ -82,7 +82,7 @@ EOF
 show_status() {
     echo "================================================================="
     echo "🔍 ESTADO DE PODMAN ROOTLESS - UBUNTU WORKSTATION (GNOME SHELL)"
-    echo "   AMD Ryzen 7 7730U | Radeon Vega 8 | NVMe | Ubuntu 26.10"
+    echo "   AMD Ryzen 7 7730U | Radeon Vega 8 | NVMe | Ubuntu Workstation"
     echo "================================================================="
 
     local linger_val socket_status docker_host_val utils_status storage_info subuid_status
@@ -173,7 +173,7 @@ show_status() {
         podman ps --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || echo "  (Ninguno en ejecución)"
     else
         echo "• Motor Podman:        ❌ No instalado en el sistema"
-        echo "• Paquete APT:         Disponible en repositorios oficiales de Ubuntu 26.10"
+        echo "• Paquete APT:         Disponible en repositorios oficiales de Ubuntu"
         echo "• Red Rootless:        $pasta_status"
         echo "• Runtime OCI:         $crun_status"
         echo "• Aceleración GPU AMD: $gpu_status"
@@ -193,8 +193,8 @@ install_packages() {
     log_info "Comprobando paquetes del motor Podman y componentes optimizados..."
     local missing_pkgs=()
 
-    # Paquetes base y de alto rendimiento en Ubuntu 26.10
-    # - passt: proporciona 'pasta', stack de red rootless estándar de Podman 5
+    # Paquetes base y de alto rendimiento en Ubuntu
+    # - passt: proporciona 'pasta', stack de red rootless estándar de Podman
     # - crun: runtime OCI nativo en C ultrarrápido y bajo consumo de memoria
     # - catatonit: init subreaper para contenedores
     for pkg in podman podman-docker passt crun catatonit uidmap dbus-user-session slirp4netns fuse-overlayfs; do
@@ -235,9 +235,10 @@ configure_storage() {
     local storage_conf="$HOME/.config/containers/storage.conf"
     mkdir -p "$(dirname "$storage_conf")"
 
-    # En Ubuntu 26.10 (Linux 7.3+), el kernel soporta native unprivileged overlayfs.
-    # Omitir 'mount_program = fuse-overlayfs' permite a Podman usar Native Overlay Diff
-    # directamente sobre el SSD NVMe Kioxia sin la penalización de CPU/IO de FUSE.
+    # En Ubuntu Workstation (Linux 6.8+ / overlayfs nativo sin privilegios),
+    # el kernel soporta native unprivileged overlayfs. Omitir 'mount_program = fuse-overlayfs'
+    # permite a Podman usar Native Overlay Diff directamente sobre el SSD NVMe Kioxia
+    # sin la penalización de CPU/IO de FUSE.
     if [ ! -f "$storage_conf" ]; then
         cat > "$storage_conf" <<'EOF'
 [storage]
@@ -524,7 +525,7 @@ case "${1:-}" in
     "")
         echo "================================================================="
         echo "🐳 OPTIMIZADOR DE PODMAN ROOTLESS - UBUNTU WORKSTATION (GNOME)"
-        echo "   AMD Ryzen 7 7730U | Radeon Vega 8 | NVMe Kioxia | Ubuntu 26.10"
+        echo "   AMD Ryzen 7 7730U | Radeon Vega 8 | NVMe Kioxia | Ubuntu Workstation"
         echo "================================================================="
         require_non_root
         install_packages
@@ -542,7 +543,7 @@ case "${1:-}" in
         echo ""
         show_status
         echo "================================================================="
-        echo "✅ Podman Rootless y Quadlets optimizados con éxito para Ubuntu 26.10."
+        echo "✅ Podman Rootless y Quadlets optimizados con éxito para Ubuntu Workstation."
         echo "💡 Comandos útiles: podman-utils create <template> <nombre> | podman ps"
         echo "================================================================="
         ;;
