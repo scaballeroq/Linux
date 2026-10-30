@@ -4,7 +4,6 @@
 # 
 # Aplica tema oscuro, transparencia y ocultamiento de scrollbar
 # para un look moderno y minimalista en Ptyxis.
-# Ptyxis ya viene instalado por defecto en Ubuntu 26.04.
 
 set -euo pipefail
 

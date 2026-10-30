@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# HABILITACIÓN DE ARQUITECTURA amd64v3 (x86-64-v3) EN UBUNTU (>= 26.04)
+# HABILITACIÓN DE ARQUITECTURA amd64v3 (x86-64-v3) EN UBUNTU
 # ==============================================================================
 # Permite descargar y ejecutar binarios y librerías compilados específicamente
 # para la microarquitectura x86-64-v3 (instrucciones AVX2, FMA, BMI1, BMI2).
@@ -24,7 +24,7 @@ Opciones:
 
 Requisitos:
   - CPU compatible con x86-64-v3 (AVX, AVX2, BMI1, BMI2, FMA).
-  - Ubuntu 26.04 LTS (resolute) o superior (ej. 26.10 stonking).
+  - Repositorios con soporte de arquitectura amd64v3.
 EOF
 }
 

@@ -75,6 +75,22 @@ gnome-theme-light:
 gnome-status:
     ./Setup/gnome-settings.sh --status
 
+# Gestión e inspección de extensiones de GNOME Shell
+gnome-extensions *args:
+    ./Setup/gnome-extensions.sh {{args}}
+
+# Diagnóstico del estado de extensiones de GNOME Shell
+gnome-extensions-status:
+    ./Setup/gnome-extensions.sh --status
+
+# Gestión de apariencia, temas de iconos (Papirus/Yaru) y cursores (Bibata)
+apariencia *args:
+    ./Setup/apariencia.sh {{args}}
+
+# Diagnóstico del estado de apariencia y temas
+apariencia-status:
+    ./Setup/apariencia.sh --status
+
 # Optimizaciones avanzadas de rendimiento (Sysctl, límites, inotify 1M, max_map_count 16M, TCP BBR, exclusiones Tracker)
 tuning:
     ./Setup/ubuntu-tuning.sh
@@ -325,7 +341,7 @@ podman-status:
 # OPTIMIZACIÓN Y ARQUITECTURA (amd64v3)
 # =============================================================================
 
-# Optimización amd64v3 (AVX2/FMA/BMI2 en Ubuntu >= 26.04)
+# Optimización amd64v3 (AVX2/FMA/BMI2 para arquitecturas compatibles)
 amd64v3:
     ./Setup/amd64v3.sh
 
