@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==============================================================================
 # post-install-intel.sh - Post-instalación para Ubuntu con Intel Core y Media Center
-# Entorno: GNOME Shell 51 (Wayland)
+# Entorno: GNOME Shell (Wayland)
 # ==============================================================================
 
 set -euo pipefail

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# SEGURIDAD Y RED DE DESARROLLO (seguridad.sh) - Ubuntu Linux 26.10 (GNOME Shell)
+# SEGURIDAD Y RED DE DESARROLLO (seguridad.sh) - Ubuntu Linux (GNOME Shell)
 # ==============================================================================
 # Configuración orientada a estación de trabajo local/hogar para desarrollo:
 # • Firewalld obligatorio: Podman Rootless (podman+, cni-podman+), KVM/QEMU (virbr0, virbr+), GSConnect, mDNS, SSH.
@@ -33,7 +33,7 @@ fi
 
 show_help() {
     cat <<EOF
-🛡️ Gestor de Seguridad y Red de Desarrollo - Ubuntu Linux 26.10
+🛡️ Gestor de Seguridad y Red de Desarrollo - Ubuntu Linux
 (Optimizado para desarrollo doméstico: Podman Rootless + KVM/Libvirt + Firewalld)
 
 Uso:
@@ -157,7 +157,7 @@ case "${1:-}" in
 esac
 
 echo "================================================================="
-echo "🛡️ CONFIGURANDO SEGURIDAD Y RED PARA DESARROLLO (UBUNTU 26.10)"
+echo "🛡️ CONFIGURANDO SEGURIDAD Y RED PARA DESARROLLO (UBUNTU WORKSTATION)"
 echo "================================================================="
 
 # 1. Desactivar y enmascarar UFW
@@ -210,7 +210,7 @@ echo "ℹ️ [4/4] Aplicando parámetros de Kernel para Podman Rootless y virtua
 $SUDO mkdir -p /etc/sysctl.d
 cat <<'EOF' | $SUDO tee /etc/sysctl.d/99-development-network.conf > /dev/null
 # =============================================================================
-# RED Y CONTENEDORES PARA DESARROLLO - UBUNTU 26.10
+# RED Y CONTENEDORES PARA DESARROLLO - UBUNTU WORKSTATION
 # =============================================================================
 
 # Reenvío de paquetes para redes de contenedores (Podman) y VMs (KVM/QEMU)
@@ -241,5 +241,5 @@ $SUDO sysctl --system > /dev/null 2>&1 || true
 echo "  ✅ Parámetros sysctl aplicados."
 
 echo "================================================================="
-echo "✅ Seguridad y red de desarrollo configuradas exitosamente en Ubuntu 26.10."
+echo "✅ Seguridad y red de desarrollo configuradas exitosamente en Ubuntu Workstation."
 echo "================================================================="

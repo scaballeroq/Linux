@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 show_help() {
     cat <<EOF
-🚀 Despachador de Post-Instalación para Ubuntu Workstation (GNOME Shell 51 Wayland)
+🚀 Despachador de Post-Instalación para Ubuntu Workstation (GNOME Shell Wayland)
 
 Uso:
   $0 [OPCIÓN]

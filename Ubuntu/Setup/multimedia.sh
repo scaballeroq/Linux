@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # multimedia.sh - Suite Multimedia, Códecs y Aceleración HW para Ubuntu Workstation
-# Optimizado para Ubuntu 26.10 con Wayland nativo (GNOME Shell 51)
+# Optimizado para Ubuntu (24.04 LTS / GNOME Shell Wayland)
 # Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Graphics Vega 8)
 # ==============================================================================
 # Características:
 #   - Pila completa de códecs oficial: FFmpeg, libavcodec-extra, ubuntu-restricted-addons/extras
 #   - Pila GStreamer 1.0 Wayland: plugins-base, good, bad (módulo VA), ugly, libav, gl, gtk4 y pipewire
 #   - Aceleración por hardware VA-API / Vulkan en Wayland: libva-wayland2, mesa-va-drivers (radeonsi)
-#   - Reproductores Wayland nativos: Showtime (GNOME 51), Celluloid y MPV con config optimizada
+#   - Reproductores Wayland nativos: Showtime (GNOME), Celluloid y MPV con config optimizada
 #   - Soporte desacoplado Flatpak / Flathub a nivel de sistema para reproductores sandbox
 #   - Opciones CLI: --status / -s, --codecs, --players, --flatpak, --help / -h
 # ==============================================================================
@@ -59,7 +59,7 @@ run_as_user() {
 # ------------------------------------------------------------------------------
 show_help() {
     cat <<EOF
-🎬 Suite Multimedia y Aceleración Gráfica - Ubuntu 26.10 (GNOME Wayland)
+🎬 Suite Multimedia y Aceleración Gráfica - Ubuntu Workstation (GNOME Wayland)
 
 Uso:
   $0 [OPCIÓN]
@@ -76,14 +76,14 @@ Componentes gestionados:
   • Aceleración HW:     Mesa VA-API (radeonsi Gallium), libva-wayland2, Vulkan RADV y vainfo.
   • Códecs Audio/Video: FFmpeg, libavcodec-extra, ubuntu-restricted-addons/extras (EULA automatizada).
   • GStreamer Wayland:  plugins-base, good, bad (VA integrado), ugly, libav, gl, gtk4 y pipewire.
-  • Reproductores:      Showtime (GTK4/Adwaita nativo GNOME 51), Celluloid, MPV y VLC.
+  • Reproductores:      Showtime (GTK4/Adwaita nativo GNOME), Celluloid, MPV y VLC.
   • Audio Moderno:      PipeWire y WirePlumber con integración en sinks GStreamer.
 EOF
 }
 
 show_status() {
     echo "================================================================="
-    echo "🔍 ESTADO MULTIMEDIA Y ACELERACIÓN WAYLAND - UBUNTU 26.10"
+    echo "🔍 ESTADO MULTIMEDIA Y ACELERACIÓN WAYLAND - UBUNTU WORKSTATION"
     echo "================================================================="
 
     echo "• Aceleración Gráfica por Hardware (VA-API / Vulkan):"
@@ -293,7 +293,7 @@ case "${1:-}" in
         ;;
     "")
         echo "================================================================="
-        echo "🎬 CONFIGURANDO SUITE MULTIMEDIA Y WAYLAND EN UBUNTU 26.10"
+        echo "🎬 CONFIGURANDO SUITE MULTIMEDIA Y WAYLAND EN UBUNTU WORKSTATION"
         echo "================================================================="
         install_codecs
         install_players

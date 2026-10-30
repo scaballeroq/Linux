@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # cockpit.sh - Consola de Administración Web Cockpit y Cliente de Escritorio
-# Sistema: Ubuntu Linux (24.04 / 24.10 / 26.10) | Escritorio: GNOME Shell Wayland
+# Sistema: Ubuntu Linux (24.04 / 24.10 / 26.04) | Escritorio: GNOME Shell Wayland
 # Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3, 8C/16T) | 32 GB RAM
 # Almacenamiento: SSD NVMe Kioxia 512 GB | Red & Seguridad: Firewalld (Puerto 9090)
 # Integración: Podman Rootless + KVM/QEMU Libvirt + NetworkManager + Btrfs/Ext4
@@ -56,7 +56,7 @@ CORE_PACKAGES=(
 show_help() {
     cat <<EOF
 🎛️ Gestor de Cockpit Web Console - Ubuntu Workstation
-Optimizado para HP ProBook 455 G10 (AMD Ryzen 7 7730U + Ubuntu 26.10)
+Optimizado para HP ProBook 455 G10 (AMD Ryzen 7 7730U + Ubuntu Workstation)
 
 Uso:
   $0 [OPCIÓN]
@@ -246,7 +246,7 @@ case "${1:-}" in
 esac
 
 echo "================================================================="
-echo "🎛️ CONFIGURANDO COCKPIT WEB CONSOLE (UBUNTU 26.10 WORKSTATION)"
+echo "🎛️ CONFIGURANDO COCKPIT WEB CONSOLE (UBUNTU WORKSTATION)"
 echo "================================================================="
 
 require_root
@@ -271,7 +271,7 @@ fi
 echo "ℹ️ [2/4] Configurando optimizaciones de rendimiento y sesión (/etc/cockpit/cockpit.conf)..."
 $SUDO mkdir -p /etc/cockpit
 cat <<EOF | $SUDO tee /etc/cockpit/cockpit.conf > /dev/null
-# Configuración optimizada de Cockpit para HP ProBook 455 G10 (Ubuntu 26.10)
+# Configuración optimizada de Cockpit para HP ProBook 455 G10 (Ubuntu Workstation)
 [WebService]
 Origins = https://localhost:9090 https://127.0.0.1:9090
 MaxStartups = 5

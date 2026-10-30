@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # apariencia.sh - Instalación y Configuración de Temas, Iconos y Cursores
-# Ubuntu Workstation (GNOME Shell 51 + Wayland)
+# Ubuntu Workstation (Ubuntu 24.04 / GNOME Shell 50 + Wayland)
 # Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8)
 # ==============================================================================
 # Características:
@@ -59,7 +59,7 @@ run_as_user() {
 # ------------------------------------------------------------------------------
 show_help() {
     cat <<EOF
-🎨 Gestor de Apariencia, Temas e Iconos - Ubuntu Workstation (GNOME 51 Wayland)
+🎨 Gestor de Apariencia, Temas e Iconos - Ubuntu Workstation (GNOME 50 Wayland)
 
 Uso:
   $0 [OPCIÓN]
@@ -72,7 +72,7 @@ Opciones:
   --papirus           Aplica Papirus como tema de iconos activo (Papirus-Dark en modo oscuro).
   --yaru              Restablece los iconos nativos de Ubuntu (Yaru / Yaru-dark).
   --bibata            Aplica el cursor moderno Bibata-Modern-Classic.
-  --install, -i       Instala únicamente los paquetes estéticos sin alterar la configuración actual.
+  --install, -i       Instala únicamente los paquetes estéticos sin actualizar el sistema ni repositorios.
   --help, -h          Muestra este mensaje de ayuda.
 
 Paquetes gestionados:
@@ -101,7 +101,7 @@ show_status() {
 }
 
 # ------------------------------------------------------------------------------
-# 3. INSTALACIÓN DE PAQUETES ESTÉTICOS (IDEMPOTENTE)
+# 3. INSTALACIÓN DE PAQUETES ESTÉTICOS (IDEMPOTENTE Y SIN ACTUALIZAR SISTEMA)
 # ------------------------------------------------------------------------------
 install_packages() {
     echo "📦 Verificando paquetes de temas, iconos y cursores..."
@@ -114,9 +114,8 @@ install_packages() {
     done
 
     if [ ${#to_install[@]} -gt 0 ]; then
-        echo "ℹ️ Instalando paquetes faltantes: ${to_install[*]}..."
-        $SUDO apt-get update -qq
-        $SUDO apt-get install -y "${to_install[@]}" 2>/dev/null || true
+        echo "ℹ️ Instalando paquetes faltantes (${to_install[*]}) sin actualizar el resto del sistema..."
+        $SUDO apt-get install -y --no-upgrade "${to_install[@]}" 2>/dev/null || true
         echo "  ✅ Paquetes instalados con éxito."
     else
         echo "  ✅ Todos los paquetes de temas e iconos ya están instalados."
