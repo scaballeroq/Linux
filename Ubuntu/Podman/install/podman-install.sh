@@ -1,12 +1,12 @@
 #!/bin/bash
 # ==============================================================================
 # podman-install.sh - Instalación, Optimización y Configuración de Podman Rootless
-# Ubuntu Workstation (GNOME Shell 51 + Wayland / Systemd User Environment)
+# Ubuntu Workstation (GNOME Shell + Wayland / Systemd User Environment)
 # ==============================================================================
 # Características:
-# - Optimizado para Ubuntu 26.10 (Kernel 7.3+ / Podman 5.8+).
+# - Optimizado para Ubuntu Workstation (Ubuntu 24.04 LTS / GNOME Shell).
 # - Soporta tanto la instalación desde cero como la reconfiguración idempotente.
-# - Paquetes modernos de Podman 5: passt (pasta de alto rendimiento), crun y catatonit.
+# - Paquetes modernos de Podman: passt (pasta de alto rendimiento), crun y catatonit.
 # - Almacenamiento overlay nativo del kernel para máxima velocidad I/O en SSD NVMe Kioxia.
 # - Aceleración por hardware para GPU AMD Radeon Graphics (Vega 8) vía grupos render/video.
 # - Integración con Firewalld asignando la interfaz podman+ a la zona trusted.

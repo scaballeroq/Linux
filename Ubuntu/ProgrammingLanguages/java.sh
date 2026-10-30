@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # java.sh - Instalación y Optimización de OpenJDK para Ubuntu Workstation
-# Arquitectura: AMD Ryzen 7 7730U (16 hilos) | 32 GB RAM | GNOME Shell 51 Wayland
+# Arquitectura: AMD Ryzen 7 7730U (16 hilos) | 32 GB RAM | GNOME Shell Wayland
 # ==============================================================================
 # Características:
 # - Despliegue idempotente de OpenJDK (openjdk-21-jdk y openjdk-21-jre)
