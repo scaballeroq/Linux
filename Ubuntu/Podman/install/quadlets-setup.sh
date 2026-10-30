@@ -36,7 +36,7 @@ require_podman() {
 
 show_help() {
     cat <<EOF
-⚙️ Gestor de Quadlets para Podman - Ubuntu Workstation (GNOME Shell 51)
+⚙️ Gestor de Quadlets para Podman - Ubuntu Workstation (GNOME Shell)
 
 Uso:
   $0 [OPCIÓN]
