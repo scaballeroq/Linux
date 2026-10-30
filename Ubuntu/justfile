@@ -320,3 +320,15 @@ podman-quadlets:
 podman-status:
     ./Podman/install/podman-install.sh --status
     ./Podman/lib/podman-utils.sh doctor
+
+# =============================================================================
+# OPTIMIZACIÓN Y ARQUITECTURA (amd64v3)
+# =============================================================================
+
+# Optimización amd64v3 (AVX2/FMA/BMI2 en Ubuntu >= 26.04)
+amd64v3:
+    ./Setup/amd64v3.sh
+
+# Estado y diagnóstico de la variante amd64v3
+amd64v3-status:
+    ./Setup/amd64v3.sh --status
