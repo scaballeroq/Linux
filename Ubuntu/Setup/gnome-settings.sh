@@ -227,9 +227,24 @@ apply_windows() {
     # Edge tiling nativo para dividir ventanas al arrastrar a los bordes
     run_as_user gsettings set org.gnome.mutter edge-tiling true 2>/dev/null || true
 
-    # Si Mutter soporta experimental-features en la versión actual, aplicarlas de forma segura
+    # Si Mutter soporta experimental-features en la versión actual, aplicarlas de forma dinámica y segura
     if run_as_user gsettings list-keys org.gnome.mutter 2>/dev/null | grep -q "^experimental-features$"; then
-        run_as_user gsettings set org.gnome.mutter experimental-features "['variable-refresh-rate', 'scale-monitor-framebuffer']" 2>/dev/null || true
+        local range features=()
+        range=$(run_as_user gsettings range org.gnome.mutter experimental-features 2>/dev/null || true)
+        if echo "$range" | grep -q "scale-monitor-framebuffer"; then
+            features+=("'scale-monitor-framebuffer'")
+        fi
+        if echo "$range" | grep -q "variable-refresh-rate"; then
+            features+=("'variable-refresh-rate'")
+        fi
+        if echo "$range" | grep -q "xwayland-native-scaling"; then
+            features+=("'xwayland-native-scaling'")
+        fi
+        if [ ${#features[@]} -gt 0 ]; then
+            local features_str
+            features_str=$(IFS=, ; echo "[${features[*]}]")
+            run_as_user gsettings set org.gnome.mutter experimental-features "$features_str" 2>/dev/null || true
+        fi
     fi
 
     echo "  ✅ Mutter optimizado para ventanas fluidas y snapping multimonitor."
