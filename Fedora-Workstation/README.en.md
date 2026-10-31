@@ -58,7 +58,6 @@ Operating system setup, personalization, and hardening:
 - **`chrome.sh`**: Google Chrome official repo activation, Wayland Ozone flags, and VA-API hardware acceleration.
 - **`firefox.sh`**: Mozilla Firefox native verification and hardware acceleration support.
 - **`steam.sh`**: Steam installation from RPM Fusion Nonfree with GameMode, MangoHud, 32-bit Vulkan drivers (`mesa-vulkan-drivers.i686`), and Proton-GE.
-- **`amd64v3.sh`**: x86-64-v3 microarchitecture diagnostic and native glibc-hwcaps support.
 
 ### 💻 [IDE](./IDE/)
 - **`antigravity.sh`**: Google Antigravity Desktop setup (with sandbox, update helper, and Nautilus context menu).

@@ -376,14 +376,3 @@ podman-status:
     ./Podman/install/podman-install.sh --status
     ./Podman/lib/podman-utils.sh doctor
 
-# =============================================================================
-# OPTIMIZACIÓN Y ARQUITECTURA (amd64v3)
-# =============================================================================
-
-# Diagnóstico de microarquitectura amd64v3 y aceleración glibc-hwcaps
-amd64v3:
-    ./Setup/amd64v3.sh
-
-# Estado y diagnóstico de la compatibilidad amd64v3
-amd64v3-status:
-    ./Setup/amd64v3.sh --status

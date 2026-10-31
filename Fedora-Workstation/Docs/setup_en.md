@@ -294,9 +294,3 @@ Complete support for monochrome and multifunction HP printers (LaserJet Pro M15w
 
 - `apariencia.sh`: GTK themes (Adwaita / Adw-gtk3), icon sets (Papirus), and modern cursors (Bibata).
 - `ptyxis.sh`: Container-aware GNOME terminal styling with dark mode, 85% opacity, and minimal hidden scrollbars.
-
----
-
-## 16. x86-64-v3 Microarchitecture Diagnostic (`amd64v3.sh`)
-
-Verifies AMD Ryzen 7 7730U compatibility with AVX2, FMA, BMI1/2 instruction sets and Fedora glibc-hwcaps acceleration.

@@ -60,7 +60,6 @@ Scripts de configuración del sistema operativo, personalización y endurecimien
 - **`chrome.sh`**: Activación del repositorio oficial de Google Chrome, flags Wayland Ozone y aceleración VA-API.
 - **`firefox.sh`**: Verificación y soporte multimedia nativo de Mozilla Firefox.
 - **`steam.sh`**: Instalación de Steam nativo desde RPM Fusion Nonfree con GameMode, MangoHud, drivers Vulkan de 32-bit (`mesa-vulkan-drivers.i686`) y Proton-GE.
-- **`amd64v3.sh`**: Diagnóstico de microarquitectura x86-64-v3 y soporte nativo glibc-hwcaps.
 
 ### 💻 [IDE](./IDE/)
 - **`antigravity.sh`**: Google Antigravity Desktop setup (con sandbox, helper de actualización y menú contextual para Nautilus).

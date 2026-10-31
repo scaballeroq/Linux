@@ -299,9 +299,3 @@ Soporte completo para impresoras monocromo y multifunción HP (LaserJet Pro M15w
 
 - `apariencia.sh`: Gestión de temas GTK (Adwaita / Adw-gtk3), iconos (Papirus) y cursores modernos (Bibata).
 - `ptyxis.sh`: Optimización estética de la terminal nativa de contenedores de GNOME con tema oscuro, transparencia (0.85) y diseño sin scrollbars.
-
----
-
-## 16. Diagnóstico de Microarquitectura x86-64-v3 (`amd64v3.sh`)
-
-Verifica la compatibilidad del procesador AMD Ryzen 7 7730U con el conjunto de instrucciones AVX2, FMA, BMI1/2 y la aceleración nativa mediante glibc-hwcaps en Fedora.
