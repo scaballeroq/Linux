@@ -1,87 +1,186 @@
 #!/bin/bash
-# hp-printer-setup.sh - Instalación y configuración de impresora HP LaserJet Pro M15w por USB en Debian Testing + GNOME
+# =============================================================================
+# hp-printer-setup.sh - Configuración de Impresora HP (LaserJet Pro M15w)
+# =============================================================================
+# Optimizado para Debian Workstation (GNOME Shell):
+#   - Conexión por cable USB y Red inalámbrica (Wi-Fi / mDNS)
+#   - Servicios CUPS, Avahi y soporte nativo de impresión en GNOME
+#   - Instalación guiada del plugin propietario requerido (hp-plugin)
+#   - Pertenencia a grupos 'lp' y 'lpadmin'
+#   - Reglas de Firewalld para descubrimiento y colas de impresión
+#   - Opciones CLI: --status, --plugin, --wifi, --usb, --help
+# =============================================================================
 
 set -euo pipefail
 
-echo "🚀 Iniciando configuración de impresora HP LaserJet Pro M15w (USB) en Debian Testing + GNOME..."
+if [ "$EUID" -ne 0 ]; then
+    if command -v sudo &> /dev/null; then
+        SUDO="sudo"
+    else
+        echo "❌ Error: Este script requiere privilegios de superusuario."
+        exit 1
+    fi
+else
+    SUDO=""
+fi
 
-# 1. Identificar usuario principal
-TARGET_USER="${SUDO_USER:-$USER}"
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    TARGET_USER="$SUDO_USER"
+else
+    TARGET_USER="${USER:-$(id -un)}"
+fi
 
-# 2. Instalación de paquetes necesarios (CUPS, HPLIP, herramientas GUI y utilidades USB)
-echo "ℹ️ Instalando paquetes de impresión (CUPS, HPLIP, HPLIP-GUI, system-config-printer)..."
-sudo apt update
-sudo apt install -y \
+show_help() {
+    cat <<EOF
+🖨️ Instalador y Configurador de Impresoras HP - Debian Workstation (GNOME)
+
+Uso:
+  $0 [OPCIÓN]
+
+Opciones:
+  (sin argumentos)       Instala dependencias, servicios y lanza configuración interactiva.
+  --status, -s           Muestra el estado de CUPS, Avahi, impresoras detectadas y colas.
+  --plugin               Descarga e instala únicamente el plugin propietario de HP (hp-plugin).
+  --wifi, --net          Inicia directamente la búsqueda y configuración de impresora por Wi-Fi.
+  --usb                  Inicia directamente la configuración de impresora por cable USB.
+  --help, -h             Muestra esta ayuda.
+
+Modelos compatibles:
+  - HP LaserJet Pro M15w / M15a
+  - HP LaserJet Pro M14 / M17 series
+  - Cualquier impresora HP compatible con HPLIP y CUPS
+EOF
+}
+
+show_status() {
+    echo "================================================================="
+    echo "🔍 ESTADO DEL SERVICIO DE IMPRESIÓN - DEBIAN WORKSTATION"
+    echo "================================================================="
+    echo "• Servicio CUPS:               $(systemctl is-active --quiet cups.service 2>/dev/null && echo '✅ Activo' || echo '❌ Inactivo')"
+    echo "• Servicio Avahi (mDNS/Wi-Fi): $(systemctl is-active --quiet avahi-daemon.service 2>/dev/null && echo '✅ Activo' || echo '❌ Inactivo')"
+    echo "• Usuario en grupos:           $(groups "$TARGET_USER" 2>/dev/null || echo 'n/a')"
+    echo "-----------------------------------------------------------------"
+    echo "• Impresoras HP detectadas por USB:"
+    if lsusb 2>/dev/null | grep -i -E "hp|hewlett" | grep -i -E "laserjet|m14|m15|m17|print" >/dev/null 2>&1; then
+        lsusb | grep -i -E "hp|hewlett" | grep -i -E "laserjet|m14|m15|m17|print" | sed 's/^/    /'
+    else
+        echo "    (Ninguna impresora HP detectada en puertos USB)"
+    fi
+    echo "-----------------------------------------------------------------"
+    echo "• Colas de impresión activas en CUPS (lpstat):"
+    lpstat -p -d 2>/dev/null || echo "    (No hay impresoras configuradas actualmente)"
+    echo "================================================================="
+    echo "💡 Puedes administrar tus impresoras también desde GNOME en:"
+    echo "   'Configuración -> Impresoras' o ejecutando 'system-config-printer'"
+}
+
+install_plugin() {
+    echo "⬇️ Instalando plugin propietario oficial de HP (hp-plugin)..."
+    if command -v hp-plugin &>/dev/null; then
+        hp-plugin -i
+    else
+        echo "❌ Error: 'hp-plugin' no está disponible. Ejecuta primero $0 sin argumentos."
+        exit 1
+    fi
+}
+
+setup_wifi() {
+    echo "📶 Buscando impresoras HP en la red local..."
+    if command -v hp-setup &>/dev/null; then
+        hp-setup -i -b net
+    else
+        echo "❌ Error: 'hp-setup' no está disponible. Ejecuta primero $0 sin argumentos."
+        exit 1
+    fi
+}
+
+setup_usb() {
+    echo "🔌 Configurando impresora HP por conexión USB..."
+    if command -v hp-setup &>/dev/null; then
+        hp-setup -i -b usb
+    else
+        echo "❌ Error: 'hp-setup' no está disponible. Ejecuta primero $0 sin argumentos."
+        exit 1
+    fi
+}
+
+case "${1:-}" in
+    --help|-h|help)
+        show_help
+        exit 0
+        ;;
+    --status|-s|status)
+        show_status
+        exit 0
+        ;;
+    --plugin)
+        install_plugin
+        exit 0
+        ;;
+    --wifi|--net)
+        setup_wifi
+        exit 0
+        ;;
+    --usb)
+        setup_usb
+        exit 0
+        ;;
+    "")
+        ;;
+    *)
+        echo "Opción no reconocida: $1"
+        show_help
+        exit 1
+        ;;
+esac
+
+echo "================================================================="
+echo "🖨️ INSTALANDO Y CONFIGURANDO IMPRESIÓN HP - DEBIAN WORKSTATION"
+echo "================================================================="
+
+# 1. Instalar paquetes de CUPS y HPLIP
+echo "ℹ️ [1/5] Instalando CUPS, Avahi y suite HPLIP..."
+$SUDO apt update
+$SUDO apt install -y \
     cups \
     cups-client \
     cups-filters \
     hplip \
     hplip-gui \
     printer-driver-hpcups \
-    python3-pyqt5 \
-    system-config-printer \
-    usbutils \
-    wget 2>/dev/null || true
+    avahi-daemon \
+    system-config-printer
 
-# 3. Habilitar e iniciar servicio CUPS
-echo "ℹ️ Habilitando e iniciando el servicio CUPS..."
-sudo systemctl enable --now cups.service
+# 2. Habilitar servicios
+echo "ℹ️ [2/5] Habilitando servicios de impresión en systemd..."
+$SUDO systemctl enable --now cups.service
+$SUDO systemctl enable --now avahi-daemon.service
 
-# 4. Añadir usuario a los grupos de impresión lp y lpadmin
-echo "ℹ️ Añadiendo al usuario '$TARGET_USER' a los grupos lp y lpadmin..."
-sudo usermod -aG lp,lpadmin "$TARGET_USER"
+# 3. Añadir usuario a grupos lp y lpadmin
+echo "ℹ️ [3/5] Añadiendo usuario '$TARGET_USER' a grupos 'lp' y 'lpadmin'..."
+$SUDO usermod -aG lp,lpadmin "$TARGET_USER"
 
-# 5. Comprobación de detección de la impresora por USB
-echo "ℹ️ Verificando conexión USB de la impresora HP..."
-if lsusb | grep -i -E "hp|hewlett" | grep -i -E "laserjet|m14|m15|m17" > /dev/null 2>&1; then
-    echo "✅ Impresora HP detectada en el puerto USB:"
-    lsusb | grep -i -E "hp|hewlett" | grep -i -E "laserjet|m14|m15|m17" || true
-else
-    echo "⚠️ No se detectó explícitamente la HP LaserJet M15w en lsusb."
-    echo "   Por favor, asegúrate de que la impresora esté encendida y conectada mediante el cable USB al equipo."
+# 4. Configurar Firewalld para CUPS e IPP
+if command -v firewall-cmd &>/dev/null && systemctl is-active --quiet firewalld; then
+    echo "ℹ️ [4/5] Configurando reglas de cortafuegos en Firewalld (mdns, ipp)..."
+    ACTIVE_ZONE=$($SUDO firewall-cmd --get-default-zone 2>/dev/null || echo "public")
+    $SUDO firewall-cmd --permanent --zone="$ACTIVE_ZONE" --add-service=mdns 2>/dev/null || true
+    $SUDO firewall-cmd --permanent --zone="$ACTIVE_ZONE" --add-service=ipp 2>/dev/null || true
+    $SUDO firewall-cmd --permanent --zone="$ACTIVE_ZONE" --add-service=ipp-client 2>/dev/null || true
+    $SUDO firewall-cmd --reload 2>/dev/null || true
 fi
 
-# 6. Instalación del Plugin Propietario de HP (Requerido para HP LaserJet Pro M15w)
-echo ""
-echo "================================================================="
-echo "💡 IMPORTANTE: La serie HP LaserJet M15w requiere el PLUGIN PROPIETARIO"
-echo "   de HP (hplip-plugin) para poder procesar trabajos de impresión."
-echo "================================================================="
-echo ""
-
-read -rp "¿Deseas ejecutar 'hp-plugin' ahora para descargar e instalar el plugin? (S/n): " INSTALL_PLUGIN || true
-INSTALL_PLUGIN="${INSTALL_PLUGIN:-s}"
-
-if [[ "$INSTALL_PLUGIN" =~ ^[Ss]$ ]]; then
-    echo "ℹ️ Ejecutando instalador del plugin HP (sigue las instrucciones en pantalla)..."
-    if command -v hp-plugin &> /dev/null; then
-        sudo hp-plugin -i || echo "⚠️ hp-plugin terminó con advertencias o requiere interacción manual."
-    fi
-else
-    echo "ℹ️ Saltando la instalación del plugin. Puedes instalarlo más tarde ejecutando: sudo hp-plugin -i"
+# 5. Descargar e instalar plugin propietario de HP
+echo "ℹ️ [5/5] Comprobando plugin propietario requerido para LaserJet M15w..."
+if command -v hp-plugin &>/dev/null; then
+    echo "💡 Se abrirá el asistente para instalar el firmware/plugin de HP:"
+    hp-plugin -i || echo "⚠️ Puedes ejecutar './Setup/hp-printer-setup.sh --plugin' más tarde si lo omites."
 fi
 
-# 7. Configuración de la cola de impresión en CUPS
-echo ""
-echo "ℹ️ Intentando añadir/configurar automáticamente la impresora con hp-setup..."
-read -rp "¿Deseas lanzar 'hp-setup' en modo USB interactivo para agregar la cola de impresión? (S/n): " RUN_HP_SETUP || true
-RUN_HP_SETUP="${RUN_HP_SETUP:-s}"
-
-if [[ "$RUN_HP_SETUP" =~ ^[Ss]$ ]]; then
-    sudo hp-setup -b usb -i || true
-fi
-
-# 8. Mostrar resumen y estado de CUPS
 echo ""
 echo "================================================================="
-echo "✅ Estado de las impresoras en CUPS:"
-lpstat -p -d 2>/dev/null || echo "ℹ️ No hay impresoras configuradas aún o CUPS requiere reinicio de sesión."
+echo "✅ Pila de impresión HP configurada correctamente en Debian."
+echo "💡 Para añadir tu impresora, ejecuta:"
+echo "   ./Setup/hp-printer-setup.sh --wifi    (Si está conectada por Wi-Fi)"
+echo "   ./Setup/hp-printer-setup.sh --usb     (Si está conectada por cable USB)"
 echo "================================================================="
-echo ""
-echo "💡 Notas finales:"
-echo "   1) Si no has añadido el grupo 'lpadmin' a tu sesión actual, ejecuta: newgrp lpadmin (o reinicia sesión)."
-echo "   2) Puedes administrar impresoras desde GNOME en 'Configuración -> Impresoras'."
-echo "   3) Panel Web de CUPS disponible en: http://localhost:631"
-echo "   4) Para probar la impresión, puedes enviar una página de prueba con: hp-testpage"
-echo ""
-echo "✅ Configuración de HP LaserJet Pro M15w completada."

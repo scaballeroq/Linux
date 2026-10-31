@@ -1,39 +1,37 @@
-# ProgrammingLanguages - Justfile
-# Este justfile es para uso desde el directorio ProgrammingLanguages/
-# Para el justfile principal, usar ../justfile
+# ProgrammingLanguages Sub-Justfile - Debian Workstation
 
-# Gestor de runtimes Mise
+# Instalar todos los lenguajes y runtimes
+languages: mise node python rust dotnet java angular
+    @echo "✅ Todos los lenguajes han sido instalados correctamente."
+
+# Gestor de versiones Mise
 mise:
     ./mise.sh
 
-# Node.js LTS
+# Node.js LTS & pnpm vía Mise
 node:
     ./nodejs.sh
 
-# Python
+# Python con UV package manager
 python:
     ./python.sh
 
-# Rust
+# Inicializador de proyectos Python con UV
+python-uv *args:
+    ./python-uv-init.sh {{args}}
+
+# Rust toolchain
 rust:
-    ./rust.sh
+    ./Revisar/rust.sh
 
 # .NET SDK
 dotnet:
-    ./dotnet.sh
+    ./Revisar/dotnet.sh
 
-# Java (OpenJDK)
+# OpenJDK Java LTS
 java:
     ./java.sh
 
 # Angular CLI
 angular:
-    ./angular.sh
-
-# Gemini CLI
-gemini:
-    ./gemini.sh
-
-# Todos los lenguajes
-all: mise node python rust dotnet java angular gemini
-    echo "✅ Todos los lenguajes instalados."
+    ./Revisar/angular.sh

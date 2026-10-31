@@ -1,17 +1,19 @@
-# Debian Environment Configuration Justfile
-# (Debian + GNOME)
+# =============================================================================
+# Debian GNU/Linux Environment Configuration Justfile
+# (Debian 13 Trixie Workstation + GNOME Shell Wayland)
+# =============================================================================
 
 # Instala todo el entorno por defecto (Auto-detección de CPU / Portátil AMD)
-setup-all: post-install workspace laptop fingerprint tuning extensions screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
-    echo "🚀 Entorno completo de Debian (Debian + GNOME) configurado. Por favor, reinicia el sistema."
+setup-all: post-install multimedia flatpak chrome steam laptop tuning gnome-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+    @echo "🚀 Entorno completo de Debian GNU/Linux (GNOME Shell Wayland) configurado. Por favor, reinicia el sistema."
 
-# Perfil completo para Portátil de desarrollo (AMD Ryzen + Huella + Virtualización)
-setup-laptop-amd: post-install-amd workspace laptop fingerprint tuning extensions screensaver plymouth shell security fonts virtualization mise cockpit ides git-setup languages yt-dlp fastfetch gnome ptyxis firefox
-    echo "🚀 Entorno Portátil AMD Ryzen configurado con éxito. Por favor, reinicia el sistema."
+# Perfil completo para Portátil de desarrollo (AMD Ryzen + Virtualización + Contenedores)
+setup-laptop-amd: post-install-amd multimedia flatpak chrome steam laptop tuning gnome-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+    @echo "🚀 Entorno Portátil AMD Ryzen (GNOME Shell) configurado con éxito. Por favor, reinicia el sistema."
 
-# Perfil para Sobremesa Centro Multimedia (Intel Haswell / Media Center - Sin virtualización ni batería)
-setup-media-desktop: post-install-intel workspace tuning extensions screensaver plymouth shell security fonts gnome apariencia fastfetch ptyxis firefox kodi
-    echo "🚀 Entorno Sobremesa Intel Media Center configurado con éxito. Por favor, reinicia el sistema."
+# Perfil para Sobremesa Centro Multimedia (Intel Core / Media Center - Sin virtualización ni batería)
+setup-media-desktop: post-install-intel multimedia chrome tuning gnome-setup shell security fonts fastfetch kitty yt-dlp kodi
+    @echo "🚀 Entorno Sobremesa Intel (GNOME Shell) configurado con éxito. Por favor, reinicia el sistema."
 
 # =============================================================================
 # CONFIGURACIÓN BASE DEL SISTEMA
@@ -21,105 +23,237 @@ setup-media-desktop: post-install-intel workspace tuning extensions screensaver 
 post-install:
     ./Setup/post-install.sh
 
-# Configuración post-instalación para AMD Ryzen (Kernel, firmware-amd, RADV, Mesa, PipeWire, GNOME)
+# Configuración post-instalación para AMD Ryzen (Kernel, firmware AMD, Mesa RADV, VA-API, PipeWire, Flatpak, GNOME Shell, ZRAM)
 post-install-amd:
     ./Setup/post-install-amd.sh
 
-# Configuración post-instalación para Intel Haswell/Core (Kernel, intel-microcode, i965 VA-API, Kodi, PipeWire, GNOME)
+# Configuración post-instalación para Intel Haswell/Core (Microcódigo Intel, i965/iHD VA-API, Kodi, PipeWire, GNOME Shell)
 post-install-intel:
     ./Setup/post-install-intel.sh
 
-# Automontaje permanente de la partición Workspace (/home/caballero/Workspace) en /etc/fstab
-workspace:
-    ./Setup/mount-workspace.sh
-
-# Compilador de Kernel Linux optimizado para x86_64-v3 y ajustado a tu portátil
-build-kernel:
-    ./Setup/build-custom-kernel.sh
-
-# Optimización para portátiles de desarrollo (Touchpad, Batería, Bluetooth, HiDPI, VRR)
+# Optimización para portátiles de desarrollo (power-profiles-daemon, Bluetooth FastConnectable, cierre de tapa con multimonitor, Touchpad Wayland y Mutter VRR)
 laptop:
     ./Setup/laptop-setup.sh
 
-# Autenticación y desbloqueo por huella dactilar (fprintd, PAM, sudo, polkit, GNOME)
-fingerprint:
-    ./Setup/fingerprint-setup.sh
+# Autenticación y desbloqueo por huella dactilar (fprintd, PAM)
+fingerprint *args:
+    ./Setup/fingerprint-setup.sh {{args}}
 
-# Configuración e instalación de impresora HP LaserJet Pro M15w (USB)
+# Estado y diagnóstico de la autenticación por huella dactilar
+fingerprint-status:
+    ./Setup/fingerprint-setup.sh --status
+
+# Registrar huella dactilar en la terminal (sensor táctil)
+fingerprint-enroll *finger:
+    ./Setup/fingerprint-setup.sh --enroll {{finger}}
+
+# Probar verificación biométrica en el lector
+fingerprint-verify *finger:
+    ./Setup/fingerprint-setup.sh --verify {{finger}}
+
+# Configuración de impresoras HP (CUPS, HPLIP, plugin propietario para LaserJet M15w)
 printer:
     ./Setup/hp-printer-setup.sh
 
-# Optimizaciones avanzadas de Debian Testing (Sysctl, Distrobox)
+# Estado del sistema de impresión HP
+printer-status:
+    ./Setup/hp-printer-setup.sh --status
+
+# Personalización y configuración de GNOME Shell (Modo oscuro, botones de ventana, scripts de Nautilus, atajos)
+gnome-setup:
+    ./Setup/gnome-settings.sh
+
+# Aplicar tema oscuro completo en GNOME Shell (prefer-dark + Adwaita-dark)
+gnome-theme-dark:
+    ./Setup/gnome-settings.sh --dark
+
+# Aplicar tema claro completo en GNOME Shell (prefer-light)
+gnome-theme-light:
+    ./Setup/gnome-settings.sh --light
+
+# Diagnóstico y estado de la configuración de GNOME Shell
+gnome-status:
+    ./Setup/gnome-settings.sh --status
+
+# Gestión e inspección de extensiones de GNOME Shell
+gnome-extensions *args:
+    ./Setup/gnome-extensions.sh {{args}}
+
+# Diagnóstico del estado de extensiones de GNOME Shell
+gnome-extensions-status:
+    ./Setup/gnome-extensions.sh --status
+
+# Gestión de apariencia, temas de iconos (Papirus/Adwaita) y cursores (Bibata)
+apariencia *args:
+    ./Setup/apariencia.sh {{args}}
+
+# Diagnóstico del estado de apariencia y temas
+apariencia-status:
+    ./Setup/apariencia.sh --status
+
+# Optimizaciones avanzadas de rendimiento (Sysctl, límites, inotify 1M, max_map_count 16M, TCP BBR, exclusiones Tracker)
 tuning:
     ./Setup/debian-tuning.sh
 
-# Instalación automatizada de conectores y las 12 extensiones de GNOME
-extensions:
-    ./Setup/gnome-extensions.sh
+# Estado actual de las optimizaciones y métricas de rendimiento
+tuning-status:
+    ./Setup/debian-tuning.sh --status
 
-# Configuración de salvapantallas 3D/Matrix al bloquear la pantalla
-screensaver:
-    ./Setup/screensaver-setup.sh
-
-# Configuración y activación de Splash Screen visual de arranque (Plymouth: BGRT / Ceratopsian)
-plymouth:
-    ./Setup/plymouth-setup.sh
-
-# Utilidades de terminal y prompt (eza, bat, fzf, starship)
+# Utilidades de terminal modernas (eza, bat, fzf, zoxide, ripgrep, fd, duf, dust, btop)
 shell:
     ./Setup/shell.sh
 
-# Seguridad básica (UFW firewall)
-security:
-    ./Setup/seguridad.sh
+# Diagnóstico y estado de utilidades CLI de terminal (eza, bat, fzf, zoxide, ripgrep...)
+shell-status:
+    ./Setup/shell.sh --status
 
-# Seguridad avanzada (DNS-over-TLS con systemd-resolved)
-security-dot:
-    ./Setup/seguridad-dot.sh
+# Starship Prompt moderno (Instalar / Activar)
+starship:
+    ./Setup/starship.sh --enable
 
-# Fuentes de desarrollo (Nerd Fonts: JetBrainsMono, FiraCode, CascadiaCode...)
-fonts:
-    ./Setup/fonts.sh
+# Desactivar Starship y restaurar prompt nativo
+starship-disable:
+    ./Setup/starship.sh --disable
 
-# Personalización de GNOME (gsettings, luz nocturna, 24h, temas)
-gnome:
-    ./Setup/gnome-settings.sh
+# Estado de Starship prompt
+starship-status:
+    ./Setup/starship.sh --status
 
-# Apariencia (Temas Adwaita Dark, iconos Papirus e integración GTK/Qt)
-apariencia:
-    ./Setup/apariencia.sh
+# Suite de Fuentes Nerd Fonts completas (JetBrainsMono, FiraCode, CascadiaCode, Meslo, Hack)
+fonts *args:
+    ./Setup/fonts.sh {{args}}
 
-# Información estética del sistema (Fastfetch)
-fastfetch:
-    ./Setup/fastfetch.sh
+# Diagnóstico y listado de fuentes Nerd Fonts instaladas
+fonts-status:
+    ./Setup/fonts.sh --status
 
-# Terminal Ptyxis + integración Nautilus
-ptyxis:
-    ./Setup/ptyxis.sh
+# Diagnóstico visual del sistema (Fastfetch con diseño Debian Ruby y soporte FastCat)
+fastfetch *args:
+    ./Setup/fastfetch.sh {{args}}
 
-# Terminal Kitty acelerada por GPU con tema oscuro y opacidad/blur
+# Estado del tema de Fastfetch
+fastfetch-status:
+    ./Setup/fastfetch.sh --status
+
+# Terminal Kitty acelerada por GPU (Tema Catppuccin Mocha, blur Wayland, JetBrainsMono)
 kitty:
     ./Setup/kitty.sh
 
-# Multimedia (yt-dlp, ffmpeg)
-yt-dlp:
-    ./Setup/yt-dlp-setup.sh
+# Diagnóstico y estado de la terminal Kitty
+kitty-status:
+    ./Setup/kitty.sh --status
+
+# Terminal Ptyxis (Diseño estético oscuro y transparente)
+ptyxis:
+    ./Setup/ptyxis.sh
+
+# Suite multimedia completa: códecs GStreamer, FFmpeg, VA-API Wayland y reproductores
+multimedia *args:
+    ./Setup/multimedia.sh {{args}}
+
+# Diagnóstico y estado de códecs multimedia y aceleración VA-API
+multimedia-status:
+    ./Setup/multimedia.sh --status
+
+# Descargador y stack multimedia yt-dlp + FFmpeg + Deno JS engine
+yt-dlp *args:
+    ./Setup/yt-dlp-setup.sh {{args}}
+
+# Diagnóstico y estado del entorno multimedia yt-dlp
+yt-dlp-status:
+    ./Setup/yt-dlp-setup.sh --status
+
+# =============================================================================
+# RED, SEGURIDAD Y FIREWALL
+# =============================================================================
+
+# Cortafuegos Firewalld obligatorio y parámetros seguros de red para desarrollo
+security:
+    ./Setup/seguridad.sh
+
+# Diagnóstico de seguridad, estado de Firewalld y parámetros del kernel
+security-status:
+    ./Setup/seguridad.sh --status
+
+# Abrir puertos locales de desarrollo en Firewalld (Vite: 5173, Next.js: 3000, FastAPI: 8000)
+dev-ports:
+    ./Setup/seguridad.sh --dev-ports
+
+# Integración móvil con GSConnect (KDE Connect para GNOME) y cortafuegos Firewalld
+gsconnect *args:
+    ./Setup/gsconnect.sh {{args}}
+
+# Estado de la integración de GSConnect y dispositivos emparejados
+gsconnect-status:
+    ./Setup/gsconnect.sh --status
+
+# =============================================================================
+# APLICACIONES DESACOPLADAS Y NAVEGADORES
+# =============================================================================
+
+# Gestor universal Flatpak y repositorio Flathub (Instalación por categorías o apps individuales)
+flatpak *args:
+    ./Setup/flatpak.sh {{args}}
+
+# Diagnóstico y lista de aplicaciones Flatpak instaladas
+flatpak-status:
+    ./Setup/flatpak.sh --status
+
+# Actualizar todas las aplicaciones y runtimes de Flatpak
+flatpak-update:
+    ./Setup/flatpak.sh --update
+
+# Limpiar runtimes huérfanos y dependencias no utilizadas de Flatpak
+flatpak-clean:
+    ./Setup/flatpak.sh --clean
+
+# Navegador Google Chrome oficial (Instalación, actualización u optimización Wayland)
+chrome *args:
+    ./Setup/chrome.sh {{args}}
+
+# Diagnóstico y estado de Google Chrome, repositorio oficial y Wayland
+chrome-status:
+    ./Setup/chrome.sh --status
+
+# Navegador Firefox nativo (.deb oficial de Mozilla)
+firefox:
+    ./Setup/firefox.sh
+
+# Steam nativo, GameMode, MangoHud y drivers Vulkan 32-bit (i386 multiarch)
+steam:
+    ./Setup/steam.sh
 
 # Centro Multimedia (Kodi + complementos de streaming)
 kodi:
-    sudo apt update && sudo apt install -y kodi kodi-inputstream-adaptive kodi-inputstream-rtmp kodi-pvr-iptvsimple
+    sudo apt-get install -y kodi kodi-inputstream-adaptive kodi-inputstream-rtmp
+
+# Actualización completa del sistema Debian vía APT
+update:
+    sudo apt update && sudo apt dist-upgrade -y && sudo apt autoremove --purge -y
 
 # =============================================================================
 # CONFIGURACIÓN DE RED Y VIRTUALIZACIÓN
 # =============================================================================
 
-# Configuración de KVM/QEMU y Libvirt
+# Configuración de KVM/QEMU y Libvirt (Optimizado para GNOME Wayland y Virt-Manager)
 virtualization:
     ./Virtualizacion/virtualization.sh
 
-# Administración Web (Cockpit)
-cockpit:
-    ./Setup/cockpit.sh
+# Diagnóstico y estado de la virtualización KVM/QEMU
+virtualization-status:
+    ./Virtualizacion/virtualization.sh --status
+
+# Administración Web (Cockpit + Podman + Máquinas Virtuales)
+cockpit *args:
+    ./Setup/cockpit.sh {{args}}
+
+# Estado del servicio y módulos de Cockpit
+cockpit-status:
+    ./Setup/cockpit.sh --status
+
+# Abrir Cockpit en el navegador web (https://localhost:9090)
+cockpit-open:
+    ./Setup/cockpit.sh --open
 
 # =============================================================================
 # CONTROL DE VERSIONES
@@ -127,32 +261,39 @@ cockpit:
 
 # Git, Delta, Lazygit, GH CLI
 git-setup:
-    ./Git/git.sh
-    ./Git/github-cli.sh
+    ./IDE/git.sh
 
 # =============================================================================
 # GESTORES DE RUNTIMES
 # =============================================================================
 
-# Gestor de versiones Mise
-mise:
-    ./ProgrammingLanguages/mise.sh
+# Gestor de versiones Mise (Instalación, actualización u opciones)
+mise *args:
+    ./ProgrammingLanguages/mise.sh {{args}}
+
+# Diagnóstico y estado de Mise y runtimes de desarrollo
+mise-status:
+    ./ProgrammingLanguages/mise.sh --status
 
 # =============================================================================
 # LENGUAJES DE PROGRAMACIÓN
 # =============================================================================
 
 # Todos los lenguajes
-languages: node python rust dotnet java
-    echo "✅ Lenguajes instalados."
+languages: mise node python rust dotnet java angular
+    @echo "✅ Lenguajes instalados."
 
 # Node.js LTS
 node:
     ./ProgrammingLanguages/nodejs.sh
 
-# Python
+# Python con UV package manager
 python:
     ./ProgrammingLanguages/python.sh
+
+# Inicializador de proyectos Python con UV
+python-uv:
+    ./ProgrammingLanguages/python-uv-init.sh
 
 # Rust
 rust:
@@ -160,39 +301,24 @@ rust:
 
 # .NET SDK
 dotnet:
-    ./ProgrammingLanguages/dotnet.sh
+    ./ProgrammingLanguages/Revisar/dotnet.sh
 
 # Java (OpenJDK)
 java:
     ./ProgrammingLanguages/java.sh
 
-# =============================================================================
-# HERRAMIENTAS DE IA
-# =============================================================================
-
-# Gemini CLI
-gemini:
-    ./ProgrammingLanguages/gemini.sh
-
 # Angular CLI
 angular:
-    ./ProgrammingLanguages/angular.sh
+    ./ProgrammingLanguages/Revisar/angular.sh
+
 
 # =============================================================================
 # ENTORNOS DE DESARROLLO (IDEs)
 # =============================================================================
 
 # Todos los IDEs
-ides: nvim vscode antigravity opencode
-    echo "✅ IDEs instalados."
-
-# Neovim + LazyVim
-nvim:
-    ./IDE/neovim.sh
-
-# Visual Studio Code
-vscode:
-    ./IDE/vscode.sh
+ides: antigravity antigravity-cli antigravity-ide opencode
+    @echo "✅ IDEs instalados."
 
 # Google Antigravity Desktop 2.0 (Completo)
 antigravity:
@@ -211,29 +337,34 @@ opencode:
     ./IDE/opencode.sh
 
 # =============================================================================
-# NAVEGADORES Y JUEGOS
+# PODMAN Y CONTENEDORES QUADLETS
 # =============================================================================
 
-# Firefox nativo (.deb)
-firefox:
-    ./Setup/firefox.sh
+# Configuración completa de Podman Rootless y Quadlets
+podman-setup:
+    ./Podman/install/podman-install.sh
 
-# Steam y herramientas de juegos
-steam:
-    ./Juegos/steam.sh
-
-# =============================================================================
-# PODMAN - BASE
-# =============================================================================
-
-# Podman base (instalación y configuración rootless)
+# Configuración base de Podman Rootless
 podman-base:
     ./Podman/install/podman-install.sh
 
-# =============================================================================
-# PODMAN - SERVICIOS Y TEMPLATES
-# =============================================================================
-
-# Configuración Quadlets de Podman
+# Configuración de servicios Quadlets de Podman
 podman-quadlets:
     ./Podman/install/quadlets-setup.sh
+
+# Estado y diagnóstico de Podman y Quadlets
+podman-status:
+    ./Podman/install/podman-install.sh --status
+    ./Podman/lib/podman-utils.sh doctor
+
+# =============================================================================
+# OPTIMIZACIÓN Y ARQUITECTURA (amd64v3)
+# =============================================================================
+
+# Optimización amd64v3 (AVX2/FMA/BMI2 para arquitecturas compatibles y glibc-hwcaps)
+amd64v3:
+    ./Setup/amd64v3.sh
+
+# Estado y diagnóstico de la variante amd64v3
+amd64v3-status:
+    ./Setup/amd64v3.sh --status

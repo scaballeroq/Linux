@@ -1,4 +1,4 @@
-# 🚀 Starship Config: DevDebian (Optimized for Ubuntu + Nerd Fonts)
+# 🚀 Starship Config: DevUbuntu (Optimized for Ubuntu + Nerd Fonts)
 
 # Formato general del prompt (Una sola línea, limpia y con alto contraste)
 format = """
@@ -23,7 +23,7 @@ add_newline = true
 success_symbol = "[❯](bold cyan)"
 error_symbol = "[✖](bold red)"
 
-# Icono del SO (Muestra el logo de Debian)
+# Icono del SO (Muestra el logo de Ubuntu)
 [os]
 format = "[$symbol]($style) "
 style = "bold orange"
