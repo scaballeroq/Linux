@@ -1,168 +1,110 @@
 #!/bin/bash
-# post-install-intel.sh - Script de post-instalación para Debian Testing (Trixie) con Intel Core (Haswell/i7-4790) + Multimedia (Kodi/Streaming)
-# (Configurado con ZRAM, Microcódigo Intel, VA-API i965/Intel HD Graphics, Codecs, Kodi, PipeWire y GNOME)
+# ==============================================================================
+# post-install-intel.sh - Post-instalación para Debian con Intel Core y Media Center
+# Entorno: GNOME Shell (Wayland)
+# ==============================================================================
 
 set -euo pipefail
 
-# Detectar versión/codename de Debian
+echo "================================================================="
+echo "INICIANDO POST-INSTALACIÓN: DEBIAN (GNOME) - INTEL MEDIA DESKTOP"
+echo "================================================================="
+
 CODENAME=$(grep '^VERSION_CODENAME=' /etc/os-release | cut -d= -f2 || true)
 if [ -z "$CODENAME" ]; then
     CODENAME=$(lsb_release -sc 2>/dev/null || echo "trixie")
 fi
 
-echo "================================================================="
-echo "🚀 INICIANDO POST-INSTALACIÓN: DEBIAN TESTING ($CODENAME) - INTEL CORE / MEDIA CENTER"
-echo "🖥️ Optimizado para sobremesa Intel Haswell (i7-4790 / HD Graphics 4600)"
-echo "🎬 Configuración multimedia para Kodi, Netflix, Prime Video y streaming"
-echo "================================================================="
+echo "Debian detectado: $CODENAME"
 
-# 1. Habilitar Repositorios Extra (Contrib, Non-Free, Non-Free-Firmware)
-echo "ℹ️ Configurando repositorios contrib, non-free y non-free-firmware para $CODENAME..."
-
+# 1. Actualización Base
+echo "ℹ️ [1/8] Actualizando repositorios y herramientas..."
 sudo apt update
-sudo apt install -y curl ca-certificates gnupg lsb-release
+sudo apt install -y curl wget ca-certificates gnupg lsb-release
 
-# Habilitar contrib, non-free y non-free-firmware en repositorios existentes
+# 2. Habilitar Repositorios Extra (Contrib, Non-Free, Non-Free-Firmware)
+echo "ℹ️ [2/8] Habilitando contrib, non-free y non-free-firmware..."
 if [ -f /etc/apt/sources.list.d/debian.sources ]; then
-    sudo sed -i '/^Components:/ s/\bmain\b\(?!.*contrib\)/main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources 2>/dev/null || true
+    sudo sed -i '/^Components:/ {/contrib/! s/$/ contrib/}' /etc/apt/sources.list.d/debian.sources 2>/dev/null || true
+    sudo sed -i '/^Components:/ {/non-free/! s/$/ non-free/}' /etc/apt/sources.list.d/debian.sources 2>/dev/null || true
+    sudo sed -i '/^Components:/ {/non-free-firmware/! s/$/ non-free-firmware/}' /etc/apt/sources.list.d/debian.sources 2>/dev/null || true
 fi
 if [ -f /etc/apt/sources.list ]; then
-    sudo sed -i '/^deb / s/\bmain\b\(?!.*contrib\)/main contrib non-free non-free-firmware/' /etc/apt/sources.list 2>/dev/null || true
+    sudo sed -i '/^deb / {/contrib/! s/\(main\)/\1 contrib non-free non-free-firmware/}' /etc/apt/sources.list 2>/dev/null || true
 fi
 
-echo "ℹ️ Debian Testing ($CODENAME) detectado: Obteniendo paquetes más recientes."
 sudo apt update
 sudo apt upgrade -y
 
-# 2. Compresión de Memoria ZRAM (Optimizado para 8 GB RAM)
-echo "ℹ️ Instalando y configurando SWAP comprimida en RAM (ZRAM con ZSTD)..."
-sudo apt install -y zram-tools 2>/dev/null || true
-if [ -f /etc/default/zramswap ]; then
-    sudo sed -i 's/^#*ALGORITHM=.*/ALGORITHM=zstd/' /etc/default/zramswap
-    sudo sed -i 's/^#*PERCENT=.*/PERCENT=50/' /etc/default/zramswap
-    sudo systemctl restart zramswap.service 2>/dev/null || true
-fi
-
-# 3. Kernel Linux, Firmware y Microcódigo Intel
-echo "ℹ️ Instalando Kernel Linux, Firmware oficial y Microcódigo Intel..."
+# 3. Microcódigo Intel y Firmware
+echo "ℹ️ [3/8] Instalando microcódigo Intel oficial y firmware..."
 sudo apt install -y \
-    linux-image-amd64 \
-    linux-headers-amd64 \
+    intel-microcode \
     firmware-linux \
     firmware-linux-nonfree \
-    firmware-misc-nonfree \
-    intel-microcode 2>/dev/null || sudo apt install -y linux-image-amd64 linux-headers-amd64 firmware-linux-nonfree intel-microcode 2>/dev/null || true
+    firmware-misc-nonfree 2>/dev/null || sudo apt install -y intel-microcode firmware-linux-nonfree 2>/dev/null || true
 
-# 4. Stack Gráfico Intel y Aceleración HW por Video (VA-API Haswell / i965 / Intel HD 4600)
-echo "ℹ️ Instalando controladores gráficos Intel y aceleración de vídeo por hardware (i965 / VA-API / Mesa)..."
+# 4. Drivers de Aceleración Intel (i965 y media-driver)
+echo "ℹ️ [4/8] Instalando controladores VA-API para Intel..."
 sudo apt install -y \
-    i965-va-driver \
-    i965-va-driver-shaders \
     intel-media-va-driver \
-    va-driver-all \
-    libgl1-mesa-dri \
+    i965-va-driver \
     mesa-va-drivers \
     mesa-vdpau-drivers \
-    mesa-vulkan-drivers \
-    mesa-utils \
-    vulkan-tools \
     vainfo \
-    intel-gpu-tools 2>/dev/null || sudo apt install -y i965-va-driver intel-media-va-driver libgl1-mesa-dri mesa-utils vainfo || true
+    vulkan-tools \
+    mesa-utils 2>/dev/null || true
 
-# Configurar driver VA-API por defecto para Intel Haswell (Gen 7.5)
-if [ ! -f /etc/environment.d/90-intel-vaapi.conf ]; then
-    sudo mkdir -p /etc/environment.d
-    echo "LIBVA_DRIVER_NAME=i965" | sudo tee /etc/environment.d/90-intel-vaapi.conf > /dev/null
-fi
+# Driver propietario opcional de Intel para codificación no-libre si está disponible
+sudo apt install -y intel-media-va-driver-non-free 2>/dev/null || true
 
-# 5. Codecs Multimedia de Alto Rendimiento y Reproducción (Streaming / DRM)
-echo "ℹ️ Instalando FFmpeg y codecs multimedia para streaming y vídeo..."
-sudo apt install -y \
-    ffmpeg \
-    libavcodec-extra \
-    gstreamer1.0-plugins-base \
-    gstreamer1.0-plugins-good \
-    gstreamer1.0-plugins-bad \
-    gstreamer1.0-plugins-ugly \
-    gstreamer1.0-libav \
-    libbluray2 2>/dev/null || true
-
-# 6. Centro Multimedia (Kodi y complementos de streaming)
-echo "ℹ️ Instalando centro multimedia Kodi y complementos para streaming adaptativo..."
-sudo apt install -y \
-    kodi \
-    kodi-inputstream-adaptive \
-    kodi-inputstream-rtmp \
-    kodi-pvr-iptvsimple 2>/dev/null || true
-
-# 7. Sistema de Audio de Alta Fidelidad (PipeWire + WirePlumber)
-echo "ℹ️ Habilitando servidor de audio moderno PipeWire y WirePlumber..."
-sudo apt install -y \
-    pipewire \
-    pipewire-alsa \
-    pipewire-pulse \
-    pipewire-jack \
-    wireplumber 2>/dev/null || true
-
-systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
-
-# 8. Entorno de Escritorio GNOME y Aplicaciones Base
-echo "ℹ️ Instalando componentes y utilidades base de GNOME..."
-sudo apt install -y \
-    gnome-core \
-    gnome-shell \
-    gnome-control-center \
-    gnome-tweaks \
-    gnome-terminal \
-    ptyxis \
-    nautilus \
-    file-roller \
-    gnome-text-editor \
-    gnome-calculator \
-    gnome-disk-utility \
-    gnome-system-monitor \
-    power-profiles-daemon \
-    ffmpegthumbnailer \
-    evince \
-    seahorse 2>/dev/null || true
-
-# 9. Integración de Flatpak & Flathub en GNOME Software
-echo "ℹ️ Configurando Flatpak y Flathub para GNOME Software..."
-sudo apt install -y flatpak gnome-software gnome-software-plugin-flatpak 2>/dev/null || true
-flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
-
-# 10. Software Esencial de Sistema (Sin herramientas de virtualización KVM)
-echo "ℹ️ Instalando utilidades esenciales para Debian..."
+# 5. Paquetes Esenciales y GNOME
+echo "ℹ️ [5/8] Instalando paquetes esenciales de escritorio..."
 sudo apt install -y \
     build-essential \
-    cmake \
     curl \
+    wget \
     btop \
     htop \
     inxi \
-    fuse3 \
-    exfat-fuse \
-    exfatprogs \
-    vlc \
-    gimp \
-    gparted \
+    flatpak \
+    gnome-software-plugin-flatpak \
+    gnome-tweaks \
+    wl-clipboard \
     7zip \
     p7zip-full \
     unrar \
     zip \
     unzip \
-    bzip2 \
-    xz-utils \
-    fastfetch 2>/dev/null || true
+    libavcodec-extra \
+    ffmpeg \
+    vlc 2>/dev/null || true
 
-# 11. Limpieza de Paquetes Antiguos
-echo "ℹ️ Limpiando paquetes obsoletos..."
+# 6. Centro Multimedia Kodi y Codecs
+echo "ℹ️ [6/8] Instalando Kodi y plugins de streaming multimedia..."
+sudo DEBIAN_FRONTEND=noninteractive apt install -y \
+    kodi \
+    kodi-inputstream-adaptive \
+    kodi-inputstream-rtmp 2>/dev/null || true
+
+# 7. Memoria ZRAM
+echo "ℹ️ [7/8] Configurando ZRAM..."
+if [ -f "$(dirname "$0")/zram-setup.sh" ]; then
+    bash "$(dirname "$0")/zram-setup.sh"
+else
+    sudo apt install -y zram-tools 2>/dev/null || true
+    if [ -f /etc/default/zramswap ]; then
+        sudo sed -i 's/^#*ALGORITHM=.*/ALGORITHM=zstd/' /etc/default/zramswap
+        sudo sed -i 's/^#*PERCENT=.*/PERCENT=50/' /etc/default/zramswap
+        sudo systemctl restart zramswap.service 2>/dev/null || true
+    fi
+fi
+
+# 8. Limpieza
+echo "ℹ️ [8/8] Limpiando dependencias huérfanas..."
 sudo apt autoremove -y
 sudo apt clean
 
 echo "================================================================="
-echo "✅ Debian Testing ($CODENAME) + GNOME (Intel Haswell / Media Center) configurado con éxito."
-echo "🎬 Aceleración gráfica por hardware i965 activada y Kodi instalado."
-echo "💡 Para Netflix y Prime Video en Firefox: Ve a Ajustes de Firefox -> General -> 'Reproducir contenido con control DRM'."
-echo "💡 Se recomienda reiniciar el equipo para arrancar con el nuevo Kernel Linux, drivers Intel y ZRAM."
+echo "✅ Post-instalación Intel Media completada con éxito en Debian."
 echo "================================================================="

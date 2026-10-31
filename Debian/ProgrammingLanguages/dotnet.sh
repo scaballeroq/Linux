@@ -1,7 +1,7 @@
 #!/bin/bash
 # dotnet.sh - .NET SDK Installation via Mise
 
-set -euo pipefail
+set -e
 
 if ! command -v mise &> /dev/null; then
     echo "❌ Error: 'mise' no está instalado."

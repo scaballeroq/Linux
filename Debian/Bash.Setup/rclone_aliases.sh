@@ -4,6 +4,9 @@
 # Este archivo contiene atajos para comandos de rclone, facilitando la
 # sincronización y copia con servicios en la nube como Google Drive y OneDrive.
 
+# Evitar ejecución en subshells y sesiones no interactivas
+[[ $- != *i* ]] && return 0 2>/dev/null || true
+
 # 1. Asegurar que el directorio de logs existe
 RCLONE_LOG_DIR="$HOME/Workspace/rclone_logs"
 mkdir -p "$RCLONE_LOG_DIR"
@@ -131,4 +134,4 @@ unset RCLONE_EXT_BASE
 # =============================================================================
 # MENSAJE DE CARGA
 # =============================================================================
-echo "✅ Aliases de rclone cargados"
+[[ $- == *i* ]] && echo "✅ Aliases de rclone cargados"

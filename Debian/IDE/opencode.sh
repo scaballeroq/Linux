@@ -1,5 +1,5 @@
 #!/bin/bash
-# opencode.sh - Instalación de OpenCode AI CLI/Editor para Debian
+# opencode.sh - Instalación de OpenCode AI CLI/Editor para CachyOS
 
 set -euo pipefail
 
@@ -10,10 +10,10 @@ echo "🤖 Instalando OpenCode (Versión: $OPENCODE_VERSION)..."
 # 1. Asegurar dependencias (curl)
 if ! command -v curl &> /dev/null; then
     echo "ℹ️ Instalando curl..."
-    if command -v apt &> /dev/null; then
-        sudo apt update && sudo apt install -y curl
-    elif command -v pacman &> /dev/null; then
+    if command -v pacman &> /dev/null; then
         sudo pacman -S --needed --noconfirm curl
+    elif command -v apt &> /dev/null; then
+        sudo apt update && sudo apt install -y curl
     fi
 fi
 

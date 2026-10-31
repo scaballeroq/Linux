@@ -2,184 +2,92 @@
 sidebar_position: 2
 ---
 
-# System Setup on Debian
+# System Configuration in Debian GNU/Linux (GNOME Shell Wayland)
 
-This guide details the base setup process, automatic workspace mount, custom `x86_64-v3` kernel compilation, GNOME desktop customization, Ptyxis and Kitty terminals, GNOME Shell extensions, and Cockpit web administration panel on **Debian** with **GNOME**.
+This guide details the base system setup, terminal optimization, essential tooling, multimedia support, and desktop personalization applied to an **Debian GNU/Linux** workstation with **GNOME Shell**.
 
-Configurations are automated via scripts located in the `Setup` directory.
-
----
-
-## 1. Base Post-Installation (`post-install.sh`, `post-install-amd.sh`, `post-install-intel.sh`)
-
-Prepares the base system by enabling additional official repositories (`contrib`, `non-free`, `non-free-firmware`), installing essential packages, ZRAM memory compression, PipeWire audio, GNOME suite, and tailored GPU/media acceleration.
-
-### Available Scripts:
-
-- **Smart Dispatcher (`post-install.sh`)**:
-  Automatically detects CPU vendor (`AuthenticAMD` vs `GenuineIntel`) or allows CLI flags:
-  ```bash
-  ./Setup/post-install.sh          # Auto-detection
-  ./Setup/post-install.sh --amd    # Force AMD mode
-  ./Setup/post-install.sh --intel  # Force Intel mode
-  ```
-
-- **AMD Ryzen Profile (`post-install-amd.sh`)**:
-  Tailored for AMD Ryzen CPUs and Radeon Graphics:
-  - Microcode: `amd64-microcode`
-  - GPU Firmware: `firmware-amd-graphics`
-  - Graphics Stack: `mesa-va-drivers`, `mesa-vdpau-drivers`, `mesa-vulkan-drivers` (RADV), `radeontop`, `va-driver-all`.
-  ```bash
-  just post-install-amd
-  ```
-
-- **Intel Core / Media Center Profile (`post-install-intel.sh`)**:
-  Tailored for Intel Core desktop PCs (specifically 4th Gen Haswell i7-4790 with Intel HD Graphics 4600) used as a media center for Kodi, Netflix, and Prime Video:
-  - Microcode: `intel-microcode`
-  - Video VA-API Acceleration: `i965-va-driver`, `i965-va-driver-shaders`, `intel-media-va-driver`, `intel-gpu-tools` (`intel_gpu_top`).
-  - Media & Streaming: `kodi`, `kodi-inputstream-adaptive`, `kodi-inputstream-rtmp`, `kodi-pvr-iptvsimple`, codecs `ffmpeg`, `libavcodec-extra`, `gstreamer1.0-*`.
-  - **No KVM Virtualization**: Stripped of virtualization overhead and laptop battery daemon to keep the media workstation lean and snappy.
-  ```bash
-  just post-install-intel
-  ```
-
-### Common Installed Packages:
-- **Compilation**: `build-essential`, `cmake`
-- **Memory**: `zram-tools` (ZRAM with ZSTD at 50%)
-- **Audio**: `pipewire`, `pipewire-alsa`, `pipewire-pulse`, `pipewire-jack`, `wireplumber`
-- **Monitoring**: `btop`, `htop`, `inxi`, `gnome-system-monitor`
-- **Utilities**: `curl`, `fuse3`, `exfatprogs`, `p7zip-full`, `unrar`, `zip`, `unzip`, `bzip2`, `xz-utils`
-- **Graphics & Multimedia**: `vlc`, `gimp`, `gparted`, `evince`, `seahorse`
-- **GNOME Suite**: `gnome-core`, `gnome-shell`, `gnome-control-center`, `gnome-tweaks`, `ptyxis`, `nautilus`, `file-roller`, `gnome-text-editor`, `gnome-calculator`, `gnome-disk-utility`, `power-profiles-daemon`, `ffmpegthumbnailer`
-- **Universal Packages**: `flatpak`, `gnome-software`, `gnome-software-plugin-flatpak` with Flathub repo.
+Configurations are automated via scripts in the `Setup/` folder and orchestrated with the `justfile`.
 
 ---
 
-## 2. Workspace Partition Auto-mount (`mount-workspace.sh`)
+## 1. Base Post-Installation (`post-install.sh`)
 
-Automatically mounts the `/home/caballero/Workspace` data partition in `/etc/fstab` using UUID identification and safe `defaults,noatime,nofail` flags.
+Prepares the base system by detecting host CPU architecture and executing the tailored installer:
+- **`post-install-amd.sh`**: For AMD Ryzen 7 7730U / Radeon Graphics (Vega 8) (Mesa RADV, VA-API hardware acceleration, PipeWire, ZRAM, Flatpak Flathub).
+- **`post-install-intel.sh`**: For Intel Core processors (i965/iHD VA-API, Kodi, PipeWire).
 
+Command:
 ```bash
-just workspace
+just post-install
 ```
 
 ---
 
-## 3. Native x86_64-v3 Linux Kernel Builder (`build-custom-kernel.sh`)
+## 2. Terminal Environment & Shell (`shell.sh`, `fastfetch.sh`, `fonts.sh`, and `kitty.sh`)
 
-Fetches the latest official stable release from `kernel.org`, applies `x86_64-v3` microarchitecture optimizations, **1000Hz** timer frequency, and dynamic preemption.
+Installs modern console utilities, developer typefaces, Starship prompt, and the GPU-accelerated Kitty terminal emulator.
 
-```bash
-just build-kernel
-```
+### Modern Terminal Utilities
+- `eza` (modern `ls` replacement with git integration and glyphs)
+- `bat` (syntax-highlighted `cat` replacement via `batcat`)
+- `fzf` (interactive fuzzy finder for Ctrl+R, Ctrl+T, Alt+C)
+- `zoxide` (smart `cd` directory jumping)
+- `ripgrep` (`rg`, blazing fast text search)
+- `fd-find` (`fd`, user-friendly file search)
+- `duf` & `du-dust` (modern disk usage visualization)
+- `procs` (modern `ps` replacement)
+- `btop` (resource monitor)
 
----
+### Kitty Terminal (GPU-Accelerated)
+Configured with:
+- 75% background opacity and background blur (*blur 32*) accelerated by Mesa RADV GPU.
+- Catppuccin Mocha color scheme (#181825).
+- JetBrainsMono Nerd Font.
+- Global `Ctrl+Alt+T` keybinding in GNOME Shell.
+- Nautilus context menu script ("Open in Kitty").
 
-## 4. Clean GNOME Extensions Installation (`gnome-extensions.sh`)
+### Developer Fonts (Nerd Fonts)
+Automated installation of:
+`JetBrainsMono`, `FiraCode`, `CascadiaCode`, `Meslo`, and `Hack`.
 
-Installs `gnome-browser-connector`, `extension-manager`, and cleanly downloads/registers the 17 curated GNOME extensions with GSettings schema compilation (`glib-compile-schemas`). See [GNOME Extensions Guide](./gnome_extensions_en.md).
-
-```bash
-just extensions
-```
-
----
-
-## 5. GNOME Personalization via GSettings (`gnome-settings.sh`)
-
-Configures:
-- **Night Light** at 3500K.
-- **24-hour clock** and battery percentage.
-- **Window controls**: minimize, maximize, close on the right.
-- **Touchpad**: Tap-to-click, natural scrolling, two-finger gestures.
-- **Mutter**: Variable Refresh Rate (VRR) & fractional scaling.
-- **Dark Mode**: Prefer dark theme.
-
-```bash
-just gnome
-```
+### Fastfetch
+Aesthetic hardware and system banner supporting official Debian theme (`debian`) and minimalist mode (`compact`).
 
 ---
 
-## 6. Modern Terminals (Ptyxis and Kitty)
+## 3. GNOME Shell Desktop & GSConnect (`gnome-settings.sh` & `gsconnect.sh`)
 
-### Ptyxis (`ptyxis.sh`)
-Installs and configures Ptyxis with translucent dark styling (85% opacity), no scrollbar, global `Ctrl + Alt + T` shortcut, and Nautilus context menu integration via `nautilus-open-any-terminal`.
-
-```bash
-just ptyxis
-```
-
-### Kitty (`kitty.sh`)
-Installs and configures GPU-accelerated Kitty terminal with Catppuccin Mocha / Tokyo Night dark theme, 85% background opacity with blur, JetBrainsMono Nerd Font typography, slanted powerline tab bar, and on-the-fly opacity adjustments (`Ctrl+Shift+A` + `M`/`L`/`1`).
-
-```bash
-just kitty
-```
+- **Dark Mode**: Enforces `prefer-dark` and `Yaru-dark` theme.
+- **Night Light**: Warm 4000K color temperature for eye comfort.
+- **Window Controls**: Visible minimize and maximize buttons.
+- **Nautilus Scripts**: Right-click context actions for Kitty, Google Antigravity, and VS Code.
+- **GSConnect**: Native GNOME KDE Connect daemon with zero KDE/Qt dependencies, integrated into Firewalld (ports 1714-1764 TCP/UDP).
+- **Extensions**: Support for Dash to Dock, AppIndicator, Blur my Shell, and Tiling Shell.
 
 ---
 
-## 7. 3D Screensaver and Lock Screen (`screensaver-setup.sh`)
+## 4. Browsers & Decoupled Software
 
-Installs XScreenSaver 3D/GL suite, registers the autostart daemon, and maps `Super + L` to lock the screen with active screensavers.
-
-```bash
-just screensaver
-```
-
----
-
-## 8. Shell Environment (`shell.sh`, `fastfetch.sh`, `fonts.sh`)
-
-Installs modern terminal CLI utilities (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`), Nerd Fonts, and Starship prompt.
-
-```bash
-just shell
-just fonts
-just fastfetch
-```
+- **Google Chrome**: Official Google repository with Ozone Wayland flags (`--ozone-platform-hint=auto` and VA-API hardware acceleration).
+- **Mozilla Firefox**: Native `.deb` package from Mozilla with APT Pin-Priority 1000, eliminating the Snap wrapper.
+- **Flatpak**: Complete catalog (Flatseal, Podman Desktop, Warehouse, VLC, Celluloid, OBS Studio, Shotcut, Spotify, Vesktop).
+- **Steam**: Native client with 32-bit architecture (`i386`), Mesa RADV 32-bit drivers, GameMode, and MangoHud.
 
 ---
 
-## 9. Cockpit Web Management (`cockpit.sh`)
-
-Deploys Cockpit admin console with modules for Podman, KVM/QEMU VMs, and storage disks at [https://localhost:9090](https://localhost:9090).
+## 5. Summary of Commands with Just
 
 ```bash
-just cockpit
+just post-install        # Smart post-install dispatcher
+just gnome-setup         # Configure GNOME desktop
+just gnome-extensions    # Install and activate extensions
+just gsconnect           # Configure GSConnect and Firewalld
+just shell               # Install modern CLI tools
+just kitty               # Configure Kitty terminal
+just fonts               # Install Nerd Fonts
+just fastfetch           # Configure Fastfetch banner
+just flatpak             # Install Flatpak applications
+just chrome              # Install official Google Chrome
+just firefox             # Install native Firefox (.deb)
+just steam               # Install Steam and 32-bit drivers
 ```
-
----
-
-## 10. Themes and Desktop Appearance (`apariencia.sh`)
-
-Applies Papirus-Dark and Adwaita styling across GTK and Qt applications.
-
-```bash
-just apariencia
-```
-
----
-
-## 11. Graphical Boot Splash (`plymouth-setup.sh`)
-
-Installs, configures, and activates Plymouth boot splash with support for multiple official and modern themes (`bgrt`, `ceratopsian`, `spinner`, etc.), ensuring a smooth, flicker-free startup.
-
-- **Install and activate default theme (BGRT / Ceratopsian)**:
-  ```bash
-  just plymouth
-  # or ./Setup/plymouth-setup.sh
-  ```
-- **List all available themes**:
-  ```bash
-  ./Setup/plymouth-setup.sh --list
-  ```
-- **Activate a specific theme**:
-  ```bash
-  ./Setup/plymouth-setup.sh ceratopsian
-  ```
-- **Preview splash screen on desktop**:
-  ```bash
-  ./Setup/plymouth-setup.sh --preview
-  ```
-

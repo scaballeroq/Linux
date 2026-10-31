@@ -1,33 +1,39 @@
-# 🚀 Bash.Setup (Debian)
+# 🚀 Bash.Setup - Debian Workstation (GNOME Shell Wayland)
 
-Colección de scripts de configuración y funciones avanzadas para potenciar tu terminal Bash en Linux (optimizado para Debian con GNOME).
+Colección de scripts de configuración modular y funciones avanzadas para potenciar la terminal Bash y Zsh en **Debian GNU/Linux** bajo **GNOME Shell** sobre **Wayland**.
 
-Este repositorio organiza de forma modular tus alias, variables de entorno, utilidades multimedia, accesos directos a GNOME y gestores de contenedores (Podman).
+Este directorio organiza de forma modular los alias, variables de entorno, utilidades multimedia, gestores de contenedores (Podman) y atajos de escritorio sin dependencias de entornos heredados.
 
 ---
 
-## 📁 Estructura del Proyecto
+## 📁 Estructura del Módulo
 
 | Archivo | Descripción |
 | :--- | :--- |
-| `aliases.sh` | Atajos generales de navegación, seguridad (`rm -i`), gestión de paquetes (`apt`) e integración con `eza` y `bat`. |
-| `functions.sh` | El "navaja suiza": utilidades multimedia (FFMPEG), gestión de discos, extracción de archivos (unificado) y navegación avanzada. |
-| `podman-functions.sh` | Funciones y aliases específicos para **Podman** y gestión de Pods. |
-| `rclone_aliases.sh` | Sincronización avanzada con la nube (Google Drive) mediante **Rclone**. |
-| `yt-dlp_aliases.sh` | Atajos para descarga optimizada de vídeo (1080p) y audio (MP3) con **yt-dlp**. |
-| `history.sh` | Configuración optimizada del historial de Bash (10k/20k líneas, sin duplicados). |
-| `environment.sh` | Definición de variables globales (`EDITOR`, `PATH`) y personalización visual de `less` y `man`. |
-| `options.sh` | Configuración del comportamiento de Bash (`autocd`, `globstar`, corrección de typos). |
-| `gnome_settings.sh` | Optimizaciones del entorno GNOME (luz nocturna, formato 24h, gestión de extensiones, temas y accesos de configuración). |
+| `aliases.sh` | Atajos de navegación, seguridad (`rm -i`), gestión de paquetes (`apt`), cortafuegos (`firewall-cmd`), hardware e integración con herramientas Rust (`eza`, `bat`, `duf`, `dust`). |
+| `environment.sh` | Variables globales (`EDITOR`, `PATH`, Wayland, integración Qt/GNOME, `DOCKER_HOST`, `LIBVIRT_DEFAULT_URI`) y activación automática de Mise. |
+| `functions.sh` | Utilidades multimedia (FFmpeg / ImageMagick), gestión de discos (`format-drive`, `iso2sd`), descompresión universal (`extract`) y navegación avanzada. |
+| `gnome_settings.sh` | Configuración nativa del entorno GNOME (modo oscuro, luz nocturna, botones completos de ventana, reloj 24h, Nautilus y atajos a `gnome-control-center`). |
+| `history.sh` | Configuración optimizada del historial (10k/20k comandos, deduplicación inmediata y soporte dual Bash/Zsh). |
+| `options.sh` | Comportamiento avanzado de shell (`autocd`, corrección de typos con `cdspell`, globbing extendido y completado insensible a mayúsculas). |
+| `podman-functions.sh` | Funciones y atajos para contenedores Podman y unidades Quadlets rootless de systemd. |
+| `rclone_aliases.sh` | Suite integral de sincronización, respaldo y descarga para Google Drive y OneDrive con Rclone. |
+| `yt-dlp_aliases.sh` | Descargas multimedia de alto rendimiento con yt-dlp y FFmpeg. |
 
 ---
 
-## 🛠️ Instalación
+## 🛠️ Instalación e Integración
 
-Para activar todas estas funcionalidades, se recomienda crear una carpeta `.bashrc.d` en tu home y añadir el siguiente bloque a tu archivo `~/.bashrc`:
+Para activar todas estas funcionalidades de forma modular, ejecuta `./Setup/shell.sh`, el cual enlazará automáticamente estos scripts en `~/.bashrc.d/` (y en `~/.zshrc.d/` si existe Zsh):
 
 ```bash
-# Carga modular de scripts
+mkdir -p ~/.bashrc.d
+ln -sf ~/Workspace/Repositorios/Linux/Debian/Bash.Setup/*.sh ~/.bashrc.d/
+```
+
+Y añade el cargador modular a tu `~/.bashrc`:
+
+```bash
 if [ -d "$HOME/.bashrc.d" ]; then
     for script in "$HOME/.bashrc.d"/*.sh; do
         [ -r "$script" ] && source "$script"
@@ -36,46 +42,8 @@ if [ -d "$HOME/.bashrc.d" ]; then
 fi
 ```
 
-Luego, puedes crear enlaces simbólicos de los scripts de este repositorio a esa carpeta:
-
-```bash
-mkdir -p ~/.bashrc.d
-ln -sf ~/Workspace/Repositorios/Linux/Debian/Bash.Setup/*.sh ~/.bashrc.d/
-```
-
 ---
 
-## ✨ Características Destacadas
-
-### 🐳 Contenedores (Podman)
-- `dsh` / `psh`: Entra en una shell interactiva de un contenedor con un solo comando.
-- `dlogs` / `plogs`: Sigue los logs en tiempo real.
-- `dstats` / `pstats`: Monitoriza recursos de forma limpia.
-- `dclean` / `pclean`: Limpieza profunda del sistema de contenedores.
-
-### 🎬 Multimedia (FFMPEG & ImageMagick)
-- `webm2mp4`: Convierte grabaciones de pantalla de GNOME a MP4 compatible.
-- `img2jpg` / `img2png`: Optimiza imágenes para web o almacenamiento.
-- `transcode-video-1080p`: Optimización rápida de video.
-
-### 📂 Navegación y Archivos
-- `mkcd`: Crea un directorio y entra en él al instante.
-- `extract`: Descomprime casi cualquier formato sin recordar las flags de `tar`.
-- `up`: Sube varios niveles de directorio fácilmente (`up 3`).
-- `duh`: Visualiza el tamaño de carpetas ordenado por peso.
-
-### ☁️ Sincronización (Rclone)
-- `rclone-documentos`: Sincroniza tu carpeta de documentos con Google Drive.
-- `rclone-videos-down`: Descarga tus vídeos de la nube al equipo local.
-
-### 📥 Descargas (YT-DLP)
-- `ytvideo` / `ytaudio`: Descarga directa en MP4 (1080p) o MP3 (alta calidad).
-- `ytlista-audio`: Descarga listas completas de reproducción convertidas a audio.
-
----
-
-## 🛡️ Seguridad
-El archivo `aliases.sh` incluye medidas de protección como:
-- `rm`, `cp`, `mv` interactivos para evitar borrados accidentales.
-- Protección del directorio raíz (`--preserve-root`).
-- Verificación automática de la tabla de particiones en funciones de disco.
+## 🛡️ Seguridad y Cortafuegos
+- **Firewalld Obligatorio:** Todos los atajos de firewall (`fw`, `fw-status`, `fw-ports`, `fw-reload`) operan exclusivamente con `firewall-cmd`.
+- **Protección de Archivos:** Operaciones interactivas por defecto (`rm -i`, `cp -i`, `mv -i`, `chown --preserve-root`).
