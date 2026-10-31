@@ -6,7 +6,7 @@ description: >-
 
 # Development Runtimes & Tooling Skill (Mise, uv, Just) - Ubuntu Workstation
 
-Esta skill proporciona las pautas y flujos de trabajo recomendados para la gestión de lenguajes de programación, entornos virtuales y automatización de tareas en Ubuntu Workstation (GNOME Shell 51 Wayland).
+Esta skill proporciona las pautas y flujos de trabajo recomendados para la gestión de lenguajes de programación, entornos virtuales y automatización de tareas en Ubuntu Workstation (GNOME Shell 50 Wayland).
 
 ---
 

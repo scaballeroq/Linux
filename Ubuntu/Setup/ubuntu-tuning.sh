@@ -54,7 +54,7 @@ run_as_user() {
 
 show_help() {
     cat <<EOF
-⚡ Optimizador de Rendimiento - Ubuntu Workstation (GNOME Shell 51)
+⚡ Optimizador de Rendimiento - Ubuntu Workstation (GNOME Shell)
 
 Uso:
   $0 [OPCIÓN]

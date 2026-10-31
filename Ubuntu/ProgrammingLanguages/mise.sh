@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # mise.sh - Instalador, Optimizador y Diagnóstico de Mise (Runtime Manager)
-# Sistema: Ubuntu Linux Workstation | Escritorio: GNOME Shell 51 (Wayland)
+# Sistema: Ubuntu Linux Workstation | Escritorio: GNOME Shell (Wayland)
 # ==============================================================================
 # Características:
 # - Despliegue idempotente y soporte rootless en espacio de usuario (~/.local/bin).

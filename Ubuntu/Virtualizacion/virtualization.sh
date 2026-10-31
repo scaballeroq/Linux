@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # virtualization.sh - Instalación y Optimización Avanzada de Virtualización (KVM/QEMU)
-# Sistema: Ubuntu Linux (24.04 / 24.10 / 26.10) | Escritorio: GNOME Shell (Wayland)
+# Sistema: Ubuntu Linux (24.04 / 24.10 / 26.04) | Escritorio: GNOME Shell (Wayland)
 # Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3 / Barcelo-R, 8C/16T)
 # GPU: AMD Radeon Graphics (Vega 8 / 3D VirGL / VA-API) | Memoria: 32 GB RAM DDR4
 # Almacenamiento: SSD NVMe Kioxia 512 GB (Btrfs NoCoW / Ext4) | Firewall: Firewalld

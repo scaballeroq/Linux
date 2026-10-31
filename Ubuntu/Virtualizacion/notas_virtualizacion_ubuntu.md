@@ -1,6 +1,6 @@
 # Instalación y Configuración de Virtualización (KVM/QEMU) en Ubuntu
 
-Este manual está optimizado para versiones modernas de Ubuntu (como Ubuntu 26.04 LTS). Utiliza el esquema estándar de `libvirtd` integrado con el sistema.
+Este manual está optimizado para versiones modernas de Ubuntu (como Ubuntu 24.04 LTS). Utiliza el esquema estándar de `libvirtd` integrado con el sistema.
 
 ## 1. Instalación de Paquetes
 Instalamos KVM, libvirt, virt-manager, y utilidades asociadas.

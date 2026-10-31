@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==============================================================================
 # nodejs.sh - Instalación y Optimización de Node.js (Última LTS) vía Mise
-# Ubuntu Workstation (GNOME Shell 51 + Wayland / Systemd User Environment)
+# Ubuntu Workstation (GNOME Shell + Wayland / Systemd User Environment)
 # ==============================================================================
 # Características:
 # - Despliegue idempotente y rootless en espacio de usuario vía Mise.

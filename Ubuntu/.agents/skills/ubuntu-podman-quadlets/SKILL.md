@@ -6,7 +6,7 @@ description: >-
 
 # Podman Rootless & Systemd Quadlets Skill (Ubuntu Workstation)
 
-Esta skill proporciona las directrices y comandos para gestionar el ecosistema de contenedores **Podman Rootless** integrado de forma nativa con **Systemd Quadlets** en Ubuntu Workstation (GNOME Shell 51).
+Esta skill proporciona las directrices y comandos para gestionar el ecosistema de contenedores **Podman Rootless** integrado de forma nativa con **Systemd Quadlets** en Ubuntu Workstation (GNOME Shell 50).
 
 ---
 

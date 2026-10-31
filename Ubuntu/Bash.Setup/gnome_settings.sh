@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
-# CONFIGURACIÓN Y ALIASES PARA GNOME SHELL 51 (gnome_settings.sh)
-# Ubuntu Workstation (GNOME Shell 51 + Wayland / Mutter)
+# CONFIGURACIÓN Y ALIASES PARA GNOME SHELL (gnome_settings.sh)
+# Ubuntu Workstation (GNOME Shell + Wayland / Mutter)
 # =============================================================================
 # Adaptación completa y sin residuos de KDE para el entorno nativo GNOME.
 # Proporciona atajos rápidos, control de apariencia, luz nocturna y accesos

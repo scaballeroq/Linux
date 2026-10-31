@@ -6,7 +6,7 @@ description: >-
 
 # KVM/QEMU Virtualization Skill (Ubuntu Workstation + AMD Ryzen)
 
-Esta skill proporciona las directrices operativas, comandos y configuraciones de alto rendimiento para el hipervisor **KVM/QEMU** y **Libvirt** en la estación de trabajo HP ProBook 455 G10 con Ubuntu Workstation, GNOME Shell 51 y procesador AMD Ryzen 7 7730U.
+Esta skill proporciona las directrices operativas, comandos y configuraciones de alto rendimiento para el hipervisor **KVM/QEMU** y **Libvirt** en la estación de trabajo HP ProBook 455 G10 con Ubuntu Workstation, GNOME Shell 50 y procesador AMD Ryzen 7 7730U.
 
 ---
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# gnome-settings.sh - Configuración y Personalización Avanzada de GNOME Shell 51
-# Ubuntu Workstation (GNOME Shell 51 + Wayland / Mutter)
+# gnome-settings.sh - Configuración y Personalización Avanzada de GNOME Shell
+# Ubuntu Workstation (Ubuntu 24.04 / GNOME Shell 50 + Wayland / Mutter)
 # Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8)
 # ==============================================================================
 # Características y Optimizaciones:
@@ -64,7 +64,7 @@ run_as_user() {
 # ------------------------------------------------------------------------------
 show_help() {
     cat <<EOF
-🎨 Personalización de GNOME Shell 51 - Ubuntu Workstation (Wayland)
+🎨 Personalización de GNOME Shell - Ubuntu Workstation (Wayland)
 
 Uso:
   $0 [OPCIÓN]
@@ -94,7 +94,7 @@ show_status() {
     echo "🔍 ESTADO DE GNOME SHELL - UBUNTU WORKSTATION"
     echo "================================================================="
     echo "• Entorno de escritorio:  ${XDG_CURRENT_DESKTOP:-ubuntu:GNOME} (${XDG_SESSION_TYPE:-wayland})"
-    echo "• Versión de GNOME Shell: $(gnome-shell --version 2>/dev/null || echo 'GNOME 51')"
+    echo "• Versión de GNOME Shell: $(gnome-shell --version 2>/dev/null || echo 'GNOME 50')"
     echo "• Compositor / Window Mgr: Mutter (Wayland)"
     echo "-----------------------------------------------------------------"
     echo "• Esquema de color:       $(run_as_user gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null || echo 'n/a')"
@@ -227,9 +227,24 @@ apply_windows() {
     # Edge tiling nativo para dividir ventanas al arrastrar a los bordes
     run_as_user gsettings set org.gnome.mutter edge-tiling true 2>/dev/null || true
 
-    # Si Mutter soporta experimental-features en la versión actual, aplicarlas de forma segura
+    # Si Mutter soporta experimental-features en la versión actual, aplicarlas de forma dinámica y segura
     if run_as_user gsettings list-keys org.gnome.mutter 2>/dev/null | grep -q "^experimental-features$"; then
-        run_as_user gsettings set org.gnome.mutter experimental-features "['variable-refresh-rate', 'scale-monitor-framebuffer']" 2>/dev/null || true
+        local range features=()
+        range=$(run_as_user gsettings range org.gnome.mutter experimental-features 2>/dev/null || true)
+        if echo "$range" | grep -q "scale-monitor-framebuffer"; then
+            features+=("'scale-monitor-framebuffer'")
+        fi
+        if echo "$range" | grep -q "variable-refresh-rate"; then
+            features+=("'variable-refresh-rate'")
+        fi
+        if echo "$range" | grep -q "xwayland-native-scaling"; then
+            features+=("'xwayland-native-scaling'")
+        fi
+        if [ ${#features[@]} -gt 0 ]; then
+            local features_str
+            features_str=$(IFS=, ; echo "[${features[*]}]")
+            run_as_user gsettings set org.gnome.mutter experimental-features "$features_str" 2>/dev/null || true
+        fi
     fi
 
     echo "  ✅ Mutter optimizado para ventanas fluidas y snapping multimonitor."
@@ -386,7 +401,7 @@ case "${1:-}" in
         echo ""
         show_status
         echo "================================================================="
-        echo "✅ Configuración de GNOME Shell 51 completada con éxito."
+        echo "✅ Configuración de GNOME Shell completada con éxito."
         echo "================================================================="
         ;;
     *)

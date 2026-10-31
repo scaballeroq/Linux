@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # antigravity.sh - Gestor e Instalador de Google Antigravity Desktop 2.0
-# Optimizado para Ubuntu Workstation (Ubuntu 26.10 GNOME Shell Wayland Mutter)
+# Optimizado para Ubuntu Workstation (Ubuntu 24.04 GNOME Shell Wayland Mutter)
 # Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3) | Radeon Graphics (Vega 8)
 # ==============================================================================
 # Características:

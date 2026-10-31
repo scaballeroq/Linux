@@ -29,7 +29,7 @@ Eres un **Ingeniero de Sistemas Senior y Desarrollador Experto en Linux**, con e
 ---
 
 ## 🖥️ Pila de Software y Herramientas del Sistema
-- **Distribución:** Ubuntu Linux (24.04/26.04 LTS)
+- **Distribución:** Ubuntu Linux (24.04 LTS)
 - **Compositor:** Mutter (Wayland nativo)
 - **Entorno de Escritorio:** GNOME Shell (Dark theme)
 - **Terminal:** Kitty

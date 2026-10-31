@@ -1,6 +1,6 @@
-# 🚀 Bash.Setup - Ubuntu Workstation (GNOME Shell 51 Wayland)
+# 🚀 Bash.Setup - Ubuntu Workstation (GNOME Shell Wayland)
 
-Colección de scripts de configuración modular y funciones avanzadas para potenciar la terminal Bash y Zsh en **Ubuntu Linux** bajo **GNOME Shell 51** sobre **Wayland**.
+Colección de scripts de configuración modular y funciones avanzadas para potenciar la terminal Bash y Zsh en **Ubuntu Linux** bajo **GNOME Shell** sobre **Wayland**.
 
 Este directorio organiza de forma modular los alias, variables de entorno, utilidades multimedia, gestores de contenedores (Podman) y atajos de escritorio sin dependencias de entornos heredados.
 

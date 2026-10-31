@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # rust.sh - Instalación y Optimización de Rust (Rustup + Cargo + Toolchain)
-# Ubuntu Workstation (Ubuntu 26.10 / GNOME Shell Wayland)
+# Ubuntu Workstation (Ubuntu 24.04 / GNOME Shell Wayland)
 # Arquitectura: AMD Ryzen 7 7730U (8C/16T) | 32 GB RAM | SSD NVMe Kioxia 512GB
 # ==============================================================================
 # Características de Optimización:
@@ -89,7 +89,7 @@ check_pkg() {
 # ------------------------------------------------------------------------------
 show_help() {
     cat <<EOF
-🦀 Instalador y Optimizador de Rust - Ubuntu Workstation (Ubuntu 26.10)
+🦀 Instalador y Optimizador de Rust - Ubuntu Workstation
    Hardware: AMD Ryzen 7 7730U (16 hilos) | 32 GB RAM | NVMe Kioxia | GNOME Wayland
 
 Uso:
@@ -117,7 +117,7 @@ EOF
 
 show_status() {
     echo "================================================================="
-    echo "🔍 ESTADO DEL ENTORNO RUST - UBUNTU WORKSTATION (UBUNTU 26.10)"
+    echo "🔍 ESTADO DEL ENTORNO RUST - UBUNTU WORKSTATION"
     echo "   AMD Ryzen 7 7730U (16 hilos) | 32 GB RAM | NVMe | GNOME Wayland"
     echo "================================================================="
 
@@ -204,7 +204,7 @@ show_status() {
         echo "• Configuración Cargo:  $config_status"
         echo "• Entorno GNOME Shell:  $env_status"
         echo "-----------------------------------------------------------------"
-        echo "💡 Para instalar Rust optimizado para Ubuntu 26.10 y este hardware:"
+        echo "💡 Para instalar Rust optimizado para Ubuntu y este hardware:"
         echo "   Ejecuta: $0"
     fi
     echo "================================================================="
@@ -214,7 +214,7 @@ show_status() {
 # 3. VERIFICACIÓN E INSTALACIÓN DE DEPENDENCIAS DEL SISTEMA
 # ------------------------------------------------------------------------------
 install_system_deps() {
-    log_info "Comprobando dependencias de compilación y enlazado en Ubuntu 26.10..."
+    log_info "Comprobando dependencias de compilación y enlazado en Ubuntu..."
     local missing_pkgs=()
 
     # build-essential, cmake, libssl-dev, pkg-config, curl son imprescindibles para compilar crates C/C++
@@ -292,7 +292,7 @@ configure_cargo_optimizations() {
 
     cat <<EOF | run_as_user tee "$config_file" > /dev/null
 # ==============================================================================
-# Cargo Configuration - Ubuntu Workstation 26.10
+# Cargo Configuration - Ubuntu Workstation
 # Hardware: AMD Ryzen 7 7730U (16 hilos) | 32 GB RAM | NVMe SSD Kioxia
 # ==============================================================================
 
@@ -470,7 +470,7 @@ case "${1:-}" in
     "")
         echo "================================================================="
         echo "🦀 OPTIMIZADOR Y CONFIGURADOR DE RUST - UBUNTU WORKSTATION"
-        echo "   AMD Ryzen 7 7730U (16 hilos) | 32 GB RAM | NVMe | Ubuntu 26.10"
+        echo "   AMD Ryzen 7 7730U (16 hilos) | 32 GB RAM | NVMe | Ubuntu Workstation"
         echo "================================================================="
         install_system_deps
         install_rustup
@@ -480,7 +480,7 @@ case "${1:-}" in
         echo ""
         show_status
         echo "================================================================="
-        echo "✅ Rust configurado y optimizado con éxito para Ubuntu 26.10."
+        echo "✅ Rust configurado y optimizado con éxito para Ubuntu Workstation."
         echo "💡 Inicia una nueva terminal o ejecuta: source ~/.bashrc"
         echo "================================================================="
         ;;

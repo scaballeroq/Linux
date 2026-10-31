@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # gsconnect.sh - Integración de GSConnect (KDE Connect para GNOME) y Firewalld
-# Sistema: Ubuntu Workstation | Escritorio: GNOME Shell 51 (Wayland)
+# Sistema: Ubuntu Workstation | Escritorio: GNOME Shell (Wayland)
 # Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Graphics (Vega 8))
 # ==============================================================================
 # Características:

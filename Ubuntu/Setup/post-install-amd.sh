@@ -2,7 +2,7 @@
 # ==============================================================================
 # post-install-amd.sh - Post-instalación para Ubuntu con AMD Ryzen y AMD Graphics
 # Optimizado para HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Graphics (Vega 8))
-# Entorno: GNOME Shell 51 (Wayland)
+# Entorno: GNOME Shell (Wayland)
 # ==============================================================================
 
 set -euo pipefail
