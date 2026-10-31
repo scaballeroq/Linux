@@ -77,6 +77,12 @@ EXTENSION_UUIDS=(
 # ------------------------------------------------------------------------------
 # Detección de privilegios y usuario real
 # ------------------------------------------------------------------------------
+if command -v dnf5 &>/dev/null; then
+    DNF_CMD="dnf5"
+else
+    DNF_CMD="dnf"
+fi
+
 if [ "$EUID" -ne 0 ]; then
     if ! command -v sudo &> /dev/null; then
         echo "❌ Error: 'sudo' no está disponible."
@@ -125,7 +131,7 @@ install_packages() {
 
     if [ ${#missing_pkgs[@]} -gt 0 ]; then
         echo "📦 [1/4] Instalando herramientas y extensiones oficiales con DNF5 (${missing_pkgs[*]})..."
-        $SUDO dnf5 install -y "${missing_pkgs[@]}" 2>/dev/null || true
+        $SUDO $DNF_CMD install -y "${missing_pkgs[@]}" 2>/dev/null || true
         echo "  ✅ Paquetes procesados."
     else
         echo "📦 [1/4] Herramientas oficiales (gnome-browser-connector, etc.) y extensiones ya instaladas vía DNF5."
@@ -358,7 +364,7 @@ case "${1:-}" in
         configure_dash_to_dock
         echo "================================================================="
         echo "✅ Configuración de extensiones completada."
-        echo "💡 Si no se cargan de inmediato, reinicia sesión o pulsa Alt+F2 y escribe 'r' (en X11)."
+        echo "💡 Si no se cargan de inmediato, cierra e inicia sesión nuevamente para aplicar en Wayland."
         echo "================================================================="
         ;;
     *)

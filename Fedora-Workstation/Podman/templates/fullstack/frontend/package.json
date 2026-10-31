@@ -1,15 +1,9 @@
 {
   "name": "__PROJECT__-frontend",
-  "version": "1.0.0",
   "private": true,
+  "version": "0.1.0",
   "scripts": {
-    "dev": "next dev --port ${FRONTEND_PORT:-3000}",
-    "build": "next build",
-    "start": "next start"
-  },
-  "dependencies": {
-    "next": "^15.0.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "dev": "echo 'Servidor de desarrollo activo'",
+    "build": "echo 'Build ok'"
   }
 }

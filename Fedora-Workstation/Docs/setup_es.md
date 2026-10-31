@@ -256,3 +256,52 @@ Para comprobar que los componentes principales se instalaron y configuraron corr
 - **Google Chrome**: Ejecuta `./Setup/chrome.sh --status` o `google-chrome --version`.
 - **Steam**: Ejecuta `./Setup/steam.sh --status` o `steam`.
 
+
+---
+
+## 11. Catálogo Desacoplado Flatpak (`flatpak.sh`)
+
+Permite gestionar aplicaciones de usuario en sandbox sin alterar las dependencias base de Fedora:
+- Repositorio Flathub oficial configurado a nivel de sistema.
+- Catálogo modular: Flatseal, Podman Desktop, Warehouse, VLC, OBS Studio, LocalSend, etc.
+- Opciones: `--status`, `--update`, `--clean`, `--all`, `--core`, `--multimedia`.
+
+---
+
+## 12. Integración Móvil GSConnect (`gsconnect.sh`)
+
+Implementación nativa de KDE Connect para GNOME Shell:
+- Apertura automática en Firewalld de puertos 1714-1764 TCP/UDP y mDNS 5353 UDP.
+- Sincronización de notificaciones, portapapeles, SMS y montaje SFTP mediante `fuse-sshfs`.
+- Opciones: `--status`, `--devices`, `--connect <IP>`, `--firewall`.
+
+---
+
+## 13. Huella Dactilar y Biometría (`fingerprint-setup.sh`)
+
+Configuración de autenticación biométrica en GDM, GNOME Shell, terminal (`sudo`) y Polkit:
+- Integración nativa con `authselect enable-feature with-fingerprint`.
+- Soporte para lectores biométricos USB (Synaptics, Elan, Goodix).
+- Opciones: `--status`, `--enroll [DEDO]`, `--verify`, `--delete`.
+
+---
+
+## 14. Impresoras HP LaserJet (`hp-printer-setup.sh`)
+
+Soporte completo para impresoras monocromo y multifunción HP (LaserJet Pro M15w / M14 / M17):
+- Configuración de CUPS, Avahi, HPLIP y plugin propietario binario (`hp-plugin`).
+- Apertura de puertos IPP e IPP-client en Firewalld.
+- Opciones: `--status`, `--plugin`, `--wifi`, `--usb`.
+
+---
+
+## 15. Apariencia, Temas y Ptyxis (`apariencia.sh` y `ptyxis.sh`)
+
+- `apariencia.sh`: Gestión de temas GTK (Adwaita / Adw-gtk3), iconos (Papirus) y cursores modernos (Bibata).
+- `ptyxis.sh`: Optimización estética de la terminal nativa de contenedores de GNOME con tema oscuro, transparencia (0.85) y diseño sin scrollbars.
+
+---
+
+## 16. Diagnóstico de Microarquitectura x86-64-v3 (`amd64v3.sh`)
+
+Verifica la compatibilidad del procesador AMD Ryzen 7 7730U con el conjunto de instrucciones AVX2, FMA, BMI1/2 y la aceleración nativa mediante glibc-hwcaps en Fedora.

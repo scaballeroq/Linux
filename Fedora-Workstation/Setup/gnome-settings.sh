@@ -1,18 +1,33 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ==============================================================================
-# gnome-settings.sh - Configuración y Personalización Avanzada de GNOME para Fedora 44
-# Optimizado para desarrollo de software, modo oscuro y estación de trabajo
+# gnome-settings.sh - Configuración y Personalización Avanzada de GNOME Shell
+# Fedora Workstation (Fedora 44 / GNOME Shell Wayland / Mutter)
+# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8)
+# ==============================================================================
+# Características y Optimizaciones:
+#  - Modo oscuro persistente y armonizado (prefer-dark + Adwaita-dark / adw-gtk3-dark).
+#  - Tipografía JetBrainsMono Nerd Font para terminal y desarrollo.
+#  - Disposición completa de botones de ventana (minimizar, maximizar, cerrar a la derecha).
+#  - Mutter Wayland: centrado de ventanas, diálogo modal anclado, VRR y edge-tiling multimonitor.
+#  - Barra superior y reloj: formato 24h, día de la semana, fecha y porcentaje de batería.
+#  - Salud visual: Luz nocturna activada a 4000K para reducir fatiga ocular.
+#  - Localización de cursor rápida con tecla Ctrl (locate-pointer) en triple pantalla.
+#  - Nautilus optimizado: vista en lista y habilitación de borrado permanente directo.
+#  - Terminal Kitty acelerada por GPU vinculada a atajo global Ctrl+Alt+T sin colisiones.
+#  - Menús contextuales nativos en Nautilus (clic derecho) para Kitty, Antigravity y VS Code.
+#  - Opciones CLI: --status / -s, --dark / -d, --light / -l, --keybindings, --nautilus, --help / -h.
 # ==============================================================================
 
 set -euo pipefail
 
-echo "================================================================="
-echo "🎨 CONFIGURANDO ENTORNO GNOME EN FEDORA 44 WORKSTATION (MODO OSCURO)"
-echo "================================================================="
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
 
+# ------------------------------------------------------------------------------
+# 1. DETECCIÓN DE USUARIO Y PRIVILEGIOS SUDO
+# ------------------------------------------------------------------------------
 if [ "$EUID" -ne 0 ]; then
     if ! command -v sudo &> /dev/null; then
-        echo "❌ Error: 'sudo' no está disponible."
+        echo "❌ Error: 'sudo' no está disponible. Ejecuta este script con privilegios de superusuario."
         exit 1
     fi
     SUDO="sudo"
@@ -20,7 +35,6 @@ else
     SUDO=""
 fi
 
-# Detectar usuario real en caso de ejecución con sudo
 if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
     REAL_USER="$SUDO_USER"
     USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
@@ -31,11 +45,18 @@ fi
 
 REAL_UID=$(id -u "$REAL_USER" 2>/dev/null || echo "1000")
 
+if command -v dnf5 &>/dev/null; then
+    DNF_CMD="dnf5"
+else
+    DNF_CMD="dnf"
+fi
+
 run_as_user() {
     if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
         sudo -u "$REAL_USER" env \
             HOME="$USER_HOME" \
             USER="$REAL_USER" \
+            PATH="/usr/local/bin:/usr/bin:/bin:$PATH" \
             XDG_RUNTIME_DIR="/run/user/$REAL_UID" \
             DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$REAL_UID/bus}" \
             "$@"
@@ -44,94 +65,302 @@ run_as_user() {
     fi
 }
 
-# 1. Herramientas esenciales de personalización de GNOME
-echo "📦 [1/6] Verificando herramientas de personalización en Fedora 44..."
-$SUDO dnf5 install -y \
-    gnome-tweaks \
-    adw-gtk3-theme \
-    gnome-browser-connector 2>/dev/null || true
+# ------------------------------------------------------------------------------
+# 2. AYUDA Y ESTADO DEL SISTEMA
+# ------------------------------------------------------------------------------
+show_help() {
+    cat <<EOF
+🎨 Personalización de GNOME Shell - Fedora Workstation (Wayland)
 
-# 2. Apariencia y Tema Oscuro Global
-echo "🌙 [2/6] Aplicando tema oscuro persistente y tipografía para desarrollo..."
-run_as_user gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null || true
-run_as_user gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' 2>/dev/null || \
-    run_as_user gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark' 2>/dev/null || true
-run_as_user gsettings set org.gnome.desktop.interface icon-theme 'Adwaita' 2>/dev/null || true
+Uso:
+  $0 [OPCIÓN]
 
-# Tipografía para desarrollo (Nerd Fonts para terminal y código)
-run_as_user gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Nerd Font 11' 2>/dev/null || true
+Opciones:
+  (sin argumentos)    Aplica toda la configuración recomendada (apariencia, Mutter,
+                      Nautilus, atajo global de Kitty y scripts contextuales).
+  --status, -s        Muestra diagnóstico detallado de temas, fuentes, ventanas y atajos.
+  --dark, -d          Aplica el modo oscuro completo (prefer-dark + tema oscuro del sistema).
+  --light, -l         Aplica el modo claro estándar.
+  --keybindings       Configura únicamente el atajo global Ctrl+Alt+T para Kitty.
+  --nautilus          Genera únicamente los scripts de clic derecho para Nautilus.
+  --help, -h          Muestra este mensaje de ayuda.
 
-# 3. Ventanas, Comportamiento y Renderizado (Mutter)
-echo "🪟 [3/6] Configurando gestión de ventanas y Mutter (VRR y escalado)..."
-# Botones de ventana completos: minimizar, maximizar, cerrar a la derecha
-run_as_user gsettings set org.gnome.desktop.wm.preferences button-layout 'appmenu:minimize,maximize,close' 2>/dev/null || true
-
-# Centrar nuevas ventanas automáticamente
-run_as_user gsettings set org.gnome.mutter center-new-windows true 2>/dev/null || true
-run_as_user gsettings set org.gnome.mutter attach-modal-dialogs true 2>/dev/null || true
-
-# Características experimentales de Mutter para multi-pantalla y monitores con refresco variable (VRR)
-run_as_user gsettings set org.gnome.mutter experimental-features "['variable-refresh-rate', 'scale-monitor-framebuffer']" 2>/dev/null || true
-
-# 4. Barra Superior, Reloj, Energía y Luz Nocturna
-echo "⏱️ [4/6] Configurando barra superior, reloj 24h y salud visual..."
-run_as_user gsettings set org.gnome.desktop.interface clock-format '24h' 2>/dev/null || true
-run_as_user gsettings set org.gnome.desktop.interface clock-show-weekday true 2>/dev/null || true
-run_as_user gsettings set org.gnome.desktop.interface clock-show-date true 2>/dev/null || true
-run_as_user gsettings set org.gnome.desktop.interface show-battery-percentage true 2>/dev/null || true
-
-# Luz Nocturna a 4000K para reducir fatiga visual
-run_as_user gsettings set org.gnome.settings-daemon.plugins.color night-light-enabled true 2>/dev/null || true
-run_as_user gsettings set org.gnome.settings-daemon.plugins.color night-light-temperature 4000 2>/dev/null || true
-
-# Energía: Portátil de desarrollo no suspende conectado a la red eléctrica
-run_as_user gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing' 2>/dev/null || true
-
-# 5. Gestor de Archivos Nautilus
-echo "📂 [5/6] Optimizando Nautilus para productividad y desarrollo..."
-run_as_user gsettings set org.gnome.nautilus.preferences default-folder-viewer 'list-view' 2>/dev/null || true
-run_as_user gsettings set org.gnome.nautilus.preferences show-delete-permanent true 2>/dev/null || true
-
-# 6. Terminal Kitty e Integración con Atajos
-echo "🐱 [6/6] Estableciendo Kitty como terminal predeterminada y configurando atajos..."
-run_as_user gsettings set org.gnome.desktop.default-applications.terminal exec 'kitty' 2>/dev/null || true
-run_as_user gsettings set org.gnome.desktop.default-applications.terminal exec-arg "" 2>/dev/null || true
-
-# Atajo global Ctrl+Alt+T para Kitty en GNOME
-KB_PATH="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
-run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "['$KB_PATH']" 2>/dev/null || true
-run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$KB_PATH name 'Kitty Terminal' 2>/dev/null || true
-run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$KB_PATH command 'kitty' 2>/dev/null || true
-run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$KB_PATH binding '<Primary><Alt>t' 2>/dev/null || true
-
-# Script nativo de Nautilus para abrir Kitty con clic derecho
-NAUTILUS_SCRIPTS_DIR="$USER_HOME/.local/share/nautilus/scripts"
-run_as_user mkdir -p "$NAUTILUS_SCRIPTS_DIR"
-
-cat << 'EOF' | run_as_user tee "$NAUTILUS_SCRIPTS_DIR/Abrir en Kitty" > /dev/null
-#!/bin/sh
-target=""
-if [ -n "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" ]; then
-    first=$(echo "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" | head -n1)
-    if [ -d "$first" ]; then
-        target="$first"
-    elif [ -f "$first" ]; then
-        target="$(dirname "$first")"
-    fi
-fi
-if [ -z "$target" ] && [ -n "$NAUTILUS_SCRIPT_CURRENT_URI" ]; then
-    target=$(echo "$NAUTILUS_SCRIPT_CURRENT_URI" | sed 's|^file://||' | python3 -c "import sys, urllib.parse; print(urllib.parse.unquote(sys.stdin.read().strip()))" 2>/dev/null || true)
-fi
-exec kitty --directory "${target:-${1:-.}}" &
+Ajustes incluidos:
+  • Apariencia:       Modo oscuro prefer-dark, iconos acordes y JetBrainsMono Nerd Font.
+  • Ventanas Mutter:  Minimizar/Maximizar/Cerrar a la derecha, centrado, VRR y edge-tiling.
+  • Barra Superior:   Reloj 24h con fecha, día de la semana y porcentaje de batería.
+  • Confort Visual:   Luz nocturna a 4000K y resalte de cursor con tecla Ctrl.
+  • Nautilus:         Vista en lista, borrado permanente habilitado y menús contextuales.
+  • Terminal:         Atajo Ctrl+Alt+T para Kitty (sin colisión con terminal por defecto).
 EOF
-run_as_user chmod +x "$NAUTILUS_SCRIPTS_DIR/Abrir en Kitty" 2>/dev/null || true
+}
 
-echo "================================================================="
-echo "✅ Configuración de GNOME completada con éxito en Fedora 44."
-echo "   - Tema oscuro 'prefer-dark' y 'adw-gtk3-dark' aplicado."
-echo "   - Monospace: JetBrainsMono Nerd Font 11."
-echo "   - Botones completos (minimizar, maximizar, cerrar)."
-echo "   - Reloj 24h, fecha y porcentaje de batería visibles."
-echo "   - Terminal Kitty configurada con atajo Ctrl+Alt+T."
-echo "   - Script contextual en Nautilus para abrir Kitty."
-echo "================================================================="
+show_status() {
+    echo "================================================================="
+    echo "🔍 ESTADO DE GNOME SHELL - FEDORA WORKSTATION"
+    echo "================================================================="
+    echo "• Entorno de escritorio:  ${XDG_CURRENT_DESKTOP:-GNOME} (${XDG_SESSION_TYPE:-wayland})"
+    echo "• Versión de GNOME Shell: $(gnome-shell --version 2>/dev/null || echo 'GNOME 50')"
+    echo "• Compositor / Window Mgr: Mutter (Wayland)"
+    echo "-----------------------------------------------------------------"
+    echo "• Esquema de color:       $(run_as_user gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null || echo 'n/a')"
+    echo "• Tema GTK:               $(run_as_user gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null || echo 'n/a')"
+    echo "• Tema de Iconos:         $(run_as_user gsettings get org.gnome.desktop.interface icon-theme 2>/dev/null || echo 'n/a')"
+    echo "• Tipografía Monospace:   $(run_as_user gsettings get org.gnome.desktop.interface monospace-font-name 2>/dev/null || echo 'n/a')"
+    echo "• Tipografía UI:          $(run_as_user gsettings get org.gnome.desktop.interface font-name 2>/dev/null || echo 'n/a')"
+    echo "-----------------------------------------------------------------"
+    echo "• Botones de ventana:     $(run_as_user gsettings get org.gnome.desktop.wm.preferences button-layout 2>/dev/null || echo 'n/a')"
+    echo "• Ventanas centradas:     $(run_as_user gsettings get org.gnome.mutter center-new-windows 2>/dev/null || echo 'n/a')"
+    echo "• Ajuste a bordes (Tiling):$(run_as_user gsettings get org.gnome.mutter edge-tiling 2>/dev/null || echo 'n/a')"
+    echo "• Localizar puntero (Ctrl):$(run_as_user gsettings get org.gnome.desktop.interface locate-pointer 2>/dev/null || echo 'false')"
+    echo "-----------------------------------------------------------------"
+    echo "• Barra superior y Reloj:"
+    echo "  - Formato de reloj:     $(run_as_user gsettings get org.gnome.desktop.interface clock-format 2>/dev/null || echo 'n/a')"
+    echo "  - Mostrar fecha y día:  $(run_as_user gsettings get org.gnome.desktop.interface clock-show-date 2>/dev/null || echo 'false') / $(run_as_user gsettings get org.gnome.desktop.interface clock-show-weekday 2>/dev/null || echo 'false')"
+    echo "  - Porcentaje de batería:$(run_as_user gsettings get org.gnome.desktop.interface show-battery-percentage 2>/dev/null || echo 'false')"
+    echo "-----------------------------------------------------------------"
+    local nl_enabled nl_temp
+    nl_enabled=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.color night-light-enabled 2>/dev/null || echo 'false')
+    nl_temp=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.color night-light-temperature 2>/dev/null | awk '{print $NF}' || echo '4000')
+    echo "• Luz Nocturna (Salud Visual):"
+    echo "  - Estado:               $(if [ "$nl_enabled" = "true" ]; then echo "✅ Activada"; else echo "❌ Desactivada"; fi)"
+    echo "  - Temperatura de color: ${nl_temp} K"
+    echo "-----------------------------------------------------------------"
+    local kb_configured
+    kb_configured=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.media-keys custom-keybindings 2>/dev/null || echo '[]')
+    echo "• Atajos de Terminal:"
+    if echo "$kb_configured" | grep -qi "custom0"; then
+        echo "  - Atajo Kitty (Ctrl+Alt+T): ✅ Configurado (custom0 -> kitty)"
+    else
+        echo "  - Atajo Kitty (Ctrl+Alt+T): ❌ No configurado"
+    fi
+    echo "-----------------------------------------------------------------"
+    echo "• Nautilus (Archivos):"
+    echo "  - Vista predeterminada: $(run_as_user gsettings get org.gnome.nautilus.preferences default-folder-viewer 2>/dev/null || echo 'n/a')"
+    echo "  - Borrado permanente:   $(run_as_user gsettings get org.gnome.nautilus.preferences show-delete-permanently 2>/dev/null || echo 'n/a')"
+    local scripts_dir="$USER_HOME/.local/share/nautilus/scripts"
+    local s_kitty s_ag s_code
+    s_kitty=$(if [ -f "$scripts_dir/Abrir en Kitty" ]; then echo "✅"; else echo "❌"; fi)
+    s_ag=$(if [ -f "$scripts_dir/Abrir en Antigravity IDE" ]; then echo "✅"; else echo "❌"; fi)
+    s_code=$(if [ -f "$scripts_dir/Abrir en VS Code" ]; then echo "✅"; else echo "❌"; fi)
+    echo "  - Scripts contextuales: Kitty: $s_kitty | Antigravity: $s_ag | VS Code: $s_code"
+    echo "================================================================="
+}
+
+# ------------------------------------------------------------------------------
+# 3. MODO OSCURO / MODO CLARO
+# ------------------------------------------------------------------------------
+apply_dark() {
+    echo "🌙 Aplicando tema oscuro persistente y armónico..."
+    run_as_user gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null || true
+
+    local target_theme="Adwaita-dark"
+    if [ -d "/usr/share/themes/adw-gtk3-dark" ] || [ -d "$USER_HOME/.local/share/themes/adw-gtk3-dark" ]; then
+        target_theme="adw-gtk3-dark"
+    elif [ -d "/usr/share/themes/Adwaita-dark" ]; then
+        target_theme="Adwaita-dark"
+    fi
+    run_as_user gsettings set org.gnome.desktop.interface gtk-theme "$target_theme" 2>/dev/null || true
+    echo "  ✅ Modo oscuro activado con tema '$target_theme'."
+}
+
+apply_light() {
+    echo "☀️ Aplicando modo claro..."
+    run_as_user gsettings set org.gnome.desktop.interface color-scheme 'default' 2>/dev/null || true
+    run_as_user gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita' 2>/dev/null || true
+    echo "  ✅ Modo claro activado."
+}
+
+# ------------------------------------------------------------------------------
+# 4. INSTALACIÓN DE PAQUETES BASE DE SOPORTE
+# ------------------------------------------------------------------------------
+apply_packages() {
+    echo "ℹ️ [1/6] Verificando utilidades de soporte y terminal Kitty en GNOME..."
+    $SUDO $DNF_CMD install -y \
+        kitty \
+        gnome-tweaks \
+        gnome-browser-connector \
+        gnome-shell-extension-gsconnect \
+        wl-clipboard \
+        adw-gtk3-theme 2>/dev/null || true
+    echo "  ✅ Utilidades base aseguradas."
+}
+
+# ------------------------------------------------------------------------------
+# 5. APARIENCIA, TIPOGRAFÍA Y ACCESIBILIDAD
+# ------------------------------------------------------------------------------
+apply_appearance() {
+    echo "ℹ️ [2/6] Configurando apariencia, tipografía y salud visual..."
+    apply_dark
+
+    # Tipografía moderna para desarrollo
+    run_as_user gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Nerd Font 11' 2>/dev/null || true
+    run_as_user gsettings set org.gnome.desktop.interface font-name 'Cantarell 11' 2>/dev/null || true
+
+    # Salud visual y luz nocturna
+    run_as_user gsettings set org.gnome.settings-daemon.plugins.color night-light-enabled true 2>/dev/null || true
+    run_as_user gsettings set org.gnome.settings-daemon.plugins.color night-light-temperature 4000 2>/dev/null || true
+
+    # Localizar puntero con la tecla Ctrl
+    run_as_user gsettings set org.gnome.desktop.interface locate-pointer true 2>/dev/null || true
+    echo "  ✅ Apariencia y confort visual aplicados."
+}
+
+# ------------------------------------------------------------------------------
+# 6. COMPORTAMIENTO DE VENTANAS Y MUTTER (WAYLAND)
+# ------------------------------------------------------------------------------
+apply_window_manager() {
+    echo "ℹ️ [3/6] Optimizando Mutter (Wayland), centrado y bordes de ventanas..."
+    run_as_user gsettings set org.gnome.desktop.wm.preferences button-layout 'appmenu:minimize,maximize,close' 2>/dev/null || true
+    run_as_user gsettings set org.gnome.mutter center-new-windows true 2>/dev/null || true
+    run_as_user gsettings set org.gnome.mutter attach-modal-dialogs true 2>/dev/null || true
+    run_as_user gsettings set org.gnome.mutter edge-tiling true 2>/dev/null || true
+    run_as_user gsettings set org.gnome.mutter dynamic-workspaces true 2>/dev/null || true
+    run_as_user gsettings set org.gnome.mutter experimental-features "['variable-refresh-rate', 'scale-monitor-framebuffer']" 2>/dev/null || true
+    echo "  ✅ Ajustes de Mutter y gestión de ventanas aplicados."
+}
+
+# ------------------------------------------------------------------------------
+# 7. BARRA SUPERIOR, RELOJ Y ENERGÍA
+# ------------------------------------------------------------------------------
+apply_top_bar() {
+    echo "ℹ️ [4/6] Configurando reloj 24h, calendario y ahorro de energía..."
+    run_as_user gsettings set org.gnome.desktop.interface clock-format '24h' 2>/dev/null || true
+    run_as_user gsettings set org.gnome.desktop.interface clock-show-weekday true 2>/dev/null || true
+    run_as_user gsettings set org.gnome.desktop.interface clock-show-date true 2>/dev/null || true
+    run_as_user gsettings set org.gnome.desktop.interface show-battery-percentage true 2>/dev/null || true
+
+    # Evitar suspensión automática indeseada conectado a la red eléctrica
+    run_as_user gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing' 2>/dev/null || true
+    echo "  ✅ Barra superior y gestión de energía configuradas."
+}
+
+# ------------------------------------------------------------------------------
+# 8. CONFIGURACIÓN DEL ATAJO GLOBAL CTRL+ALT+T PARA KITTY
+# ------------------------------------------------------------------------------
+apply_keybindings() {
+    echo "ℹ️ [5/6] Vinculando atajo global Ctrl+Alt+T a Kitty Terminal..."
+    local custom_path="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
+    
+    run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "['$custom_path']" 2>/dev/null || true
+    run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$custom_path name 'Abrir Kitty Terminal' 2>/dev/null || true
+    run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$custom_path command 'kitty' 2>/dev/null || true
+    run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$custom_path binding '<Primary><Alt>t' 2>/dev/null || true
+
+    # Asegurar que la aplicación predeterminada de terminal de GNOME apunte a Kitty
+    run_as_user gsettings set org.gnome.desktop.default-applications.terminal exec 'kitty' 2>/dev/null || true
+    run_as_user gsettings set org.gnome.desktop.default-applications.terminal exec-arg "" 2>/dev/null || true
+    echo "  ✅ Atajo Ctrl+Alt+T configurado para Kitty."
+}
+
+# ------------------------------------------------------------------------------
+# 9. OPTIMIZACIÓN DE NAUTILUS Y SCRIPTS CONTEXTUALES
+# ------------------------------------------------------------------------------
+apply_nautilus() {
+    echo "ℹ️ [6/6] Optimizando Nautilus y generando scripts contextuales..."
+    run_as_user gsettings set org.gnome.nautilus.preferences default-folder-viewer 'list-view' 2>/dev/null || true
+    run_as_user gsettings set org.gnome.nautilus.preferences show-delete-permanently true 2>/dev/null || true
+
+    local scripts_dir="$USER_HOME/.local/share/nautilus/scripts"
+    run_as_user mkdir -p "$scripts_dir"
+
+    # 1. Script para Kitty
+    cat <<'EOF' | run_as_user tee "$scripts_dir/Abrir en Kitty" > /dev/null
+#!/usr/bin/env bash
+target="${NAUTILUS_SCRIPT_SELECTED_FILE_PATHS%%$'\n'*}"
+[ -z "$target" ] && target="$NAUTILUS_SCRIPT_CURRENT_URI"
+if [[ "$target" =~ ^file:// ]]; then
+    target="${target#file://}"
+    target=$(python3 -c "import urllib.parse, sys; print(urllib.parse.unquote(sys.argv[1]))" "$target" 2>/dev/null || echo "$target")
+fi
+[ -f "$target" ] && target=$(dirname "$target")
+[ -d "$target" ] && cd "$target"
+exec kitty
+EOF
+    chmod +x "$scripts_dir/Abrir en Kitty"
+
+    # 2. Script para Antigravity IDE
+    cat <<'EOF' | run_as_user tee "$scripts_dir/Abrir en Antigravity IDE" > /dev/null
+#!/usr/bin/env bash
+target="${NAUTILUS_SCRIPT_SELECTED_FILE_PATHS%%$'\n'*}"
+[ -z "$target" ] && target="$NAUTILUS_SCRIPT_CURRENT_URI"
+if [[ "$target" =~ ^file:// ]]; then
+    target="${target#file://}"
+    target=$(python3 -c "import urllib.parse, sys; print(urllib.parse.unquote(sys.argv[1]))" "$target" 2>/dev/null || echo "$target")
+fi
+if command -v antigravity &>/dev/null; then
+    exec antigravity "$target"
+elif [ -x /usr/local/bin/antigravity ]; then
+    exec /usr/local/bin/antigravity "$target"
+fi
+EOF
+    chmod +x "$scripts_dir/Abrir en Antigravity IDE"
+
+    # 3. Script para VS Code
+    cat <<'EOF' | run_as_user tee "$scripts_dir/Abrir en VS Code" > /dev/null
+#!/usr/bin/env bash
+target="${NAUTILUS_SCRIPT_SELECTED_FILE_PATHS%%$'\n'*}"
+[ -z "$target" ] && target="$NAUTILUS_SCRIPT_CURRENT_URI"
+if [[ "$target" =~ ^file:// ]]; then
+    target="${target#file://}"
+    target=$(python3 -c "import urllib.parse, sys; print(urllib.parse.unquote(sys.argv[1]))" "$target" 2>/dev/null || echo "$target")
+fi
+if command -v code &>/dev/null; then
+    exec code "$target"
+fi
+EOF
+    chmod +x "$scripts_dir/Abrir en VS Code"
+
+    echo "  ✅ Nautilus configurado con menú contextual de clic derecho."
+}
+
+# ------------------------------------------------------------------------------
+# 10. ENTRADA PRINCIPAL Y CONTROL DE PARÁMETROS
+# ------------------------------------------------------------------------------
+case "${1:-}" in
+    --status|-s|status)
+        show_status
+        exit 0
+        ;;
+    --dark|-d)
+        apply_dark
+        exit 0
+        ;;
+    --light|-l)
+        apply_light
+        exit 0
+        ;;
+    --keybindings)
+        apply_keybindings
+        exit 0
+        ;;
+    --nautilus)
+        apply_nautilus
+        exit 0
+        ;;
+    --help|-h|help)
+        show_help
+        exit 0
+        ;;
+    "")
+        echo "================================================================="
+        echo "🎨 CONFIGURANDO ENTORNO GNOME EN FEDORA WORKSTATION (WAYLAND)"
+        echo "================================================================="
+        apply_packages
+        apply_appearance
+        apply_window_manager
+        apply_top_bar
+        apply_keybindings
+        apply_nautilus
+        echo ""
+        show_status
+        echo "================================================================="
+        echo "✅ Configuración de GNOME Shell finalizada con éxito."
+        echo "================================================================="
+        ;;
+    *)
+        echo "Opción no reconocida: $1"
+        show_help
+        exit 1
+        ;;
+esac

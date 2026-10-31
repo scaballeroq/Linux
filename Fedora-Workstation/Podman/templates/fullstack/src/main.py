@@ -1,13 +1,11 @@
 from fastapi import FastAPI
 
-app = FastAPI(title="__PROJECT_UPPER__")
-
+app = FastAPI(title="__PROJECT__ API")
 
 @app.get("/")
-def root():
-    return {"message": "Hello from __PROJECT_UPPER__!"}
-
+def read_root():
+    return {"message": "API Fullstack de __PROJECT__"}
 
 @app.get("/health")
-def health():
+def health_check():
     return {"status": "ok"}
