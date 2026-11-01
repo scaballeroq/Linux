@@ -4,11 +4,15 @@
 # =============================================================================
 # Este archivo contiene atajos para descargar vídeos y audio usando yt-dlp.
 
-# Motor de JS para yt-dlp (Deno es recomendado; detectamos si viene de mise o sistema)
+# Motor de JS para yt-dlp (Deno o Node.js; detectamos si viene de mise o sistema)
 if command -v deno &> /dev/null; then
     JS_RUNTIME="--js-runtimes deno"
 elif command -v mise &> /dev/null && mise where deno &>/dev/null; then
     JS_RUNTIME="--js-runtimes deno:$(mise where deno)/bin/deno"
+elif [ -x "$HOME/.local/share/mise/shims/node" ]; then
+    JS_RUNTIME="--js-runtimes node:$HOME/.local/share/mise/shims/node"
+elif command -v node &> /dev/null; then
+    JS_RUNTIME="--js-runtimes node"
 else
     JS_RUNTIME=""
 fi

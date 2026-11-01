@@ -26,6 +26,7 @@ REQUIRED_PACKAGES=(
     "ffmpeg"
     "aria2"
     "python3-mutagen"
+    "atomicparsley"
 )
 
 # Colores ANSI para terminal
@@ -132,6 +133,20 @@ get_mutagen_version() {
     fi
 }
 
+get_atomicparsley_version() {
+    if command -v AtomicParsley &>/dev/null; then
+        local ver
+        ver=$(AtomicParsley --version 2>&1 | awk 'NR==1 {print $2}')
+        echo "${ver:-Instalado}"
+    elif dpkg -s atomicparsley &>/dev/null; then
+        local ver
+        ver=$(dpkg -s atomicparsley 2>/dev/null | grep -i "^Version:" | awk '{print $2}')
+        echo "${ver:-Instalado}"
+    else
+        echo "No instalado"
+    fi
+}
+
 get_js_engine_info() {
     local mise_cmd
     mise_cmd=$(get_mise_executable)
@@ -157,11 +172,22 @@ get_js_engine_info() {
         fi
     fi
 
-    # 2. Node.js como alternativa
+    # 2. Node.js en PATH, shims de Mise o binario de Mise
     if command -v node &>/dev/null; then
         local node_ver
         node_ver=$(node --version 2>/dev/null)
-        echo "Node.js $node_ver (Respaldo en PATH)"
+        echo "Node.js $node_ver (Activo en PATH)"
+        return 0
+    elif [ -x "$USER_HOME/.local/share/mise/shims/node" ]; then
+        local node_ver
+        node_ver=$("$USER_HOME/.local/share/mise/shims/node" --version 2>/dev/null || echo "lts")
+        echo "Node.js $node_ver (vía Mise shims)"
+        return 0
+    elif [ -n "$mise_cmd" ] && run_as_user "$mise_cmd" which node &>/dev/null; then
+        local node_path node_ver
+        node_path=$(run_as_user "$mise_cmd" which node 2>/dev/null)
+        node_ver=$("$node_path" --version 2>/dev/null || echo "lts")
+        echo "Node.js $node_ver (vía Mise: $node_path)"
         return 0
     fi
 
@@ -169,10 +195,12 @@ get_js_engine_info() {
 }
 
 are_packages_installed() {
-    dpkg -s yt-dlp &>/dev/null && \
-    dpkg -s ffmpeg &>/dev/null && \
-    dpkg -s aria2 &>/dev/null && \
-    dpkg -s python3-mutagen &>/dev/null
+    for pkg in "${REQUIRED_PACKAGES[@]}"; do
+        if ! dpkg -s "$pkg" &>/dev/null; then
+            return 1
+        fi
+    done
+    return 0
 }
 
 # ------------------------------------------------------------------------------
@@ -247,7 +275,16 @@ show_status() {
         echo -e "• ${BOLD}Mutagen (tags/covers):${NC} ${YELLOW}⚠️ No instalado${NC}"
     fi
 
-    # 5. Motor JavaScript
+    # 5. AtomicParsley (carátulas MP4/M4A)
+    local atomic_ver
+    atomic_ver=$(get_atomicparsley_version)
+    if [ "$atomic_ver" != "No instalado" ]; then
+        echo -e "• ${BOLD}AtomicParsley (MP4):${NC}   ${GREEN}✅ Instalado${NC} ($atomic_ver)"
+    else
+        echo -e "• ${BOLD}AtomicParsley (MP4):${NC}   ${YELLOW}⚠️ No instalado (opcional para carátulas MP4/M4A)${NC}"
+    fi
+
+    # 6. Motor JavaScript
     local js_engine
     js_engine=$(get_js_engine_info)
     if [[ "$js_engine" != "No detectado"* ]]; then
@@ -256,7 +293,7 @@ show_status() {
         echo -e "• ${BOLD}Motor JavaScript:${NC}      ${YELLOW}⚠️ No detectado (requerido para resolver retos n-sig de YouTube)${NC}"
     fi
 
-    # 6. Archivo de configuración
+    # 7. Archivo de configuración
     if [ -f "$CONFIG_FILE" ]; then
         echo -e "• ${BOLD}Archivo de config:${NC}     ${GREEN}✅ Presente${NC} ($CONFIG_FILE)"
     else
@@ -267,38 +304,48 @@ show_status() {
 }
 
 install_packages() {
-    if are_packages_installed; then
-        echo -e "${GREEN}✔${NC} Paquetes multimedia ya instalados (yt-dlp, FFmpeg, aria2, Mutagen)."
+    local missing=()
+    for pkg in "${REQUIRED_PACKAGES[@]}"; do
+        if ! dpkg -s "$pkg" &>/dev/null; then
+            missing+=("$pkg")
+        fi
+    done
+
+    if [ ${#missing[@]} -eq 0 ]; then
+        echo -e "${GREEN}✔${NC} Paquetes multimedia ya instalados (${REQUIRED_PACKAGES[*]})."
         return 0
     fi
 
-    echo -e "${BLUE}📦 Instalando paquetes multimedia vía APT...${NC}"
+    echo -e "${BLUE}📦 Instalando paquetes multimedia faltantes vía APT (${missing[*]})...${NC}"
     require_root
     $SUDO apt-get update -qq
-    $SUDO apt-get install -y "${REQUIRED_PACKAGES[@]}"
+    $SUDO apt-get install -y "${missing[@]}"
     echo -e "${GREEN}✔${NC} Paquetes multimedia instalados con éxito."
 }
 
 configure_js_engine() {
-    echo -e "${BLUE}⚡ Configurando motor JavaScript (Deno) para retos de descifrado de YouTube...${NC}"
+    echo -e "${BLUE}⚡ Verificando motor JavaScript para retos n-token de YouTube...${NC}"
 
     local mise_cmd
     mise_cmd=$(get_mise_executable)
 
+    # Si ya disponemos de Deno o Node funcional, confirmarlo
+    local current_engine
+    current_engine=$(get_js_engine_info)
+    if [[ "$current_engine" != "No detectado"* ]]; then
+        echo -e "${GREEN}✔${NC} Motor JavaScript listo: $current_engine"
+        return 0
+    fi
+
     if [ -n "$mise_cmd" ]; then
         echo -e "   Desplegando Deno vía Mise ($mise_cmd)..."
-        run_as_user "$mise_cmd" use --global deno@latest || true
-        run_as_user "$mise_cmd" reshim || true
-        echo -e "${GREEN}✔${NC} Deno configurado globalmente con Mise."
+        run_as_user "$mise_cmd" use --global deno@latest 2>/dev/null || true
+        run_as_user "$mise_cmd" reshim 2>/dev/null || true
+        echo -e "${GREEN}✔${NC} Deno configurado con Mise."
         return 0
     fi
 
-    if command -v node &>/dev/null; then
-        echo -e "${GREEN}✔${NC} Node.js detectado en el sistema como motor JS alternativo."
-        return 0
-    fi
-
-    echo -e "${YELLOW}⚠️ Aviso:${NC} Mise no detectado. Se recomienda instalar Mise ('just mise') para soporte de Deno."
+    echo -e "${YELLOW}⚠️ Aviso:${NC} No se detectó motor JS. Instala Node.js o Deno ('mise use -g node@lts' o 'mise use -g deno@latest')."
 }
 
 generate_config() {
@@ -330,6 +377,12 @@ generate_config() {
 --concurrent-fragments 5
 --no-overwrites
 --continue
+--retries 10
+--fragment-retries 10
+--file-access-retries 5
+
+# --- Argumentos para aria2c (cuando se invoque con --downloader aria2c) ---
+--downloader-args "aria2c:-s 16 -x 16 -k 1M -j 16"
 
 # --- Formato y Contenedor Predeterminado ---
 --merge-output-format mp4/mkv
@@ -369,15 +422,20 @@ update_components() {
     echo -e "${CYAN}=================================================================${NC}"
 
     require_root
-    echo -e "${BLUE}📦 Actualizando yt-dlp, FFmpeg y aria2 vía APT...${NC}"
+    echo -e "${BLUE}📦 Actualizando yt-dlp, FFmpeg, aria2 y utilidades vía APT...${NC}"
     $SUDO apt-get update -qq
-    $SUDO apt-get install --only-upgrade -y yt-dlp ffmpeg aria2 2>/dev/null || true
+    $SUDO apt-get install --only-upgrade -y "${REQUIRED_PACKAGES[@]}" 2>/dev/null || true
 
     local mise_cmd
     mise_cmd=$(get_mise_executable)
     if [ -n "$mise_cmd" ]; then
-        echo -e "${BLUE}⚡ Actualizando motor JavaScript Deno vía Mise...${NC}"
-        run_as_user "$mise_cmd" upgrade deno 2>/dev/null || run_as_user "$mise_cmd" use --global deno@latest 2>/dev/null || true
+        echo -e "${BLUE}⚡ Actualizando motor JavaScript vía Mise...${NC}"
+        if run_as_user "$mise_cmd" where deno &>/dev/null; then
+            run_as_user "$mise_cmd" upgrade deno 2>/dev/null || run_as_user "$mise_cmd" use --global deno@latest 2>/dev/null || true
+        fi
+        if run_as_user "$mise_cmd" where node &>/dev/null; then
+            run_as_user "$mise_cmd" upgrade node 2>/dev/null || true
+        fi
         run_as_user "$mise_cmd" reshim 2>/dev/null || true
     fi
 

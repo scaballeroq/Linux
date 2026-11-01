@@ -22,7 +22,7 @@ python-uv *args:
 
 # Rust toolchain
 rust:
-    ./Revisar/rust.sh
+    ./rust.sh
 
 # .NET SDK
 dotnet:

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # rust.sh - Instalación y Optimización de Rust (Rustup + Cargo + Toolchain)
-# Soplos Linux Boro Workstation (Soplos Linux Boro / GNOME Shell Wayland)
+# Soplos Linux Boro Workstation (GNOME Shell Wayland)
 # Arquitectura: AMD Ryzen 7 7730U (8C/16T) | 32 GB RAM | SSD NVMe Kioxia 512GB
 # ==============================================================================
 # Características de Optimización:
@@ -121,7 +121,7 @@ show_status() {
     echo "   AMD Ryzen 7 7730U (16 hilos) | 32 GB RAM | NVMe | GNOME Wayland"
     echo "================================================================="
 
-    local rustc_ver cargo_ver rustup_ver analyzer_ver clippy_ver binstall_ver
+    local rustc_ver cargo_ver rustup_ver analyzer_ver clippy_ver rustfmt_ver binstall_ver
     local mold_status sccache_status config_status env_status
 
     rustc_ver=$(run_as_user rustc --version 2>/dev/null || echo "No instalado")
@@ -141,6 +141,12 @@ show_status() {
         clippy_ver="✅ Disponible ($(run_as_user cargo clippy --version 2>/dev/null | head -n1 || echo "presente"))"
     else
         clippy_ver="ℹ️ No instalado"
+    fi
+
+    if run_as_user rustfmt --version &>/dev/null; then
+        rustfmt_ver="✅ Disponible ($(run_as_user rustfmt --version 2>/dev/null | head -n1 || echo "presente"))"
+    else
+        rustfmt_ver="ℹ️ No instalado"
     fi
 
     if command -v cargo-binstall &>/dev/null || [ -f "$CARGO_HOME/bin/cargo-binstall" ]; then
@@ -180,9 +186,14 @@ show_status() {
     if [ "$rustc_ver" != "No instalado" ]; then
         echo "• Compilador rustc:     ✅ $rustc_ver"
         echo "• Gestor Cargo:         ✅ $cargo_ver"
-        echo "• Gestor Rustup:        ✅ $rustup_ver"
+        if [ "$rustup_ver" != "No instalado" ]; then
+            echo "• Gestor Rustup:        ✅ $rustup_ver"
+        else
+            echo "• Gestor Rustup:        ℹ️ No instalado (Rust nativo de Soplos Linux Boro)"
+        fi
         echo "• Servidor LSP:         $analyzer_ver"
         echo "• Linter Clippy:        $clippy_ver"
+        echo "• Formateador Rustfmt:  $rustfmt_ver"
         echo "• Binarios binstall:    $binstall_ver"
         echo "• Enlazador rápido:     $mold_status"
         echo "• Caché sccache:        $sccache_status"
@@ -364,6 +375,19 @@ PATH=$CARGO_HOME/bin:\${PATH}
 CARGO_BUILD_JOBS=$NPROC
 EOF
 
+    # Propagar en caliente a la sesión activa de systemd user y DBus
+    local user_uid runtime_dir
+    user_uid=$(id -u "$REAL_USER")
+    runtime_dir="/run/user/$user_uid"
+    if [ -d "$runtime_dir" ]; then
+        if command -v systemctl &>/dev/null; then
+            run_as_user env XDG_RUNTIME_DIR="$runtime_dir" systemctl --user import-environment CARGO_HOME RUSTUP_HOME CARGO_BUILD_JOBS PATH 2>/dev/null || true
+        fi
+        if command -v dbus-update-activation-environment &>/dev/null; then
+            run_as_user env XDG_RUNTIME_DIR="$runtime_dir" dbus-update-activation-environment --systemd CARGO_HOME RUSTUP_HOME CARGO_BUILD_JOBS PATH 2>/dev/null || true
+        fi
+    fi
+
     # 7.2. Integración modular Bash (~/.bashrc.d/rust.sh) - PREDETERMINADO
     cat <<EOF | run_as_user tee "$bashrc_d/rust.sh" > /dev/null
 # Rust & Cargo Environment
@@ -411,16 +435,16 @@ fi
 EOF
     fi
 
-    # 7.5. Autocompletados para Bash y Zsh
+    # 7.5. Autocompletados para Bash y Zsh (ejecución y escritura como usuario)
     if command -v rustup &>/dev/null || [ -f "$CARGO_HOME/bin/rustup" ]; then
-        run_as_user rustup completions bash > "$bash_comp_dir/rustup" 2>/dev/null || true
-        run_as_user rustup completions bash cargo > "$bash_comp_dir/cargo" 2>/dev/null || true
+        run_as_user rustup completions bash 2>/dev/null | run_as_user tee "$bash_comp_dir/rustup" > /dev/null || true
+        run_as_user rustup completions bash cargo 2>/dev/null | run_as_user tee "$bash_comp_dir/cargo" > /dev/null || true
 
         if [ -f "$USER_HOME/.zshrc" ]; then
             local zsh_comp_dir="$USER_HOME/.local/share/zsh/site-functions"
             local zfunc_dir="$USER_HOME/.zfunc"
-            run_as_user rustup completions zsh > "$zsh_comp_dir/_rustup" 2>/dev/null || true
-            run_as_user rustup completions zsh cargo > "$zsh_comp_dir/_cargo" 2>/dev/null || true
+            run_as_user rustup completions zsh 2>/dev/null | run_as_user tee "$zsh_comp_dir/_rustup" > /dev/null || true
+            run_as_user rustup completions zsh cargo 2>/dev/null | run_as_user tee "$zsh_comp_dir/_cargo" > /dev/null || true
             run_as_user cp "$zsh_comp_dir/_rustup" "$zfunc_dir/_rustup" 2>/dev/null || true
             run_as_user cp "$zsh_comp_dir/_cargo" "$zfunc_dir/_cargo" 2>/dev/null || true
         fi
