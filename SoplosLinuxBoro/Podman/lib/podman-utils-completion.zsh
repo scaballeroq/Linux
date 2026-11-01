@@ -1,6 +1,6 @@
 #compdef podman-utils
 # =============================================================================
-# Zsh Completion for podman-utils (Ubuntu Linux + GNOME Shell)
+# Zsh Completion for podman-utils (Soplos Linux Boro Workstation)
 # =============================================================================
 
 _podman_utils_get_repo_dir() {

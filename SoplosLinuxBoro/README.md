@@ -40,7 +40,7 @@ Scripts de configuración del sistema operativo, personalización de GNOME Shell
 - **`laptop-setup.sh`**: Optimización para portátiles de desarrollo (power-profiles-daemon, Bluetooth FastConnectable, cierre de tapa inteligente con multimonitor, Touchpad Wayland gestures y Mutter VRR, `--status`).
 - **`fingerprint-setup.sh`**: Autenticación y desbloqueo biométrico (fprintd + PAM, sensor Synaptics, `--status`, `--enroll`, `--verify`, `--disable`).
 - **`hp-printer-setup.sh`**: Pila de impresión para impresoras HP (CUPS, HPLIP, plugin propietario para LaserJet M15w, Firewalld USB/Wi-Fi, `--status`).
-- **`gnome-settings.sh`**: Configuración de GNOME Shell (Modo oscuro Adwaita-dark, botones minimizar/maximizar, scripts de Nautilus para Kitty/Antigravity/VS Code, Night Light a 4000K, reloj 24h, `--status`, `--dark`, `--light`).
+- **`gnome-settings.sh`**: Configuración de GNOME Shell (Modo oscuro Adwaita-dark, botones minimizar/maximizar, scripts de Nautilus para Ghostty/Antigravity/VS Code, Night Light a 4000K, reloj 24h, `--status`, `--dark`, `--light`).
 - **`gnome-extensions.sh`**: Instalación y configuración de extensiones GNOME (GSConnect, Dash to Dock, AppIndicator, Blur my Shell, Tiling Shell, `--status`).
 - **`gsconnect.sh`**: Integración nativa de GSConnect (KDE Connect para GNOME con cero librerías KDE/Qt) y reglas de Firewalld (1714-1764 TCP/UDP, `--status`, `--setup-firewall`, `--daemon`).
 - **`soplos-tuning.sh`**: Ajustes de Kernel (`sysctl` inotify 1M, max_map_count 16M, TCP BBR, ZRAM), límites del sistema (`limits.d`), exclusiones de GNOME Tracker Miner en directorios pesados (`~/Workspace`, `node_modules`, `.git`, `.venv`, `.cargo`) y compresión ZRAM (`--status`, `--sysctl`, `--limits`, `--tracker`, `--zram`).
@@ -48,16 +48,12 @@ Scripts de configuración del sistema operativo, personalización de GNOME Shell
 - **`cockpit.sh`**: Consola web Cockpit y gestión de servidores (Podman, KVM, almacenamiento, Firewalld exclusivo, `--status`, `--open`, `--start`, `--stop`, `--disable`).
 - **`fastfetch.sh`**: Resumen estético del sistema con soporte de temas (`soplos` oficial Ruby, `compact` FastCat, `--status`, `--theme`, `--diff`, `--force`).
 - **`fonts.sh`**: Instalación automatizada y diagnóstico de fuentes de desarrollo (JetBrainsMono, FiraCode, CascadiaCode, Meslo y Hack Nerd Fonts, `--status`, `--list`, `--clean`).
-- **`kitty.sh`**: Terminal Kitty acelerada por GPU con opacidad 75%, blur 32, tema Catppuccin Mocha, atajo Ctrl+Alt+T e integración en menú contextual de Nautilus (`--status`).
-- **`ptyxis.sh`**: Terminal moderna Ptyxis con transparencia y modo oscuro.
-- **`seguridad.sh`**: Endurecimiento con Firewalld exclusivo (desactivación obligatoria de UFW, servicios `kdeconnect`/GSConnect, `mdns`, `ssh`, zona `libvirt` para virbr0, zona `trusted` para `podman+`, sysctl de puertos no privilegiados).
+- **`seguridad.sh`**: Seguridad de red con cortafuegos nativo UFW / GUI GUFW (servicios GSConnect, mDNS, SSH, KVM virbr0 y sysctl para Podman Rootless).
 - **`shell.sh`**: Herramientas modernas de terminal (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`, `dust`, `btop`, `jq`) y sincronización modular.
 - **`starship.sh` & `starship.toml`**: Prompt Starship moderno con configuración modular (`--enable`, `--disable`, `--status`).
-- **`multimedia.sh`**: Codecs multimedia oficiales (FFmpeg, libavcodec-extra, GStreamer completo con VA-API) y VLC desacoplado vía Flatpak (`--status`).
 - **`flatpak.sh`**: Suite de aplicaciones de escritorio desacopladas vía Flatpak/Flathub (Flatseal, Podman Desktop, Warehouse, VLC, Celluloid, OBS Studio, Shotcut, Spotify, Vesktop...) sin tocar el sistema base (`--status`, `--all`, `--essential`, `--multimedia`, `--clean`, `--update`).
 - **`chrome.sh`**: Activación del repositorio oficial de Google Chrome e instalación de `google-chrome-stable` con optimización Ozone Wayland (`--status`, `--wayland`).
 - **`firefox.sh`**: Instalación de Firefox nativo (.deb) desde el repositorio oficial de Mozilla con APT Pin-Priority 900 (`--status`).
-- **`steam.sh`**: Instalación de Steam nativo con multiarch i386, repositorios `contrib non-free`, GameMode, MangoHud, Proton-GE y drivers Mesa Vulkan de 32 bits (`--status`).
 - **`amd64v3.sh`**: Diagnóstico de compatibilidad CPU para microarquitectura x86-64-v3 y soporte transparente glibc-hwcaps en Soplos Linux Boro (`--status`).
 
 ### 📦 [ProgrammingLanguages](./ProgrammingLanguages/)

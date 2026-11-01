@@ -31,12 +31,16 @@ export LESS_TERMCAP_ue=$'\E[0m'
 # -----------------------------------------------------------------------------
 # 2. INTEGRACIÓN WAYLAND, GNOME SHELL, QT Y APLICACIONES ELECTRON
 # -----------------------------------------------------------------------------
+# Terminal predeterminado del sistema (Ghostty con aceleración GPU)
+export TERMINAL="ghostty"
+
 # Backend gráfico Wayland prioritario
 export GDK_BACKEND="wayland,x11,*"
 
 # Compatibilidad Qt/Wayland nativo con integración visual GNOME (Adwaita/QGnomePlatform)
 export QT_QPA_PLATFORM="wayland;xcb"
 export QT_QPA_PLATFORMTHEME="gnome"
+export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
 export QT_AUTO_SCREEN_SCALE_FACTOR=1
 
 # Firefox en modo Wayland nativo
@@ -48,6 +52,11 @@ export ELECTRON_OZONE_PLATFORM_HINT="auto"
 # -----------------------------------------------------------------------------
 # 3. PATH PERSONALIZADO
 # -----------------------------------------------------------------------------
+# Rutas de administración del sistema (Debian / Soplos Linux Boro)
+if [ -d "/usr/sbin" ] && [[ ":$PATH:" != *":/usr/sbin:"* ]]; then
+    export PATH="$PATH:/usr/local/sbin:/usr/sbin:/sbin"
+fi
+
 # Scripts personales del usuario
 if [ -d "$HOME/bin" ] && [[ ":$PATH:" != *":$HOME/bin:"* ]]; then
     export PATH="$HOME/bin:$PATH"
@@ -109,9 +118,17 @@ if command -v mise &> /dev/null; then
 fi
 
 # -----------------------------------------------------------------------------
-# 7. OPTIMIZACIONES DE SISTEMA Y HERRAMIENTAS (UV)
+# 7. OPTIMIZACIONES DE HARDWARE AMD Y COMPILACIÓN (HP ProBook 455 G10)
 # -----------------------------------------------------------------------------
+# Topología de CPU AMD Ryzen 7 7730U (8 Núcleos / 16 Hilos) y 32 GB RAM
+export MAKEFLAGS="-j8"
+export CMAKE_BUILD_PARALLEL_LEVEL=8
+export NINJA_STATUS="[%f/%t %p] "
+
+# Runtimes modernos: Python con uv desacoplado respetando PEP 668
+export PYTHONUNBUFFERED=1
 export UV_LINK_MODE="copy"
+export UV_CONCURRENT_DOWNLOADS=8
 
 # =============================================================================
 # MENSAJE DE CARGA

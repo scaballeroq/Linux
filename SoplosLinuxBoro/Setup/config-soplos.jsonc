@@ -1,110 +1,148 @@
-// Fastfetch Soplos Linux Boro Theme Configuration
 {
     "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
     "logo": {
-        "source": "debian",
+        "source": "/usr/share/branding-soplos/menusoplos.png",
         "type": "auto",
+        "height": 18,
+        "width": 32,
         "padding": {
             "top": 1,
-            "right": 2
+            "left": 2,
+            "right": 3
         }
     },
     "display": {
-        "separator": "  ➜  ",
+        "separator": " 󰅂 ",
         "color": {
-            "keys": "38;2;215;10;83",
-            "title": "38;2;215;10;83"
+            "keys": "38;2;255;203;65",
+            "title": "38;2;242;83;54",
+            "separator": "38;2;237;152;45"
+        },
+        "percent": {
+            "type": 3
+        },
+        "bar": {
+            "char": {
+                "elapsed": "■",
+                "total": "─"
+            },
+            "width": 10
         }
     },
     "modules": [
         "title",
-        "separator",
         {
-            "type": "os",
-            "key": "OS",
-            "keyColor": "38;2;215;10;83"
+            "type": "custom",
+            "format": "\u001b[38;2;242;83;54m────────────────────────────────────────────────────────\u001b[0m"
+        },
+        {
+            "type": "custom",
+            "format": "\u001b[1;38;2;242;83;54m󰋊 HARDWARE\u001b[0m"
         },
         {
             "type": "host",
-            "key": "Host",
-            "keyColor": "38;2;215;10;83"
-        },
-        {
-            "type": "kernel",
-            "key": "Kernel",
-            "keyColor": "38;2;215;10;83"
-        },
-        {
-            "type": "uptime",
-            "key": "Uptime",
-            "keyColor": "38;2;215;10;83"
-        },
-        {
-            "type": "packages",
-            "key": "Packages",
-            "keyColor": "38;2;215;10;83"
-        },
-        {
-            "type": "shell",
-            "key": "Shell",
-            "keyColor": "38;2;215;10;83"
-        },
-        {
-            "type": "display",
-            "key": "Display",
-            "keyColor": "38;2;215;10;83"
-        },
-        {
-            "type": "de",
-            "key": "DE",
-            "keyColor": "38;2;215;10;83"
-        },
-        {
-            "type": "wm",
-            "key": "WM",
-            "keyColor": "38;2;215;10;83"
-        },
-        {
-            "type": "terminal",
-            "key": "Terminal",
-            "keyColor": "38;2;215;10;83"
+            "key": "  󰌢 Host      "
         },
         {
             "type": "cpu",
-            "key": "CPU",
-            "keyColor": "38;2;215;10;83"
+            "key": "  󰻠 CPU       ",
+            "format": "{1} ({3}) @ {7}"
         },
         {
             "type": "gpu",
-            "key": "GPU",
-            "keyColor": "38;2;215;10;83"
+            "key": "  󰢮 GPU       ",
+            "format": "{2}"
         },
         {
             "type": "memory",
-            "key": "Memory",
-            "keyColor": "38;2;215;10;83"
-        },
-        {
-            "type": "swap",
-            "key": "Swap (ZRAM)",
-            "keyColor": "38;2;215;10;83"
+            "key": "  󰍛 Memory    "
         },
         {
             "type": "disk",
-            "key": "Disk (NVMe)",
-            "keyColor": "38;2;215;10;83"
+            "key": "  󰋊 Disk      ",
+            "format": "{size-percentage-bar} {size-used} / {size-total} ({size-percentage}) [{mountpoint:-14}] - {filesystem}"
         },
         {
             "type": "battery",
-            "key": "Battery",
-            "keyColor": "38;2;215;10;83"
+            "key": "   Battery   "
         },
         {
-            "type": "poweradapter",
-            "key": "Power",
-            "keyColor": "38;2;215;10;83"
+            "type": "display",
+            "key": "  󰍹 Display   "
+        },
+        {
+            "type": "sound",
+            "key": "   Audio     ",
+            "format": "{name:-25} {volume-percentage-bar} ({volume-percentage})"
         },
         "break",
-        "colors"
+        {
+            "type": "custom",
+            "format": "\u001b[1;38;2;242;83;54m󰻠 SYSTEM\u001b[0m"
+        },
+        {
+            "type": "os",
+            "key": "   OS        ",
+            "format": "{name}"
+        },
+        {
+            "type": "kernel",
+            "key": "   Kernel    "
+        },
+        {
+            "type": "packages",
+            "key": "  󰏖 Packages  "
+        },
+        {
+            "type": "uptime",
+            "key": "  󰅐 Uptime    "
+        },
+        {
+            "type": "command",
+            "key": "  󰚭 OS Age    ",
+            "text": "birth_install=$(stat -c %W / 2>/dev/null || echo 0); current=$(date +%s); if [ \"$birth_install\" -gt 0 ]; then echo \"$(( (current - birth_install) / 86400 )) days\"; else echo 'Unknown'; fi"
+        },
+        {
+            "type": "locale",
+            "key": "   Locale    "
+        },
+        "break",
+        {
+            "type": "custom",
+            "format": "\u001b[1;38;2;242;83;54m󰔎 THEMING & DESKTOP\u001b[0m"
+        },
+        {
+            "type": "de",
+            "key": "   Desktop   "
+        },
+        {
+            "type": "wm",
+            "key": "   WM        "
+        },
+        {
+            "type": "theme",
+            "key": "  󰉼 Theme     "
+        },
+        {
+            "type": "icons",
+            "key": "  󰸉 Icons     "
+        },
+        {
+            "type": "font",
+            "key": "   Font      "
+        },
+        {
+            "type": "terminal",
+            "key": "   Terminal  "
+        },
+        {
+            "type": "shell",
+            "key": "   Shell     "
+        },
+        "break",
+        {
+            "type": "colors",
+            "symbol": "circle"
+        }
     ]
 }

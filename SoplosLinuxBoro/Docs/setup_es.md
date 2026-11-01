@@ -23,9 +23,9 @@ just post-install
 
 ---
 
-## 2. Entorno de Terminal y Shell (`shell.sh`, `fastfetch.sh`, `fonts.sh` y `kitty.sh`)
+## 2. Entorno de Terminal y Shell (`shell.sh`, `fastfetch.sh` y `fonts.sh`)
 
-Instala utilidades modernas de consola, tipografías para desarrollo, el prompt interactivo Starship y el emulador Kitty acelerado por GPU.
+Instala utilidades modernas de consola, tipografías para desarrollo, el prompt interactivo Starship y optimiza el entorno para la terminal nativa Ghostty.
 
 ### Utilidades Modernas de Terminal
 Se instalan alternativas modernas a comandos clásicos:
@@ -39,13 +39,12 @@ Se instalan alternativas modernas a comandos clásicos:
 - `procs` (reemplazo moderno de `ps`)
 - `btop` (monitor de recursos del sistema)
 
-### Kitty Terminal Acelerada por GPU
-Configura Kitty con:
-- Opacidad al 75% con desenfoque de fondo (*blur 32*) acelerado por GPU Mesa RADV.
-- Esquema de color Catppuccin Mocha (#181825).
-- Tipografía JetBrainsMono Nerd Font.
+### Terminal Ghostty (Nativa en Soplos Linux Boro)
+Ghostty viene preinstalada y configurada de serie con:
+- Opacidad al 85% con desenfoque de fondo (*blur*) acelerado por GPU vía Wayland / Mutter.
+- Integración nativa con GNOME Shell (GTK4 / Libadwaita).
 - Atajo global `Ctrl+Alt+T` en GNOME Shell.
-- Script contextual en Nautilus para "Abrir en Kitty".
+- Script contextual en Nautilus para "Abrir en Ghostty".
 
 ### Fuentes de Desarrollo (Nerd Fonts)
 Descarga e instala fuentes optimizadas para programación y glifos de terminal:
@@ -58,10 +57,10 @@ Muestra información estética del hardware y sistema. Soporta temas oficiales d
 
 ## 3. Escritorio GNOME Shell y GSConnect (`gnome-settings.sh` y `gsconnect.sh`)
 
-- **Modo Oscuro**: Aplica `prefer-dark` y tema `Yaru-dark`.
+- **Modo Oscuro**: Aplica `prefer-dark` y tema oscuro del sistema.
 - **Luz Nocturna**: Temperatura cálida a 4000K para descanso visual.
 - **Ventanas**: Botones minimizar y maximizar visibles.
-- **Nautilus Scripts**: Menú contextual con accesos a Kitty, Google Antigravity y VS Code.
+- **Nautilus Scripts**: Menú contextual con accesos a Ghostty, Google Antigravity y VS Code.
 - **GSConnect**: Integración nativa de KDE Connect sin dependencias de KDE/Qt, con reglas en Firewalld (puertos 1714-1764 TCP/UDP).
 - **Extensiones**: Soporte para Dash to Dock, AppIndicator, Blur my Shell y Tiling Shell.
 
@@ -84,7 +83,7 @@ just gnome-setup         # Configura entorno GNOME
 just gnome-extensions    # Instala y activa extensiones
 just gsconnect           # Configura GSConnect y Firewalld
 just shell               # Instala herramientas CLI modernas
-just kitty               # Configura terminal Kitty
+just ghostty-status      # Diagnóstico de la terminal Ghostty
 just fonts               # Instala fuentes Nerd Fonts
 just fastfetch           # Configura banner estético Fastfetch
 just flatpak             # Instala catálogo Flatpak

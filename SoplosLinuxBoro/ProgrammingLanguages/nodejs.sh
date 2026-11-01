@@ -33,8 +33,8 @@ else
     SUDO=""
 fi
 
-# Flags de optimización multinúcleo (AMD Ryzen / multinúcleo) para node-gyp
-NPROC=$(nproc 2>/dev/null || echo 8)
+# Flags de optimización multinúcleo (AMD Ryzen 7 7730U: 16 hilos) para node-gyp
+NPROC=$(nproc 2>/dev/null || echo 16)
 export MAKEFLAGS="-j$NPROC"
 export JOBS="$NPROC"
 export npm_config_jobs="$NPROC"
@@ -50,9 +50,9 @@ run_as_user() {
             COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
             PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" "$@"
     else
-        MAKEFLAGS="-j$NPROC" JOBS="$NPROC" npm_config_jobs="$NPROC" \
-        COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
-        PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" "$@"
+        env MAKEFLAGS="-j$NPROC" JOBS="$NPROC" npm_config_jobs="$NPROC" \
+            COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
+            PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" "$@"
     fi
 }
 
@@ -162,7 +162,7 @@ fi
 # ------------------------------------------------------------------------------
 echo "ℹ️ [1/4] Verificando dependencias del sistema para módulos nativos (node-gyp)..."
 MISSING_PKGS=()
-for pkg in build-essential make curl python3; do
+for pkg in build-essential make curl python3 python3-dev; do
     if ! dpkg -s "$pkg" &>/dev/null && ! command -v "$pkg" &>/dev/null; then
         MISSING_PKGS+=("$pkg")
     fi
@@ -178,7 +178,7 @@ if [ ${#MISSING_PKGS[@]} -gt 0 ]; then
     $SUDO apt-get install -y "${MISSING_PKGS[@]}"
     echo "  ✅ Dependencias de sistema instaladas."
 else
-    echo "  ✅ Dependencias de compilación (build-essential, make, curl, python3) ya satisfechas."
+    echo "  ✅ Dependencias de compilación (build-essential, make, curl, python3, python3-dev) ya satisfechas."
 fi
 
 # ------------------------------------------------------------------------------
@@ -213,6 +213,18 @@ JOBS=$NPROC
 npm_config_jobs=$NPROC
 EOF
 
+# Propagar en caliente a la sesión activa de systemd user y DBus
+local_user_uid=$(id -u "$REAL_USER")
+local_runtime_dir="/run/user/$local_user_uid"
+if [ -d "$local_runtime_dir" ]; then
+    if command -v systemctl &>/dev/null; then
+        run_as_user env XDG_RUNTIME_DIR="$local_runtime_dir" systemctl --user import-environment COREPACK_ENABLE_DOWNLOAD_PROMPT JOBS npm_config_jobs 2>/dev/null || true
+    fi
+    if command -v dbus-update-activation-environment &>/dev/null; then
+        run_as_user env XDG_RUNTIME_DIR="$local_runtime_dir" dbus-update-activation-environment --systemd COREPACK_ENABLE_DOWNLOAD_PROMPT JOBS npm_config_jobs 2>/dev/null || true
+    fi
+fi
+
 # 8.2. Shell Bash (predeterminada)
 cat << EOF | run_as_user tee "$BASHRC_D/nodejs.sh" > /dev/null
 # Node.js & Corepack Environment Settings
@@ -233,10 +245,10 @@ export npm_config_jobs=$NPROC
 EOF
 fi
 
-# 8.4. Autocompletados para Bash
+# 8.4. Autocompletados para Bash (ejecutados como usuario para evitar permisos root)
 if command -v mise &>/dev/null || [ -x "$USER_HOME/.local/bin/mise" ]; then
-    run_as_user mise exec node@lts -- npm completion > "$BASH_COMPLETIONS_DIR/npm" 2>/dev/null || true
-    run_as_user mise exec node@lts -- pnpm completion bash > "$BASH_COMPLETIONS_DIR/pnpm" 2>/dev/null || true
+    run_as_user mise exec node@lts -- npm completion 2>/dev/null | run_as_user tee "$BASH_COMPLETIONS_DIR/npm" > /dev/null || true
+    run_as_user mise exec node@lts -- pnpm completion bash 2>/dev/null | run_as_user tee "$BASH_COMPLETIONS_DIR/pnpm" > /dev/null || true
 fi
 
 # 8.5. Autocompletados para Zsh (si existe ~/.zshrc)
@@ -246,8 +258,8 @@ if [ -f "$USER_HOME/.zshrc" ]; then
     run_as_user mkdir -p "$ZSH_COMPLETIONS_DIR" "$ZFUNC_DIR"
 
     if command -v mise &>/dev/null || [ -x "$USER_HOME/.local/bin/mise" ]; then
-        run_as_user mise exec node@lts -- pnpm completion zsh > "$ZSH_COMPLETIONS_DIR/_pnpm" 2>/dev/null || true
-        run_as_user mise exec node@lts -- pnpm completion zsh > "$ZFUNC_DIR/_pnpm" 2>/dev/null || true
+        run_as_user mise exec node@lts -- pnpm completion zsh 2>/dev/null | run_as_user tee "$ZSH_COMPLETIONS_DIR/_pnpm" > /dev/null || true
+        run_as_user mise exec node@lts -- pnpm completion zsh 2>/dev/null | run_as_user tee "$ZFUNC_DIR/_pnpm" > /dev/null || true
     fi
 fi
 

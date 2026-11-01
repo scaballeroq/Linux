@@ -4,13 +4,14 @@
 # Soplos Linux Boro Workstation (GNOME Shell + Wayland / Systemd User Environment)
 # ==============================================================================
 # Características:
-# - Optimizado para Soplos Linux Boro (Soplos Linux Boro / GNOME Shell).
+# - Optimizado para Soplos Linux Boro (Debian Testing / GNOME Shell Wayland).
 # - Soporta tanto la instalación desde cero como la reconfiguración idempotente.
 # - Paquetes modernos de Podman: passt (pasta de alto rendimiento), crun y catatonit.
 # - Almacenamiento overlay nativo del kernel para máxima velocidad I/O en SSD NVMe Kioxia.
 # - Aceleración por hardware para GPU AMD Radeon Graphics (Vega 8) vía grupos render/video.
-# - Integración con Firewalld asignando la interfaz podman+ a la zona trusted.
-# - Permite enlace a puertos bajos (80, 443) en modo rootless vía sysctl.
+# - Integración de cortafuegos adaptativa: soporte nativo para UFW (con reglas de
+#   interfaz podman+ y enrutamiento inter-contenedor/WAN) y Firewalld (zona trusted).
+# - Permite enlace a puertos bajos (80, 443) en modo rootless y forward vía sysctl.
 # - Activa loginctl linger para persistencia de contenedores tras cerrar sesión.
 # - Habilita podman.socket en systemd user para compatibilidad total con Docker API.
 # - Inyecta DOCKER_HOST en GNOME Shell (environment.d), Bash (~/.bashrc.d) y Zsh.
@@ -20,6 +21,8 @@
 # ==============================================================================
 
 set -euo pipefail
+
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:${PATH:-}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PODMAN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -57,9 +60,9 @@ Uso:
 Opciones:
   (sin argumentos)       Instala paquetes (si no están presentes), optimiza almacenamiento NVMe,
                          registries, linger, socket Docker API, DOCKER_HOST, CLI podman-utils,
-                         aceleración GPU, firewalld y la estructura de Quadlets.
+                         aceleración GPU, cortafuegos (UFW/Firewalld) y la estructura de Quadlets.
   --status, -s           Muestra el estado completo del motor Podman, socket, linger,
-                         red pasta, GPU, almacenamiento NVMe, DOCKER_HOST y contenedores.
+                         red pasta, GPU, almacenamiento NVMe, DOCKER_HOST, cortafuegos y contenedores.
   --help, -h             Muestra este mensaje de ayuda.
 
 Características configuradas:
@@ -67,7 +70,7 @@ Características configuradas:
   • Almacenamiento NVMe: Overlay nativo del Kernel (sin sobrecarga FUSE) con ignore_chown_errors.
   • Red Rootless:        Stack de red nativo 'pasta' de alto rendimiento y baja latencia.
   • Aceleración GPU AMD: Acceso a /dev/dri/renderD128 mediante grupos render y video.
-  • Cortafuegos:         Interfaz podman+ asociada a la zona trusted en Firewalld.
+  • Cortafuegos (UFW):   Reglas para interfaz podman+ (in/out) y forwarding de red para contenedores.
   • Puertos Rootless:    ip_unprivileged_port_start=80 para Traefik y proxies en puertos 80/443.
   • Persistencia Linger: loginctl linger para ejecutar contenedores en segundo plano.
   • Docker Socket API:   podman.socket en /run/user/\$UID/podman/podman.sock.
@@ -81,8 +84,8 @@ EOF
 # 1. Mostrar estado de Podman
 show_status() {
     echo "================================================================="
-    echo "🔍 ESTADO DE PODMAN ROOTLESS - UBUNTU WORKSTATION (GNOME SHELL)"
-    echo "   AMD Ryzen 7 7730U | Radeon Vega 8 | NVMe | Soplos Linux Boro Workstation"
+    echo "🔍 ESTADO DE PODMAN ROOTLESS - SOPLOS LINUX BORO WORKSTATION"
+    echo "   AMD Ryzen 7 7730U | Radeon Vega 8 | NVMe | GNOME Shell (Wayland)"
     echo "================================================================="
 
     local linger_val socket_status docker_host_val utils_status storage_info subuid_status
@@ -124,8 +127,10 @@ show_status() {
         gpu_status="ℹ️ /dev/dri/renderD128 no detectado"
     fi
 
-    # Comprobar Firewalld vía D-Bus (busctl) sin invocar agentes polkit ni solicitar contraseña
-    if systemctl is-active firewalld.service &>/dev/null; then
+    # Comprobar Cortafuegos (UFW prioritario en Soplos Linux Boro, fallback a Firewalld)
+    if systemctl is-active ufw.service &>/dev/null || [ "$(grep -i "^ENABLED=" /etc/ufw/ufw.conf 2>/dev/null | cut -d= -f2)" = "yes" ]; then
+        firewall_status="✅ UFW activo (cortafuegos del sistema configurado para podman+)"
+    elif systemctl is-active firewalld.service &>/dev/null; then
         local trusted_ifaces=""
         if command -v busctl &>/dev/null; then
             trusted_ifaces=$(busctl call org.fedoraproject.FirewallD1 /org/fedoraproject/FirewallD1 org.fedoraproject.FirewallD1.zone getInterfaces s "trusted" 2>/dev/null || echo "")
@@ -137,12 +142,12 @@ show_status() {
             firewall_status="ℹ️ Firewalld activo (interfaz podman+ pendiente de asociar a trusted)"
         fi
     else
-        firewall_status="ℹ️ Firewalld inactivo o no instalado"
+        firewall_status="ℹ️ Cortafuegos inactivo o no instalado"
     fi
 
-    # Comprobar puerto unprivileged
+    # Comprobar puerto unprivileged y forwarding
     local unpriv_port
-    unpriv_port=$(sysctl -n net.ipv4.ip_unprivileged_port_start 2>/dev/null || echo "1024")
+    unpriv_port=$(cat /proc/sys/net/ipv4/ip_unprivileged_port_start 2>/dev/null || sysctl -n net.ipv4.ip_unprivileged_port_start 2>/dev/null || /sbin/sysctl -n net.ipv4.ip_unprivileged_port_start 2>/dev/null || echo "1024")
     if [ "$unpriv_port" -le 80 ]; then
         port_status="✅ $unpriv_port (Permite enlazar puertos 80 y 443 rootless)"
     else
@@ -235,7 +240,7 @@ configure_storage() {
     local storage_conf="$HOME/.config/containers/storage.conf"
     mkdir -p "$(dirname "$storage_conf")"
 
-    # En Soplos Linux Boro Workstation (Linux 6.8+ / overlayfs nativo sin privilegios),
+    # En Soplos Linux Boro Workstation (Linux 7.3+ / overlayfs nativo sin privilegios),
     # el kernel soporta native unprivileged overlayfs. Omitir 'mount_program = fuse-overlayfs'
     # permite a Podman usar Native Overlay Diff directamente sobre el SSD NVMe Kioxia
     # sin la penalización de CPU/IO de FUSE.
@@ -248,14 +253,14 @@ driver = "overlay"
 pull_options = {enable_partial_images = "true", use_hard_links = "false", ostree_repos = ""}
 
 [storage.options.overlay]
-# Native overlay del kernel en Linux 7.3 (evita sobrecarga de FUSE en SSD NVMe)
+# Native overlay del kernel en Linux (evita sobrecarga de FUSE en SSD NVMe)
 ignore_chown_errors = "true"
 EOF
         log_ok "storage.conf creado con driver overlay nativo para SSD NVMe."
     else
         # Si existe pero tiene forzado fuse-overlayfs, optimizarlo para el kernel actual
         if grep -q 'mount_program = "/usr/bin/fuse-overlayfs"' "$storage_conf" 2>/dev/null; then
-            log_step "Optimizando storage.conf existente para usar overlay nativo del kernel 7.3..."
+            log_step "Optimizando storage.conf existente para usar overlay nativo del kernel..."
             sed -i 's|mount_program = "/usr/bin/fuse-overlayfs"|# mount_program = "/usr/bin/fuse-overlayfs" (desactivado: native overlay activo)|g' "$storage_conf"
             if ! grep -q "ignore_chown_errors" "$storage_conf" 2>/dev/null; then
                 sed -i '/\[storage.options.overlay\]/a ignore_chown_errors = "true"' "$storage_conf"
@@ -345,10 +350,33 @@ configure_privileges_and_gpu() {
     fi
 }
 
-# 7. Configurar Firewalld para redes de Podman (zona trusted)
+# 7. Configurar Cortafuegos para redes de Podman (UFW / Firewalld)
 configure_firewall() {
-    log_info "Verificando reglas de cortafuegos (Firewalld)..."
-    if systemctl is-active firewalld.service &>/dev/null; then
+    log_info "Verificando reglas de cortafuegos (UFW / Firewalld)..."
+    local ufw_bin=""
+    if command -v ufw &>/dev/null; then
+        ufw_bin="$(command -v ufw)"
+    elif [ -x /usr/sbin/ufw ]; then
+        ufw_bin="/usr/sbin/ufw"
+    elif [ -x /sbin/ufw ]; then
+        ufw_bin="/sbin/ufw"
+    fi
+
+    if [ -n "$ufw_bin" ] && (systemctl is-active ufw.service &>/dev/null || [ "$(grep -i "^ENABLED=" /etc/ufw/ufw.conf 2>/dev/null | cut -d= -f2)" = "yes" ]); then
+        log_step "UFW activo: configurando reglas de interfaz podman+ y enrutamiento..."
+        if command -v sudo &>/dev/null; then
+            # Permitir tráfico entrante y saliente en la interfaz de contenedores podman+
+            sudo "$ufw_bin" allow in on podman+ 2>/dev/null || true
+            sudo "$ufw_bin" allow out on podman+ 2>/dev/null || true
+            # Permitir tráfico ruteado entre contenedores e internet
+            sudo "$ufw_bin" route allow in on podman+ 2>/dev/null || true
+            sudo "$ufw_bin" route allow out on podman+ 2>/dev/null || true
+            sudo "$ufw_bin" reload 2>/dev/null || true
+            log_ok "Reglas de Podman (interfaz podman+ y route) aplicadas con éxito en UFW."
+        else
+            log_error "Se requiere sudo para aplicar reglas de red de Podman en UFW."
+        fi
+    elif systemctl is-active firewalld.service &>/dev/null; then
         local in_trusted=0
         if command -v busctl &>/dev/null; then
             if busctl call org.fedoraproject.FirewallD1 /org/fedoraproject/FirewallD1 org.fedoraproject.FirewallD1.zone getInterfaces s "trusted" 2>/dev/null | grep -q "podman+"; then
@@ -357,7 +385,7 @@ configure_firewall() {
         fi
 
         if [ "$in_trusted" -eq 1 ]; then
-            log_ok "Interfaz podman+ ya está asignada a la zona trusted."
+            log_ok "Interfaz podman+ ya está asignada a la zona trusted en Firewalld."
         else
             if command -v sudo &>/dev/null; then
                 log_step "Asignando interfaz podman+ a la zona trusted en Firewalld..."
@@ -367,25 +395,30 @@ configure_firewall() {
             fi
         fi
     else
-        log_info "Firewalld no está activo, omitiendo configuración de interfaz de cortafuegos."
+        log_info "Cortafuegos inactivo o no instalado, omitiendo configuración de cortafuegos."
     fi
 }
 
-# 8. Persistencia de puertos no privilegiados (sysctl <= 80 para Traefik)
+# 8. Persistencia de puertos no privilegiados y reenvío de paquetes (sysctl)
 configure_sysctl_ports() {
-    log_info "Verificando inicio de puertos no privilegiados (sysctl)..."
-    local current_port
-    current_port=$(sysctl -n net.ipv4.ip_unprivileged_port_start 2>/dev/null || echo "1024")
+    log_info "Verificando puertos no privilegiados y forward en kernel (sysctl)..."
+    local current_port current_forward
+    current_port=$(cat /proc/sys/net/ipv4/ip_unprivileged_port_start 2>/dev/null || sysctl -n net.ipv4.ip_unprivileged_port_start 2>/dev/null || /sbin/sysctl -n net.ipv4.ip_unprivileged_port_start 2>/dev/null || echo "1024")
+    current_forward=$(cat /proc/sys/net/ipv4/ip_forward 2>/dev/null || sysctl -n net.ipv4.ip_forward 2>/dev/null || /sbin/sysctl -n net.ipv4.ip_forward 2>/dev/null || echo "0")
 
-    if [ "$current_port" -gt 80 ]; then
+    if [ "$current_port" -gt 80 ] || [ "$current_forward" -ne 1 ]; then
         if command -v sudo &>/dev/null; then
-            log_step "Configurando net.ipv4.ip_unprivileged_port_start = 80..."
-            echo "net.ipv4.ip_unprivileged_port_start = 80" | sudo tee /etc/sysctl.d/99-podman-ports.conf > /dev/null
-            sudo sysctl --system > /dev/null 2>&1 || true
-            log_ok "Puertos 80 y 443 habilitados para rootless vía sysctl."
+            log_step "Configurando sysctl para puertos rootless (80/443) y reenvío de paquetes..."
+            cat <<'EOF' | sudo tee /etc/sysctl.d/99-podman-workstation.conf > /dev/null
+net.ipv4.ip_unprivileged_port_start = 80
+net.ipv4.ip_forward = 1
+net.ipv6.conf.all.forwarding = 1
+EOF
+            sudo sysctl --system > /dev/null 2>&1 || sudo /sbin/sysctl --system > /dev/null 2>&1 || true
+            log_ok "Puertos 80/443 y reenvío IPv4/IPv6 habilitados vía sysctl."
         fi
     else
-        log_ok "Puertos no privilegiados ya permiten enlazar desde puerto 80."
+        log_ok "Configuración sysctl ya optimizada (puerto inicial: $current_port, ip_forward: $current_forward)."
     fi
 }
 
@@ -506,7 +539,7 @@ setup_quadlets() {
     log_info "Configurando estructura de directorios para Quadlets..."
     if [ -f "$SCRIPT_DIR/quadlets-setup.sh" ]; then
         chmod +x "$SCRIPT_DIR/quadlets-setup.sh"
-        "$SCRIPT_DIR/quadlets-setup.sh"
+        "$SCRIPT_DIR/quadlets-setup.sh" --init-only
     fi
 }
 
@@ -524,8 +557,8 @@ case "${1:-}" in
         ;;
     "")
         echo "================================================================="
-        echo "🐳 OPTIMIZADOR DE PODMAN ROOTLESS - UBUNTU WORKSTATION (GNOME)"
-        echo "   AMD Ryzen 7 7730U | Radeon Vega 8 | NVMe Kioxia | Soplos Linux Boro Workstation"
+        echo "🐳 OPTIMIZADOR DE PODMAN ROOTLESS - SOPLOS LINUX BORO (GNOME)"
+        echo "   AMD Ryzen 7 7730U | Radeon Vega 8 | NVMe Kioxia | UFW Firewall"
         echo "================================================================="
         require_non_root
         install_packages

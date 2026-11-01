@@ -40,23 +40,19 @@ System provisioning, GNOME Shell customization, and hardening:
 - **`laptop-setup.sh`**: Laptop optimizations (power-profiles-daemon, Bluetooth FastConnectable, smart multi-monitor lid switch handling, Wayland touchpad gestures, Mutter VRR, `--status`).
 - **`fingerprint-setup.sh`**: Biometric authentication (fprintd + PAM, Synaptics sensor, `--status`, `--enroll`, `--verify`, `--disable`).
 - **`hp-printer-setup.sh`**: HP printer stack (CUPS, HPLIP, proprietary plugin for LaserJet M15w, Firewalld rules, `--status`).
-- **`gnome-settings.sh`**: GNOME Shell configuration (Adwaita-dark theme, window button layout, Nautilus right-click scripts for Kitty/Antigravity/VS Code, 4000K Night Light, 24h clock, `--status`, `--dark`, `--light`).
+- **`gnome-settings.sh`**: GNOME Shell configuration (Adwaita-dark theme, window button layout, Nautilus right-click scripts for Ghostty/Antigravity/VS Code, 4000K Night Light, 24h clock, `--status`, `--dark`, `--light`).
 - **`gnome-extensions.sh`**: GNOME Shell extensions manager (`gnome-shell-extensions`, GSConnect, Dash to Dock, AppIndicator, Blur my Shell, Tiling Shell, `--status`).
 - **`gsconnect.sh`**: Native GSConnect integration (KDE Connect protocol for GNOME without KDE/Qt dependencies) and Firewalld rules (1714-1764 TCP/UDP, `--status`, `--setup-firewall`, `--daemon`).
 - **`soplos-tuning.sh`**: Kernel tuning (`sysctl` inotify 1M, max_map_count 16M, TCP BBR, ZRAM), system limits (`limits.d`), GNOME Tracker Miner exclusions on code directories (`~/Workspace`, `node_modules`, `.git`, `.venv`, `.cargo`), and ZRAM compression (`--status`, `--sysctl`, `--limits`, `--tracker`, `--zram`).
 - **`cockpit.sh`**: Web management console and modular dashboard (Podman, KVM VMs, storage, Firewalld exclusive, `--status`, `--open`, `--start`, `--stop`, `--disable`).
 - **`fastfetch.sh`**: System summary with theme support (Soplos Linux Boro official Ruby theme, FastCat `compact`, `--status`, `--theme`, `--diff`, `--force`).
 - **`fonts.sh`**: Automated installer and diagnostics for developer fonts (JetBrainsMono, FiraCode, CascadiaCode, Meslo, and Hack Nerd Fonts, `--status`, `--list`, `--clean`).
-- **`kitty.sh`**: GPU-accelerated Kitty terminal with 75% opacity, blur 32, Catppuccin Mocha theme, global Ctrl+Alt+T shortcut, and Nautilus integration (`--status`).
-- **`ptyxis.sh`**: Modern transparent Ptyxis terminal.
-- **`seguridad.sh`**: Hardening with exclusive Firewalld (mandatory UFW disable and mask, services for `kdeconnect`/GSConnect, `mdns`, `ssh`, trusted zones for `podman+`, virbr0, and unprivileged port sysctl).
+- **`seguridad.sh`**: Network security with native UFW firewall / GUFW GUI (GSConnect, mDNS, SSH, KVM virbr0, and unprivileged port sysctl for rootless Podman).
 - **`shell.sh`**: Modern CLI utilities (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`, `dust`, `btop`, `jq`) and modular shell syncing.
 - **`starship.sh` & `starship.toml`**: Modern Starship prompt with modular configuration (`--enable`, `--disable`, `--status`).
-- **`multimedia.sh`**: Codecs (FFmpeg, libavcodec-extra, complete GStreamer with VA-API) and decoupled VLC via Flatpak (`--status`).
 - **`flatpak.sh`**: Decoupled desktop apps suite via Flatpak/Flathub (Flatseal, Podman Desktop, Warehouse, VLC, Celluloid, OBS Studio, Shotcut, Spotify, Vesktop...) keeping the base system pristine (`--status`, `--all`, `--essential`, `--multimedia`, `--clean`, `--update`).
 - **`chrome.sh`**: Official Google Chrome APT repository and `google-chrome-stable` with Ozone Wayland flags (`--status`, `--wayland`).
 - **`firefox.sh`**: Native Firefox (.deb) from the official Mozilla repository with APT Pin-Priority 900 (`--status`).
-- **`steam.sh`**: Native Steam setup with i386 multiarch, `contrib non-free` repositories, GameMode, MangoHud, Proton-GE, and 32-bit Mesa Vulkan drivers (`--status`).
 - **`amd64v3.sh`**: CPU microarchitecture compatibility verification and transparent glibc-hwcaps diagnostics for Soplos Linux Boro (`--status`).
 
 ### 📦 [ProgrammingLanguages](./ProgrammingLanguages/)

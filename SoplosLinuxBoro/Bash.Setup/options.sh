@@ -11,6 +11,9 @@ if [ -n "${BASH_VERSION:-}" ]; then
     # cdspell: Intenta corregir pequeños errores tipográficos en los comandos cd.
     shopt -s cdspell 2>/dev/null || true
 
+    # dirspell: Corrige errores ortográficos en completado de rutas de directorios.
+    shopt -s dirspell 2>/dev/null || true
+
     # autocd: Permite entrar en un directorio escribiendo solo su nombre.
     shopt -s autocd 2>/dev/null || true
 
@@ -19,6 +22,9 @@ if [ -n "${BASH_VERSION:-}" ]; then
 
     # checkwinsize: Verifica el tamaño de la ventana después de cada comando.
     shopt -s checkwinsize 2>/dev/null || true
+
+    # no_empty_cmd_completion: Evita buscar todo el PATH al pulsar TAB en línea vacía.
+    shopt -s no_empty_cmd_completion 2>/dev/null || true
 
     # Autocompletado Readline (solo interactivo)
     if [[ $- == *i* ]]; then

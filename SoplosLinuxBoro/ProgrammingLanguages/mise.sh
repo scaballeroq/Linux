@@ -230,6 +230,11 @@ install_standalone() {
     echo -e "${BLUE}⬇️ Instalando Mise en espacio de usuario (~/.local/bin/mise)...${NC}"
     run_as_user mkdir -p "$USER_BIN"
 
+    if ! command -v curl &>/dev/null; then
+        echo -e "${YELLOW}📦 Instalando dependencia 'curl'...${NC}"
+        $SUDO apt-get update -qq && $SUDO apt-get install -y curl
+    fi
+
     local temp_script
     temp_script=$(mktemp /tmp/mise-install-XXXXXX.sh)
 
@@ -281,11 +286,17 @@ COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 EOF
 
     # Propagar variables en caliente a la sesión activa de systemd y DBus
-    if command -v systemctl &>/dev/null; then
-        run_as_user systemctl --user import-environment PATH 2>/dev/null || true
-    fi
-    if command -v dbus-update-activation-environment &>/dev/null; then
-        run_as_user dbus-update-activation-environment --systemd PATH 2>/dev/null || true
+    local user_uid runtime_dir
+    user_uid=$(id -u "$REAL_USER")
+    runtime_dir="/run/user/$user_uid"
+
+    if [ -d "$runtime_dir" ]; then
+        if command -v systemctl &>/dev/null; then
+            run_as_user env XDG_RUNTIME_DIR="$runtime_dir" systemctl --user import-environment PATH MISE_SHELL COREPACK_ENABLE_DOWNLOAD_PROMPT 2>/dev/null || true
+        fi
+        if command -v dbus-update-activation-environment &>/dev/null; then
+            run_as_user env XDG_RUNTIME_DIR="$runtime_dir" dbus-update-activation-environment --systemd PATH MISE_SHELL COREPACK_ENABLE_DOWNLOAD_PROMPT 2>/dev/null || true
+        fi
     fi
 
     echo -e "${GREEN}✔${NC} Archivo de sesión configurado: $ENV_CONF_FILE"
@@ -350,25 +361,25 @@ configure_completions() {
 
     local bash_comp_dir="$USER_HOME/.local/share/bash-completion/completions"
     run_as_user mkdir -p "$bash_comp_dir"
-    run_as_user "$bin" completion bash > "$bash_comp_dir/mise" 2>/dev/null || true
+    run_as_user "$bin" completion bash 2>/dev/null | run_as_user tee "$bash_comp_dir/mise" > /dev/null || true
 
     if [ -f "$USER_HOME/.zshrc" ]; then
         local zsh_comp_dir="$USER_HOME/.local/share/zsh/site-functions"
         run_as_user mkdir -p "$zsh_comp_dir"
-        run_as_user "$bin" completion zsh > "$zsh_comp_dir/_mise" 2>/dev/null || true
+        run_as_user "$bin" completion zsh 2>/dev/null | run_as_user tee "$zsh_comp_dir/_mise" > /dev/null || true
     fi
 
     echo -e "${GREEN}✔${NC} Autocompletados actualizados."
 }
 
 # ------------------------------------------------------------------------------
-# 7. INSTALACIÓN PRINCIPAL Y ACTUALIZACIONES
+# 7. INSTALACIÓN PRINCIPAL, ACTUALIZACIONES Y DESINSTALACIÓN
 # ------------------------------------------------------------------------------
 install_mise() {
     local force="${1:-false}"
 
     echo -e "${CYAN}=================================================================${NC}"
-    echo -e "${BOLD}⚡ CONFIGURACIÓN DE MISE (RUNTIME MANAGER) - UBUNTU${NC}"
+    echo -e "${BOLD}⚡ CONFIGURACIÓN DE MISE (RUNTIME MANAGER) - SOPLOS LINUX BORO WORKSTATION${NC}"
     echo -e "${CYAN}=================================================================${NC}"
 
     export PATH="$USER_BIN:$MISE_SHIMS_DIR:/usr/bin:$PATH"
@@ -377,11 +388,8 @@ install_mise() {
         echo -e "${GREEN}✔${NC} Mise ya está instalado ($(get_mise_version)) - $(get_install_type)."
         echo -e "   Para actualizar Mise y sus runtimes, ejecuta: ${BOLD}$0 --update${NC} (o 'just mise -u')"
     else
-        if [ "$EUID" -ne 0 ] && [ -z "${SUDO_USER:-}" ]; then
-            install_standalone
-        else
-            install_deb
-        fi
+        # En Soplos Linux Boro se prioriza la instalación Standalone rootless en espacio de usuario
+        install_standalone
     fi
 
     configure_environment
@@ -428,6 +436,38 @@ update_mise() {
     show_status
 }
 
+uninstall_mise() {
+    echo -e "${BLUE}🗑️ Desinstalando Mise de Soplos Linux Boro Workstation...${NC}"
+
+    # 1. Eliminar binario standalone
+    if [ -f "$USER_BIN_MISE" ]; then
+        run_as_user rm -f "$USER_BIN_MISE"
+        echo -e "${GREEN}✔${NC} Eliminado binario standalone ($USER_BIN_MISE)."
+    fi
+
+    # 2. Si existe paquete DEB y se tienen permisos, desinstalarlo
+    if dpkg -s mise &>/dev/null; then
+        require_root
+        $SUDO apt-get remove --purge -y mise
+        echo -e "${GREEN}✔${NC} Paquete DEB de Mise desinstalado."
+    fi
+
+    # 3. Eliminar directorios de datos, shims y cache de usuario
+    run_as_user rm -rf "$MISE_DATA_DIR" "$USER_HOME/.config/mise" "$USER_HOME/.cache/mise"
+    echo -e "${GREEN}✔${NC} Directorios de shims, plugins y cache eliminados."
+
+    # 4. Eliminar integración con environment.d, shells y autocompletados
+    if [ -f "$ENV_CONF_FILE" ]; then
+        run_as_user rm -f "$ENV_CONF_FILE"
+        echo -e "${GREEN}✔${NC} Archivo de sesión $ENV_CONF_FILE eliminado."
+    fi
+
+    run_as_user rm -f "$USER_HOME/.bashrc.d/mise.sh" "$USER_HOME/.zshrc.d/mise.zsh" 2>/dev/null || true
+    run_as_user rm -f "$USER_HOME/.local/share/bash-completion/completions/mise" "$USER_HOME/.local/share/zsh/site-functions/_mise" 2>/dev/null || true
+
+    echo -e "${GREEN}✅ Mise ha sido desinstalado completamente.${NC}"
+}
+
 # ------------------------------------------------------------------------------
 # 8. PROCESAR ARGUMENTOS CLI
 # ------------------------------------------------------------------------------
@@ -446,6 +486,10 @@ case "${1:-}" in
         ;;
     -i|--install|install)
         install_mise true
+        exit 0
+        ;;
+    -r|--uninstall|uninstall)
+        uninstall_mise
         exit 0
         ;;
     --standalone)

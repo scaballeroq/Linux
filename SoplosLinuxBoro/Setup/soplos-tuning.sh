@@ -8,9 +8,9 @@
 #   - ZRAM con compresión ZSTD y swappiness adaptativo
 #   - Monitoreo masivo de archivos (Inotify 1M watches) para IDEs y compiladores
 #   - Límites de descriptores de archivos (1M nofile) y tareas Systemd (TasksMax=infinity)
-#   - Optimización de red con TCP BBR + FQ
+#   - Optimización de red con TCP BBR + FQ (con carga de módulo tcp_bbr)
 #   - Ajuste de GNOME Tracker Miner para excluir carpetas pesadas de desarrollo
-#   - Servicios de mantenimiento: fstrim.timer para SSD/NVMe e irqbalance
+#   - Mantenimiento SSD/NVMe: fstrim.timer activo (sin irqbalance para proteger batería en AMD Ryzen)
 #   - Opciones CLI: --status, --sysctl, --limits, --tracker, --zram, --no-install, --help
 # ==============================================================================
 
@@ -78,7 +78,7 @@ Optimizaciones incluidas:
   3. Systemd Timeouts:   DefaultTimeoutStopSec=10s para apagados y reinicios rápidos.
   4. GNOME Tracker:      Exclusiones en Tracker Miner de node_modules, .git, .venv y Workspace.
   5. Memoria ZRAM:       Compresión ZSTD al 50% de RAM con zram-tools.
-  6. Servicios:          fstrim.timer (mantenimiento SSD/NVMe) e irqbalance (reparto multi-core).
+  6. Servicios:          fstrim.timer (mantenimiento SSD/NVMe Kioxia) y ahorro de energía AMD Zen 3.
 EOF
 }
 
@@ -95,7 +95,7 @@ show_status() {
     echo "  - vm.page-cluster:             $(sysctl -n vm.page-cluster 2>/dev/null || echo 'n/a') (Objetivo: 0 para ZRAM/NVMe)"
     echo "  - vm.watermark_boost_factor:   $(sysctl -n vm.watermark_boost_factor 2>/dev/null || echo 'n/a') (Objetivo: 0)"
     echo "  - net.ipv4.tcp_congestion:     $(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo 'n/a') (Objetivo: bbr)"
-    echo "  - net.core.default_qdisc:      $(sysctl -n net.core.default_qdisc 2>/dev/null || echo 'n/a') (Objetivo: fq)"
+    echo "  - Módulo kernel tcp_bbr:       $([ -d /sys/module/tcp_bbr ] && echo '✅ Cargado en memoria' || echo '⚠️ No cargado')"
     echo "-----------------------------------------------------------------"
     echo "• Memoria ZRAM:"
     if command -v zramctl &>/dev/null; then
@@ -109,14 +109,25 @@ show_status() {
     echo "  - Configuración limits.d:      $([ -f /etc/security/limits.d/99-development-limits.conf ] && echo '✅ Activa' || echo '❌ Ausente')"
     echo "-----------------------------------------------------------------"
     echo "• Servicios del Sistema:"
-    echo "  - fstrim.timer (SSD/NVMe):     $(systemctl is-active fstrim.timer 2>/dev/null || echo 'inactivo')"
-    echo "  - irqbalance (Multi-core):     $(systemctl is-active irqbalance 2>/dev/null || echo 'inactivo')"
+    local fstrim_st irq_st
+    fstrim_st=$(systemctl is-active fstrim.timer 2>/dev/null || echo 'inactivo')
+    if systemctl is-active --quiet irqbalance 2>/dev/null; then
+        irq_st="activo (⚠️ no recomendado en portátiles AMD Ryzen)"
+    else
+        irq_st="inactivo (✅ óptimo para C-states y batería en Ryzen 7 7730U)"
+    fi
+    echo "  - fstrim.timer (SSD/NVMe):     $fstrim_st"
+    echo "  - irqbalance (CPU multi-core): $irq_st"
     echo "================================================================="
 }
 
 apply_sysctl() {
     echo "⚙️ [1/6] Configurando optimizaciones del Kernel y Memoria en /etc/sysctl.d/..."
-    $SUDO mkdir -p /etc/sysctl.d
+    $SUDO mkdir -p /etc/sysctl.d /etc/modules-load.d
+
+    # 1. Asegurar la carga y persistencia del módulo TCP BBR
+    echo "tcp_bbr" | $SUDO tee /etc/modules-load.d/bbr.conf > /dev/null
+    $SUDO modprobe tcp_bbr 2>/dev/null || true
 
     cat <<'EOF' | $SUDO tee /etc/sysctl.d/99-soplos-tuning.conf > /dev/null
 # =============================================================================
@@ -148,8 +159,7 @@ vm.watermark_scale_factor = 125
 vm.dirty_background_ratio = 5
 vm.dirty_ratio = 10
 
-# Algoritmo de congestión TCP BBR + FQ para menor latencia de red
-net.core.default_qdisc = fq
+# Algoritmo de congestión TCP BBR para menor latencia de red
 net.ipv4.tcp_congestion_control = bbr
 
 # Búferes de red modernos para conexiones de alta velocidad
@@ -160,7 +170,6 @@ net.ipv4.tcp_wmem = 4096 65536 16777216
 net.ipv4.tcp_fastopen = 3
 
 # Tamaño de cola de conexiones de red
-net.core.netdev_max_backlog = 16384
 net.core.somaxconn = 8192
 net.ipv4.tcp_max_syn_backlog = 8192
 net.ipv4.tcp_max_tw_buckets = 2097152
@@ -241,12 +250,16 @@ apply_zram() {
 }
 
 apply_services() {
-    echo "⚙️ [5/6] Habilitando servicios de mantenimiento (fstrim e irqbalance)..."
-    $SUDO apt update -qq 2>/dev/null || true
-    $SUDO apt install -y irqbalance 2>/dev/null || true
+    echo "⚙️ [5/6] Asegurando mantenimiento de almacenamiento SSD/NVMe (fstrim.timer)..."
     $SUDO systemctl enable --now fstrim.timer 2>/dev/null || true
-    $SUDO systemctl enable --now irqbalance 2>/dev/null || true
-    echo "  ✅ fstrim.timer e irqbalance activos."
+
+    # En portátiles monoplaca AMD Ryzen (amd-pstate-epp), el demonio irqbalance es contraproducente
+    # para la autonomía al interrumpir los estados de bajo consumo (C-States C6).
+    if systemctl is-active --quiet irqbalance 2>/dev/null; then
+        echo "ℹ️ Desactivando irqbalance para maximizar la autonomía de batería en AMD Ryzen..."
+        $SUDO systemctl disable --now irqbalance 2>/dev/null || true
+    fi
+    echo "  ✅ fstrim.timer activo para SSD/NVMe Kioxia (irqbalance omitido para proteger la batería)."
 }
 
 case "${1:-}" in

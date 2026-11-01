@@ -1,4 +1,4 @@
-# 🚀 Starship Config: DevUbuntu (Optimized for Ubuntu + Nerd Fonts)
+# 🚀 Starship Config: Soplos Linux Boro (Optimized for Soplos + Nerd Fonts)
 
 # Formato general del prompt (Una sola línea, limpia y con alto contraste)
 format = """
@@ -23,13 +23,15 @@ add_newline = true
 success_symbol = "[❯](bold cyan)"
 error_symbol = "[✖](bold red)"
 
-# Icono del SO (Muestra el logo de Ubuntu)
+# Icono del SO (Logo de Soplos Linux en color naranja corporativo)
 [os]
 format = "[$symbol]($style) "
-style = "bold orange"
+style = "bold #FF7800"
 disabled = false
 
 [os.symbols]
+Linux = "󰰣 "
+Debian = "󰰣 "
 Ubuntu = " "
 
 # Configuración del Directorio

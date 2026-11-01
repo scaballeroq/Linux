@@ -4,15 +4,15 @@
 # =============================================================================
 
 # Instala todo el entorno por defecto (Auto-detección de CPU / Portátil AMD)
-setup-all: post-install multimedia flatpak chrome steam laptop tuning gnome-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+setup-all: post-install multimedia flatpak chrome steam laptop tuning gnome-setup shell security fonts fastfetch yt-dlp virtualization cockpit ides git-setup languages podman-setup
     @echo "🚀 Entorno completo de Soplos Linux Boro (GNOME Shell Wayland) configurado. Por favor, reinicia el sistema."
 
 # Perfil completo para Portátil de desarrollo (AMD Ryzen + Virtualización + Contenedores)
-setup-laptop-amd: post-install-amd multimedia flatpak chrome steam laptop tuning gnome-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+setup-laptop-amd: post-install-amd multimedia flatpak chrome steam laptop tuning gnome-setup shell security fonts fastfetch yt-dlp virtualization cockpit ides git-setup languages podman-setup
     @echo "🚀 Entorno Portátil AMD Ryzen (GNOME Shell) configurado con éxito. Por favor, reinicia el sistema."
 
 # Perfil para Sobremesa Centro Multimedia (Intel Core / Media Center - Sin virtualización ni batería)
-setup-media-desktop: post-install-intel multimedia chrome tuning gnome-setup shell security fonts fastfetch kitty yt-dlp kodi
+setup-media-desktop: post-install-intel multimedia chrome tuning gnome-setup shell security fonts fastfetch yt-dlp kodi
     @echo "🚀 Entorno Sobremesa Intel (GNOME Shell) configurado con éxito. Por favor, reinicia el sistema."
 
 # =============================================================================
@@ -35,6 +35,10 @@ post-install-intel:
 laptop:
     ./Setup/laptop-setup.sh
 
+# Estado y diagnóstico de la configuración del portátil
+laptop-status:
+    ./Setup/laptop-setup.sh --status
+
 # Autenticación y desbloqueo por huella dactilar (fprintd, PAM)
 fingerprint *args:
     ./Setup/fingerprint-setup.sh {{args}}
@@ -55,19 +59,39 @@ fingerprint-verify *finger:
 printer:
     ./Setup/hp-printer-setup.sh
 
-# Estado del sistema de impresión HP
+# Estado y diagnóstico del sistema de impresión HP
 printer-status:
     ./Setup/hp-printer-setup.sh --status
+
+# Instalar o actualizar el plugin propietario oficial de HP (firmware LaserJet M15w)
+printer-plugin:
+    ./Setup/hp-printer-setup.sh --plugin
+
+# Configurar impresora HP en red local / Wi-Fi
+printer-wifi:
+    ./Setup/hp-printer-setup.sh --wifi
+
+# Configurar impresora HP conectada por cable USB
+printer-usb:
+    ./Setup/hp-printer-setup.sh --usb
+
+# Abrir panel gráfico de impresoras en GNOME
+printer-gui:
+    ./Setup/hp-printer-setup.sh --gui
+
+# Enviar página de prueba a la impresora predeterminada
+printer-test:
+    ./Setup/hp-printer-setup.sh --test
 
 # Personalización y configuración de GNOME Shell (Modo oscuro, botones de ventana, scripts de Nautilus, atajos)
 gnome-setup:
     ./Setup/gnome-settings.sh
 
-# Aplicar tema oscuro completo en GNOME Shell (prefer-dark + Adwaita-dark)
+# Aplicar tema oscuro oficial de Soplos Linux Boro (Orchis-Orange-Dark + kora-soplos)
 gnome-theme-dark:
     ./Setup/gnome-settings.sh --dark
 
-# Aplicar tema claro completo en GNOME Shell (prefer-light)
+# Aplicar tema claro oficial de Soplos Linux Boro (Orchis-Orange-Light + kora-soplos)
 gnome-theme-light:
     ./Setup/gnome-settings.sh --light
 
@@ -82,14 +106,6 @@ gnome-extensions *args:
 # Diagnóstico del estado de extensiones de GNOME Shell
 gnome-extensions-status:
     ./Setup/gnome-extensions.sh --status
-
-# Gestión de apariencia, temas de iconos (Papirus/Adwaita) y cursores (Bibata)
-apariencia *args:
-    ./Setup/apariencia.sh {{args}}
-
-# Diagnóstico del estado de apariencia y temas
-apariencia-status:
-    ./Setup/apariencia.sh --status
 
 # Optimizaciones avanzadas de rendimiento (Sysctl, límites, inotify 1M, max_map_count 16M, TCP BBR, exclusiones Tracker)
 tuning:
@@ -135,25 +151,15 @@ fastfetch *args:
 fastfetch-status:
     ./Setup/fastfetch.sh --status
 
-# Terminal Kitty acelerada por GPU (Tema Catppuccin Mocha, blur Wayland, JetBrainsMono)
-kitty:
-    ./Setup/kitty.sh
-
-# Diagnóstico y estado de la terminal Kitty
-kitty-status:
-    ./Setup/kitty.sh --status
-
-# Terminal Ptyxis (Diseño estético oscuro y transparente)
-ptyxis:
-    ./Setup/ptyxis.sh
-
-# Suite multimedia completa: códecs GStreamer, FFmpeg, VA-API Wayland y reproductores
-multimedia *args:
-    ./Setup/multimedia.sh {{args}}
-
-# Diagnóstico y estado de códecs multimedia y aceleración VA-API
-multimedia-status:
-    ./Setup/multimedia.sh --status
+# Diagnóstico y estado de la terminal Ghostty preinstalada
+ghostty-status:
+    @echo "================================================================="
+    @echo "🔍 ESTADO DE GHOSTTY TERMINAL - SOPLOS LINUX BORO"
+    @echo "================================================================="
+    @echo "• Binario Ghostty:  $$(if command -v ghostty &>/dev/null; then echo "✅ Presente ($$(ghostty --version 2>/dev/null | head -n1))"; else echo "❌ No encontrado"; fi)"
+    @echo "• Configuración:    $$(if [ -f "$$HOME/.config/ghostty/config" ]; then echo "✅ Presente ($$HOME/.config/ghostty/config)"; else echo "❌ No presente"; fi)"
+    @echo "• Atajo GNOME:      $$(if gsettings get org.gnome.settings-daemon.plugins.media-keys custom-keybindings 2>/dev/null | grep -qi "custom0"; then echo "✅ Asignado Ctrl+Alt+T"; else echo "❌ No asignado"; fi)"
+    @echo "================================================================="
 
 # Descargador y stack multimedia yt-dlp + FFmpeg + Deno JS engine
 yt-dlp *args:
@@ -218,10 +224,6 @@ chrome-status:
 # Navegador Firefox nativo (.deb oficial de Mozilla)
 firefox:
     ./Setup/firefox.sh
-
-# Steam nativo, GameMode, MangoHud y drivers Vulkan 32-bit (i386 multiarch)
-steam:
-    ./Setup/steam.sh
 
 # Centro Multimedia (Kodi + complementos de streaming)
 kodi:

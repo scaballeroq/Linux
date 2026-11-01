@@ -1,8 +1,10 @@
 #!/bin/bash
 # =============================================================================
 # podman-utils.sh - CLI para Gestion de Proyectos y Contenedores Quadlets
-# Ubuntu Linux (GNOME Shell + Wayland)
+# Soplos Linux Boro Workstation (GNOME Shell + Wayland)
 # =============================================================================
+
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:${PATH:-}"
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     set -euo pipefail
@@ -548,8 +550,8 @@ cmd_quadlet_reload() {
 # =============================================================================
 cmd_doctor() {
     echo "================================================================="
-    echo "🩺 DIAGNÓSTICO DE PODMAN ROOTLESS - UBUNTU LINUX (GNOME SHELL)"
-    echo "   AMD Ryzen 7 7730U | Radeon Vega 8 GPU | NVMe"
+    echo "🩺 DIAGNÓSTICO DE PODMAN ROOTLESS - SOPLOS LINUX BORO (GNOME SHELL)"
+    echo "   AMD Ryzen 7 7730U | Radeon Vega 8 GPU | NVMe | UFW"
     echo "================================================================="
 
     # 1. Podman CLI
@@ -615,8 +617,10 @@ cmd_doctor() {
         log_info "Red Rootless: passt/pasta no detectado en PATH (degradando a slirp4netns)"
     fi
 
-    # 9. Cortafuegos (Firewalld vía D-Bus sin invocar polkit ni pedir contraseña)
-    if systemctl is-active firewalld.service &>/dev/null; then
+    # 9. Cortafuegos (UFW prioritario en Soplos Linux Boro, fallback a Firewalld)
+    if systemctl is-active ufw.service &>/dev/null || [ "$(grep -i "^ENABLED=" /etc/ufw/ufw.conf 2>/dev/null | cut -d= -f2)" = "yes" ]; then
+        log_ok "Cortafuegos: UFW activo (reglas para interfaz podman+ y enrutamiento)"
+    elif systemctl is-active firewalld.service &>/dev/null; then
         local trusted_ifaces=""
         if command -v busctl &>/dev/null; then
             trusted_ifaces=$(busctl call org.fedoraproject.FirewallD1 /org/fedoraproject/FirewallD1 org.fedoraproject.FirewallD1.zone getInterfaces s "trusted" 2>/dev/null || echo "")
@@ -628,7 +632,7 @@ cmd_doctor() {
             log_info "Cortafuegos: Firewalld activo (podman+ pendiente de asociar a trusted)"
         fi
     else
-        log_info "Cortafuegos: Firewalld inactivo o no instalado"
+        log_info "Cortafuegos: Inactivo o no instalado"
     fi
 
     # 10. Aceleración Gráfica (AMD Radeon Graphics (Vega 8))
@@ -640,9 +644,9 @@ cmd_doctor() {
         fi
     fi
 
-    # 11. Puertos No Privilegiados
+    # 11. Puertos No Privilegiados y Forwarding
     local unpriv_port
-    unpriv_port=$(sysctl -n net.ipv4.ip_unprivileged_port_start 2>/dev/null || echo "1024")
+    unpriv_port=$(cat /proc/sys/net/ipv4/ip_unprivileged_port_start 2>/dev/null || sysctl -n net.ipv4.ip_unprivileged_port_start 2>/dev/null || /sbin/sysctl -n net.ipv4.ip_unprivileged_port_start 2>/dev/null || echo "1024")
     if [ "$unpriv_port" -le 80 ]; then
         log_ok "Puertos Rootless: Permite enlazar puertos 80 y 443 (start: $unpriv_port)"
     else
@@ -664,8 +668,8 @@ cmd_doctor() {
 # =============================================================================
 usage() {
     cat <<EOF
-🐳 podman-utils - Gestor de Proyectos y Contenedores Quadlets (Ubuntu Linux)
-   Optimizado para: AMD Ryzen 7 PRO (8C/16T) | Radeon Vega 8 GPU | GNOME Shell
+🐳 podman-utils - Gestor de Proyectos y Contenedores Quadlets (Soplos Linux Boro)
+   Optimizado para: AMD Ryzen 7 7730U | Radeon Vega 8 | GNOME Shell (Wayland)
 
 Uso:
   podman-utils <comando> [argumentos]

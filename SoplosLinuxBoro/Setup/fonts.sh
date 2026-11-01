@@ -2,24 +2,31 @@
 # ==============================================================================
 # fonts.sh - Instalación, Verificación y Gestión de Fuentes de Desarrollo (Nerd Fonts)
 # Sistema: Soplos Linux Boro | Escritorio: GNOME Shell (Wayland)
+# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8)
 # ==============================================================================
-# Características:
+# Características y Optimizaciones:
 # - Soporte para fuentes de desarrollo con ligaduras y glifos Nerd Fonts:
-#   * JetBrainsMono (predeterminada en Kitty, Neovim e IDEs)
+#   * JetBrainsMono (predeterminada en Ghostty, Neovim, GNOME Shell e IDEs)
 #   * FiraCode (ligaduras completas de programación)
 #   * CascadiaCode / CaskaydiaCove (estilo moderno con ligaduras)
 #   * Meslo (optimizada para prompts CLI: Starship, Powerlevel10k)
 #   * Hack (monoespacio clásico de alta legibilidad)
-# - Detección inteligente tanto en estructura plana como en subdirectorios.
-# - Comandos CLI: --status, --list, --force, --clean, --update-cache, --help.
-# - Modo de usuario rootless: no invoca sudo ni apt a menos que falten binarios.
-# - Descargas resilientes con reintentos y barra de progreso.
+#   * GeistMono, CommitMono, VictorMono, SourceCodePro, Monaspace, Iosevka.
+# - Detección inteligente recursiva y resiliente en $XDG_DATA_HOME/fonts (~/.local/share/fonts).
+# - Descargas seguras atómicas: staging en directorio temporal antes de aplicar en destino.
+# - Purga automática de artefactos no tipográficos (*.txt, *.md, LICENSE*) y variantes
+#   redundantes de Windows para ahorrar hasta 50% de espacio en disco.
+# - Integración con GNOME Shell Wayland (--set-gnome) para configurar tipografía monospace.
+# - Soporte completo de banderas CLI: --status, --list, --clean, --clean-windows,
+#   --update-cache, --remove, --dry-run, --set-gnome, --force, --help.
+# - Modo rootless estricto: ejecución con privilegios de usuario real, invocando sudo
+#   únicamente si faltan paquetes esenciales de sistema (curl, unzip, fontconfig).
 # ==============================================================================
 
 set -euo pipefail
 
 # ------------------------------------------------------------------------------
-# 1. DETECCIÓN DE USUARIO Y PERMISOS
+# 1. DETECCIÓN DE USUARIO, ENTORNO Y PERMISOS
 # ------------------------------------------------------------------------------
 if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
     REAL_USER="$SUDO_USER"
@@ -29,24 +36,61 @@ else
     USER_HOME="${HOME:-/home/$REAL_USER}"
 fi
 
+REAL_UID=$(id -u "$REAL_USER" 2>/dev/null || echo "1000")
+XDG_DATA_HOME="${XDG_DATA_HOME:-$USER_HOME/.local/share}"
+FONT_DIR="$XDG_DATA_HOME/fonts"
+
 run_as_user() {
     if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-        sudo -u "$REAL_USER" env HOME="$USER_HOME" "$@"
+        sudo -u "$REAL_USER" env \
+            HOME="$USER_HOME" \
+            USER="$REAL_USER" \
+            PATH="/usr/local/bin:/usr/bin:/bin:$USER_HOME/.local/bin:$PATH" \
+            XDG_DATA_HOME="$XDG_DATA_HOME" \
+            XDG_RUNTIME_DIR="/run/user/$REAL_UID" \
+            DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$REAL_UID/bus}" \
+            "$@"
     else
         "$@"
     fi
 }
 
 # ------------------------------------------------------------------------------
-# 2. DIRECTORIOS Y RECURSOS TEMPORALES
+# 2. COLORES Y UTILIDADES DE SALIDA
 # ------------------------------------------------------------------------------
-FONT_DIR="$USER_HOME/.local/share/fonts"
+if [ -t 1 ]; then
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    BLUE='\033[0;34m'
+    CYAN='\033[0;36m'
+    BOLD='\033[1m'
+    NC='\033[0m'
+else
+    RED=''
+    GREEN=''
+    YELLOW=''
+    BLUE=''
+    CYAN=''
+    BOLD=''
+    NC=''
+fi
+
+log_info()    { echo -e "${CYAN}ℹ️  $*${NC}"; }
+log_success() { echo -e "${GREEN}✅ $*${NC}"; }
+log_warn()    { echo -e "${YELLOW}⚠️  $*${NC}"; }
+log_error()   { echo -e "${RED}❌ $*${NC}"; }
+log_step()    { echo -e "${BLUE}▶  $*${NC}"; }
+
+# ------------------------------------------------------------------------------
+# 3. RECURSOS TEMPORALES Y LIMPIEZA
+# ------------------------------------------------------------------------------
 TMP_DIR=""
 INSTALLED_ANY=false
 
 cleanup() {
-    if [ -n "$TMP_DIR" ] && [ -d "$TMP_DIR" ]; then
-        rm -rf "$TMP_DIR"
+    if [ -n "${TMP_DIR:-}" ] && [ -d "$TMP_DIR" ]; then
+        rm -rf "$TMP_DIR" 2>/dev/null || run_as_user rm -rf "$TMP_DIR" 2>/dev/null || true
     fi
 }
 trap cleanup EXIT INT TERM
@@ -58,22 +102,22 @@ ensure_tmp_dir() {
 }
 
 # ------------------------------------------------------------------------------
-# 3. VERIFICACIÓN DE DEPENDENCIAS
+# 4. VERIFICACIÓN DE DEPENDENCIAS DEL SISTEMA
 # ------------------------------------------------------------------------------
 ensure_dependencies() {
     local missing=()
-    for cmd in curl unzip fc-cache; do
+    for cmd in curl unzip fc-cache fc-list; do
         if ! command -v "$cmd" &>/dev/null; then
             missing+=("$cmd")
         fi
     done
 
     if [ ${#missing[@]} -gt 0 ]; then
-        echo "📦 Dependencias faltantes: ${missing[*]}"
-        echo "   Instalando dependencias necesarias con APT..."
+        log_warn "Dependencias faltantes detectadas: ${missing[*]}"
+        log_info "Instalando paquetes requeridos (curl, unzip, fontconfig) vía APT..."
         if [ "$EUID" -ne 0 ]; then
             if ! command -v sudo &>/dev/null; then
-                echo "❌ Error: Se requiere 'sudo' para instalar las dependencias faltantes."
+                log_error "Se requiere 'sudo' para instalar las dependencias faltantes."
                 exit 1
             fi
             sudo apt-get update -qq
@@ -86,9 +130,54 @@ ensure_dependencies() {
 }
 
 # ------------------------------------------------------------------------------
-# 4. CONFIGURACIÓN Y METADATOS DE FUENTES
+# 5. METADATOS Y NORMALIZACIÓN DE FUENTES
 # ------------------------------------------------------------------------------
 DEFAULT_FONTS=("JetBrainsMono" "FiraCode" "CascadiaCode" "Meslo" "Hack")
+EXTENDED_FONTS=("GeistMono" "CommitMono" "VictorMono" "SourceCodePro" "Monaspace" "Iosevka")
+
+normalize_font_name() {
+    local input="$1"
+    local lower="${input,,}"
+    lower="${lower//[-_]/}"
+    case "$lower" in
+        jetbrains|jetbrainsmono|jbm)
+            echo "JetBrainsMono"
+            ;;
+        fira|firacode)
+            echo "FiraCode"
+            ;;
+        cascadia|cascadiacode|caskaydia|caskaydiacove)
+            echo "CascadiaCode"
+            ;;
+        meslo|meslolgs|meslolg)
+            echo "Meslo"
+            ;;
+        hack)
+            echo "Hack"
+            ;;
+        geist|geistmono)
+            echo "GeistMono"
+            ;;
+        victor|victormono)
+            echo "VictorMono"
+            ;;
+        commit|commitmono)
+            echo "CommitMono"
+            ;;
+        sourcecode|sourcecodepro|saucecode|saucecodepro)
+            echo "SourceCodePro"
+            ;;
+        monaspace|monaspice)
+            echo "Monaspace"
+            ;;
+        iosevka)
+            echo "Iosevka"
+            ;;
+        *)
+            echo "$input"
+            ;;
+    esac
+}
 
 get_font_meta() {
     local font="$1"
@@ -97,7 +186,7 @@ get_font_meta() {
             FONT_ARCHIVE="JetBrainsMono.zip"
             FONT_PATTERNS=("*JetBrainsMono*")
             FONT_FC_FAMILY="JetBrainsMono Nerd Font"
-            FONT_DESC="Predeterminada para Kitty, Neovim e IDEs (ligaduras completas)"
+            FONT_DESC="Predeterminada para Ghostty, Neovim e IDEs (ligaduras completas)"
             ;;
         FiraCode)
             FONT_ARCHIVE="FiraCode.zip"
@@ -147,6 +236,18 @@ get_font_meta() {
             FONT_FC_FAMILY="SauceCodePro Nerd Font"
             FONT_DESC="Clásica monoespaciada profesional diseñada por Adobe"
             ;;
+        Monaspace)
+            FONT_ARCHIVE="Monaspace.zip"
+            FONT_PATTERNS=("*Monaspace*" "*Monaspice*")
+            FONT_FC_FAMILY="MonaspiceNe Nerd Font"
+            FONT_DESC="Superfamilia de GitHub (Neon, Argon, Radon, Krypton) con ligaduras"
+            ;;
+        Iosevka)
+            FONT_ARCHIVE="Iosevka.zip"
+            FONT_PATTERNS=("*Iosevka*")
+            FONT_FC_FAMILY="Iosevka Nerd Font"
+            FONT_DESC="Monoespacio ultra condensado de alta densidad para código"
+            ;;
         *)
             FONT_ARCHIVE="${font}.zip"
             FONT_PATTERNS=("*${font}*")
@@ -158,156 +259,310 @@ get_font_meta() {
 
 count_font_files() {
     local font="$1"
-    get_font_meta "$font"
-    local total=0
-
-    # 1. Verificar subdirectorio específico si existe
-    if [ -d "$FONT_DIR/$font" ]; then
-        local count_sub
-        count_sub=$(find "$FONT_DIR/$font" -type f \( -name "*.ttf" -o -name "*.otf" \) 2>/dev/null | wc -l)
-        total=$((total + count_sub))
+    if [ ! -d "$FONT_DIR" ]; then
+        echo "0"
+        return 0
     fi
 
-    # 2. Verificar archivos planos en el directorio base
+    get_font_meta "$font"
+
+    local find_args=()
     for pat in "${FONT_PATTERNS[@]}"; do
-        local count_flat
-        count_flat=$(find "$FONT_DIR" -maxdepth 1 -type f -name "$pat" 2>/dev/null | wc -l)
-        total=$((total + count_flat))
+        if [ ${#find_args[@]} -gt 0 ]; then
+            find_args+=("-o")
+        fi
+        find_args+=("-iname" "$pat")
     done
 
-    echo "$total"
+    local count
+    count=$(find "$FONT_DIR" -type f \( -iname "*.ttf" -o -iname "*.otf" \) \( "${find_args[@]}" \) 2>/dev/null | wc -l)
+    echo "${count:-0}"
 }
 
 fc_list_has_family() {
     local family="$1"
+    local cache="${2:-}"
+    if [ -n "$cache" ]; then
+        echo "$cache" | grep -qi "$family"
+        return $?
+    fi
+
     if command -v fc-list &>/dev/null; then
-        fc-list ":family=$family" family 2>/dev/null | grep -i "$family" >/dev/null 2>&1
+        fc-list ":family=$family" family 2>/dev/null | grep -qi "$family"
         return $?
     fi
     return 1
 }
 
 # ------------------------------------------------------------------------------
-# 5. TAREAS DE INSTALACIÓN Y LIMPIEZA
+# 6. TAREAS DE INSTALACIÓN, DESINSTALACIÓN Y MANTENIMIENTO
 # ------------------------------------------------------------------------------
+clean_font_artifacts_in_dir() {
+    local target="$1"
+    if [ -d "$target" ]; then
+        run_as_user find "$target" -type f \( -iname "*.txt" -o -iname "*.md" -o -iname "LICENSE*" \) -delete 2>/dev/null || true
+    fi
+}
+
+clean_windows_variants_in_dir() {
+    local target="$1"
+    if [ -d "$target" ]; then
+        run_as_user find "$target" -type f -iname "*Windows Compatible*" -delete 2>/dev/null || true
+    fi
+}
+
 install_font() {
     local font="$1"
     local force="${2:-false}"
-    get_font_meta "$font"
+    local dry_run="${3:-false}"
+    local clean_windows="${4:-true}"
+
+    local normalized
+    normalized=$(normalize_font_name "$font")
+    get_font_meta "$normalized"
 
     local existing_count
-    existing_count=$(count_font_files "$font")
+    existing_count=$(count_font_files "$normalized")
 
     if [ "$existing_count" -gt 0 ] && [ "$force" != "true" ]; then
-        echo "  ✅ $font ya está instalada ($existing_count variantes detectadas). Omitiendo."
+        log_success "$normalized ya está instalada ($existing_count variantes detectadas). Omitiendo."
         return 0
     fi
 
-    echo "⬇️  Descargando $font Nerd Font..."
-    ensure_tmp_dir
+    if [ "$dry_run" = "true" ]; then
+        log_info "[DRY-RUN] Se descargaría e instalaría $normalized Nerd Font ($FONT_ARCHIVE)."
+        return 0
+    fi
 
-    local target_dir="$FONT_DIR/$font"
-    run_as_user mkdir -p "$target_dir"
+    log_step "Descargando $normalized Nerd Font..."
+    ensure_tmp_dir
 
     local tmp_zip="$TMP_DIR/${FONT_ARCHIVE}"
     local download_url="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${FONT_ARCHIVE}"
 
-    if ! curl --proto '=https' --tlsv1.2 -fL --retry 3 --retry-delay 2 --progress-bar "$download_url" -o "$tmp_zip"; then
-        echo "❌ Error: Falló la descarga de $font desde $download_url"
+    local curl_progress=(--progress-bar)
+    if [ ! -t 1 ]; then
+        curl_progress=(-s -S)
+    fi
+
+    if ! run_as_user curl --proto '=https' --tlsv1.2 -fL --connect-timeout 10 --max-time 180 --retry 3 --retry-delay 2 "${curl_progress[@]}" "$download_url" -o "$tmp_zip"; then
+        log_error "Falló la descarga de $normalized desde $download_url"
+        rm -f "$tmp_zip" 2>/dev/null || true
         return 1
     fi
 
     if ! unzip -tq "$tmp_zip" &>/dev/null; then
-        echo "❌ Error: El archivo descargado para $font no es un ZIP válido."
-        rm -f "$tmp_zip"
+        log_error "El archivo descargado para $normalized no es un archivo ZIP válido."
+        rm -f "$tmp_zip" 2>/dev/null || true
         return 1
     fi
 
-    echo "📦 Extrayendo variantes de $font en $target_dir..."
-    run_as_user unzip -qo "$tmp_zip" -d "$target_dir"
-    rm -f "$tmp_zip"
+    local extract_tmp="$TMP_DIR/extract_${normalized}"
+    run_as_user rm -rf "$extract_tmp" 2>/dev/null || true
+    run_as_user mkdir -p "$extract_tmp"
 
-    # Limpiar archivos no tipográficos
-    run_as_user find "$target_dir" -type f \( -name "*.txt" -o -name "*.md" -o -name "LICENSE*" \) -delete 2>/dev/null || true
+    log_step "Extrayendo y optimizando variantes de $normalized..."
+    run_as_user unzip -qo "$tmp_zip" -d "$extract_tmp"
+    rm -f "$tmp_zip" 2>/dev/null || true
 
-    local new_count
-    new_count=$(find "$target_dir" -type f \( -name "*.ttf" -o -name "*.otf" \) 2>/dev/null | wc -l)
-    echo "  ✅ $font instalada con éxito ($new_count variantes en $target_dir)."
+    clean_font_artifacts_in_dir "$extract_tmp"
+    if [ "$clean_windows" = "true" ]; then
+        clean_windows_variants_in_dir "$extract_tmp"
+    fi
+
+    local extracted_count
+    extracted_count=$(find "$extract_tmp" -type f \( -iname "*.ttf" -o -iname "*.otf" \) 2>/dev/null | wc -l)
+    if [ "$extracted_count" -eq 0 ]; then
+        log_error "No se encontraron archivos .ttf o .otf válidos en el paquete de $normalized."
+        run_as_user rm -rf "$extract_tmp" 2>/dev/null || true
+        return 1
+    fi
+
+    local target_dir="$FONT_DIR/$normalized"
+    run_as_user mkdir -p "$target_dir"
+
+    if [ "$force" = "true" ] && [ -d "$target_dir" ]; then
+        run_as_user rm -rf "${target_dir:?}"/* 2>/dev/null || true
+    fi
+
+    run_as_user cp -rf "$extract_tmp"/* "$target_dir"/
+    run_as_user rm -rf "$extract_tmp" 2>/dev/null || true
+
+    log_success "$normalized instalada con éxito ($extracted_count variantes en $target_dir)."
+    INSTALLED_ANY=true
+}
+
+remove_font() {
+    local font="$1"
+    local dry_run="${2:-false}"
+
+    local normalized
+    normalized=$(normalize_font_name "$font")
+    get_font_meta "$normalized"
+
+    if [ "$dry_run" = "true" ]; then
+        log_info "[DRY-RUN] Se desinstalaría $normalized de $FONT_DIR."
+        return 0
+    fi
+
+    log_step "Desinstalando $normalized Nerd Font..."
+    local initial_count
+    initial_count=$(count_font_files "$normalized")
+
+    if [ "$initial_count" -eq 0 ]; then
+        log_info "No se encontraron variantes instaladas de $normalized en $FONT_DIR."
+        return 0
+    fi
+
+    # 1. Eliminar subdirectorio específico si existe
+    if [ -d "$FONT_DIR/$normalized" ]; then
+        run_as_user rm -rf "$FONT_DIR/$normalized"
+    fi
+
+    # 2. Eliminar variantes sueltas que coincidan con los patrones
+    if [ -d "$FONT_DIR" ]; then
+        for pat in "${FONT_PATTERNS[@]}"; do
+            run_as_user find "$FONT_DIR" -maxdepth 1 -type f -iname "$pat" -delete 2>/dev/null || true
+        done
+    fi
+
+    log_success "$normalized desinstalada correctamente ($initial_count variantes eliminadas)."
     INSTALLED_ANY=true
 }
 
 clean_font_artifacts() {
-    echo "🧹 Verificando archivos residuales no tipográficos (*.txt, *.md, LICENSE*)..."
+    if [ ! -d "$FONT_DIR" ]; then
+        log_info "Directorio de fuentes ($FONT_DIR) no existe aún. Nada que limpiar."
+        return 0
+    fi
+
+    log_step "Buscando archivos residuales no tipográficos (*.txt, *.md, LICENSE*)..."
     local count
-    count=$(find "$FONT_DIR" -type f \( -name "*.txt" -o -name "*.md" -o -name "LICENSE*" \) 2>/dev/null | wc -l)
+    count=$(find "$FONT_DIR" -type f \( -iname "*.txt" -o -iname "*.md" -o -iname "LICENSE*" \) 2>/dev/null | wc -l)
     if [ "$count" -gt 0 ]; then
-        run_as_user find "$FONT_DIR" -type f \( -name "*.txt" -o -name "*.md" -o -name "LICENSE*" \) -delete 2>/dev/null || true
-        echo "  ✅ $count archivo(s) residual(es) eliminado(s) de $FONT_DIR."
+        run_as_user find "$FONT_DIR" -type f \( -iname "*.txt" -o -iname "*.md" -o -iname "LICENSE*" \) -delete 2>/dev/null || true
+        log_success "$count archivo(s) residual(es) eliminado(s) de $FONT_DIR."
     else
-        echo "  ℹ️ No se encontraron archivos residuales en $FONT_DIR."
+        log_info "No se encontraron archivos residuales en $FONT_DIR."
+    fi
+}
+
+clean_windows_fonts() {
+    if [ ! -d "$FONT_DIR" ]; then
+        log_info "Directorio de fuentes ($FONT_DIR) no existe aún."
+        return 0
+    fi
+
+    log_step "Buscando variantes 'Windows Compatible' redundantes en $FONT_DIR..."
+    local count
+    count=$(find "$FONT_DIR" -type f -iname "*Windows Compatible*" 2>/dev/null | wc -l)
+    if [ "$count" -gt 0 ]; then
+        run_as_user find "$FONT_DIR" -type f -iname "*Windows Compatible*" -delete 2>/dev/null || true
+        log_success "$count archivo(s) redundante(s) de Windows eliminado(s). Espacio recuperado."
+        INSTALLED_ANY=true
+    else
+        log_info "No se detectaron archivos redundantes 'Windows Compatible'."
     fi
 }
 
 update_cache() {
-    echo "ℹ️  Actualizando caché de fuentes de usuario con fc-cache..."
+    if [ ! -d "$FONT_DIR" ]; then
+        log_info "Directorio de fuentes ($FONT_DIR) no existe aún. Omitiendo regeneración de caché."
+        return 0
+    fi
+    log_info "Actualizando caché de fuentes de usuario con fc-cache..."
     run_as_user fc-cache -f "$FONT_DIR"
-    echo "  ✅ Caché de fuentes actualizada correctamente."
+    log_success "Caché de fuentes fontconfig actualizada correctamente."
+}
+
+set_gnome_monospace() {
+    local font_choice="${1:-JetBrainsMono}"
+    local size="${2:-11}"
+    local normalized
+    normalized=$(normalize_font_name "$font_choice")
+    get_font_meta "$normalized"
+
+    local target_font="$FONT_FC_FAMILY $size"
+    if command -v gsettings &>/dev/null; then
+        run_as_user gsettings set org.gnome.desktop.interface monospace-font-name "$target_font" 2>/dev/null || true
+        log_success "Tipografía monoespaciada de GNOME Shell configurada a: '$target_font'"
+    else
+        log_warn "'gsettings' no está disponible en este entorno para configurar GNOME."
+    fi
 }
 
 # ------------------------------------------------------------------------------
-# 6. REPORTES Y DIAGNÓSTICO
+# 7. REPORTES Y DIAGNÓSTICO
 # ------------------------------------------------------------------------------
 show_status() {
-    echo "================================================================="
-    echo "🔤 ESTADO DE FUENTES NERD FONTS (Soplos Linux Boro GNOME Wayland)"
-    echo "================================================================="
-    echo "👤 Usuario:         $REAL_USER"
-    echo "📁 Directorio:      $FONT_DIR"
+    echo -e "${BOLD}${BLUE}=================================================================${NC}"
+    echo -e "${BOLD}🔤 ESTADO DE FUENTES NERD FONTS (Soplos Linux Boro GNOME Wayland)${NC}"
+    echo -e "${BOLD}${BLUE}=================================================================${NC}"
+    echo -e "👤 Usuario:         ${CYAN}$REAL_USER${NC}"
+    echo -e "📁 Directorio:      ${CYAN}$FONT_DIR${NC}"
+
     if [ -d "$FONT_DIR" ]; then
         local disk_usage total_files
         disk_usage=$(du -sh "$FONT_DIR" 2>/dev/null | cut -f1)
-        total_files=$(find "$FONT_DIR" -type f \( -name "*.ttf" -o -name "*.otf" \) 2>/dev/null | wc -l)
-        echo "💾 Uso en disco:    $disk_usage ($total_files variantes tipográficas)"
+        total_files=$(find "$FONT_DIR" -type f \( -iname "*.ttf" -o -iname "*.otf" \) 2>/dev/null | wc -l)
+        echo -e "💾 Uso en disco:    ${GREEN}$disk_usage${NC} ($total_files variantes tipográficas en total)"
     else
-        echo "💾 Uso en disco:    Directorio no creado aún"
+        echo -e "💾 Uso en disco:    ${YELLOW}Directorio no creado aún (0 fuentes locales)${NC}"
     fi
-    echo "-----------------------------------------------------------------"
+
+    if command -v gsettings &>/dev/null; then
+        local gnome_mono
+        gnome_mono=$(run_as_user gsettings get org.gnome.desktop.interface monospace-font-name 2>/dev/null || echo "Desconocida")
+        echo -e "🖥️  GNOME Monospace: ${GREEN}$gnome_mono${NC}"
+    fi
+
+    echo -e "${BLUE}-----------------------------------------------------------------${NC}"
     printf "%-15s | %-12s | %-10s | %-12s | %s\n" "FUENTE" "ESTADO" "ARCHIVOS" "FONTCONFIG" "USO RECOMENDADO"
-    echo "--------------------------------------------------------------------------------------------------"
+    echo -e "${BLUE}--------------------------------------------------------------------------------------------------${NC}"
+
+    local fc_cache_all=""
+    if command -v fc-list &>/dev/null; then
+        fc_cache_all=$(fc-list : family 2>/dev/null || true)
+    fi
 
     for font in "${DEFAULT_FONTS[@]}"; do
         get_font_meta "$font"
         local count
         count=$(count_font_files "$font")
-        local fc_status="❌ Inactiva"
-        if fc_list_has_family "$FONT_FC_FAMILY"; then
-            fc_status="✅ Activa"
+        local fc_status="${RED}❌ Inactiva${NC}"
+        if fc_list_has_family "$FONT_FC_FAMILY" "$fc_cache_all"; then
+            fc_status="${GREEN}✅ Activa${NC}"
         fi
 
         if [ "$count" -gt 0 ]; then
-            printf "%-15s | %-12s | %-10s | %-12s | %s\n" "$font" "✅ Instalada" "$count" "$fc_status" "$FONT_DESC"
+            printf "%-15s | ${GREEN}%-12s${NC} | %-10s | %-12b | %s\n" "$font" "Instalada" "$count" "$fc_status" "$FONT_DESC"
         else
-            printf "%-15s | %-12s | %-10s | %-12s | %s\n" "$font" "⚠️ Faltante" "0" "$fc_status" "$FONT_DESC"
+            printf "%-15s | ${YELLOW}%-12s${NC} | %-10s | %-12b | %s\n" "$font" "Faltante" "0" "$fc_status" "$FONT_DESC"
         fi
     done
-    echo "================================================================="
+    echo -e "${BOLD}${BLUE}=================================================================${NC}"
 }
 
 show_list() {
-    echo "================================================================="
-    echo "🔤 FUENTES NERD FONTS RECOMENDADAS Y DISPONIBLES"
-    echo "================================================================="
-    printf "%-15s | %s\n" "NOMBRE" "DESCRIPCIÓN Y USO RECOMENDADO"
-    echo "-----------------------------------------------------------------"
-    for f in "${DEFAULT_FONTS[@]}" GeistMono CommitMono VictorMono SourceCodePro; do
+    echo -e "${BOLD}${BLUE}=================================================================${NC}"
+    echo -e "${BOLD}🔤 FUENTES NERD FONTS DISPONIBLES EN EL CATÁLOGO${NC}"
+    echo -e "${BOLD}${BLUE}=================================================================${NC}"
+    printf "%-15s | %-12s | %s\n" "NOMBRE" "TIPO" "DESCRIPCIÓN Y USO RECOMENDADO"
+    echo -e "${BLUE}-----------------------------------------------------------------${NC}"
+    for f in "${DEFAULT_FONTS[@]}"; do
         get_font_meta "$f"
-        printf "%-15s | %s\n" "$f" "$FONT_DESC"
+        printf "%-15s | %-12s | %s\n" "$f" "Predeterminada" "$FONT_DESC"
     done
-    echo "-----------------------------------------------------------------"
-    echo "💡 Puedes instalar cualquiera de forma individual con:"
-    echo "   ./Setup/fonts.sh <NombreFuente>"
-    echo "   Ejemplo: ./Setup/fonts.sh GeistMono"
-    echo "================================================================="
+    echo -e "${BLUE}-----------------------------------------------------------------${NC}"
+    for f in "${EXTENDED_FONTS[@]}"; do
+        get_font_meta "$f"
+        printf "%-15s | %-12s | %s\n" "$f" "Opcional" "$FONT_DESC"
+    done
+    echo -e "${BLUE}-----------------------------------------------------------------${NC}"
+    echo -e "💡 Instala fuentes específicas de forma individual o múltiple con:"
+    echo -e "   ${CYAN}./Setup/fonts.sh <NombreFuente>${NC}"
+    echo -e "   Ejemplo: ${CYAN}./Setup/fonts.sh GeistMono Monaspace${NC}"
+    echo -e "${BOLD}${BLUE}=================================================================${NC}"
 }
 
 show_help() {
@@ -318,30 +573,41 @@ Instalación, verificación y gestión optimizada de fuentes de desarrollo (Nerd
 para Soplos Linux Boro y GNOME Shell (Wayland).
 
 OPCIONES:
-  -s, --status         Muestra el estado detallado de las fuentes instaladas y fontconfig.
-  -l, --list           Muestra la lista de fuentes recomendadas disponibles.
-  -f, --force          Fuerza la descarga e instalación aunque ya existan.
-  -c, --clean          Elimina archivos no tipográficos residuales (*.txt, *.md, LICENSE*).
-  -u, --update-cache   Fuerza la regeneración de la caché de fuentes de usuario.
-  -h, --help           Muestra esta ayuda.
+  -s, --status            Muestra el estado detallado de las fuentes instaladas, fontconfig y GNOME.
+  -l, --list              Muestra el catálogo completo de fuentes disponibles.
+  -f, --force             Fuerza la descarga e instalación aunque ya existan.
+  -n, --dry-run           Simula las acciones sin descargar ni modificar archivos en disco.
+  -c, --clean             Elimina archivos no tipográficos residuales (*.txt, *.md, LICENSE*).
+  --clean-windows         Elimina variantes redundantes 'Windows Compatible' para ahorrar ~50% de espacio.
+  -r, --remove <FUENTE>   Desinstala la fuente especificada y actualiza la caché fontconfig.
+  -g, --set-gnome [FNT]   Configura la fuente monoespaciada de GNOME Shell (predeterminada: JetBrainsMono 11).
+  -u, --update-cache      Fuerza la regeneración de la caché de fuentes fontconfig.
+  -h, --help              Muestra esta ayuda.
 
 EJEMPLOS:
-  $(basename "$0")                     # Verifica e instala fuentes predeterminadas faltantes
-  $(basename "$0") --status            # Diagnóstico del estado de fuentes y caché
-  $(basename "$0") CascadiaCode        # Descarga e instala únicamente CascadiaCode
-  $(basename "$0") -f JetBrainsMono    # Reinstala forzosamente JetBrainsMono
-  $(basename "$0") --clean             # Limpia archivos no tipográficos residuales
+  $(basename "$0")                      # Verifica e instala fuentes predeterminadas faltantes
+  $(basename "$0") --status             # Diagnóstico de estado de fuentes, caché y GNOME
+  $(basename "$0") CascadiaCode         # Descarga e instala únicamente CascadiaCode
+  $(basename "$0") -f JetBrainsMono     # Reinstala forzosamente JetBrainsMono
+  $(basename "$0") --set-gnome          # Configura JetBrainsMono Nerd Font 11 en GNOME Shell
+  $(basename "$0") --remove Meslo       # Desinstala Meslo y refresca la caché
+  $(basename "$0") --clean              # Limpia archivos no tipográficos residuales
+  $(basename "$0") --clean-windows      # Pone al día el espacio eliminando variantes Windows
 
 FUENTES PREDETERMINADAS:
-  JetBrainsMono, FiraCode, CascadiaCode, Meslo, Hack
+  ${DEFAULT_FONTS[*]}
 EOF
 }
 
 # ------------------------------------------------------------------------------
-# 7. PARSEO DE ARGUMENTOS Y FLUJO PRINCIPAL
+# 8. PARSEO DE ARGUMENTOS Y FLUJO PRINCIPAL
 # ------------------------------------------------------------------------------
 FORCE_INSTALL=false
+DRY_RUN=false
+CLEAN_WINDOWS=true
 ACTION=""
+GNOME_FONT_ARG=""
+REMOVE_FONTS=()
 TARGET_FONTS=()
 
 while [ $# -gt 0 ]; do
@@ -358,6 +624,10 @@ while [ $# -gt 0 ]; do
             ACTION="clean"
             shift
             ;;
+        --clean-windows)
+            ACTION="clean-windows"
+            shift
+            ;;
         -u|--update-cache)
             ACTION="update-cache"
             shift
@@ -365,6 +635,28 @@ while [ $# -gt 0 ]; do
         -f|--force)
             FORCE_INSTALL=true
             shift
+            ;;
+        -n|--dry-run)
+            DRY_RUN=true
+            shift
+            ;;
+        -r|--remove|--uninstall)
+            shift
+            if [ $# -gt 0 ] && [[ ! "$1" =~ ^- ]]; then
+                REMOVE_FONTS+=("$1")
+                shift
+            else
+                log_error "La opción --remove requiere el nombre de la fuente a desinstalar."
+                exit 1
+            fi
+            ;;
+        -g|--set-gnome)
+            ACTION="set-gnome"
+            shift
+            if [ $# -gt 0 ] && [[ ! "$1" =~ ^- ]]; then
+                GNOME_FONT_ARG="$1"
+                shift
+            fi
             ;;
         -h|--help)
             show_help
@@ -377,6 +669,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 
+# Flujos de acción directa inmediata
 if [ "$ACTION" = "status" ]; then
     show_status
     exit 0
@@ -387,40 +680,62 @@ elif [ "$ACTION" = "clean" ]; then
     clean_font_artifacts
     update_cache
     exit 0
+elif [ "$ACTION" = "clean-windows" ]; then
+    clean_windows_fonts
+    update_cache
+    exit 0
 elif [ "$ACTION" = "update-cache" ]; then
     update_cache
     exit 0
+elif [ "$ACTION" = "set-gnome" ]; then
+    set_gnome_monospace "${GNOME_FONT_ARG:-JetBrainsMono}"
+    exit 0
 fi
 
+# Flujo de desinstalación
+if [ ${#REMOVE_FONTS[@]} -gt 0 ]; then
+    for rf in "${REMOVE_FONTS[@]}"; do
+        remove_font "$rf" "$DRY_RUN"
+    done
+    if [ "$INSTALLED_ANY" = "true" ] && [ "$DRY_RUN" = "false" ]; then
+        update_cache
+    fi
+    exit 0
+fi
+
+# Flujo principal de instalación / verificación
 ensure_dependencies
-run_as_user mkdir -p "$FONT_DIR"
+if [ "$DRY_RUN" = "false" ]; then
+    run_as_user mkdir -p "$FONT_DIR"
+fi
 
 if [ ${#TARGET_FONTS[@]} -eq 0 ]; then
     TARGET_FONTS=("${DEFAULT_FONTS[@]}")
 fi
 
-echo "================================================================="
-echo "🔤 Verificando fuentes de desarrollo (Nerd Fonts) para $REAL_USER..."
-echo "================================================================="
+echo -e "${BOLD}${BLUE}=================================================================${NC}"
+echo -e "${BOLD}🔤 Verificando fuentes de desarrollo (Nerd Fonts) para $REAL_USER...${NC}"
+echo -e "${BOLD}${BLUE}=================================================================${NC}"
 
 for font in "${TARGET_FONTS[@]}"; do
     if [ "$font" = "all" ]; then
         for df in "${DEFAULT_FONTS[@]}"; do
-            install_font "$df" "$FORCE_INSTALL"
+            install_font "$df" "$FORCE_INSTALL" "$DRY_RUN" "$CLEAN_WINDOWS"
         done
     else
-        install_font "$font" "$FORCE_INSTALL"
+        install_font "$font" "$FORCE_INSTALL" "$DRY_RUN" "$CLEAN_WINDOWS"
     fi
 done
 
-clean_font_artifacts
-
-if [ "$INSTALLED_ANY" = "true" ] || [ "$FORCE_INSTALL" = "true" ]; then
-    update_cache
-else
-    echo "ℹ️  Todas las fuentes solicitadas ya están presentes y listas para usar."
+if [ "$DRY_RUN" = "false" ]; then
+    clean_font_artifacts
+    if [ "$INSTALLED_ANY" = "true" ] || [ "$FORCE_INSTALL" = "true" ]; then
+        update_cache
+    else
+        log_info "Todas las fuentes solicitadas ya están presentes y listas para usar."
+    fi
 fi
 
-echo "================================================================="
-echo "✅ Gestión de fuentes completada exitosamente."
-echo "================================================================="
+echo -e "${BOLD}${BLUE}=================================================================${NC}"
+log_success "Gestión de fuentes completada exitosamente."
+echo -e "${BOLD}${BLUE}=================================================================${NC}"

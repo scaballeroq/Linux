@@ -191,12 +191,16 @@ show_status() {
     echo "-----------------------------------------------------------------"
     echo "• Gestión de Tapa y Multimonitor:"
     echo "  - Logind lid docked:    $(if [ -f /etc/systemd/logind.conf.d/lid-docked.conf ]; then echo "✅ Configurado (Docked=ignore)"; else echo "❌ Predeterminado"; fi)"
-    local gnome_lid_ext
-    gnome_lid_ext=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.power lid-close-suspend-with-external-monitor 2>/dev/null || echo 'n/a')
-    if [ "$gnome_lid_ext" = "false" ]; then
-        echo "  - GNOME lid docked:     ✅ No suspender con monitores externos (false)"
+    if run_as_user gsettings list-keys org.gnome.settings-daemon.plugins.power 2>/dev/null | grep -q "^lid-close-suspend-with-external-monitor$"; then
+        local gnome_lid_ext
+        gnome_lid_ext=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.power lid-close-suspend-with-external-monitor 2>/dev/null || echo 'n/a')
+        if [ "$gnome_lid_ext" = "false" ]; then
+            echo "  - GNOME lid docked:     ✅ No suspender con monitores externos (false)"
+        else
+            echo "  - GNOME lid docked:     ⚠️ Suspende con monitores ($gnome_lid_ext)"
+        fi
     else
-        echo "  - GNOME lid docked:     ⚠️ Suspende con monitores ($gnome_lid_ext)"
+        echo "  - GNOME lid docked:     ✅ Gestionado por systemd-logind (nativo en GNOME 43+ / 50)"
     fi
 
     echo "-----------------------------------------------------------------"
@@ -233,14 +237,29 @@ echo "   $OS_CUR_NAME | GNOME Shell $GNOME_CUR_VER"
 echo "   Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8)"
 echo "================================================================="
 
-# 1. Instalar servicios de hardware y energía
-echo "ℹ️ [1/5] Instalando utilidades de energía y hardware..."
-$SUDO apt update
-$SUDO apt install -y \
-    power-profiles-daemon \
-    switcheroo-control \
-    bluez \
+# 1. Instalar servicios de hardware y energía (idempotente)
+echo "ℹ️ [1/5] Verificando utilidades de energía y hardware..."
+REQUIRED_PKGS=(
+    power-profiles-daemon
+    switcheroo-control
+    bluez
     brightnessctl
+)
+MISSING_PKGS=()
+for pkg in "${REQUIRED_PKGS[@]}"; do
+    if ! dpkg -s "$pkg" &>/dev/null; then
+        MISSING_PKGS+=("$pkg")
+    fi
+done
+
+if [ ${#MISSING_PKGS[@]} -gt 0 ]; then
+    echo "  ⬇️ Instalando paquetes faltantes: ${MISSING_PKGS[*]}..."
+    $SUDO apt-get update -qq
+    $SUDO apt-get install -y "${MISSING_PKGS[@]}"
+    echo "  ✅ Paquetes instalados con éxito."
+else
+    echo "  ✅ Paquetes de energía y hardware ya instalados."
+fi
 
 # Si tlp estuviese instalado, desactivarlo para evitar conflictos con power-profiles-daemon
 if systemctl is-active --quiet tlp 2>/dev/null || systemctl is-enabled --quiet tlp 2>/dev/null; then
@@ -299,8 +318,10 @@ run_as_user gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive
 run_as_user gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing' 2>/dev/null || true
 run_as_user gsettings set org.gnome.settings-daemon.plugins.power power-button-action 'interactive' 2>/dev/null || true
 
-# Evitar suspender con tapa cerrada si hay monitor externo conectado (a nivel de GNOME Shell)
-run_as_user gsettings set org.gnome.settings-daemon.plugins.power lid-close-suspend-with-external-monitor false 2>/dev/null || true
+# Evitar suspender con tapa cerrada si hay monitor externo conectado (a nivel de GNOME Shell si la clave está disponible)
+if run_as_user gsettings list-keys org.gnome.settings-daemon.plugins.power 2>/dev/null | grep -q "^lid-close-suspend-with-external-monitor$"; then
+    run_as_user gsettings set org.gnome.settings-daemon.plugins.power lid-close-suspend-with-external-monitor false 2>/dev/null || true
+fi
 
 # Activar modo de bajo consumo automático cuando la batería esté baja (si soportado)
 if run_as_user gsettings list-keys org.gnome.settings-daemon.plugins.power 2>/dev/null | grep -q "^power-saver-profile-on-low-battery$"; then

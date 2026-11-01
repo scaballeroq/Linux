@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # virtualization.sh - Instalación y Optimización Avanzada de Virtualización (KVM/QEMU)
-# Sistema: Soplos Linux Boro (Soplos Linux Boro) | Escritorio: GNOME Shell (Wayland)
+# Sistema: Soplos Linux Boro Workstation | Escritorio: GNOME Shell (Wayland)
 # Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3 / Barcelo-R, 8C/16T)
 # GPU: AMD Radeon Graphics (Vega 8 / 3D VirGL / VA-API) | Memoria: 32 GB RAM DDR4
 # Almacenamiento: SSD NVMe Kioxia 512 GB (Btrfs NoCoW / Ext4) | Firewall: Firewalld
@@ -297,10 +297,9 @@ echo "🚀 Iniciando configuración y optimización de virtualización KVM/QEMU 
 echo "🎯 Integrando Cockpit Machines (Web) y Virt-Manager (GNOME Shell Wayland)..."
 
 # ---------------------------------------------------------------------------
-# 1. Instalación de paquetes vía APT
+# 1. Instalación de paquetes vía APT (Idempotente)
 # ---------------------------------------------------------------------------
-echo "ℹ️ [1/13] Verificando e instalando paquetes oficiales para Soplos Linux Boro..."
-sudo apt-get update -qq
+echo "ℹ️ [1/13] Verificando dependencias de paquetes de virtualización en Soplos Linux Boro..."
 
 PKGS_TO_INSTALL=(
     # Hipervisor base y emulación
@@ -341,7 +340,21 @@ PKGS_TO_INSTALL=(
     acl
 )
 
-sudo apt-get install -y "${PKGS_TO_INSTALL[@]}"
+MISSING_PKGS=()
+for pkg in "${PKGS_TO_INSTALL[@]}"; do
+    if ! dpkg -s "$pkg" &>/dev/null; then
+        MISSING_PKGS+=("$pkg")
+    fi
+done
+
+if [ ${#MISSING_PKGS[@]} -gt 0 ]; then
+    echo "  📦 Instalando paquetes faltantes (${MISSING_PKGS[*]}) vía APT..."
+    sudo apt-get update -qq
+    sudo apt-get install -y "${MISSING_PKGS[@]}"
+    echo "  ✅ Dependencias de virtualización instaladas."
+else
+    echo "  ✅ Todos los paquetes de virtualización (${#PKGS_TO_INSTALL[@]}) ya están presentes en Soplos Linux Boro."
+fi
 
 # ---------------------------------------------------------------------------
 # 2. Controladores VirtIO para Windows (Opcional)
@@ -585,13 +598,14 @@ fi
 # ---------------------------------------------------------------------------
 echo "ℹ️ [12/13] Configurando grupos de usuario (libvirt, kvm, render) para $TARGET_USER..."
 sudo usermod -aG libvirt,kvm,render "$TARGET_USER" 2>/dev/null || sudo usermod -aG libvirt,kvm "$TARGET_USER" 2>/dev/null || true
+echo "  ✅ Usuario $TARGET_USER añadido a los grupos de virtualización y GPU."
 
 sudo setfacl -R -b /var/lib/libvirt/images 2>/dev/null || true
 sudo setfacl -R -m u:"$TARGET_USER":rwX /var/lib/libvirt/images 2>/dev/null || true
 sudo setfacl -d -m u:"$TARGET_USER":rwX /var/lib/libvirt/images 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
-# 13. Variable de Entorno LIBVIRT_DEFAULT_URI
+# 13. Variable de Entorno LIBVIRT_DEFAULT_URI y Sesión GNOME
 # ---------------------------------------------------------------------------
 echo "ℹ️ [13/13] Configurando LIBVIRT_DEFAULT_URI en el perfil de $TARGET_USER..."
 
@@ -619,6 +633,19 @@ chown -R "$TARGET_USER:$TARGET_USER" \
     "$TARGET_HOME/.bashrc.d" 2>/dev/null || true
 
 [ -d "$TARGET_HOME/.zshrc.d" ] && chown -R "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.zshrc.d" 2>/dev/null || true
+
+# Propagación en caliente a la sesión gráfica activa de GNOME Shell (systemd user y DBus)
+TARGET_UID=$(id -u "$TARGET_USER" 2>/dev/null || id -u)
+RUNTIME_DIR="/run/user/$TARGET_UID"
+if [ -d "$RUNTIME_DIR" ]; then
+    if command -v systemctl >/dev/null 2>&1; then
+        sudo -u "$TARGET_USER" env XDG_RUNTIME_DIR="$RUNTIME_DIR" systemctl --user import-environment LIBVIRT_DEFAULT_URI 2>/dev/null || true
+    fi
+    if command -v dbus-update-activation-environment >/dev/null 2>&1; then
+        sudo -u "$TARGET_USER" env XDG_RUNTIME_DIR="$RUNTIME_DIR" dbus-update-activation-environment --systemd LIBVIRT_DEFAULT_URI 2>/dev/null || true
+    fi
+    echo "  ✅ Variable LIBVIRT_DEFAULT_URI propagada en caliente a la sesión activa de GNOME Shell."
+fi
 
 HOST_IP=$(ip route get 1.1.1.1 2>/dev/null | awk '{print $7}' | head -n1 || echo '127.0.0.1')
 echo "================================================================="
