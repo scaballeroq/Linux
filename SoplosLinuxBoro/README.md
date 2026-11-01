@@ -50,14 +50,12 @@ Scripts de configuración del sistema operativo, personalización de GNOME Shell
 - **`fonts.sh`**: Instalación automatizada y diagnóstico de fuentes de desarrollo (JetBrainsMono, FiraCode, CascadiaCode, Meslo y Hack Nerd Fonts, `--status`, `--list`, `--clean`).
 - **`kitty.sh`**: Terminal Kitty acelerada por GPU con opacidad 75%, blur 32, tema Catppuccin Mocha, atajo Ctrl+Alt+T e integración en menú contextual de Nautilus (`--status`).
 - **`ptyxis.sh`**: Terminal moderna Ptyxis con transparencia y modo oscuro.
-- **`seguridad.sh`**: Endurecimiento con Firewalld exclusivo (desactivación obligatoria de UFW, servicios `kdeconnect`/GSConnect, `mdns`, `ssh`, zona `libvirt` para virbr0, zona `trusted` para `podman+`, sysctl de puertos no privilegiados).
+- **`seguridad.sh`**: Seguridad de red con cortafuegos nativo UFW / GUI GUFW (servicios GSConnect, mDNS, SSH, KVM virbr0 y sysctl para Podman Rootless).
 - **`shell.sh`**: Herramientas modernas de terminal (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`, `dust`, `btop`, `jq`) y sincronización modular.
 - **`starship.sh` & `starship.toml`**: Prompt Starship moderno con configuración modular (`--enable`, `--disable`, `--status`).
-- **`multimedia.sh`**: Codecs multimedia oficiales (FFmpeg, libavcodec-extra, GStreamer completo con VA-API) y VLC desacoplado vía Flatpak (`--status`).
 - **`flatpak.sh`**: Suite de aplicaciones de escritorio desacopladas vía Flatpak/Flathub (Flatseal, Podman Desktop, Warehouse, VLC, Celluloid, OBS Studio, Shotcut, Spotify, Vesktop...) sin tocar el sistema base (`--status`, `--all`, `--essential`, `--multimedia`, `--clean`, `--update`).
 - **`chrome.sh`**: Activación del repositorio oficial de Google Chrome e instalación de `google-chrome-stable` con optimización Ozone Wayland (`--status`, `--wayland`).
 - **`firefox.sh`**: Instalación de Firefox nativo (.deb) desde el repositorio oficial de Mozilla con APT Pin-Priority 900 (`--status`).
-- **`steam.sh`**: Instalación de Steam nativo con multiarch i386, repositorios `contrib non-free`, GameMode, MangoHud, Proton-GE y drivers Mesa Vulkan de 32 bits (`--status`).
 - **`amd64v3.sh`**: Diagnóstico de compatibilidad CPU para microarquitectura x86-64-v3 y soporte transparente glibc-hwcaps en Soplos Linux Boro (`--status`).
 
 ### 📦 [ProgrammingLanguages](./ProgrammingLanguages/)

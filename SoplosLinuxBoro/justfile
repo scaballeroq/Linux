@@ -35,6 +35,10 @@ post-install-intel:
 laptop:
     ./Setup/laptop-setup.sh
 
+# Estado y diagnóstico de la configuración del portátil
+laptop-status:
+    ./Setup/laptop-setup.sh --status
+
 # Autenticación y desbloqueo por huella dactilar (fprintd, PAM)
 fingerprint *args:
     ./Setup/fingerprint-setup.sh {{args}}
@@ -147,14 +151,6 @@ kitty-status:
 ptyxis:
     ./Setup/ptyxis.sh
 
-# Suite multimedia completa: códecs GStreamer, FFmpeg, VA-API Wayland y reproductores
-multimedia *args:
-    ./Setup/multimedia.sh {{args}}
-
-# Diagnóstico y estado de códecs multimedia y aceleración VA-API
-multimedia-status:
-    ./Setup/multimedia.sh --status
-
 # Descargador y stack multimedia yt-dlp + FFmpeg + Deno JS engine
 yt-dlp *args:
     ./Setup/yt-dlp-setup.sh {{args}}
@@ -218,10 +214,6 @@ chrome-status:
 # Navegador Firefox nativo (.deb oficial de Mozilla)
 firefox:
     ./Setup/firefox.sh
-
-# Steam nativo, GameMode, MangoHud y drivers Vulkan 32-bit (i386 multiarch)
-steam:
-    ./Setup/steam.sh
 
 # Centro Multimedia (Kodi + complementos de streaming)
 kodi:
