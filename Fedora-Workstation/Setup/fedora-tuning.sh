@@ -17,6 +17,12 @@
 
 set -euo pipefail
 
+if command -v dnf5 &>/dev/null; then
+    DNF_CMD="dnf5"
+else
+    DNF_CMD="dnf"
+fi
+
 if [ "$EUID" -ne 0 ]; then
     if ! command -v sudo &> /dev/null; then
         echo "❌ Error: 'sudo' no está disponible. Ejecuta este script como root o instala sudo."
@@ -235,7 +241,7 @@ apply_gnome_tuning() {
 # 6. Herramientas de Desarrollo y Contenedores (Distrobox + Podman)
 install_dev_tools() {
     echo "📦 [5/5] Verificando e instalando Distrobox y Podman para entornos aislados..."
-    $SUDO dnf5 install -y distrobox podman 2>/dev/null || true
+    $SUDO $DNF_CMD install -y distrobox podman 2>/dev/null || true
     echo "✅ Distrobox y Podman listos."
 }
 

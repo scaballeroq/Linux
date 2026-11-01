@@ -1,14 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ==============================================================================
-# laptop-setup.sh - Optimización para portátiles de desarrollo en Fedora 44 + GNOME
-# Hardware: AMD Ryzen (HP EliteBook 855 G7) + Triple Pantalla / Escritorio fijo
+# laptop-setup.sh - Optimización para portátiles de desarrollo en Fedora + GNOME
+# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U) + Triple Pantalla
 # ==============================================================================
 
 set -euo pipefail
-
-echo "================================================================="
-echo "🚀 INICIANDO OPTIMIZACIÓN PARA PORTÁTIL - FEDORA 44 (GNOME)"
-echo "================================================================="
 
 if [ "$EUID" -ne 0 ]; then
     if ! command -v sudo &> /dev/null; then
@@ -20,7 +16,6 @@ else
     SUDO=""
 fi
 
-# Detectar usuario real en caso de ejecución con sudo
 if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
     REAL_USER="$SUDO_USER"
     USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
@@ -31,11 +26,18 @@ fi
 
 REAL_UID=$(id -u "$REAL_USER" 2>/dev/null || echo "1000")
 
+if command -v dnf5 &>/dev/null; then
+    DNF_CMD="dnf5"
+else
+    DNF_CMD="dnf"
+fi
+
 run_as_user() {
     if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
         sudo -u "$REAL_USER" env \
             HOME="$USER_HOME" \
             USER="$REAL_USER" \
+            PATH="/usr/local/bin:/usr/bin:/bin:$PATH" \
             XDG_RUNTIME_DIR="/run/user/$REAL_UID" \
             DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$REAL_UID/bus}" \
             "$@"
@@ -44,18 +46,58 @@ run_as_user() {
     fi
 }
 
+show_help() {
+    cat <<EOF
+💻 Optimizador de Portátil - Fedora Workstation (GNOME)
+
+Uso:
+  $0 [OPCIÓN]
+
+Opciones:
+  (sin argumentos)    Aplica optimizaciones de energía, Bluetooth, cierre de tapa, touchpad y brillo.
+  --status, -s        Muestra diagnóstico del estado de energía, Bluetooth y touchpad.
+  --help, -h          Muestra este mensaje de ayuda.
+EOF
+}
+
+show_status() {
+    echo "================================================================="
+    echo "🔍 ESTADO DE CONFIGURACIÓN DEL PORTÁTIL - FEDORA WORKSTATION"
+    echo "================================================================="
+    echo "• Bluetooth Service:         $(systemctl is-active bluetooth 2>/dev/null || echo 'inactivo')"
+    echo "• Perfil de Energía Activo:  $(if command -v powerprofilesctl &>/dev/null; then powerprofilesctl get 2>/dev/null || echo 'n/a'; else echo 'powerprofilesctl no instalado'; fi)"
+    echo "• Brillo actual:             $(if command -v brightnessctl &>/dev/null; then brightnessctl get 2>/dev/null || echo 'n/a'; else echo 'brightnessctl no disponible'; fi)"
+    echo "• Touchpad Tap-to-click:     $(run_as_user gsettings get org.gnome.desktop.peripherals.touchpad tap-to-click 2>/dev/null || echo 'n/a')"
+    echo "• Touchpad Natural Scroll:   $(run_as_user gsettings get org.gnome.desktop.peripherals.touchpad natural-scroll 2>/dev/null || echo 'n/a')"
+    echo "• HandleLidSwitchDocked:     $(grep -E '^HandleLidSwitchDocked=' /etc/systemd/logind.conf.d/lid-docked.conf 2>/dev/null || echo 'estándar')"
+    echo "================================================================="
+}
+
+case "${1:-}" in
+    --status|-s|status)
+        show_status
+        exit 0
+        ;;
+    --help|-h|help)
+        show_help
+        exit 0
+        ;;
+esac
+
+echo "================================================================="
+echo "🚀 INICIANDO OPTIMIZACIÓN PARA PORTÁTIL - FEDORA WORKSTATION"
+echo "================================================================="
+
 # 1. Herramientas de Hardware, Conectividad y Energía
-echo "ℹ️ [1/6] Instalando utilidades de hardware, bluetooth y brillo vía DNF5..."
-# Nota: En Fedora 41+, el daemon predeterminado de perfiles de energía es tuned-ppd (en conflicto con power-profiles-daemon).
-$SUDO dnf5 install -y \
+echo "ℹ️ [1/6] Instalando utilidades de hardware, bluetooth y brillo vía $DNF_CMD..."
+$SUDO $DNF_CMD install -y \
     switcheroo-control \
     bluez \
     bluez-tools \
     brightnessctl 2>/dev/null || true
 
-# Si ni tuned-ppd ni power-profiles-daemon están instalados, asegurar tuned-ppd
 if ! rpm -q tuned-ppd &>/dev/null && ! rpm -q power-profiles-daemon &>/dev/null; then
-    $SUDO dnf5 install -y tuned-ppd 2>/dev/null || true
+    $SUDO $DNF_CMD install -y tuned-ppd 2>/dev/null || true
 fi
 
 # 2. Habilitar servicios systemd esenciales
@@ -63,7 +105,6 @@ echo "ℹ️ [2/6] Habilitando servicios de sistema..."
 $SUDO systemctl enable --now bluetooth.service 2>/dev/null || true
 $SUDO systemctl enable --now switcheroo-control.service 2>/dev/null || true
 
-# Habilitar el gestor de perfiles de energía correspondiente (tuned-ppd o power-profiles-daemon)
 if systemctl list-unit-files tuned-ppd.service &>/dev/null; then
     $SUDO systemctl enable --now tuned.service tuned-ppd.service 2>/dev/null || true
 elif systemctl list-unit-files power-profiles-daemon.service &>/dev/null; then
@@ -94,9 +135,6 @@ HandleLidSwitch=suspend
 HandleLidSwitchExternalPower=ignore
 HandleLidSwitchDocked=ignore
 EOF
-# NOTA: No se debe reiniciar systemd-logind en caliente durante una sesión gráfica activa,
-# ya que desconecta los asientos y dispositivos de entrada en Wayland, forzando la pantalla de bloqueo y congelando el sistema.
-# La configuración se aplicará automáticamente en el próximo reinicio.
 
 # 5. Configuración de Touchpad y Energía en GNOME
 echo "ℹ️ [5/6] Configurando Touchpad y ahorro energético en GNOME..."
@@ -128,10 +166,8 @@ EOF
 $SUDO systemctl daemon-reload 2>/dev/null || true
 $SUDO systemctl enable --now persist-screen-brightness.service 2>/dev/null || true
 
+echo ""
+show_status
 echo "================================================================="
-echo "✅ Optimización de portátil completada para Fedora 44 (GNOME)."
-echo "   - Bluetooth con FastConnectable y batería de periféricos activa."
-echo "   - Cierre de tapa seguro configurado (se aplicará tras reiniciar)."
-echo "   - Touchpad: Tap-to-click y desplazamiento natural activos en GNOME."
-echo "   - Servicio de brillo al 95% configurado."
+echo "✅ Optimización de portátil completada para Fedora Workstation (GNOME)."
 echo "================================================================="

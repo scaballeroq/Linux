@@ -10,6 +10,12 @@
 
 set -euo pipefail
 
+if command -v dnf5 &>/dev/null; then
+    DNF_CMD="dnf5"
+else
+    DNF_CMD="dnf"
+fi
+
 if [ "$EUID" -ne 0 ]; then
     if ! command -v sudo &> /dev/null; then
         echo "❌ Error: 'sudo' no esta disponible. Ejecuta este script como root o instala sudo."
@@ -48,6 +54,18 @@ run_as_user() {
 OPACITY="0.75"
 BLUR_RADIUS="32"
 
+show_status() {
+    echo "================================================================="
+    echo "🔍 ESTADO DE KITTY TERMINAL - FEDORA WORKSTATION (GNOME)"
+    echo "================================================================="
+    echo "• Kitty instalado:          $(if command -v kitty &>/dev/null; then echo "✅ Kitty ($(kitty --version 2>/dev/null | awk '{print $2}'))"; else echo "❌ No instalado"; fi)"
+    echo "• Tipografía Nerd Font:     $(if fc-list "JetBrainsMono Nerd Font" 2>/dev/null | grep -qi "JetBrainsMono"; then echo "✅ JetBrainsMono Nerd Font disponible"; else echo "⚠️ No detectada (Ejecuta: ./Setup/fonts.sh)"; fi)"
+    echo "• Archivo de configuración: $(if [ -f "$USER_HOME/.config/kitty/kitty.conf" ]; then echo "✅ ~/.config/kitty/kitty.conf"; else echo "❌ No encontrado"; fi)"
+    echo "• Opacidad activa:          $(grep -E '^background_opacity\s+' "$USER_HOME/.config/kitty/kitty.conf" 2>/dev/null | awk '{print $2}' || echo "1.0 (opaco)")"
+    echo "• Atajo GNOME Ctrl+Alt+T:   $(if run_as_user gsettings get org.gnome.settings-daemon.plugins.media-keys custom-keybindings 2>/dev/null | grep -qi "custom0"; then echo "✅ Configurado para Kitty"; else echo "❌ No configurado"; fi)"
+    echo "================================================================="
+}
+
 show_help() {
     cat <<EOF
 🐱 Configuracion Estetica de Kitty Terminal - Fedora 44 Workstation (GNOME Workstation)
@@ -57,6 +75,7 @@ Uso:
 
 Opciones:
   (sin argumentos)           Instala Kitty y aplica opacidad al 75% (0.75) con desenfoque suave (blur 32).
+  --status, -s               Muestra el diagnóstico de Kitty, opacidad, configuración y atajos.
   --opacity <VALOR>, -o      Configura un valor de opacidad personalizado entre 0.10 y 1.0 (ej: 0.70, 0.65).
   <VALOR_NUMERICO>           Atajo directo para opacidad (ej: $0 0.70).
   --help, -h                 Muestra este mensaje de ayuda.
@@ -73,6 +92,10 @@ EOF
 # Procesar argumentos
 if [ $# -gt 0 ]; then
     case "$1" in
+        --status|-s|status)
+            show_status
+            exit 0
+            ;;
         --help|-h|help)
             show_help
             exit 0
@@ -107,9 +130,9 @@ echo "==========================================================="
 if ! command -v kitty &> /dev/null; then
     echo "📦 [1/4] Instalando Kitty Terminal vía DNF5..."
     if [ -n "$SUDO" ]; then
-        $SUDO dnf5 install -y kitty
+        $SUDO $DNF_CMD install -y kitty
     else
-        dnf5 install -y kitty
+        $DNF_CMD install -y kitty
     fi
 else
     echo "📦 [1/4] Kitty Terminal ya se encuentra instalado."

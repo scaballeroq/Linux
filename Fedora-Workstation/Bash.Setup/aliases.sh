@@ -1,8 +1,8 @@
 # =============================================================================
-# ARCHIVO DE ALIASES (aliases.sh) - Adaptado para Fedora 44 Workstation (GNOME)
+# ARCHIVO DE ALIASES (aliases.sh) - Adaptado para Fedora Workstation (GNOME)
 # =============================================================================
 # Este archivo contiene atajos (aliases) para comandos utilizados frecuentemente.
-# Optimizado para Fedora 44 Workstation con GNOME, Wayland y herramientas Rust.
+# Optimizado para Fedora Workstation con GNOME, Wayland y herramientas Rust.
 
 # Evitar ejecución en subshells y sesiones no interactivas (ej: scp, rsync)
 [[ $- != *i* ]] && return 0 2>/dev/null || true
@@ -15,6 +15,8 @@ alias ~='cd ~'
 alias repo='cd ~/Workspace/Repositorios'
 alias repos='cd ~/Workspace/Repositorios'
 alias fedora='cd ~/Workspace/Repositorios/Linux/Fedora-Workstation'
+alias ubuntu='cd ~/Workspace/Repositorios/Linux/Ubuntu'
+alias debian='cd ~/Workspace/Repositorios/Linux/Debian'
 alias cachyos='cd ~/Workspace/Repositorios/Linux/CachyOS'
 
 # 2. INTEGRACIÓN CON GNOME Y ESCRITORIO
@@ -43,7 +45,47 @@ else
     alias la='ls -lAh --color=auto --group-directories-first'
 fi
 
-# 4. SEGURIDAD Y PREVENCIÓN DE ERRORES
+# 4. GIT
+alias gs='git status -sb'
+alias ga='git add'
+alias gaa='git add --all'
+alias gc='git commit -m'
+alias gca='git commit -am'
+alias gp='git push'
+alias gl='git pull'
+alias gd='git diff'
+alias glog='git log --oneline --graph --decorate'
+alias gb='git branch'
+alias gco='git checkout'
+alias gcb='git checkout -b'
+alias gba='git branch -a'
+
+# 5. GESTIÓN DE PAQUETES (DNF / DNF5)
+if command -v dnf5 &>/dev/null; then
+    alias update='sudo dnf5 check-update --refresh'
+    alias upgrade='sudo dnf5 upgrade --refresh -y'
+    alias install='sudo dnf5 install'
+    alias remove='sudo dnf5 remove'
+    alias search='dnf5 search'
+    alias clean='sudo dnf5 autoremove -y && sudo dnf5 clean all'
+    alias list='dnf5 list --upgrades'
+    alias installed='dnf5 list --installed'
+    alias pkg-info='dnf5 info'
+    alias pkg-history='dnf5 history'
+else
+    alias update='sudo dnf check-update --refresh'
+    alias upgrade='sudo dnf upgrade --refresh -y'
+    alias install='sudo dnf install'
+    alias remove='sudo dnf remove'
+    alias search='dnf search'
+    alias clean='sudo dnf autoremove -y && sudo dnf clean all'
+    alias list='dnf list --upgrades'
+    alias installed='dnf list --installed'
+    alias pkg-info='dnf info'
+    alias pkg-history='dnf history'
+fi
+
+# 6. SEGURIDAD Y PREVENCIÓN DE ERRORES
 alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
@@ -53,19 +95,7 @@ alias chown='chown --preserve-root'
 alias chmod='chmod --preserve-root'
 alias chgrp='chgrp --preserve-root'
 
-# 5. GESTIÓN DE PAQUETES (DNF5)
-alias update='sudo dnf5 check-update --refresh'
-alias upgrade='sudo dnf5 upgrade --refresh -y'
-alias install='sudo dnf5 install'
-alias remove='sudo dnf5 remove'
-alias search='dnf5 search'
-alias clean='sudo dnf5 autoremove -y && sudo dnf5 clean all'
-alias list='dnf5 list --upgrades'
-alias installed='dnf5 list --installed'
-alias pkg-info='dnf5 info'
-alias pkg-history='dnf5 history'
-
-# 6. UTILIDADES MODERNAS (RUST-BASED)
+# 7. UTILIDADES MODERNAS (RUST-BASED) CON FALLBACK
 if command -v batcat &> /dev/null; then
     alias bat='batcat'
     alias cat='batcat --paging=never'
@@ -75,13 +105,21 @@ elif command -v bat &> /dev/null; then
     alias less='bat'
 fi
 
-# Reemplazos si las herramientas están instaladas
 command -v duf &> /dev/null && alias df='duf'
 command -v dust &> /dev/null && alias du='dust'
 command -v procs &> /dev/null && alias ps='procs'
-command -v btm &> /dev/null && alias top='btm'
+if command -v btm &> /dev/null; then
+    alias top='btm'
+elif command -v btop &> /dev/null; then
+    alias top='btop'
+fi
 
-# 7. VARIOS Y CONTROL DE KERNEL
+if command -v fastfetch &> /dev/null; then
+    alias ff='fastfetch'
+    alias sysinfo='fastfetch'
+fi
+
+# 8. VARIOS Y CONTROL DE RED
 alias h='history'
 alias c='clear'
 alias sudo='sudo '
@@ -90,14 +128,21 @@ alias ports='sudo ss -tulanp'
 alias myip='curl -s --connect-timeout 2 ifconfig.me'
 alias localip='ip -4 addr show | grep -oP "(?<=inet\s)\d+(\.\d+){3}"'
 
+# Cortafuegos Exclusivo (Firewalld)
+alias fw='sudo firewall-cmd'
+alias fw-status='sudo firewall-cmd --state'
+alias fw-active='sudo firewall-cmd --get-active-zones'
+alias fw-ports='sudo firewall-cmd --list-ports'
+alias fw-services='sudo firewall-cmd --list-services'
+alias fw-all='sudo firewall-cmd --list-all'
+alias fw-reload='sudo firewall-cmd --reload'
+
 # Recarga dinámica según la shell activa
 alias reload='[ -n "$ZSH_VERSION" ] && source ~/.zshrc || source ~/.bashrc'
 alias edit-zshrc='${EDITOR:-nano} ~/.zshrc'
 alias edit-bashrc='${EDITOR:-nano} ~/.bashrc'
 alias edit-shell='[ -n "$ZSH_VERSION" ] && ${EDITOR:-nano} ~/.zshrc || ${EDITOR:-nano} ~/.bashrc'
 alias edit-aliases='[ -n "$ZSH_VERSION" ] && (${EDITOR:-nano} ~/.zshrc.d/aliases.sh 2>/dev/null || ${EDITOR:-nano} ~/.zshrc.d/aliases.zsh) || ${EDITOR:-nano} ~/.bashrc.d/aliases.sh'
-alias ff='fastfetch'
-alias sysinfo='ff'
 
 # Comprobar versión de kernel activo vs última versión en kernel.org
 check-kernel-update() {
@@ -122,22 +167,21 @@ check-kernel-update() {
     echo "================================================================="
     if [ "$latest_kernel" != "Desconocido" ] && [[ "$active_kernel" != *"$latest_kernel"* ]]; then
         echo "💡 Hay una versión más reciente disponible en el sistema/repositorios:"
-        echo "   sudo dnf5 upgrade --refresh"
+        echo "   sudo dnf upgrade --refresh"
     else
         echo "✅ Tu kernel está actualizado a la última versión estable."
     fi
 }
 alias check-kernel='check-kernel-update'
 
-# 8. VIRTUALIZACIÓN (Libvirt/KVM)
+# 9. VIRTUALIZACIÓN (Libvirt/KVM)
 alias vms='virsh list --all'
 alias vmstart='virsh start'
 alias vmstop='virsh shutdown'
 alias vminfo='virsh dominfo'
 
-# 9. IDEs
-alias update-antigravity='sudo "$UPDATE_ANTIGRAVITY_PATH"'
-alias update-antigravity-ide='sudo "$UPDATE_ANTIGRAVITY_IDE_PATH"'
+# 10. IDEs
+alias update-antigravity='sudo /usr/local/bin/update-antigravity'
+alias update-antigravity-ide='sudo /usr/local/bin/update-antigravity-ide'
 
-echo "✅ Aliases modernizados cargados (DNF5, GNOME, Kernel-Check, Rust tools)"
-
+echo "✅ Aliases modernizados cargados (DNF/DNF5, GNOME, Firewalld, Git, Rust tools)"

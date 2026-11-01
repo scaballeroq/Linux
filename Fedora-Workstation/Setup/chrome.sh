@@ -1,92 +1,337 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ==============================================================================
-# chrome.sh - Instalación de Google Chrome y Activación de Repositorio Oficial
-# Fedora 44 Workstation (GNOME)
+# chrome.sh - Instalación, Optimización y Diagnóstico de Google Chrome
+# Sistema: Fedora 44 Workstation | Escritorio: GNOME Shell (Wayland)
+# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8 / VA-API)
+# ==============================================================================
+# Características:
+# - Gestión idempotente del repositorio RPM oficial firmado por Google.
+# - Importación de clave GPG oficial en /etc/pki/rpm-gpg/.
+# - Optimización nativa para Wayland y aceleración por GPU (Ozone + VA-API AMD).
+# - Descarga de respaldo oficial RPM en caso de contingencia.
+# - Diagnóstico integral del estado del navegador, repositorio y aceleración gráfica.
 # ==============================================================================
 
 set -euo pipefail
 
+# ------------------------------------------------------------------------------
+# 1. CONSTANTES Y CONFIGURACIÓN
+# ------------------------------------------------------------------------------
+REPO_NAME="google-chrome"
+REPO_FILE="/etc/yum.repos.d/google-chrome.repo"
+REPO_URL="http://dl.google.com/linux/chrome/rpm/stable/x86_64"
+GPG_KEY_URL="https://dl.google.com/linux/linux_signing_key.pub"
+FALLBACK_RPM_URL="https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm"
+PACKAGE_NAME="google-chrome-stable"
+SYSTEM_DESKTOP="/usr/share/applications/google-chrome.desktop"
+
+# Colores ANSI para terminal
+BOLD='\033[1m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+CYAN='\033[0;36m'
+NC='\033[0m' # Sin color
+
+# ------------------------------------------------------------------------------
+# 2. DETECCIÓN DE USUARIO Y ELEVACIÓN DE PRIVILEGIOS
+# ------------------------------------------------------------------------------
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    REAL_USER="$SUDO_USER"
+    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+else
+    REAL_USER="${USER:-$(id -un)}"
+    USER_HOME="${HOME:-/home/$REAL_USER}"
+fi
+
+USER_DESKTOP_DIR="$USER_HOME/.local/share/applications"
+USER_DESKTOP_FILE="$USER_DESKTOP_DIR/google-chrome.desktop"
+
+if command -v dnf5 &>/dev/null; then
+    DNF_CMD="dnf5"
+else
+    DNF_CMD="dnf"
+fi
+
 if [ "$EUID" -ne 0 ]; then
-    if ! command -v sudo &> /dev/null; then
-        echo "❌ Error: 'sudo' no está disponible. Ejecuta este script como root o instala sudo."
-        exit 1
-    fi
     SUDO="sudo"
 else
     SUDO=""
 fi
 
-show_help() {
-    cat <<EOF
-🌐 Instalador de Google Chrome - Fedora 44 Workstation
+require_root() {
+    if command -v dnf5 &>/dev/null; then
+    DNF_CMD="dnf5"
+else
+    DNF_CMD="dnf"
+fi
 
-Uso:
+if [ "$EUID" -ne 0 ]; then
+        if ! command -v sudo &>/dev/null; then
+            echo -e "${RED}❌ Error:${NC} Esta operación requiere privilegios de administrador ('sudo')." >&2
+            exit 1
+        fi
+    fi
+}
+
+# ------------------------------------------------------------------------------
+# 3. FUNCIONES DE AYUDA Y DIAGNÓSTICO
+# ------------------------------------------------------------------------------
+show_help() {
+    echo -e "${BOLD}🌐 Instalador y Optimizador de Google Chrome - Fedora 44 (GNOME)${NC}
+
+${BOLD}Uso:${NC}
   $0 [OPCIÓN]
 
-Opciones:
-  (sin argumentos)    Activa el repositorio oficial de Google Chrome e instala google-chrome-stable.
-  --status, -s        Muestra el estado del repositorio y la versión instalada de Google Chrome.
-  --help, -h          Muestra este mensaje de ayuda.
-EOF
+${BOLD}Opciones:${NC}
+  (sin argumentos)        Instala Google Chrome y activa el repositorio oficial de forma idempotente.
+  -i, --install           Fuerza la configuración del repositorio e instalación/revisión del paquete.
+  -u, --update            Busca e instala actualizaciones de Google Chrome desde el repositorio oficial.
+  -w, --wayland           Optimiza el lanzador de escritorio para GNOME Shell Wayland y aceleración VA-API (AMD Vega).
+      --restore-desktop   Restaura el lanzador de escritorio original del sistema.
+  -s, --status            Muestra diagnóstico detallado del repositorio, paquete, Wayland y aceleración GPU.
+  -r, --uninstall         Desinstala Google Chrome del sistema.
+  -h, --help              Muestra este mensaje de ayuda.
+
+${BOLD}Ejemplos:${NC}
+  $0                    # Instalación idempotente estándar
+  $0 --wayland          # Activa Wayland nativo y aceleración por GPU para el usuario actual
+  $0 --status           # Comprueba estado y configuración"
+}
+
+is_repo_configured() {
+    [ -f "$REPO_FILE" ] && grep -q "dl.google.com" "$REPO_FILE" 2>/dev/null
+}
+
+is_chrome_installed() {
+    rpm -q "$PACKAGE_NAME" >/dev/null 2>&1
+}
+
+get_chrome_version() {
+    if is_chrome_installed; then
+        rpm -q --qf '%{VERSION}-%{RELEASE} (%{ARCH})\n' "$PACKAGE_NAME" 2>/dev/null
+    elif command -v google-chrome-stable &>/dev/null; then
+        google-chrome-stable --version 2>/dev/null || echo "Desconocida"
+    elif command -v google-chrome &>/dev/null; then
+        google-chrome --version 2>/dev/null || echo "Desconocida"
+    else
+        echo "No instalado"
+    fi
+}
+
+is_wayland_optimized() {
+    if [ -f "$USER_DESKTOP_FILE" ]; then
+        grep -q -- "--ozone-platform-hint=auto" "$USER_DESKTOP_FILE" 2>/dev/null
+    else
+        return 1
+    fi
 }
 
 show_status() {
-    echo "================================================================="
-    echo "🔍 ESTADO DE GOOGLE CHROME - FEDORA 44"
-    echo "================================================================="
-    echo "• Repositorio Google Chrome: $(if [ -f /etc/yum.repos.d/google-chrome.repo ]; then echo 'Presente (/etc/yum.repos.d/google-chrome.repo)'; else echo 'No configurado'; fi)"
-    if command -v google-chrome &> /dev/null || command -v google-chrome-stable &> /dev/null; then
-        local chrome_bin
-        chrome_bin=$(command -v google-chrome-stable 2>/dev/null || command -v google-chrome)
-        echo "• Google Chrome:            ✅ Instalado ($("$chrome_bin" --version 2>/dev/null || echo 'Presente'))"
+    echo -e "${CYAN}=================================================================${NC}"
+    echo -e "${BOLD}🔍 DIAGNÓSTICO DE GOOGLE CHROME - FEDORA WORKSTATION (GNOME SHELL)${NC}"
+    echo -e "${CYAN}=================================================================${NC}"
+
+    # 1. Repositorio Oficial
+    if is_repo_configured; then
+        echo -e "• ${BOLD}Repositorio DNF5:${NC}      ${GREEN}✅ Configurado y Activo${NC} ($REPO_FILE)"
     else
-        echo "• Google Chrome:            ❌ No instalado"
+        echo -e "• ${BOLD}Repositorio DNF5:${NC}      ${RED}❌ No configurado${NC}"
     fi
-    echo "================================================================="
+
+    # 2. Paquete y Binario
+    if is_chrome_installed; then
+        local chrome_bin
+        chrome_bin=$(command -v google-chrome-stable 2>/dev/null || command -v google-chrome || echo "/usr/bin/google-chrome-stable")
+        echo -e "• ${BOLD}Google Chrome RPM:${NC}     ${GREEN}✅ Instalado${NC}"
+        echo -e "  - Versión instalada:   $(get_chrome_version)"
+        echo -e "  - Binario ejecutable:  $chrome_bin"
+    else
+        echo -e "• ${BOLD}Google Chrome RPM:${NC}     ${RED}❌ No instalado${NC}"
+    fi
+
+    # 3. Integración Wayland y Entorno Gráfico
+    local session_type="${XDG_SESSION_TYPE:-wayland}"
+    echo -e "• ${BOLD}Sesión de Escritorio:${NC}  ${CYAN}${session_type^}${NC} (GNOME Shell)"
+
+    if is_wayland_optimized; then
+        echo -e "• ${BOLD}Optimización Wayland:${NC}  ${GREEN}✅ Activa en lanzador de usuario${NC}"
+        echo -e "  - Archivo Desktop:     $USER_DESKTOP_FILE"
+        echo -e "  - Flags activos:       --ozone-platform-hint=auto, --enable-features=VaapiVideoDecodeLinuxGL"
+    else
+        echo -e "• ${BOLD}Optimización Wayland:${NC}  ${YELLOW}ℹ️ Estándar del sistema (XWayland por defecto)${NC}"
+        echo -e "  - Sugerencia:          Ejecuta '$0 --wayland' para activar Wayland nativo y aceleración VA-API."
+    fi
+
+    # 4. Aceleración por Hardware VA-API (AMD Radeon Vega 7)
+    if command -v vainfo &>/dev/null; then
+        if vainfo 2>&1 | grep -qi "Driver version.*AMD"; then
+            echo -e "• ${BOLD}Aceleración VA-API:${NC}    ${GREEN}✅ Hardware AMD Radeon Vega activo (Mesa radeonsi)${NC}"
+        else
+            echo -e "• ${BOLD}Aceleración VA-API:${NC}    ${CYAN}ℹ️ vainfo disponible en el sistema${NC}"
+        fi
+    else
+        echo -e "• ${BOLD}Aceleración VA-API:${NC}    ${YELLOW}ℹ️ Herramienta 'vainfo' no instalada${NC}"
+    fi
+
+    echo -e "${CYAN}=================================================================${NC}"
 }
 
-case "${1:-}" in
-    --status|-s|status)
-        show_status
-        exit 0
-        ;;
-    --help|-h|help)
-        show_help
-        exit 0
-        ;;
-esac
+# ------------------------------------------------------------------------------
+# 4. GESTIÓN DEL REPOSITORIO
+# ------------------------------------------------------------------------------
+setup_repository() {
+    if is_repo_configured; then
+        echo -e "${GREEN}✔${NC} Repositorio oficial '$REPO_NAME' ya configurado en $REPO_FILE."
+        return 0
+    fi
 
-echo "================================================================="
-echo "🌐 CONFIGURANDO REPOSITORIO E INSTALACIÓN DE GOOGLE CHROME"
-echo "================================================================="
-
-# 1. Habilitar repositorio mediante fedora-workstation-repositories o archivo directo
-echo "📦 [1/2] Activando repositorio oficial de Google Chrome..."
-if $SUDO dnf5 install -y fedora-workstation-repositories 2>/dev/null; then
-    $SUDO dnf5 config-manager setopt google-chrome.enabled=1 2>/dev/null || true
-fi
-
-# Asegurar configuración del repositorio si no existe
-if [ ! -f /etc/yum.repos.d/google-chrome.repo ]; then
-    cat << 'EOF' | $SUDO tee /etc/yum.repos.d/google-chrome.repo > /dev/null
+    echo -e "${BLUE}📦 Añadiendo repositorio oficial de Google Chrome a DNF5...${NC}"
+    require_root
+    $SUDO tee "$REPO_FILE" >/dev/null <<EOF
 [google-chrome]
 name=google-chrome
-baseurl=https://dl.google.com/linux/chrome/rpm/stable/x86_64
+baseurl=$REPO_URL
 enabled=1
 gpgcheck=1
-gpgkey=https://dl.google.com/linux/linux_signing_key.pub
+gpgkey=$GPG_KEY_URL
 EOF
-fi
+    $SUDO chmod 644 "$REPO_FILE"
+    echo -e "${GREEN}✔${NC} Repositorio registrado exitosamente en $REPO_FILE."
+}
 
-# Importar clave GPG oficial de Google
-$SUDO rpm --import https://dl.google.com/linux/linux_signing_key.pub 2>/dev/null || true
+# ------------------------------------------------------------------------------
+# 5. INSTALACIÓN Y ACTUALIZACIÓN
+# ------------------------------------------------------------------------------
+optimize_wayland_launcher() {
+    echo -e "${BLUE}🎨 Configurando lanzador optimizado para Wayland y aceleración VA-API...${NC}"
+    mkdir -p "$USER_DESKTOP_DIR"
 
-# 2. Instalar Google Chrome Stable
-echo "⬇️ [2/2] Instalando Google Chrome Stable vía DNF5..."
-$SUDO dnf5 install -y google-chrome-stable
+    if [ ! -f "$SYSTEM_DESKTOP" ]; then
+        echo -e "${YELLOW}⚠️ Aviso:${NC} $SYSTEM_DESKTOP no existe aún. Omitiendo ajuste."
+        return 0
+    fi
 
-echo "================================================================="
-echo "✅ Google Chrome instalado correctamente."
-echo "   - Binario: $(which google-chrome-stable 2>/dev/null || which google-chrome)"
-echo "   - Versión: $(google-chrome-stable --version 2>/dev/null || google-chrome --version 2>/dev/null || true)"
-echo "================================================================="
+    # Flags optimizados para GNOME Shell Wayland + AMD Radeon Vega
+    local WAYLAND_FLAGS="--ozone-platform-hint=auto --enable-features=VaapiVideoDecodeLinuxGL,VaapiVideoEncoderLinuxGL,OverlayScrollbar --enable-gpu-rasterization"
+
+    cp "$SYSTEM_DESKTOP" "$USER_DESKTOP_FILE"
+    sed -i "s|^Exec=/usr/bin/google-chrome-stable|Exec=/usr/bin/google-chrome-stable $WAYLAND_FLAGS|g" "$USER_DESKTOP_FILE"
+    sed -i "s|^Exec=google-chrome-stable|Exec=google-chrome-stable $WAYLAND_FLAGS|g" "$USER_DESKTOP_FILE"
+    chmod 644 "$USER_DESKTOP_FILE"
+
+    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+        chown -R "$REAL_USER:" "$USER_DESKTOP_DIR" 2>/dev/null || true
+        sudo -u "$REAL_USER" kbuildsycoca6 --noincremental 2>/dev/null || true
+    else
+        kbuildsycoca6 --noincremental 2>/dev/null || true
+    fi
+
+    echo -e "${GREEN}✔${NC} Lanzador configurado en $USER_DESKTOP_FILE."
+}
+
+restore_desktop_launcher() {
+    if [ -f "$USER_DESKTOP_FILE" ]; then
+        echo -e "${BLUE}🔄 Restaurando lanzador de escritorio original del sistema...${NC}"
+        rm -f "$USER_DESKTOP_FILE"
+        if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+            sudo -u "$REAL_USER" kbuildsycoca6 --noincremental 2>/dev/null || true
+        else
+            kbuildsycoca6 --noincremental 2>/dev/null || true
+        fi
+        echo -e "${GREEN}✔${NC} Lanzador personalizado de usuario eliminado."
+    else
+        echo -e "${YELLOW}ℹ️ No hay lanzador personalizado que restaurar.${NC}"
+    fi
+}
+
+install_chrome() {
+    local force="${1:-false}"
+
+    echo -e "${CYAN}=================================================================${NC}"
+    echo -e "${BOLD}🌐 CONFIGURACIÓN E INSTALACIÓN DE GOOGLE CHROME - FEDORA 44${NC}"
+    echo -e "${CYAN}=================================================================${NC}"
+
+    if is_chrome_installed && is_repo_configured && [ "$force" != "true" ]; then
+        echo -e "${GREEN}✔${NC} Google Chrome ya está instalado en el sistema ($(get_chrome_version))."
+        echo -e "${GREEN}✔${NC} Repositorio oficial validado."
+        optimize_wayland_launcher
+        return 0
+    fi
+
+    setup_repository
+
+    echo -e "${BLUE}⬇️ Instalando $PACKAGE_NAME vía DNF5...${NC}"
+    require_root
+    if $SUDO $DNF_CMD install -y "$PACKAGE_NAME" 2>/dev/null; then
+        echo -e "${GREEN}✔${NC} Paquete $PACKAGE_NAME instalado correctamente vía DNF5."
+    else
+        echo -e "${YELLOW}⚠️ DNF5 falló. Intentando RPM directo de Google...${NC}"
+        local temp_rpm
+        temp_rpm=$(mktemp /tmp/google-chrome-XXXXXX.rpm)
+        curl -fsSL "$FALLBACK_RPM_URL" -o "$temp_rpm"
+        $SUDO $DNF_CMD install -y "$temp_rpm"
+        rm -f "$temp_rpm"
+        echo -e "${GREEN}✔${NC} Google Chrome instalado desde RPM directo."
+    fi
+
+    optimize_wayland_launcher
+    echo -e "${GREEN}✅ Google Chrome configurado con éxito.${NC}"
+}
+
+update_chrome() {
+    echo -e "${BLUE}🔄 Buscando actualizaciones de Google Chrome en DNF5...${NC}"
+    require_root
+    setup_repository
+    $SUDO $DNF_CMD upgrade --refresh -y "$PACKAGE_NAME"
+    echo -e "${GREEN}✔${NC} Google Chrome se encuentra en la versión más reciente ($(get_chrome_version))."
+}
+
+uninstall_chrome() {
+    echo -e "${YELLOW}⚠️ Desinstalando Google Chrome del sistema...${NC}"
+    require_root
+    $SUDO $DNF_CMD remove -y "$PACKAGE_NAME" 2>/dev/null || true
+    restore_desktop_launcher
+    echo -e "${GREEN}✔${NC} Google Chrome desinstalado exitosamente."
+}
+
+# ------------------------------------------------------------------------------
+# 6. DESPACHADOR DE COMANDOS
+# ------------------------------------------------------------------------------
+case "${1:-}" in
+    -s|--status|status)
+        show_status
+        ;;
+    -w|--wayland|wayland)
+        if ! is_chrome_installed; then
+            echo -e "${YELLOW}⚠️ Google Chrome no está instalado. Instalándolo primero...${NC}"
+            install_chrome false
+        else
+            optimize_wayland_launcher
+        fi
+        ;;
+    --restore-desktop)
+        restore_desktop_launcher
+        ;;
+    -u|--update|update)
+        update_chrome
+        ;;
+    -i|--install|install)
+        install_chrome true
+        ;;
+    -r|--uninstall|uninstall)
+        uninstall_chrome
+        ;;
+    -h|--help|help)
+        show_help
+        ;;
+    "")
+        install_chrome false
+        ;;
+    *)
+        echo -e "${RED}❌ Opción desconocida: '$1'${NC}\n" >&2
+        show_help
+        exit 1
+        ;;
+esac

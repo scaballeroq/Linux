@@ -13,6 +13,12 @@
 
 set -euo pipefail
 
+if command -v dnf5 &>/dev/null; then
+    DNF_CMD="dnf5"
+else
+    DNF_CMD="dnf"
+fi
+
 if [ "$EUID" -ne 0 ]; then
     if ! command -v sudo &> /dev/null; then
         echo "❌ Error: 'sudo' no está disponible. Ejecuta este script como root o instala sudo."
@@ -79,9 +85,9 @@ show_status() {
     
     if command -v firewall-cmd &>/dev/null && systemctl is-active firewalld &>/dev/null; then
         local FW_STATUS="No"
-        if firewall-cmd --list-services 2>/dev/null | grep -qw "cockpit"; then
+        if timeout 1 firewall-cmd --list-services 2>/dev/null | grep -qw "cockpit"; then
             FW_STATUS="Habilitado (Zona activa)"
-        elif firewall-cmd --zone=FedoraWorkstation --list-services 2>/dev/null | grep -qw "cockpit"; then
+        elif timeout 1 firewall-cmd --zone=FedoraWorkstation --list-services 2>/dev/null | grep -qw "cockpit"; then
             FW_STATUS="Habilitado (FedoraWorkstation)"
         fi
         echo "• Regla en Firewalld:  $FW_STATUS"
@@ -98,7 +104,7 @@ show_status() {
 # 2. Instalación de paquetes de Cockpit y módulos avanzados
 install_cockpit() {
     echo "📦 [1/3] Instalando Cockpit y módulos avanzados vía DNF5..."
-    $SUDO dnf5 install -y \
+    $SUDO $DNF_CMD install -y \
         cockpit \
         cockpit-bridge \
         cockpit-system \
@@ -109,7 +115,7 @@ install_cockpit() {
         cockpit-networkmanager \
         cockpit-selinux \
         cockpit-files \
-        cockpit-sosreport 2>/dev/null || $SUDO dnf5 install -y cockpit cockpit-podman cockpit-machines cockpit-storaged
+        cockpit-sosreport 2>/dev/null || $SUDO $DNF_CMD install -y cockpit cockpit-podman cockpit-machines cockpit-storaged
     echo "✅ Paquetes y módulos de Cockpit instalados con éxito."
 }
 

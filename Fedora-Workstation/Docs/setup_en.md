@@ -251,3 +251,46 @@ Prepares the system for native Linux gaming and Proton/Wine via Steam:
 - **Google Chrome**: Run `./Setup/chrome.sh --status` or `google-chrome --version`.
 - **Steam**: Run `./Setup/steam.sh --status` or `steam`.
 
+
+---
+
+## 11. Decoupled Flatpak Software Catalog (`flatpak.sh`)
+
+Manages sandboxed desktop applications without cluttering base system packages:
+- Official Flathub repository configured system-wide.
+- Curated catalog: Flatseal, Podman Desktop, Warehouse, VLC, OBS Studio, LocalSend, etc.
+- CLI options: `--status`, `--update`, `--clean`, `--all`, `--core`, `--multimedia`.
+
+---
+
+## 12. Mobile Integration with GSConnect (`gsconnect.sh`)
+
+Native KDE Connect implementation for GNOME Shell:
+- Automated Firewalld configuration opening ports 1714-1764 TCP/UDP and mDNS 5353 UDP.
+- Syncs notifications, clipboard, SMS, and enables SFTP browsing via `fuse-sshfs`.
+- CLI options: `--status`, `--devices`, `--connect <IP>`, `--firewall`.
+
+---
+
+## 13. Fingerprint Biometrics (`fingerprint-setup.sh`)
+
+Enables biometric authentication across GDM, GNOME Shell lockscreen, terminal (`sudo`), and Polkit:
+- Native PAM integration via `authselect enable-feature with-fingerprint`.
+- Compatible with USB sensors (Synaptics, Elan, Goodix).
+- CLI options: `--status`, `--enroll [FINGER]`, `--verify`, `--delete`.
+
+---
+
+## 14. HP LaserJet Printers (`hp-printer-setup.sh`)
+
+Complete support for monochrome and multifunction HP printers (LaserJet Pro M15w / M14 / M17):
+- Configures CUPS, Avahi, HPLIP, and proprietary binary plugin (`hp-plugin`).
+- Firewall rules for IPP and IPP-client.
+- CLI options: `--status`, `--plugin`, `--wifi`, `--usb`.
+
+---
+
+## 15. Appearance, Themes and Ptyxis (`apariencia.sh` and `ptyxis.sh`)
+
+- `apariencia.sh`: GTK themes (Adwaita / Adw-gtk3), icon sets (Papirus), and modern cursors (Bibata).
+- `ptyxis.sh`: Container-aware GNOME terminal styling with dark mode, 85% opacity, and minimal hidden scrollbars.

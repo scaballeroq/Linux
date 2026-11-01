@@ -1,5 +1,7 @@
 [Unit]
-Description=__PROJECT__ Project Target
+Description=Proyecto __PROJECT__
+After=__PROJECT__.network
+Wants=__PROJECT__-backend.service __PROJECT__-frontend.service __PROJECT__-postgres.service __PROJECT__-traefik.service __PROJECT__-keycloak.service
 
 [Install]
 WantedBy=default.target

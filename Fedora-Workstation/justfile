@@ -1,17 +1,19 @@
-# Fedora 44 Environment Configuration Justfile
-# (Fedora 44 Workstation + GNOME)
+# =============================================================================
+# Fedora Workstation Environment Configuration Justfile
+# (Fedora Workstation + GNOME Shell Wayland)
+# =============================================================================
 
 # Instala todo el entorno por defecto (Auto-detección de CPU / Portátil AMD)
-setup-all: post-install multimedia mpv chrome steam laptop tuning gnome-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
-    @echo "🚀 Entorno completo de Fedora 44 Workstation (GNOME) configurado. Por favor, reinicia el sistema."
+setup-all: post-install multimedia flatpak chrome steam laptop tuning gnome-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+    @echo "🚀 Entorno completo de Fedora Workstation (GNOME Shell Wayland) configurado. Por favor, reinicia el sistema."
 
 # Perfil completo para Portátil de desarrollo (AMD Ryzen + Virtualización + Contenedores)
-setup-laptop-amd: post-install-amd multimedia mpv chrome steam laptop tuning gnome-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
-    @echo "🚀 Entorno Portátil AMD Ryzen (GNOME) configurado con éxito. Por favor, reinicia el sistema."
+setup-laptop-amd: post-install-amd multimedia flatpak chrome steam laptop tuning gnome-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
+    @echo "🚀 Entorno Portátil AMD Ryzen (GNOME Shell) configurado con éxito. Por favor, reinicia el sistema."
 
-# Perfil para Sobremesa (Intel Core - Sin virtualización ni batería)
-setup-media-desktop: post-install-intel multimedia mpv chrome tuning gnome-setup shell security fonts fastfetch kitty yt-dlp
-    @echo "🚀 Entorno Sobremesa Intel (GNOME) configurado con éxito. Por favor, reinicia el sistema."
+# Perfil para Sobremesa Centro Multimedia (Intel Core / Media Center - Sin virtualización ni batería)
+setup-media-desktop: post-install-intel multimedia chrome tuning gnome-setup shell security fonts fastfetch kitty yt-dlp kodi
+    @echo "🚀 Entorno Sobremesa Intel (GNOME Shell) configurado con éxito. Por favor, reinicia el sistema."
 
 # =============================================================================
 # CONFIGURACIÓN BASE DEL SISTEMA
@@ -21,31 +23,79 @@ setup-media-desktop: post-install-intel multimedia mpv chrome tuning gnome-setup
 post-install:
     ./Setup/post-install.sh
 
-# Configuración post-instalación para AMD Ryzen (Kernel, firmware-amd, RADV, Mesa, PipeWire, GNOME)
+# Configuración post-instalación para AMD Ryzen (Kernel, Mesa RADV, VA-API freeworld, PipeWire, Flatpak, GNOME Shell, ZRAM)
 post-install-amd:
     ./Setup/post-install-amd.sh
 
-# Configuración post-instalación para Intel Core (Kernel, microcódigo Intel, VA-API Intel, PipeWire, GNOME)
+# Configuración post-instalación para Intel Haswell/Core (Microcódigo Intel, VA-API Intel, Kodi, PipeWire, GNOME Shell)
 post-install-intel:
     ./Setup/post-install-intel.sh
 
-# Optimización para portátiles de desarrollo (Touchpad, Batería, Bluetooth, persistencia de brillo al 95%)
+# Optimización para portátiles de desarrollo (tuned-ppd, Bluetooth FastConnectable, cierre de tapa con multimonitor, Touchpad Wayland y Mutter VRR)
 laptop:
     ./Setup/laptop-setup.sh
 
-# Personalización y configuración de GNOME (Modo oscuro, gsettings, Mutter VRR, Nautilus, atajos)
+# Estado y diagnóstico del hardware del portátil
+laptop-status:
+    ./Setup/laptop-setup.sh --status
+
+# Autenticación y desbloqueo por huella dactilar (fprintd, authselect PAM)
+fingerprint *args:
+    ./Setup/fingerprint-setup.sh {{args}}
+
+# Estado y diagnóstico de la autenticación por huella dactilar
+fingerprint-status:
+    ./Setup/fingerprint-setup.sh --status
+
+# Registrar huella dactilar en la terminal (sensor biométrico)
+fingerprint-enroll *finger:
+    ./Setup/fingerprint-setup.sh --enroll {{finger}}
+
+# Probar verificación biométrica en el lector
+fingerprint-verify:
+    ./Setup/fingerprint-setup.sh --verify
+
+# Configuración de impresoras HP (CUPS, HPLIP, plugin propietario para LaserJet M15w)
+printer:
+    ./Setup/hp-printer-setup.sh
+
+# Estado del sistema de impresión HP
+printer-status:
+    ./Setup/hp-printer-setup.sh --status
+
+# Personalización y configuración de GNOME Shell (Modo oscuro, botones de ventana, scripts de Nautilus, atajos)
 gnome-setup:
     ./Setup/gnome-settings.sh
 
-# Extensiones de GNOME Shell desde repositorios oficiales y extensions.gnome.org (Dash to Dock, AppIndicator, Blur, etc.)
-gnome-extensions:
-    ./Setup/gnome-extensions.sh
+# Aplicar tema oscuro completo en GNOME Shell (prefer-dark + adw-gtk3-dark)
+gnome-theme-dark:
+    ./Setup/gnome-settings.sh --dark
 
-# Estado de las extensiones de GNOME Shell
+# Aplicar tema claro completo en GNOME Shell (prefer-light)
+gnome-theme-light:
+    ./Setup/gnome-settings.sh --light
+
+# Diagnóstico y estado de la configuración de GNOME Shell
+gnome-status:
+    ./Setup/gnome-settings.sh --status
+
+# Gestión e inspección de extensiones de GNOME Shell
+gnome-extensions *args:
+    ./Setup/gnome-extensions.sh {{args}}
+
+# Diagnóstico del estado de extensiones de GNOME Shell
 gnome-extensions-status:
     ./Setup/gnome-extensions.sh --status
 
-# Optimizaciones avanzadas de rendimiento (Sysctl, límites, Systemd, Tracker 3, Distrobox para Fedora 44 + GNOME)
+# Gestión de apariencia, temas de iconos (Papirus/Adwaita) y cursores (Bibata)
+apariencia *args:
+    ./Setup/apariencia.sh {{args}}
+
+# Diagnóstico del estado de apariencia y temas
+apariencia-status:
+    ./Setup/apariencia.sh --status
+
+# Optimizaciones avanzadas de rendimiento (Sysctl, límites, inotify 1M, max_map_count 16M, TCP BBR, ZRAM, exclusiones Tracker)
 tuning:
     ./Setup/fedora-tuning.sh
 
@@ -53,63 +103,139 @@ tuning:
 tuning-status:
     ./Setup/fedora-tuning.sh --status
 
-# Utilidades de terminal modernas (eza, bat, fzf, zoxide, ripgrep)
+# Utilidades de terminal modernas (eza, bat, fzf, zoxide, ripgrep, fd, duf, dust, btop)
 shell:
     ./Setup/shell.sh
 
-# Starship Prompt opcional (Instalar / Activar)
+# Diagnóstico y estado de utilidades CLI de terminal (eza, bat, fzf, zoxide, ripgrep...)
+shell-status:
+    ./Setup/shell.sh --status
+
+# Starship Prompt moderno (Instalar / Activar)
 starship:
-    ./Setup/starship.sh
+    ./Setup/starship.sh --enable
 
 # Desactivar Starship y restaurar prompt nativo
 starship-disable:
     ./Setup/starship.sh --disable
 
-# Seguridad y cortafuegos (Firewalld zona FedoraWorkstation / GSConnect, DNS-over-TLS, MAC Randomization, Sysctl)
+# Estado de Starship prompt
+starship-status:
+    ./Setup/starship.sh --status
+
+# Seguridad y cortafuegos obligatorio (Firewalld con servicios gsconnect/kdeconnect, mdns, ssh, KVM virbr0, Podman rootless, Sysctl)
 security:
     ./Setup/seguridad.sh
 
-# Fuentes de desarrollo (Nerd Fonts: JetBrainsMono, FiraCode, CascadiaCode...)
+# Estado y diagnóstico de seguridad, cortafuegos Firewalld y sysctl
+security-status:
+    ./Setup/seguridad.sh --status
+
+# Integración de GSConnect (KDE Connect para GNOME) y reglas de Firewalld (1714-1764 TCP/UDP)
+gsconnect *args:
+    ./Setup/gsconnect.sh {{args}}
+
+# Estado y diagnóstico de GSConnect, reglas de red y dispositivos emparejados
+gsconnect-status:
+    ./Setup/gsconnect.sh --status
+
+# Fuentes de desarrollo (Nerd Fonts: JetBrainsMono, FiraCode, CascadiaCode, Meslo, Hack)
 fonts:
     ./Setup/fonts.sh
 
-# Información estética del sistema (Fastfetch)
-fastfetch:
-    ./Setup/fastfetch.sh
+# Estado y diagnóstico de fuentes de desarrollo (Nerd Fonts)
+fonts-status:
+    ./Setup/fonts.sh --status
 
-# Terminal Kitty acelerada por GPU con tema oscuro Catppuccin Mocha y opacidad/blur
+# Información estética del sistema (Fastfetch)
+fastfetch *args:
+    ./Setup/fastfetch.sh {{args}}
+
+# Estado y diagnóstico de la configuración de Fastfetch
+fastfetch-status:
+    ./Setup/fastfetch.sh --status
+
+# Terminal Kitty acelerada por GPU con tema Catppuccin Mocha, opacidad/blur y atajo Ctrl+Alt+T
 kitty:
     ./Setup/kitty.sh
 
-# Multimedia (yt-dlp stack, FFmpeg, AtomicParsley, aria2, motor JS Deno)
-yt-dlp:
-    ./Setup/yt-dlp-setup.sh
+# Estado y diagnóstico de Kitty Terminal
+kitty-status:
+    ./Setup/kitty.sh --status
 
-# Codecs multimedia completos, FFmpeg completo y drivers privativos (RPM Fusion Free/Nonfree/Tainted)
+# Multimedia (yt-dlp stack, FFmpeg, aria2, motor JS Deno vía Mise)
+yt-dlp *args:
+    ./Setup/yt-dlp-setup.sh {{args}}
+
+# Diagnóstico y estado de yt-dlp y herramientas multimedia
+yt-dlp-status:
+    ./Setup/yt-dlp-setup.sh --status
+
+# Limpieza de caché residual de yt-dlp
+yt-dlp-clean-cache:
+    ./Setup/yt-dlp-setup.sh --clean-cache
+
+# Suite multimedia completa (RPM Fusion Free/Nonfree/Tainted, FFmpeg completo, GStreamer, VA-API freeworld, Celluloid, MPV, VLC)
 multimedia:
     ./Setup/multimedia.sh
 
-# Reproductor MPV con aceleración gráfica por hardware (VA-API), Wayland y mapeo de tonos HDR
-mpv:
-    ./Setup/mpv.sh
+# Estado de repositorios multimedia, códecs y aceleración VA-API
+multimedia-status:
+    ./Setup/multimedia.sh --status
 
-# Diagnóstico y estado del reproductor MPV y aceleración VA-API
-mpv-status:
-    ./Setup/mpv.sh --status
+# Aplicaciones y herramientas desacopladas vía Flatpak (Flatseal, Podman Desktop, Warehouse, VLC...)
+flatpak *args:
+    ./Setup/flatpak.sh {{args}}
 
-# Navegador Google Chrome oficial
-chrome:
-    ./Setup/chrome.sh
+# Diagnóstico y estado de Flatpak, repositorio Flathub y aplicaciones instaladas
+flatpak-status:
+    ./Setup/flatpak.sh --status
 
-# Steam nativo, GameMode, MangoHud y drivers Vulkan 32-bit (RPM Fusion Non-Free)
+# Actualizar todas las aplicaciones y runtimes de Flatpak
+flatpak-update:
+    ./Setup/flatpak.sh --update
+
+# Limpiar runtimes huérfanos y dependencias no utilizadas de Flatpak
+flatpak-clean:
+    ./Setup/flatpak.sh --clean
+
+# Navegador Google Chrome oficial (Instalación, actualización u optimización Wayland)
+chrome *args:
+    ./Setup/chrome.sh {{args}}
+
+# Diagnóstico y estado de Google Chrome, repositorio oficial y Wayland
+chrome-status:
+    ./Setup/chrome.sh --status
+
+# Navegador Mozilla Firefox nativo con aceleración por hardware
+firefox:
+    ./Setup/firefox.sh
+
+# Diagnóstico y estado de Mozilla Firefox
+firefox-status:
+    ./Setup/firefox.sh --status
+
+# Steam nativo (RPM Fusion Non-Free), GameMode, MangoHud y drivers Vulkan 32-bit (i686)
 steam:
     ./Setup/steam.sh
+
+# Diagnóstico y estado de Steam y herramientas de Gaming
+steam-status:
+    ./Setup/steam.sh --status
+
+# Centro Multimedia (Kodi + complementos de streaming)
+kodi:
+    command -v dnf5 &>/dev/null && sudo dnf5 install -y kodi kodi-inputstream-adaptive kodi-inputstream-rtmp || sudo dnf install -y kodi kodi-inputstream-adaptive kodi-inputstream-rtmp
+
+# Actualización completa del sistema Fedora vía DNF/DNF5
+update:
+    command -v dnf5 &>/dev/null && sudo dnf5 upgrade --refresh -y && sudo dnf5 autoremove -y && sudo dnf5 clean all || sudo dnf upgrade --refresh -y && sudo dnf autoremove -y && sudo dnf clean all
 
 # =============================================================================
 # CONFIGURACIÓN DE RED Y VIRTUALIZACIÓN
 # =============================================================================
 
-# Configuración de KVM/QEMU y Libvirt (Optimizado para distribuciones Linux y virt-manager)
+# Configuración de KVM/QEMU y Libvirt (Optimizado para GNOME Wayland y Virt-Manager)
 virtualization:
     ./Virtualizacion/virtualization.sh
 
@@ -117,9 +243,17 @@ virtualization:
 virtualization-status:
     ./Virtualizacion/virtualization.sh --status
 
-# Administración Web (Cockpit)
-cockpit:
-    ./Setup/cockpit.sh
+# Administración Web (Cockpit + Podman + Máquinas Virtuales)
+cockpit *args:
+    ./Setup/cockpit.sh {{args}}
+
+# Estado del servicio y módulos de Cockpit
+cockpit-status:
+    ./Setup/cockpit.sh --status
+
+# Abrir Cockpit en el navegador web (https://localhost:9090)
+cockpit-open:
+    ./Setup/cockpit.sh --open
 
 # =============================================================================
 # CONTROL DE VERSIONES
@@ -129,13 +263,21 @@ cockpit:
 git-setup:
     ./IDE/git.sh
 
+# Diagnóstico y estado del entorno Git y herramientas asociadas
+git-status:
+    ./IDE/git.sh --status
+
 # =============================================================================
 # GESTORES DE RUNTIMES
 # =============================================================================
 
-# Gestor de versiones Mise
-mise:
-    ./ProgrammingLanguages/mise.sh
+# Gestor de versiones Mise (Instalación, actualización u opciones)
+mise *args:
+    ./ProgrammingLanguages/mise.sh {{args}}
+
+# Diagnóstico y estado de Mise y runtimes de desarrollo
+mise-status:
+    ./ProgrammingLanguages/mise.sh --status
 
 # =============================================================================
 # LENGUAJES DE PROGRAMACIÓN
@@ -149,9 +291,13 @@ languages: mise node python rust dotnet java angular
 node:
     ./ProgrammingLanguages/nodejs.sh
 
-# Python
+# Python con UV package manager
 python:
     ./ProgrammingLanguages/python.sh
+
+# Inicializador de proyectos Python con UV
+python-uv:
+    ./ProgrammingLanguages/python-uv-init.sh
 
 # Rust
 rust:
@@ -159,7 +305,7 @@ rust:
 
 # .NET SDK
 dotnet:
-    ./ProgrammingLanguages/dotnet.sh
+    ./ProgrammingLanguages/Revisar/dotnet.sh
 
 # Java (OpenJDK)
 java:
@@ -167,7 +313,7 @@ java:
 
 # Angular CLI
 angular:
-    ./ProgrammingLanguages/angular.sh
+    ./ProgrammingLanguages/Revisar/angular.sh
 
 # =============================================================================
 # ENTORNOS DE DESARROLLO (IDEs)
@@ -181,17 +327,33 @@ ides: antigravity antigravity-cli antigravity-ide opencode
 antigravity:
     ./IDE/antigravity.sh
 
+# Estado de Google Antigravity Desktop
+antigravity-status:
+    ./IDE/antigravity.sh --status
+
 # Google Antigravity CLI
 antigravity-cli:
     ./IDE/antigravity-cli.sh
+
+# Estado de Google Antigravity CLI
+antigravity-cli-status:
+    ./IDE/antigravity-cli.sh --status
 
 # Google Antigravity IDE Engine
 antigravity-ide:
     ./IDE/antigravity-ide.sh
 
+# Estado de Google Antigravity IDE Engine
+antigravity-ide-status:
+    ./IDE/antigravity-ide.sh --status
+
 # OpenCode AI CLI/Editor
 opencode:
     ./IDE/opencode.sh
+
+# Estado de OpenCode AI CLI
+opencode-status:
+    ./IDE/opencode.sh --status
 
 # =============================================================================
 # PODMAN Y CONTENEDORES QUADLETS
@@ -213,3 +375,4 @@ podman-quadlets:
 podman-status:
     ./Podman/install/podman-install.sh --status
     ./Podman/lib/podman-utils.sh doctor
+
