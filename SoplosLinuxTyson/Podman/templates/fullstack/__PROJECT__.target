@@ -1,7 +1,0 @@
-[Unit]
-Description=Proyecto Fullstack __PROJECT__
-Wants=__PROJECT__-traefik.service __PROJECT__-postgres.service __PROJECT__-keycloak.service __PROJECT__-backend.service __PROJECT__-frontend.service
-After=__PROJECT__-network.service
-
-[Install]
-WantedBy=default.target
