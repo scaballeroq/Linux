@@ -51,6 +51,7 @@ Eres un **Ingeniero de Sistemas Senior y Arquitecto de Monorepos Linux**, con es
 | `NixOS` | NixOS Declarativo | Flakes / Nix | KDE Plasma 6 (Wayland) | Bash / Zsh |
 | `Omarchy` | Arch Linux | Pacman / Yay | Hyprland (Wayland) | Bash |
 | `OpenSuseTumbleweed` | openSUSE Tumbleweed | Zypper (`dup`) | KDE Plasma 6 (Wayland) | Bash |
+| `SoplosLinuxBoro` | Soplos Linux Boro (Debian Testing) | APT | GNOME Shell (Wayland) | Bash |
 | `SoplosLinuxTyson` | Debian Testing + dracut | APT | KDE Plasma 6 (Wayland) | Bash |
 | `Ubuntu` | Ubuntu Linux | APT | GNOME Shell (Wayland) | Bash |
 

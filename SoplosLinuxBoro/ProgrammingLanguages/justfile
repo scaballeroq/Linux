@@ -1,0 +1,37 @@
+# ProgrammingLanguages Sub-Justfile - Soplos Linux Boro Workstation
+
+# Instalar todos los lenguajes y runtimes
+languages: mise node python rust dotnet java angular
+    @echo "✅ Todos los lenguajes han sido instalados correctamente."
+
+# Gestor de versiones Mise
+mise:
+    ./mise.sh
+
+# Node.js LTS & pnpm vía Mise
+node:
+    ./nodejs.sh
+
+# Python con UV package manager
+python:
+    ./python.sh
+
+# Inicializador de proyectos Python con UV
+python-uv *args:
+    ./python-uv-init.sh {{args}}
+
+# Rust toolchain
+rust:
+    ./Revisar/rust.sh
+
+# .NET SDK
+dotnet:
+    ./Revisar/dotnet.sh
+
+# OpenJDK Java LTS
+java:
+    ./java.sh
+
+# Angular CLI
+angular:
+    ./Revisar/angular.sh
