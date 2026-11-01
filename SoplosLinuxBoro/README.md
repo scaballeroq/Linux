@@ -40,7 +40,7 @@ Scripts de configuración del sistema operativo, personalización de GNOME Shell
 - **`laptop-setup.sh`**: Optimización para portátiles de desarrollo (power-profiles-daemon, Bluetooth FastConnectable, cierre de tapa inteligente con multimonitor, Touchpad Wayland gestures y Mutter VRR, `--status`).
 - **`fingerprint-setup.sh`**: Autenticación y desbloqueo biométrico (fprintd + PAM, sensor Synaptics, `--status`, `--enroll`, `--verify`, `--disable`).
 - **`hp-printer-setup.sh`**: Pila de impresión para impresoras HP (CUPS, HPLIP, plugin propietario para LaserJet M15w, Firewalld USB/Wi-Fi, `--status`).
-- **`gnome-settings.sh`**: Configuración de GNOME Shell (Modo oscuro Adwaita-dark, botones minimizar/maximizar, scripts de Nautilus para Kitty/Antigravity/VS Code, Night Light a 4000K, reloj 24h, `--status`, `--dark`, `--light`).
+- **`gnome-settings.sh`**: Configuración de GNOME Shell (Modo oscuro Adwaita-dark, botones minimizar/maximizar, scripts de Nautilus para Ghostty/Antigravity/VS Code, Night Light a 4000K, reloj 24h, `--status`, `--dark`, `--light`).
 - **`gnome-extensions.sh`**: Instalación y configuración de extensiones GNOME (GSConnect, Dash to Dock, AppIndicator, Blur my Shell, Tiling Shell, `--status`).
 - **`gsconnect.sh`**: Integración nativa de GSConnect (KDE Connect para GNOME con cero librerías KDE/Qt) y reglas de Firewalld (1714-1764 TCP/UDP, `--status`, `--setup-firewall`, `--daemon`).
 - **`soplos-tuning.sh`**: Ajustes de Kernel (`sysctl` inotify 1M, max_map_count 16M, TCP BBR, ZRAM), límites del sistema (`limits.d`), exclusiones de GNOME Tracker Miner en directorios pesados (`~/Workspace`, `node_modules`, `.git`, `.venv`, `.cargo`) y compresión ZRAM (`--status`, `--sysctl`, `--limits`, `--tracker`, `--zram`).
@@ -48,8 +48,6 @@ Scripts de configuración del sistema operativo, personalización de GNOME Shell
 - **`cockpit.sh`**: Consola web Cockpit y gestión de servidores (Podman, KVM, almacenamiento, Firewalld exclusivo, `--status`, `--open`, `--start`, `--stop`, `--disable`).
 - **`fastfetch.sh`**: Resumen estético del sistema con soporte de temas (`soplos` oficial Ruby, `compact` FastCat, `--status`, `--theme`, `--diff`, `--force`).
 - **`fonts.sh`**: Instalación automatizada y diagnóstico de fuentes de desarrollo (JetBrainsMono, FiraCode, CascadiaCode, Meslo y Hack Nerd Fonts, `--status`, `--list`, `--clean`).
-- **`kitty.sh`**: Terminal Kitty acelerada por GPU con opacidad 75%, blur 32, tema Catppuccin Mocha, atajo Ctrl+Alt+T e integración en menú contextual de Nautilus (`--status`).
-- **`ptyxis.sh`**: Terminal moderna Ptyxis con transparencia y modo oscuro.
 - **`seguridad.sh`**: Seguridad de red con cortafuegos nativo UFW / GUI GUFW (servicios GSConnect, mDNS, SSH, KVM virbr0 y sysctl para Podman Rootless).
 - **`shell.sh`**: Herramientas modernas de terminal (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`, `dust`, `btop`, `jq`) y sincronización modular.
 - **`starship.sh` & `starship.toml`**: Prompt Starship moderno con configuración modular (`--enable`, `--disable`, `--status`).

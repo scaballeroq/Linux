@@ -23,9 +23,9 @@ just post-install
 
 ---
 
-## 2. Terminal Environment & Shell (`shell.sh`, `fastfetch.sh`, `fonts.sh`, and `kitty.sh`)
+## 2. Terminal Environment & Shell (`shell.sh`, `fastfetch.sh`, and `fonts.sh`)
 
-Installs modern console utilities, developer typefaces, Starship prompt, and the GPU-accelerated Kitty terminal emulator.
+Installs modern console utilities, developer typefaces, Starship prompt, and optimizes the workflow for the native Ghostty terminal.
 
 ### Modern Terminal Utilities
 - `eza` (modern `ls` replacement with git integration and glyphs)
@@ -38,13 +38,12 @@ Installs modern console utilities, developer typefaces, Starship prompt, and the
 - `procs` (modern `ps` replacement)
 - `btop` (resource monitor)
 
-### Kitty Terminal (GPU-Accelerated)
-Configured with:
-- 75% background opacity and background blur (*blur 32*) accelerated by Mesa RADV GPU.
-- Catppuccin Mocha color scheme (#181825).
-- JetBrainsMono Nerd Font.
+### Ghostty Terminal (Native in Soplos Linux Boro)
+Ghostty comes preinstalled and configured out of the box with:
+- 85% background opacity with background blur accelerated via Wayland / Mutter.
+- Native GNOME Shell / Libadwaita integration.
 - Global `Ctrl+Alt+T` keybinding in GNOME Shell.
-- Nautilus context menu script ("Open in Kitty").
+- Nautilus context menu script ("Open in Ghostty").
 
 ### Developer Fonts (Nerd Fonts)
 Automated installation of:
@@ -57,10 +56,10 @@ Aesthetic hardware and system banner supporting official Soplos Linux Boro theme
 
 ## 3. GNOME Shell Desktop & GSConnect (`gnome-settings.sh` & `gsconnect.sh`)
 
-- **Dark Mode**: Enforces `prefer-dark` and `Yaru-dark` theme.
+- **Dark Mode**: Enforces `prefer-dark` and system dark theme.
 - **Night Light**: Warm 4000K color temperature for eye comfort.
 - **Window Controls**: Visible minimize and maximize buttons.
-- **Nautilus Scripts**: Right-click context actions for Kitty, Google Antigravity, and VS Code.
+- **Nautilus Scripts**: Right-click context actions for Ghostty, Google Antigravity, and VS Code.
 - **GSConnect**: Native GNOME KDE Connect daemon with zero KDE/Qt dependencies, integrated into Firewalld (ports 1714-1764 TCP/UDP).
 - **Extensions**: Support for Dash to Dock, AppIndicator, Blur my Shell, and Tiling Shell.
 
@@ -83,7 +82,7 @@ just gnome-setup         # Configure GNOME desktop
 just gnome-extensions    # Install and activate extensions
 just gsconnect           # Configure GSConnect and Firewalld
 just shell               # Install modern CLI tools
-just kitty               # Configure Kitty terminal
+just ghostty-status      # Ghostty terminal diagnostics
 just fonts               # Install Nerd Fonts
 just fastfetch           # Configure Fastfetch banner
 just flatpak             # Install Flatpak applications

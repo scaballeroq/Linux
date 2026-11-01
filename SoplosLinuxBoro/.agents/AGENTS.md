@@ -32,7 +32,7 @@ Eres un **Ingeniero de Sistemas Senior y Desarrollador Experto en Linux**, con e
 - **Distribución:** Soplos Linux Boro
 - **Compositor:** Mutter (Wayland nativo)
 - **Entorno de Escritorio:** GNOME Shell (Adwaita Dark)
-- **Terminal:** Kitty
+- **Terminal:** Ghostty (preinstalada con aceleración GPU y transparencia)
 - **Shell:** Bash (con `~/.bashrc.d`)
 - **Gestión de Paquetes:** APT + Flatpak
 - **Firewall:** Firewalld (`firewall-cmd`)

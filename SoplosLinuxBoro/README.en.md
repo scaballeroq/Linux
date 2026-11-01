@@ -40,15 +40,13 @@ System provisioning, GNOME Shell customization, and hardening:
 - **`laptop-setup.sh`**: Laptop optimizations (power-profiles-daemon, Bluetooth FastConnectable, smart multi-monitor lid switch handling, Wayland touchpad gestures, Mutter VRR, `--status`).
 - **`fingerprint-setup.sh`**: Biometric authentication (fprintd + PAM, Synaptics sensor, `--status`, `--enroll`, `--verify`, `--disable`).
 - **`hp-printer-setup.sh`**: HP printer stack (CUPS, HPLIP, proprietary plugin for LaserJet M15w, Firewalld rules, `--status`).
-- **`gnome-settings.sh`**: GNOME Shell configuration (Adwaita-dark theme, window button layout, Nautilus right-click scripts for Kitty/Antigravity/VS Code, 4000K Night Light, 24h clock, `--status`, `--dark`, `--light`).
+- **`gnome-settings.sh`**: GNOME Shell configuration (Adwaita-dark theme, window button layout, Nautilus right-click scripts for Ghostty/Antigravity/VS Code, 4000K Night Light, 24h clock, `--status`, `--dark`, `--light`).
 - **`gnome-extensions.sh`**: GNOME Shell extensions manager (`gnome-shell-extensions`, GSConnect, Dash to Dock, AppIndicator, Blur my Shell, Tiling Shell, `--status`).
 - **`gsconnect.sh`**: Native GSConnect integration (KDE Connect protocol for GNOME without KDE/Qt dependencies) and Firewalld rules (1714-1764 TCP/UDP, `--status`, `--setup-firewall`, `--daemon`).
 - **`soplos-tuning.sh`**: Kernel tuning (`sysctl` inotify 1M, max_map_count 16M, TCP BBR, ZRAM), system limits (`limits.d`), GNOME Tracker Miner exclusions on code directories (`~/Workspace`, `node_modules`, `.git`, `.venv`, `.cargo`), and ZRAM compression (`--status`, `--sysctl`, `--limits`, `--tracker`, `--zram`).
 - **`cockpit.sh`**: Web management console and modular dashboard (Podman, KVM VMs, storage, Firewalld exclusive, `--status`, `--open`, `--start`, `--stop`, `--disable`).
 - **`fastfetch.sh`**: System summary with theme support (Soplos Linux Boro official Ruby theme, FastCat `compact`, `--status`, `--theme`, `--diff`, `--force`).
 - **`fonts.sh`**: Automated installer and diagnostics for developer fonts (JetBrainsMono, FiraCode, CascadiaCode, Meslo, and Hack Nerd Fonts, `--status`, `--list`, `--clean`).
-- **`kitty.sh`**: GPU-accelerated Kitty terminal with 75% opacity, blur 32, Catppuccin Mocha theme, global Ctrl+Alt+T shortcut, and Nautilus integration (`--status`).
-- **`ptyxis.sh`**: Modern transparent Ptyxis terminal.
 - **`seguridad.sh`**: Network security with native UFW firewall / GUFW GUI (GSConnect, mDNS, SSH, KVM virbr0, and unprivileged port sysctl for rootless Podman).
 - **`shell.sh`**: Modern CLI utilities (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `duf`, `dust`, `btop`, `jq`) and modular shell syncing.
 - **`starship.sh` & `starship.toml`**: Modern Starship prompt with modular configuration (`--enable`, `--disable`, `--status`).
