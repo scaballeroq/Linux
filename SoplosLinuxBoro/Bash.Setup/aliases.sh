@@ -16,7 +16,7 @@ alias ....='cd ../../..'
 alias ~='cd ~'
 alias repo='cd ~/Workspace/Repositorios'
 alias workspace='cd ~/Workspace'
-alias deb='cd ~/Workspace/Repositorios/Linux/SoplosLinuxBoro'
+alias soplos='cd ~/Workspace/Repositorios/Linux/SoplosLinuxBoro'
 
 # -----------------------------------------------------------------------------
 # 2. LISTADO DE ARCHIVOS (MODERNO CON FALLBACK)
