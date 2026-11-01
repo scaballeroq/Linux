@@ -60,7 +60,7 @@
         {
             "type": "disk",
             "key": "  󰋊 Disk      ",
-            "format": "{size-percentage-bar} {size-used} / {size-total} ({size-percentage}) [{mountpoint}] - {filesystem}"
+            "format": "{size-percentage-bar} {size-used} / {size-total} ({size-percentage}) [{mountpoint:-14}] - {filesystem}"
         },
         {
             "type": "battery",
