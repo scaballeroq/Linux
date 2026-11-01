@@ -35,7 +35,7 @@ else
     SUDO=""
 fi
 
-export UV_LINK_MODE="copy"
+export UV_LINK_MODE="${UV_LINK_MODE:-hardlink}"
 export PYTHONUNBUFFERED=1
 
 export PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:/usr/bin:$PATH"
@@ -43,11 +43,11 @@ export PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:/usr/bin:$
 run_as_user() {
     if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
         sudo -u "$REAL_USER" env HOME="$USER_HOME" \
-            UV_LINK_MODE="copy" PYTHONUNBUFFERED=1 \
+            UV_LINK_MODE="$UV_LINK_MODE" PYTHONUNBUFFERED=1 \
             PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" "$@"
     else
-        UV_LINK_MODE="copy" PYTHONUNBUFFERED=1 \
-        PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" "$@"
+        env UV_LINK_MODE="$UV_LINK_MODE" PYTHONUNBUFFERED=1 \
+            PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" "$@"
     fi
 }
 
@@ -84,12 +84,12 @@ EOF
 
 show_status() {
     echo "================================================================="
-    echo "🔍 ESTADO DEL ENTORNO PYTHON (NATIVO UBUNTU + GESTOR UV)"
+    echo "🔍 ESTADO DEL ENTORNO PYTHON (NATIVO SOPLOS LINUX BORO + GESTOR UV)"
     echo "================================================================="
 
     local py_bin py_ver py_pkg venv_status pip_status mise_py uv_status uvx_status
 
-    py_bin=$(which python3 2>/dev/null || echo "No encontrado")
+    py_bin=$(command -v python3 2>/dev/null || echo "No encontrado")
     py_ver=$(python3 --version 2>/dev/null || echo "No disponible")
     py_pkg=$(dpkg -l "python3" 2>/dev/null | awk '/^ii/ {print $2, $3}' || echo "Paquete nativo")
 
@@ -113,15 +113,15 @@ show_status() {
         mise_py="✅ Ninguno (Intacto: /usr/bin/python3 protegido)"
     fi
 
-    if command -v uv &>/dev/null; then
+    if command -v uv &>/dev/null || [ -x "$USER_HOME/.local/bin/uv" ] || [ -x "$USER_HOME/.local/share/mise/shims/uv" ]; then
         local uv_v
-        uv_v=$(uv --version 2>/dev/null | awk '{print $2}')
+        uv_v=$(run_as_user uv --version 2>/dev/null | awk '{print $2}' || echo "Instalado")
         uv_status="✅ v$uv_v (Astral / Rust)"
     else
         uv_status="❌ No instalado"
     fi
 
-    if command -v uvx &>/dev/null; then
+    if command -v uvx &>/dev/null || [ -x "$USER_HOME/.local/bin/uvx" ] || [ -x "$USER_HOME/.local/share/mise/shims/uvx" ]; then
         uvx_status="✅ Activo (ejecutor de herramientas CLI efímeras)"
     else
         uvx_status="ℹ️ No disponible"
@@ -140,7 +140,7 @@ show_status() {
     echo "3. Gestor de Proyectos Aislados (uv per-project):"
     echo "   • Gestor uv:            $uv_status"
     echo "   • Runner uvx:           $uvx_status"
-    echo "   • Modo enlace:          UV_LINK_MODE=copy (compatible y portable)"
+    echo "   • Modo enlace:          UV_LINK_MODE=$UV_LINK_MODE (rendimiento óptimo en NVMe ext4/btrfs)"
     echo "   • Entorno GNOME Shell:  $(if [ -f "$USER_HOME/.config/environment.d/10-python.conf" ]; then echo "✅ Configurado"; else echo "ℹ️ No presente"; fi)"
     echo "   • Autocompletado Bash:  $(if [ -f "$USER_HOME/.local/share/bash-completion/completions/uv" ]; then echo "✅ uv & uvx activos"; else echo "ℹ️ No generado"; fi)"
     echo "================================================================="
@@ -173,7 +173,7 @@ echo "🐍 Verificando Python Nativo de Soplos Linux Boro y Gestor 'uv' (Mise)"
 echo "================================================================="
 
 # ------------------------------------------------------------------------------
-# 4. VERIFICAR PYTHON NATIVO DE UBUNTU
+# 4. VERIFICAR PYTHON NATIVO DE SOPLOS LINUX BORO
 # ------------------------------------------------------------------------------
 echo "ℹ️ [1/4] Comprobando integridad del Python nativo de Soplos Linux Boro..."
 MISSING_PKGS=()
@@ -237,34 +237,46 @@ BASH_COMPLETIONS_DIR="$USER_HOME/.local/share/bash-completion/completions"
 run_as_user mkdir -p "$ENV_DIR" "$BASHRC_D" "$BASH_COMPLETIONS_DIR"
 
 # 7.1. Integración con sesión gráfica GNOME Shell (systemd user)
-cat << 'EOF' | run_as_user tee "$ENV_DIR/10-python.conf" > /dev/null
+cat << EOF | run_as_user tee "$ENV_DIR/10-python.conf" > /dev/null
 # Integración de Python & uv para Wayland / GNOME Shell
 PYTHONUNBUFFERED=1
-UV_LINK_MODE=copy
+UV_LINK_MODE=$UV_LINK_MODE
 EOF
 
+# Propagar en caliente a la sesión activa de systemd user y DBus
+local_user_uid=$(id -u "$REAL_USER")
+local_runtime_dir="/run/user/$local_user_uid"
+if [ -d "$local_runtime_dir" ]; then
+    if command -v systemctl &>/dev/null; then
+        run_as_user env XDG_RUNTIME_DIR="$local_runtime_dir" systemctl --user import-environment PYTHONUNBUFFERED UV_LINK_MODE 2>/dev/null || true
+    fi
+    if command -v dbus-update-activation-environment &>/dev/null; then
+        run_as_user env XDG_RUNTIME_DIR="$local_runtime_dir" dbus-update-activation-environment --systemd PYTHONUNBUFFERED UV_LINK_MODE 2>/dev/null || true
+    fi
+fi
+
 # 7.2. Shell Bash (predeterminada)
-cat << 'EOF' | run_as_user tee "$BASHRC_D/python.sh" > /dev/null
+cat << EOF | run_as_user tee "$BASHRC_D/python.sh" > /dev/null
 # Python & uv Environment Settings (Soplos Linux Boro Workstation)
 export PYTHONUNBUFFERED=1
-export UV_LINK_MODE=copy
+export UV_LINK_MODE="$UV_LINK_MODE"
 EOF
 
 # 7.3. Shell Zsh (compatibilidad condicional)
 if [ -f "$USER_HOME/.zshrc" ]; then
     ZSHRC_D="$USER_HOME/.zshrc.d"
     run_as_user mkdir -p "$ZSHRC_D"
-    cat << 'EOF' | run_as_user tee "$ZSHRC_D/python.zsh" > /dev/null
+    cat << EOF | run_as_user tee "$ZSHRC_D/python.zsh" > /dev/null
 # Python & uv Environment Settings (Soplos Linux Boro Workstation)
 export PYTHONUNBUFFERED=1
-export UV_LINK_MODE=copy
+export UV_LINK_MODE="$UV_LINK_MODE"
 EOF
 fi
 
 # 7.4. Autocompletados para Bash (uv y uvx)
-if command -v uv &>/dev/null; then
-    uv generate-shell-completion bash > "$BASH_COMPLETIONS_DIR/uv" 2>/dev/null || true
-    uvx --generate-shell-completion bash > "$BASH_COMPLETIONS_DIR/uvx" 2>/dev/null || true
+if run_as_user command -v uv &>/dev/null || [ -x "$USER_HOME/.local/share/mise/shims/uv" ] || [ -x "$USER_HOME/.local/bin/uv" ]; then
+    run_as_user uv generate-shell-completion bash 2>/dev/null | run_as_user tee "$BASH_COMPLETIONS_DIR/uv" > /dev/null || true
+    run_as_user uvx --generate-shell-completion bash 2>/dev/null | run_as_user tee "$BASH_COMPLETIONS_DIR/uvx" > /dev/null || true
 fi
 
 # 7.5. Autocompletados para Zsh (si existe ~/.zshrc)
@@ -273,11 +285,11 @@ if [ -f "$USER_HOME/.zshrc" ]; then
     ZFUNC_DIR="$USER_HOME/.zfunc"
     run_as_user mkdir -p "$ZSH_COMPLETIONS_DIR" "$ZFUNC_DIR"
 
-    if command -v uv &>/dev/null; then
-        uv generate-shell-completion zsh > "$ZSH_COMPLETIONS_DIR/_uv" 2>/dev/null || true
-        uv generate-shell-completion zsh > "$ZFUNC_DIR/_uv" 2>/dev/null || true
-        uvx --generate-shell-completion zsh > "$ZSH_COMPLETIONS_DIR/_uvx" 2>/dev/null || true
-        uvx --generate-shell-completion zsh > "$ZFUNC_DIR/_uvx" 2>/dev/null || true
+    if run_as_user command -v uv &>/dev/null || [ -x "$USER_HOME/.local/share/mise/shims/uv" ] || [ -x "$USER_HOME/.local/bin/uv" ]; then
+        run_as_user uv generate-shell-completion zsh 2>/dev/null | run_as_user tee "$ZSH_COMPLETIONS_DIR/_uv" > /dev/null || true
+        run_as_user uv generate-shell-completion zsh 2>/dev/null | run_as_user tee "$ZFUNC_DIR/_uv" > /dev/null || true
+        run_as_user uvx --generate-shell-completion zsh 2>/dev/null | run_as_user tee "$ZSH_COMPLETIONS_DIR/_uvx" > /dev/null || true
+        run_as_user uvx --generate-shell-completion zsh 2>/dev/null | run_as_user tee "$ZFUNC_DIR/_uvx" > /dev/null || true
     fi
 fi
 
@@ -293,7 +305,7 @@ echo "✅ Entorno Python & uv listo para Soplos Linux Boro Workstation y GNOME:"
 echo "  • Python Sistema: $PYTHON_VER (/usr/bin/python3 nativo)"
 echo "  • Gestor pip:     v$PIP_VER (paquetes nativos Soplos Linux Boro)"
 echo "  • Gestor uv:      $UV_VER (para proyectos y entornos aislados)"
-echo "  • Modo enlace:    UV_LINK_MODE=copy"
+echo "  • Modo enlace:    UV_LINK_MODE=$UV_LINK_MODE"
 echo "  • Entorno GNOME:  ~/.config/environment.d/10-python.conf"
 echo "  • Shells:         Bash (predeterminada)$([ -f "$USER_HOME/.zshrc" ] && echo " & Zsh (compatible)") con autocompletados (uv / uvx)"
 echo "  • Proyectos:      Ejecuta './ProgrammingLanguages/python-uv-init.sh' para crear nuevos entornos"

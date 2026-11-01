@@ -140,7 +140,7 @@ show_status() {
     echo "🔍 ESTADO DEL ENTORNO OPENJDK (SOPLOS LINUX BORO WORKSTATION + GNOME SHELL)"
     echo "================================================================="
 
-    local java_ver javac_ver mvn_ver jvm_active cacerts_status alts_active
+    local java_ver javac_ver mvn_ver jvm_active cacerts_status
     local env_conf="$USER_HOME/.config/environment.d/10-java.conf"
     local bashrc_file="$USER_HOME/.bashrc.d/java.sh"
     local gradle_file="$USER_HOME/.gradle/gradle.properties"
@@ -184,11 +184,9 @@ show_status() {
 
     echo ""
     echo "📂 JVMs detectadas en el sistema:"
-    for jdir in /usr/lib/jvm; do
-        if [ -d "$jdir" ]; then
-            ls -d "$jdir"/* 2>/dev/null | sed 's/^/  • /' || true
-        fi
-    done
+    if [ -d "/usr/lib/jvm" ]; then
+        ls -d /usr/lib/jvm/* 2>/dev/null | sed 's/^/  • /' || true
+    fi
     echo "================================================================="
 }
 
@@ -225,7 +223,7 @@ case "${1:-}" in
         echo "🔄 Actualizando OpenJDK y herramientas Java vía APT..."
         $SUDO apt-get update -qq
         $SUDO apt-get install --only-upgrade -y \
-            openjdk-21-jdk openjdk-21-jre maven ca-certificates ca-certificates-java 2>/dev/null || true
+            openjdk-21-jdk openjdk-21-jre maven ca-certificates ca-certificates-java
         echo "✅ Paquetes de Java actualizados con éxito."
         show_status
         exit 0
@@ -233,7 +231,7 @@ case "${1:-}" in
 esac
 
 # ------------------------------------------------------------------------------
-# 5. INSTALACIÓN DE PAQUETES (IDEMPOTENTE Y COMPATIBLE CON UBUNTU)
+# 5. INSTALACIÓN DE PAQUETES (IDEMPOTENTE - SOPLOS LINUX BORO / DEBIAN TESTING)
 # ------------------------------------------------------------------------------
 echo "================================================================="
 echo "☕ Instalando y Optimizando OpenJDK para Soplos Linux Boro Workstation"
@@ -309,13 +307,25 @@ PATH=$DEFAULT_JVM/bin:\${PATH}
 # Integración gráfica Wayland Mutter (evita ventanas grises en aplicaciones AWT/Swing)
 _JAVA_AWT_WM_NONREPARENTING=1
 
-# Suavizado de tipografías subpixel para pantallas 1080p
-_JAVA_OPTIONS="-Dawt.useSystemAAFontSettings=on -Dswing.aatext=true"
+# Suavizado de tipografías subpixel para pantallas 1080p (JDK 9+ limpio sin advertencias de stderr)
+JDK_JAVA_OPTIONS="-Dawt.useSystemAAFontSettings=on -Dswing.aatext=true"
 
 # Optimización multihilo para Apache Maven (AMD Ryzen 7 7730U: 16 hilos)
 MAVEN_ARGS="-T 1C"
 MAVEN_OPTS="-Xms512m -Xmx4096m -XX:+UseG1GC"
 EOF
+
+# Propagar en caliente a la sesión activa de systemd user y DBus
+local_user_uid=$(id -u "$REAL_USER")
+local_runtime_dir="/run/user/$local_user_uid"
+if [ -d "$local_runtime_dir" ]; then
+    if command -v systemctl &>/dev/null; then
+        run_as_user env XDG_RUNTIME_DIR="$local_runtime_dir" systemctl --user import-environment JAVA_HOME _JAVA_AWT_WM_NONREPARENTING JDK_JAVA_OPTIONS MAVEN_ARGS MAVEN_OPTS 2>/dev/null || true
+    fi
+    if command -v dbus-update-activation-environment &>/dev/null; then
+        run_as_user env XDG_RUNTIME_DIR="$local_runtime_dir" dbus-update-activation-environment --systemd JAVA_HOME _JAVA_AWT_WM_NONREPARENTING JDK_JAVA_OPTIONS MAVEN_ARGS MAVEN_OPTS 2>/dev/null || true
+    fi
+fi
 
 # 7.2. Shell Bash (predeterminada)
 cat << EOF | run_as_user tee "$BASHRC_D/java.sh" > /dev/null
@@ -331,7 +341,7 @@ if [ -n "\${JAVA_HOME:-}" ] && [ -d "\${JAVA_HOME}/bin" ]; then
 fi
 
 export _JAVA_AWT_WM_NONREPARENTING=1
-export _JAVA_OPTIONS="-Dawt.useSystemAAFontSettings=on -Dswing.aatext=true"
+export JDK_JAVA_OPTIONS="-Dawt.useSystemAAFontSettings=on -Dswing.aatext=true"
 export MAVEN_ARGS="-T 1C"
 export MAVEN_OPTS="-Xms512m -Xmx4096m -XX:+UseG1GC"
 EOF
@@ -354,7 +364,7 @@ if [ -n "\${JAVA_HOME:-}" ] && [ -d "\${JAVA_HOME}/bin" ]; then
 fi
 
 export _JAVA_AWT_WM_NONREPARENTING=1
-export _JAVA_OPTIONS="-Dawt.useSystemAAFontSettings=on -Dswing.aatext=true"
+export JDK_JAVA_OPTIONS="-Dawt.useSystemAAFontSettings=on -Dswing.aatext=true"
 export MAVEN_ARGS="-T 1C"
 export MAVEN_OPTS="-Xms512m -Xmx4096m -XX:+UseG1GC"
 EOF
