@@ -73,7 +73,8 @@ extract() {
             *.Z)         uncompress "$1"  ;;
             *.7z)        7z x "$1"        ;;
             *.tar.xz)    tar xf "$1"      ;;
-            *.tar.zst)   tar --zstd -xf "$1" ;;
+            *.tar.zst|*.tar.zstd) tar --zstd -xf "$1" ;;
+            *.zst)       unzstd "$1"      ;;
             *)           echo "'$1' no puede ser extraído mediante extract()" ;;
         esac
     else
@@ -82,9 +83,9 @@ extract() {
 }
 
 # -----------------------------------------------------------------------------
-# compress: Compresor rápido
+# compress: Compresor rápido con soporte multinúcleo (Zstandard / Tar / Zip)
 # Uso: compress <formato> <nombre_salida> <archivos...>
-# Formatos soportados: tar.gz, tar.bz2, tar.xz, zip, 7z
+# Formatos soportados: tar.zst, tar.gz, tar.bz2, tar.xz, zip, 7z
 # -----------------------------------------------------------------------------
 compress() {
     local format=$1
@@ -92,12 +93,16 @@ compress() {
     shift 2
 
     case $format in
+        tar.zst|zst)
+            tar -I 'zstd -T8 -15' -cf "${output}.tar.zst" "$@"
+            echo "✅ Creado: ${output}.tar.zst (Zstandard multithread)"
+            ;;
         tar.gz)  tar -czf "${output}.tar.gz" "$@" ;;
         tar.bz2) tar -cjf "${output}.tar.bz2" "$@" ;;
         tar.xz)  tar -cJf "${output}.tar.xz" "$@" ;;
         zip)     zip -r "${output}.zip" "$@" ;;
         7z)      7z a "${output}.7z" "$@" ;;
-        *)       echo "Formato no soportado. Usa: tar.gz, tar.bz2, tar.xz, zip, 7z" ;;
+        *)       echo "Formato no soportado. Usa: tar.zst, tar.gz, tar.bz2, tar.xz, zip, 7z" ;;
     esac
 }
 
@@ -131,6 +136,54 @@ hg() {
     else
         history | grep -i "$1"
     fi
+}
+
+# -----------------------------------------------------------------------------
+# soplos-telemetry: Auditoría rápida de hardware y estado de la estación
+# HP ProBook 455 G10 / AMD Ryzen 7 7730U / Radeon Vega 8 / 32GB RAM / NVMe
+# -----------------------------------------------------------------------------
+soplos-telemetry() {
+    echo "================================================================="
+    echo "💻 SOPLOS LINUX BORO - ESTACIÓN HP PROBOOK 455 G10"
+    echo "================================================================="
+    echo "⚡ CPU: AMD Ryzen 7 7730U ($(nproc) hilos disponibles)"
+    lscpu 2>/dev/null | grep -E "Model name|CPU MHz|CPU max MHz|CPU min MHz" | sed 's/^/   /'
+    echo "🎮 GPU: AMD Radeon Graphics (Barcelo-R / Mesa RADV)"
+    lspci -nnk 2>/dev/null | grep -iA2 -E "vga|3d" | sed 's/^/   /'
+    echo "🧠 Memoria RAM y ZRAM Swap:"
+    free -h | sed 's/^/   /'
+    command -v zramctl &>/dev/null && zramctl | sed 's/^/   /'
+    echo "💾 Almacenamiento NVMe (Kioxia KBG50ZNV512G):"
+    df -h / /home 2>/dev/null | awk 'NR==1 || /^\/dev/' | sed 's/^/   /'
+    echo "🛡️ Cortafuegos (UFW):"
+    if command -v ufw &>/dev/null || [ -x /usr/sbin/ufw ] || [ -x /sbin/ufw ]; then
+        sudo ufw status verbose 2>/dev/null | head -n 12 | sed 's/^/   /'
+    elif command -v firewall-cmd &>/dev/null; then
+        sudo firewall-cmd --state 2>/dev/null | sed 's/^/   Estado: /'
+        echo -n "   Puertos abiertos: "
+        sudo firewall-cmd --list-ports 2>/dev/null || echo "Ninguno"
+    fi
+    echo "🖥️ Topología de Pantallas (Wayland):"
+    soplos-monitors
+    echo "================================================================="
+}
+
+# -----------------------------------------------------------------------------
+# soplos-monitors: Inspección de topología de monitores en Wayland
+# -----------------------------------------------------------------------------
+soplos-monitors() {
+    local count=0
+    for drm in /sys/class/drm/card*-*; do
+        if [ -f "$drm/status" ] && grep -q "^connected" "$drm/status"; then
+            local name
+            name=$(basename "$drm" | sed 's/card[0-9]*-//')
+            local modes="Desconocido"
+            [ -f "$drm/modes" ] && modes=$(head -n1 "$drm/modes")
+            echo "   • Conector $name: $modes (Conectado)"
+            count=$((count + 1))
+        fi
+    done
+    [ "$count" -eq 0 ] && echo "   • No se detectaron pantallas vía DRM sysfs."
 }
 
 # =============================================================================
@@ -193,19 +246,19 @@ format-drive() {
 # =============================================================================
 
 # -----------------------------------------------------------------------------
-# webm2mp4: Convertir WebM a MP4
+# webm2mp4: Convertir WebM a MP4 (Multihilo para AMD Ryzen)
 # Uso: webm2mp4 <archivo.webm>
 # -----------------------------------------------------------------------------
 webm2mp4() {
   if [ $# -ne 1 ]; then echo "Uso: webm2mp4 <archivo.webm>"; return 1; fi
   if ! command -v ffmpeg &> /dev/null; then echo "❌ Faltan dependencias: ffmpeg"; return 1; fi
 
-  ffmpeg -i "$1" -c:v libx264 -preset slow -crf 22 -c:a aac -b:a 192k "${1%.*}.mp4"
+  ffmpeg -i "$1" -threads 8 -c:v libx264 -preset slow -crf 22 -c:a aac -b:a 192k "${1%.*}.mp4"
   echo "✅ Convertido: ${1%.*}.mp4"
 }
 
 # -----------------------------------------------------------------------------
-# transcode-video-1080p: Transcodificar a 1080p optimizado para streaming
+# transcode-video-1080p: Transcodificar a 1080p optimizado para streaming (CPU 8 hilos)
 # Uso: transcode-video-1080p <video>
 # -----------------------------------------------------------------------------
 transcode-video-1080p() {
@@ -215,9 +268,35 @@ transcode-video-1080p() {
   local input="$1"
   local output="${input%.*}-1080p.mp4"
 
-  ffmpeg -i "$input" -vf "scale=-2:1080" -c:v libx264 -preset slow -crf 20 \
+  ffmpeg -i "$input" -threads 8 -vf "scale=-2:1080" -c:v libx264 -preset slow -crf 20 \
          -c:a aac -b:a 192k -movflags +faststart "$output"
   echo "✅ Transcodificado: $output"
+}
+
+# -----------------------------------------------------------------------------
+# transcode-video-vaapi: Transcodificar con aceleración hardware GPU AMD Radeon (VA-API)
+# Uso: transcode-video-vaapi <video>
+# -----------------------------------------------------------------------------
+transcode-video-vaapi() {
+  if [ $# -lt 1 ]; then echo "Uso: transcode-video-vaapi <video_origen>"; return 1; fi
+  if ! command -v ffmpeg &> /dev/null; then echo "❌ Faltan dependencias: ffmpeg"; return 1; fi
+
+  local input="$1"
+  local output="${input%.*}-vaapi-1080p.mp4"
+  local vaapi_dev="/dev/dri/renderD128"
+
+  if [ ! -e "$vaapi_dev" ]; then
+    echo "⚠️ Dispositivo VA-API $vaapi_dev no disponible. Usando transcodificación por CPU..."
+    transcode-video-1080p "$input"
+    return $?
+  fi
+
+  echo "⚡ Transcodificando con aceleración por hardware AMD Radeon (VA-API)..."
+  ffmpeg -vaapi_device "$vaapi_dev" -i "$input" \
+         -vf 'format=nv12,hwupload,scale_vaapi=w=-2:h=1080' \
+         -c:v h264_vaapi -qp 23 -c:a aac -b:a 192k \
+         -movflags +faststart "$output"
+  echo "✅ Transcodificado por GPU: $output"
 }
 
 # -----------------------------------------------------------------------------

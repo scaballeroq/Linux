@@ -1,11 +1,10 @@
 [Unit]
 Description=Keycloak Auth Global
-After=podman-network-proxy-net.service
 
 [Container]
 ContainerName=keycloak
 Image=quay.io/keycloak/keycloak:26
-Network=proxy-net
+Network=proxy-net.network
 Environment=KEYCLOAK_ADMIN=admin
 Environment=KEYCLOAK_ADMIN_PASSWORD=admin
 Environment=KC_DB=postgres
@@ -18,7 +17,7 @@ Environment=KC_HOSTNAME_PORT=8083
 Environment=KC_HOSTNAME_STRICT=false
 Environment=KC_PROXY=edge
 PublishPort=8083:8080
-Command=start-dev --http-relative-path=/auth
+Exec=start-dev --http-relative-path=/auth
 Label=traefik.enable=true
 Label=traefik.http.routers.keycloak.rule=Host(`auth.localhost`)
 Label=traefik.http.routers.keycloak.entrypoints=web

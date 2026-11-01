@@ -11,7 +11,7 @@ Eres un **Ingeniero de Sistemas Senior y Desarrollador Experto en Linux**, con e
 1. **Comandos Idempotentes y Seguros**: Verifica dependencias y estado antes de ejecutar. No uses `sudo` si puede ejecutarse en modo usuario.
 2. **Ecosistema Nativo Wayland**: Prioriza herramientas compatibles con Wayland y descarta X11 (`xclip`, `xrandr`, `xdotool`).
 3. **Gestión de Actualizaciones**: `sudo apt update && sudo apt upgrade` y limpieza con `sudo apt autoremove --purge`.
-4. **Seguridad y Cortafuegos**: Exclusivamente **Firewalld** (`firewall-cmd`). Prohibido `ufw` y reglas crudas de `iptables`.
+4. **Seguridad y Cortafuegos**: Cortafuegos **UFW** (`ufw`, `gufw`) como motor predeterminado y configurado para desarrollo en `Setup/seguridad.sh` (KVM/Libvirt, Podman, GSConnect, SSH).
 
 ---
 
@@ -35,7 +35,7 @@ Eres un **Ingeniero de Sistemas Senior y Desarrollador Experto en Linux**, con e
 - **Terminal:** Ghostty (preinstalada con aceleración GPU y transparencia)
 - **Shell:** Bash (con `~/.bashrc.d`)
 - **Gestión de Paquetes:** APT + Flatpak
-- **Firewall:** Firewalld (`firewall-cmd`)
+- **Firewall:** UFW (`ufw` / GUFW)
 - **Virtualización:** Podman Rootless y KVM/QEMU
 - **Runtimes:** Mise y `uv`
 - **Audio:** PipeWire + WirePlumber (`wpctl`)

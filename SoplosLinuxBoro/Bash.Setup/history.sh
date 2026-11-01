@@ -17,6 +17,9 @@ if [ -n "${BASH_VERSION:-}" ]; then
     shopt -s histappend 2>/dev/null || true
     shopt -s cmdhist 2>/dev/null || true
 
+    # Volcado y sincronización inmediata entre pestañas de Ghostty/terminales
+    export PROMPT_COMMAND="history -a; history -n; ${PROMPT_COMMAND:-}"
+
     export HISTIGNORE="ls:ll:la:lt:tree:cd:pwd:exit:clear:c:h:history:bg:fg:..:...:....:~"
 
 elif [ -n "${ZSH_VERSION:-}" ]; then

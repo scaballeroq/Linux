@@ -60,6 +60,26 @@ podman-utils help
 
 ---
 
+## 🛡️ Integración de Red y Cortafuegos (UFW)
+
+En **Soplos Linux Boro Workstation**, el cortafuegos del sistema es **UFW**. El instalador `podman-install.sh` y el diagnóstico `podman-utils doctor` configuran automáticamente las siguientes reglas para garantizar la conectividad de los contenedores:
+
+1. **Interfaz Podman (`podman+`)**:
+   ```bash
+   sudo ufw allow in on podman+
+   sudo ufw allow out on podman+
+   ```
+2. **Enrutamiento (Forwarding inter-contenedor y salida WAN)**:
+   ```bash
+   sudo ufw route allow in on podman+
+   sudo ufw route allow out on podman+
+   ```
+3. **Parámetros del Kernel (`sysctl`)**:
+   - `net.ipv4.ip_unprivileged_port_start = 80`: Permite enlazar puertos 80 y 443 en modo rootless (Traefik, Nginx).
+   - `net.ipv4.ip_forward = 1`: Habilita el reenvío de paquetes para redes puente de Podman (Netavark / Pasta).
+
+---
+
 ## 💡 Uso Rápido
 
 ```bash
