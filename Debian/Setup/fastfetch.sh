@@ -67,6 +67,12 @@ get_theme_path() {
             fi
             return 0
             ;;
+        simple|debian-simple)
+            if [ -f "$SCRIPT_DIR/config-debian-simple.jsonc" ]; then
+                echo "$SCRIPT_DIR/config-debian-simple.jsonc"
+            fi
+            return 0
+            ;;
         modern)
             if [ -f "$SCRIPT_DIR/config-modern.jsonc" ]; then
                 echo "$SCRIPT_DIR/config-modern.jsonc"
@@ -102,6 +108,9 @@ get_theme_title() {
     case "$base_name" in
         config-debian.jsonc|config.jsonc)
             echo "Debian Oficial (Logo Debian Swirl + Categorías y Barras de Progreso)"
+            ;;
+        config-debian-simple.jsonc)
+            echo "Debian Simple (Hardware esencial, display unificado y categoría Desktop)"
             ;;
         config-modern.jsonc)
             echo "Debian Modern Minimal (Logo ASCII y paleta rubí condensada)"
@@ -261,6 +270,7 @@ list_themes() {
     echo "-----------------------------------------------------------------"
     echo "💡 Atajos rápidos con Justfile:"
     echo "   just fastfetch --theme debian"
+    echo "   just fastfetch --theme debian-simple"
     echo "   just fastfetch --theme modern"
     echo "   just fastfetch --theme compact"
     echo "   just fastfetch --menu"
@@ -396,17 +406,20 @@ OPCIONES:
   -h, --help                Muestra esta ayuda.
 
 TEMAS PREDEFINIDOS DISPONIBLES:
-  debian        (Predeterminado) Tema oficial Debian con métricas completas por categorías.
-  modern        Diseño condensado con logo Debian ASCII y acentos rubí.
-  compact       Caja minimalista redondeada FastCat sin logo, ideal para paneles reducidos.
-  <ruta.jsonc>  Cualquier ruta a un archivo de configuración Fastfetch personalizado.
+  debian         (Predeterminado) Tema oficial Debian con métricas completas por categorías.
+  debian-simple  Tema Debian simplificado (sin Swap/Battery/Locale, display unificado, categoría Desktop).
+  modern         Diseño condensado con logo Debian ASCII y acentos rubí.
+  compact        Caja minimalista redondeada FastCat sin logo, ideal para paneles reducidos.
+  <ruta.jsonc>   Cualquier ruta a un archivo de configuración Fastfetch personalizado.
 
 EJEMPLOS:
   $(basename "$0")                         # Instala/Aplica el tema oficial de Debian
   $(basename "$0") --menu                  # Selector interactivo de temas
   $(basename "$0") --list-themes           # Muestra todos los temas disponibles con detalles
+  $(basename "$0") --preview debian-simple # Previsualiza el diseño simplificado
   $(basename "$0") --preview compact       # Previsualiza el diseño minimalista sin aplicarlo
   $(basename "$0") --preview modern        # Previsualiza el diseño condensado
+  $(basename "$0") --theme debian-simple   # Aplica el diseño simplificado
   $(basename "$0") --theme modern          # Cambia al diseño condensado
   $(basename "$0") --theme compact         # Aplica la caja minimalista FastCat
   $(basename "$0") --status                # Diagnóstico del entorno y tema activo
