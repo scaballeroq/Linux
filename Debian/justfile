@@ -249,8 +249,12 @@ chrome-status:
     ./Setup/chrome.sh --status
 
 # Navegador Firefox nativo (.deb oficial de Mozilla)
-firefox:
-    ./Setup/firefox.sh
+firefox *args:
+    ./Setup/firefox.sh {{args}}
+
+# Diagnóstico y estado de Mozilla Firefox nativo y repositorio oficial
+firefox-status:
+    ./Setup/firefox.sh --status
 
 # Steam nativo, GameMode, MangoHud y drivers Vulkan 32-bit (i386 multiarch)
 steam:
