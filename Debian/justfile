@@ -176,6 +176,14 @@ kitty *args:
 kitty-status:
     ./Setup/kitty.sh --status
 
+# Terminal Ghostty nativa Wayland (GTK4 / Libadwaita, Tema Catppuccin Mocha, Blur)
+ghostty *args:
+    ./Setup/ghostty.sh {{args}}
+
+# Diagnóstico y estado de la terminal Ghostty
+ghostty-status:
+    ./Setup/ghostty.sh --status
+
 # Terminal Ptyxis (Diseño estético oscuro y transparente)
 ptyxis:
     ./Setup/ptyxis.sh

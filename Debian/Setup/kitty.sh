@@ -391,7 +391,7 @@ setup_keybinding() {
             run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "['$kb_path']" 2>/dev/null || true
         elif ! echo "$current_kb" | grep -q "$kb_path"; then
             local new_kb
-            new_kb=$(echo "$current_kb" | sed "s/]/, '$kb_path']/")
+            new_kb=$(echo "$current_kb" | sed "s|]|, '$kb_path']|")
             run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "$new_kb" 2>/dev/null || true
         fi
 
