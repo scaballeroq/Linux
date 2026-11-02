@@ -167,9 +167,12 @@ show_status() {
     fi
 
     # Menú contextual de Nautilus
-    local nautilus_ext="$USER_HOME/.local/share/nautilus-python/extensions/open-ghostty.py"
+    local nautilus_sys_ext="/usr/share/nautilus-python/extensions/ghostty.py"
+    local nautilus_user_ext="$USER_HOME/.local/share/nautilus-python/extensions/open-ghostty.py"
     local nautilus_script="$USER_HOME/.local/share/nautilus/scripts/Abrir en Ghostty"
-    if [ -f "$nautilus_ext" ]; then
+    if [ -f "$nautilus_sys_ext" ]; then
+        echo "• Menú Nautilus (Clic derecho):  ✅ Activo (Extensión oficial del sistema)"
+    elif [ -f "$nautilus_user_ext" ]; then
         echo "• Menú Nautilus (Clic derecho):  ✅ Activo (Extensión nativa de 1er nivel)"
     elif [ -f "$nautilus_script" ]; then
         echo "• Menú Nautilus (Clic derecho):  ⚠️ En submenú 'Guiones' (Script clásico)"
@@ -358,11 +361,17 @@ setup_nautilus_script() {
         fi
     fi
 
-    # 1. Extensión Python nativa (aparece directamente en el menú de clic derecho)
+    local sys_ext="/usr/share/nautilus-python/extensions/ghostty.py"
     local ext_dir="$USER_HOME/.local/share/nautilus-python/extensions"
-    run_as_user mkdir -p "$ext_dir"
 
-    cat << 'EOF' | run_as_user tee "$ext_dir/open-ghostty.py" > /dev/null
+    # Si el paquete deb ya instaló ghostty.py en el sistema, evitar duplicados eliminando la copia de usuario
+    if [ -f "$sys_ext" ]; then
+        echo "   ℹ️ Extensión nativa de Ghostty ya provista por el paquete en $sys_ext (sin duplicados)."
+        run_as_user rm -f "$ext_dir/open-ghostty.py" 2>/dev/null || true
+    else
+        # Extensión Python nativa propia
+        run_as_user mkdir -p "$ext_dir"
+        cat << 'EOF' | run_as_user tee "$ext_dir/open-ghostty.py" > /dev/null
 # Extensión de Nautilus para abrir la terminal Ghostty directamente en el menú contextual
 # Compatible con Nautilus 4.0+ (GNOME 43/48) y python3-nautilus
 
@@ -417,6 +426,7 @@ class OpenGhosttyExtension(GObject.GObject, Nautilus.MenuProvider):
         path = unquote(urlparse(uri).path)
         self._open_ghostty(path)
 EOF
+    fi
 
     # 2. Script clásico en ~/.local/share/nautilus/scripts (submenú 'Guiones' como respaldo)
     local scripts_dir="$USER_HOME/.local/share/nautilus/scripts"
@@ -444,7 +454,7 @@ EOF
     # Reiniciar Nautilus para recargar extensiones inmediatamente
     run_as_user nautilus -q 2>/dev/null || true
 
-    echo "   ✅ Integración contextual de Nautilus completada (Extensión 1er nivel + Script de respaldo)."
+    echo "   ✅ Integración contextual de Nautilus completada sin duplicidades."
 }
 
 # ------------------------------------------------------------------------------
