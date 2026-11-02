@@ -157,12 +157,15 @@ show_status() {
         echo "• Atajo Global (Ctrl+Alt+T):     ℹ️ No asignado directamente a Kitty"
     fi
 
-    # Script de Nautilus
+    # Menú contextual de Nautilus
+    local nautilus_ext="$USER_HOME/.local/share/nautilus-python/extensions/open-kitty.py"
     local nautilus_script="$USER_HOME/.local/share/nautilus/scripts/Abrir en Kitty"
-    if [ -f "$nautilus_script" ]; then
-        echo "• Script de Nautilus:            ✅ Instalado ('Abrir en Kitty')"
+    if [ -f "$nautilus_ext" ]; then
+        echo "• Menú Nautilus (Clic derecho):  ✅ Activo (Extensión nativa de 1er nivel)"
+    elif [ -f "$nautilus_script" ]; then
+        echo "• Menú Nautilus (Clic derecho):  ⚠️ En submenú 'Guiones' (Script clásico)"
     else
-        echo "• Script de Nautilus:            ❌ No instalado"
+        echo "• Menú Nautilus (Clic derecho):  ❌ No instalado"
     fi
 
     # Terminal del sistema
@@ -402,10 +405,81 @@ setup_keybinding() {
 }
 
 # ------------------------------------------------------------------------------
-# 7. MENÚ CONTEXTUAL DE NAUTILUS (CLIC DERECHO)
+# 7. MENÚ CONTEXTUAL DE NAUTILUS (CLIC DERECHO NATIVO)
 # ------------------------------------------------------------------------------
 setup_nautilus_script() {
-    echo "📁 [4/4] Creando script contextual de Nautilus ('Abrir en Kitty')..."
+    echo "📁 [4/4] Configurando menú contextual de Nautilus ('Abrir en Kitty')..."
+
+    # Asegurar paquete python3-nautilus para menú contextual de primer nivel
+    if ! dpkg -s python3-nautilus &>/dev/null; then
+        echo "   ℹ️ Instalando python3-nautilus para integración nativa..."
+        if [ "$EUID" -eq 0 ] || command -v sudo &>/dev/null; then
+            $SUDO apt-get update -qq
+            $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y python3-nautilus 2>/dev/null || true
+        fi
+    fi
+
+    # 1. Extensión Python nativa (aparece en el menú principal del clic derecho)
+    local ext_dir="$USER_HOME/.local/share/nautilus-python/extensions"
+    run_as_user mkdir -p "$ext_dir"
+
+    cat << 'EOF' | run_as_user tee "$ext_dir/open-kitty.py" > /dev/null
+# Extensión de Nautilus para abrir la terminal Kitty directamente en el menú contextual
+# Compatible con Nautilus 4.0+ (GNOME 43/48) y python3-nautilus
+
+import os
+import subprocess
+from urllib.parse import unquote, urlparse
+from gi.repository import GObject, Nautilus
+
+class OpenKittyExtension(GObject.GObject, Nautilus.MenuProvider):
+    def __init__(self):
+        super().__init__()
+
+    def _open_kitty(self, path):
+        if not path:
+            path = os.path.expanduser("~")
+        if os.path.isfile(path):
+            path = os.path.dirname(path)
+        try:
+            subprocess.Popen(["kitty", "--directory", path])
+        except Exception as e:
+            print(f"Error al lanzar Kitty: {e}")
+
+    def get_file_items(self, files):
+        if not files:
+            return []
+        item = Nautilus.MenuItem(
+            name="OpenKitty::OpenFileItem",
+            label="Abrir en Kitty",
+            tip="Abrir la terminal Kitty en esta ubicación"
+        )
+        item.connect("activate", self._on_file_activated, files)
+        return [item]
+
+    def get_background_items(self, current_folder):
+        item = Nautilus.MenuItem(
+            name="OpenKitty::OpenBackgroundItem",
+            label="Abrir en Kitty",
+            tip="Abrir la terminal Kitty en la carpeta actual"
+        )
+        item.connect("activate", self._on_background_activated, current_folder)
+        return [item]
+
+    def _on_file_activated(self, menu_item, files):
+        if not files:
+            return
+        uri = files[0].get_uri()
+        path = unquote(urlparse(uri).path)
+        self._open_kitty(path)
+
+    def _on_background_activated(self, menu_item, folder):
+        uri = folder.get_uri()
+        path = unquote(urlparse(uri).path)
+        self._open_kitty(path)
+EOF
+
+    # 2. Script clásico en ~/.local/share/nautilus/scripts (submenú 'Guiones' como respaldo)
     local scripts_dir="$USER_HOME/.local/share/nautilus/scripts"
     run_as_user mkdir -p "$scripts_dir"
 
@@ -426,7 +500,11 @@ fi
 exec kitty --directory "${target:-.}" &
 EOF
     run_as_user chmod +x "$scripts_dir/Abrir en Kitty" 2>/dev/null || true
-    echo "   ✅ Script contextual 'Abrir en Kitty' listo para Nautilus."
+
+    # Reiniciar Nautilus para recargar extensiones inmediatamente
+    run_as_user nautilus -q 2>/dev/null || true
+
+    echo "   ✅ Integración contextual de Nautilus completada (Extensión 1er nivel + Script de respaldo)."
 }
 
 # ------------------------------------------------------------------------------
