@@ -5,21 +5,13 @@
 # Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8)
 # Topología: Triple pantalla 1080p (DP-3 principal, DP-4 lateral, eDP-1 portátil)
 # ==============================================================================
-# Características y Optimizaciones:
-#  - Modo oscuro persistente y armónico (prefer-dark + Adwaita-dark para GTK3/4 y libadwaita).
-#  - Renderizado tipográfico nítido en triple monitor 1080p (subpixel antialiasing RGBA + slight hinting).
-#  - Detección precisa de fuentes Nerd Fonts (JetBrainsMono Nerd Font) con fallbacks elegantes.
-#  - Disposición limpia de botones de ventana (:minimize,maximize,close) a la derecha.
-#  - Mutter Wayland: centrado de ventanas, diálogo modal anclado, edge-tiling y workspaces persistentes.
-#  - Mutter adaptativo: escalado fraccional, variable-refresh-rate (VRR) y xwayland-native-scaling.
-#  - Barra superior y reloj: formato 24h, día de la semana, fecha completa y porcentaje de batería.
-#  - Salud visual: Luz nocturna con programación automática y temperatura cálida de 4000K.
-#  - Accesibilidad multimonitor: Localización de cursor rápida con tecla Ctrl (locate-pointer).
-#  - Nautilus optimizado: vista en lista, creación de enlaces simbólicos y borrado permanente habilitado.
-#  - Menús contextuales nativos en Nautilus (clic derecho) para Kitty, Antigravity IDE y VS Code.
-#  - Terminal Kitty acelerada por GPU vinculada a atajo global Ctrl+Alt+T sin colisiones.
-#  - Opciones CLI: --status / -s, --dark / -d, --light / -l, --appearance / -a,
-#                  --windows / -w, --keybindings / -k, --nautilus / -n, --help / -h.
+# Filosofía:
+#   - Personalizable y modular: Tú decides qué instalar desde repositorios y qué configurar.
+#   - Modo sin paquetes (--no-install / --config-only): Aplica 100% ajustes GSettings y scripts
+#     en espacio de usuario sin invocar APT ni requerir privilegios de superusuario (sudo).
+#   - Modo interactivo (--interactive / -i): Asistente guiado paso a paso en terminal.
+#   - Soporte multimarca de terminales: Elige tu terminal preferida (Kitty, Ptyxis o GNOME Terminal)
+#     para el atajo global Ctrl+Alt+T y el menú contextual de Nautilus.
 # ==============================================================================
 
 set -euo pipefail
@@ -27,13 +19,34 @@ set -euo pipefail
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
 
 # ------------------------------------------------------------------------------
-# 1. DETECCIÓN DE USUARIO, ENTORNO Y PRIVILEGIOS SUDO
+# 1. CONSTANTES Y PAQUETES DEL SISTEMA
+# ------------------------------------------------------------------------------
+# Paquetes disponibles en repositorios oficiales de Debian 13 para soporte GNOME:
+SUPPORT_PACKAGES=(
+    "gnome-tweaks|Herramienta gráfica de Retoques de GNOME"
+    "gnome-browser-connector|Integración con navegadores para extensiones GNOME"
+    "gnome-shell-extension-gsconnect|GSConnect (KDE Connect nativo en GNOME Shell)"
+    "gnome-shell-extensions|Extensiones base oficiales de GNOME"
+    "gnome-themes-extra|Temas clásicos GTK (incluye Adwaita-dark para GTK3)"
+    "dconf-cli|Herramienta de terminal para consultas y volcados dconf"
+    "wl-clipboard|Utilidades nativas de portapapeles Wayland (wl-copy / wl-paste)"
+)
+
+TERMINAL_OPTIONS=("kitty" "ptyxis" "gnome-terminal")
+
+# Colores ANSI
+BOLD='\033[1m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+# ------------------------------------------------------------------------------
+# 2. DETECCIÓN DE USUARIO, ENTORNO Y PRIVILEGIOS SUDO
 # ------------------------------------------------------------------------------
 if [ "$EUID" -ne 0 ]; then
-    if ! command -v sudo &> /dev/null; then
-        echo "❌ Error: 'sudo' no está disponible. Ejecuta este script con privilegios de superusuario."
-        exit 1
-    fi
     SUDO="sudo"
 else
     SUDO=""
@@ -85,38 +98,65 @@ get_os_description() {
     fi
 }
 
+detect_preferred_terminal() {
+    if command -v kitty &>/dev/null; then
+        echo "kitty"
+    elif command -v ptyxis &>/dev/null; then
+        echo "ptyxis"
+    elif command -v gnome-terminal &>/dev/null; then
+        echo "gnome-terminal"
+    else
+        echo "kitty"
+    fi
+}
+
 # ------------------------------------------------------------------------------
-# 2. AYUDA Y DIAGNÓSTICO DEL SISTEMA
+# 3. AYUDA Y DIAGNÓSTICO DEL SISTEMA
 # ------------------------------------------------------------------------------
 show_help() {
     cat <<EOF
-🎨 Personalización de GNOME Shell - Debian Workstation (Wayland)
-Optimizado para HP ProBook 455 G10 (AMD Ryzen 7 7730U / Vega 8 / Triple Monitor)
+🎨 Personalizador de GNOME Shell - Debian 13 Workstation (Wayland)
+Control modular y personal: Elige qué paquetes instalar y qué ajustes aplicar.
 
 Uso:
-  $0 [OPCIÓN]
+  $0 [OPCIÓN] [PARÁMETROS]
 
-Opciones:
-  (sin argumentos)    Aplica toda la configuración (apariencia, ventanas, reloj,
-                      Nautilus, luz nocturna y atajo global de Kitty).
-  --status, -s        Muestra diagnóstico detallado de temas, fuentes, ventanas y atajos.
-  --dark, -d          Aplica el modo oscuro completo (prefer-dark + Adwaita-dark).
-  --light, -l         Aplica el modo claro estándar.
-  --appearance, -a    Configura temas, nitidez de fuentes (RGBA/slight) y salud visual.
-  --windows, -w       Configura Mutter (botones, centrado, tiling y workspaces multimonitor).
-  --nautilus, -n      Configura preferencias y genera scripts de clic derecho en Nautilus.
-  --keybindings, -k   Configura el atajo global Ctrl+Alt+T para terminal Kitty.
-  --help, -h          Muestra este mensaje de ayuda.
+Opciones de Ejecución:
+  (sin argumentos)        Aplica la configuración recomendada completa (Modo oscuro, Mutter,
+                          reloj, Nautilus y atajo de terminal detectada).
+  -i, --interactive       Modo interactivo: Asistente en terminal para elegir paso a paso qué
+                          instalar, qué terminal preferir y qué opciones activar.
+  -s, --status            Muestra diagnóstico detallado de paquetes APT, configuraciones y atajos.
+  --no-install, --config  Aplica únicamente configuraciones de usuario (GSettings/dconf/Nautilus)
+                          SIN instalar paquetes APT ni requerir privilegios de superusuario (sudo).
+  --packages, -p          Instala únicamente los paquetes de soporte del sistema desde repositorios APT.
 
-Ajustes incluidos en Debian 13 (GNOME 48+ Wayland):
-  • Apariencia:       Modo oscuro prefer-dark + Adwaita-dark, tipografía Nerd Font.
-  • Nitidez Textos:   Subpixel RGB antialiasing (rgba) + slight hinting para paneles 1080p.
-  • Ventanas Mutter:  Minimizar/Maximizar/Cerrar a la derecha, centrado y edge-tiling.
-  • Multimonitor:     Workspaces persistentes en pantallas laterales (DP-4/eDP-1).
-  • Barra Superior:   Reloj 24h con fecha, día de la semana y porcentaje de batería.
-  • Confort Visual:   Luz nocturna automática a 4000K y resalte de cursor con tecla Ctrl.
-  • Nautilus:         Vista en lista, creación de enlaces, borrado directo y scripts contextuales.
-  • Terminal:         Atajo Ctrl+Alt+T para Kitty (sin colisión con terminal por defecto).
+Personalización Específica:
+  --dark, -d              Aplica el modo oscuro completo (prefer-dark + Adwaita-dark).
+  --light, -l             Aplica el modo claro estándar.
+  --terminal <nombre>     Configura la terminal preferida para Ctrl+Alt+T y Nautilus.
+                          Valores soportados: kitty | ptyxis | gnome-terminal (defecto: auto).
+  --buttons <disposición> Configura los botones de ventana.
+                          Valores: right (:minimize,maximize,close) | left (close,minimize,maximize:).
+  --appearance, -a        Aplica fuentes, nitidez antialiasing (RGBA/slight) y modo oscuro.
+  --windows, -w           Configura Mutter (centrado, tiling, multimonitor, experimental-features).
+  --nautilus, -n          Configura Nautilus (vista en lista, enlaces) y scripts de clic derecho.
+  --keybindings, -k       Configura únicamente el atajo global Ctrl+Alt+T.
+  -h, --help              Muestra este mensaje de ayuda.
+
+¿Qué se instala desde repositorios y qué NO?
+  • DESDE REPOSITORIOS (APT):
+      - gnome-tweaks, gnome-browser-connector, gnome-shell-extension-gsconnect,
+        gnome-shell-extensions, gnome-themes-extra, dconf-cli, wl-clipboard.
+      - Terminal opcional: kitty o ptyxis.
+  • NO SE INSTALA DESDE REPOSITORIOS (Configuración pura en usuario / GSettings / dconf):
+      - Temas de color (prefer-dark / Adwaita).
+      - Botones de ventanas a la derecha y centrado de ventanas de Mutter.
+      - Antialiasing RGBA y fuentes para monitores 1080p.
+      - Reloj 24h con fecha y porcentaje de batería en barra superior.
+      - Luz nocturna a 4000K con horario automático.
+      - Atajo global Ctrl+Alt+T en org.gnome.settings-daemon.plugins.media-keys.
+      - Scripts contextuales de clic derecho en ~/.local/share/nautilus/scripts/.
 EOF
 }
 
@@ -126,13 +166,30 @@ show_status() {
     gnome_ver=$(get_gnome_version)
 
     echo "================================================================="
-    echo "🔍 ESTADO DE GNOME SHELL - DEBIAN WORKSTATION"
+    echo "🔍 ESTADO DE PERSONALIZACIÓN GNOME SHELL - DEBIAN WORKSTATION"
     echo "================================================================="
     echo "• Sistema Operativo:      $os_name (Kernel $(uname -r))"
     echo "• Entorno de Escritorio:  ${XDG_CURRENT_DESKTOP:-GNOME} $gnome_ver (${XDG_SESSION_TYPE:-wayland})"
-    echo "• Compositor / Window Mgr:Mutter (Wayland nativo)"
+    echo "• Compositor / Ventanas:  Mutter (Wayland nativo)"
     echo "• Hardware:               HP ProBook 455 G10 (AMD Ryzen 7 7730U / Vega 8)"
     echo "-----------------------------------------------------------------"
+    echo "📦 PAQUETES APT EN EL SISTEMA (Repositorios oficiales Debian 13):"
+    for item in "${SUPPORT_PACKAGES[@]}"; do
+        IFS="|" read -r pkg desc <<< "$item"
+        local status_icon="❌"
+        local pkg_v="no instalado"
+        if dpkg -s "$pkg" &>/dev/null; then
+            status_icon="✅"
+            pkg_v=$(dpkg-query -W -f='${Version}' "$pkg" 2>/dev/null || echo "instalado")
+        fi
+        printf "  %-32s %s (v%s)\n" "$pkg:" "$status_icon" "$pkg_v"
+    done
+    echo "• Emuladores de Terminal disponibles:"
+    echo "  - Kitty:                $(if command -v kitty &>/dev/null; then echo "✅ $(which kitty) (v$(kitty --version 2>/dev/null | awk '{print $2}'))"; else echo "❌ No instalado"; fi)"
+    echo "  - Ptyxis:               $(if command -v ptyxis &>/dev/null; then echo "✅ $(which ptyxis) (v$(dpkg-query -W -f='${Version}' ptyxis 2>/dev/null || echo '48'))"; else echo "❌ No instalado"; fi)"
+    echo "  - GNOME Terminal:       $(if command -v gnome-terminal &>/dev/null; then echo "✅ $(which gnome-terminal)"; else echo "❌ No instalado"; fi)"
+    echo "-----------------------------------------------------------------"
+    echo "⚙️ CONFIGURACIÓN DE USUARIO (GSettings / dconf / scripts - Sin APT):"
     echo "• Esquema de Color:       $(run_as_user gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null || echo 'n/a')"
     echo "• Tema GTK:               $(run_as_user gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null || echo 'n/a')"
     echo "• Tema de Iconos:         $(run_as_user gsettings get org.gnome.desktop.interface icon-theme 2>/dev/null || echo 'n/a')"
@@ -159,36 +216,75 @@ show_status() {
     echo "  - Estado:               $(if [ "$nl_enabled" = "true" ]; then echo "✅ Activada (auto: $nl_auto)"; else echo "❌ Desactivada"; fi)"
     echo "  - Temperatura de Color: ${nl_temp} K"
     echo "-----------------------------------------------------------------"
-    local kb_configured
+    local kb_configured kb_cmd
     kb_configured=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.media-keys custom-keybindings 2>/dev/null || echo '[]')
-    echo "• Atajos de Terminal:"
-    if echo "$kb_configured" | grep -qi "custom0"; then
-        echo "  - Atajo Kitty (Ctrl+Alt+T): ✅ Configurado (custom0 -> kitty)"
+    kb_cmd=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ command 2>/dev/null || echo '')
+    echo "• Atajo Global de Terminal (Ctrl+Alt+T):"
+    if echo "$kb_configured" | grep -qi "custom0" && [ -n "$kb_cmd" ]; then
+        echo "  - Estado:               ✅ Configurado ($kb_cmd)"
     else
-        echo "  - Atajo Kitty (Ctrl+Alt+T): ❌ No configurado"
+        echo "  - Estado:               ❌ No configurado (usando atajo predeterminado de GNOME)"
     fi
     echo "-----------------------------------------------------------------"
-    echo "• Nautilus (Archivos):"
+    echo "• Nautilus (Gestor de Archivos):"
     echo "  - Vista Predeterminada: $(run_as_user gsettings get org.gnome.nautilus.preferences default-folder-viewer 2>/dev/null || echo 'n/a')"
     echo "  - Borrado Permanente:   $(run_as_user gsettings get org.gnome.nautilus.preferences show-delete-permanently 2>/dev/null || echo 'n/a')"
-    echo "  - Crear Enlace Simbólico:$(run_as_user gsettings get org.gnome.nautilus.preferences show-create-link 2>/dev/null || echo 'n/a')"
+    echo "  - Crear Enlace:         $(run_as_user gsettings get org.gnome.nautilus.preferences show-create-link 2>/dev/null || echo 'n/a')"
     local scripts_dir="$USER_HOME/.local/share/nautilus/scripts"
-    local s_kitty s_ag s_code
-    s_kitty=$(if [ -f "$scripts_dir/Abrir en Kitty" ]; then echo "✅"; else echo "❌"; fi)
+    local s_term s_ag s_code
+    s_term=$(if [ -f "$scripts_dir/Abrir en Terminal" ] || [ -f "$scripts_dir/Abrir en Kitty" ] || [ -f "$scripts_dir/Abrir en Ptyxis" ]; then echo "✅"; else echo "❌"; fi)
     s_ag=$(if [ -f "$scripts_dir/Abrir en Antigravity IDE" ]; then echo "✅"; else echo "❌"; fi)
     s_code=$(if [ -f "$scripts_dir/Abrir en VS Code" ]; then echo "✅"; else echo "❌"; fi)
-    echo "  - Scripts Contextuales: Kitty: $s_kitty | Antigravity: $s_ag | VS Code: $s_code"
+    echo "  - Scripts Contextuales: Terminal: $s_term | Antigravity: $s_ag | VS Code: $s_code"
     echo "================================================================="
 }
 
 # ------------------------------------------------------------------------------
-# 3. MODO OSCURO / MODO CLARO
+# 4. INSTALACIÓN DE PAQUETES BASE DESDE APT (OPCIONAL Y MODULAR)
+# ------------------------------------------------------------------------------
+apply_packages() {
+    local install_kitty="${1:-false}"
+    local install_ptyxis="${2:-false}"
+
+    echo "📦 [1/6] Verificando e instalando utilidades de soporte desde repositorios APT..."
+    if [ "$EUID" -ne 0 ] && ! command -v sudo &>/dev/null; then
+        echo "⚠️ 'sudo' no está disponible. Omitiendo instalación de paquetes APT."
+        return 0
+    fi
+
+    local pkgs_to_install=()
+    for item in "${SUPPORT_PACKAGES[@]}"; do
+        IFS="|" read -r pkg desc <<< "$item"
+        if ! dpkg -s "$pkg" &>/dev/null; then
+            pkgs_to_install+=("$pkg")
+        fi
+    done
+
+    if [ "$install_kitty" = "true" ] && ! command -v kitty &>/dev/null; then
+        pkgs_to_install+=("kitty")
+    fi
+
+    if [ "$install_ptyxis" = "true" ] && ! command -v ptyxis &>/dev/null; then
+        pkgs_to_install+=("ptyxis")
+    fi
+
+    if [ ${#pkgs_to_install[@]} -gt 0 ]; then
+        echo "  - Instalando paquetes seleccionados: ${pkgs_to_install[*]}..."
+        $SUDO apt-get update -qq
+        $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y "${pkgs_to_install[@]}" 2>/dev/null || true
+        echo "  ✅ Paquetes instalados con éxito."
+    else
+        echo "  ✅ Todos los paquetes seleccionados ya están instalados en el sistema."
+    fi
+}
+
+# ------------------------------------------------------------------------------
+# 5. MODO OSCURO / MODO CLARO (GSettings puro)
 # ------------------------------------------------------------------------------
 apply_dark() {
     echo "🌙 Aplicando tema oscuro persistente y armónico..."
     run_as_user gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null || true
 
-    # Seleccionar tema GTK instalado real para retrocompatibilidad GTK3/4
     local target_theme="Adwaita-dark"
     if [ -d "/usr/share/themes/adw-gtk3-dark" ] || [ -d "$USER_HOME/.local/share/themes/adw-gtk3-dark" ]; then
         target_theme="adw-gtk3-dark"
@@ -197,7 +293,6 @@ apply_dark() {
     fi
     run_as_user gsettings set org.gnome.desktop.interface gtk-theme "$target_theme" 2>/dev/null || true
 
-    # Tema de iconos acorde
     if [ -d "/usr/share/icons/Adwaita-dark" ]; then
         run_as_user gsettings set org.gnome.desktop.interface icon-theme 'Adwaita-dark' 2>/dev/null || true
     fi
@@ -214,35 +309,17 @@ apply_light() {
 }
 
 # ------------------------------------------------------------------------------
-# 4. INSTALACIÓN DE PAQUETES BASE DE SOPORTE
-# ------------------------------------------------------------------------------
-apply_packages() {
-    echo "ℹ️ [1/6] Verificando utilidades de soporte y terminal Kitty en GNOME..."
-    $SUDO apt-get update -qq
-    $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y \
-        kitty \
-        gnome-tweaks \
-        gnome-browser-connector \
-        gnome-shell-extension-gsconnect \
-        gnome-shell-extensions \
-        gnome-themes-extra \
-        dconf-cli \
-        wl-clipboard 2>/dev/null || true
-    echo "  ✅ Utilidades base aseguradas."
-}
-
-# ------------------------------------------------------------------------------
-# 5. APARIENCIA, TIPOGRAFÍA Y ACCESIBILIDAD MULTIMONITOR
+# 6. APARIENCIA, TIPOGRAFÍA Y ACCESIBILIDAD MULTIMONITOR (GSettings puro)
 # ------------------------------------------------------------------------------
 apply_appearance() {
-    echo "ℹ️ [2/6] Configurando apariencia, nitidez tipográfica y accesibilidad..."
+    echo "🎨 [2/6] Configurando apariencia, nitidez tipográfica y accesibilidad..."
     apply_dark
 
-    # Optimización de renderizado de fuentes para monitores LCD 1080p (subpixel RGBA)
+    # Optimización de renderizado de fuentes para pantallas LCD 1080p (subpixel RGBA)
     run_as_user gsettings set org.gnome.desktop.interface font-antialiasing 'rgba' 2>/dev/null || true
     run_as_user gsettings set org.gnome.desktop.interface font-hinting 'slight' 2>/dev/null || true
 
-    # Detección precisa de tipografía monospace (Nerd Fonts o mono del sistema)
+    # Detección precisa de tipografía monospace instalada en el sistema
     if [ -n "$(fc-list : family | grep -i "^JetBrainsMono Nerd Font" 2>/dev/null || true)" ]; then
         run_as_user gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Nerd Font 10' 2>/dev/null || true
         echo "  - Fuente Monospace: JetBrainsMono Nerd Font 10"
@@ -261,12 +338,17 @@ apply_appearance() {
 }
 
 # ------------------------------------------------------------------------------
-# 6. GESTIÓN DE VENTANAS Y COMPOSITOR MUTTER WAYLAND
+# 7. GESTIÓN DE VENTANAS Y MUTTER WAYLAND (GSettings puro)
 # ------------------------------------------------------------------------------
 apply_windows() {
-    echo "ℹ️ [3/6] Optimizando compositor Mutter y ventanas para multimonitor..."
-    # Disposición estándar moderna de botones a la derecha: minimizar, maximizar, cerrar
-    run_as_user gsettings set org.gnome.desktop.wm.preferences button-layout ':minimize,maximize,close' 2>/dev/null || true
+    local button_pos="${1:-right}"
+    echo "🖼️ [3/6] Optimizando compositor Mutter y ventanas para multimonitor..."
+
+    if [ "$button_pos" = "left" ]; then
+        run_as_user gsettings set org.gnome.desktop.wm.preferences button-layout 'close,minimize,maximize:' 2>/dev/null || true
+    else
+        run_as_user gsettings set org.gnome.desktop.wm.preferences button-layout ':minimize,maximize,close' 2>/dev/null || true
+    fi
 
     # Acciones de la barra de título
     run_as_user gsettings set org.gnome.desktop.wm.preferences action-double-click-titlebar 'toggle-maximize' 2>/dev/null || true
@@ -309,59 +391,93 @@ apply_windows() {
 }
 
 # ------------------------------------------------------------------------------
-# 7. BARRA SUPERIOR, RELOJ Y SALUD VISUAL
+# 8. BARRA SUPERIOR, RELOJ Y SALUD VISUAL (GSettings puro)
 # ------------------------------------------------------------------------------
 apply_topbar_power() {
-    echo "ℹ️ [4/6] Configurando barra superior, reloj 24h y salud visual..."
+    local enable_night_light="${1:-true}"
+    echo "🕒 [4/6] Configurando barra superior, reloj 24h y confort visual..."
     run_as_user gsettings set org.gnome.desktop.interface clock-format '24h' 2>/dev/null || true
     run_as_user gsettings set org.gnome.desktop.interface clock-show-weekday true 2>/dev/null || true
     run_as_user gsettings set org.gnome.desktop.interface clock-show-date true 2>/dev/null || true
     run_as_user gsettings set org.gnome.desktop.interface show-battery-percentage true 2>/dev/null || true
 
-    # Luz nocturna para reducción de fatiga visual en sesiones de desarrollo prolongadas
-    run_as_user gsettings set org.gnome.settings-daemon.plugins.color night-light-enabled true 2>/dev/null || true
-    run_as_user gsettings set org.gnome.settings-daemon.plugins.color night-light-temperature 4000 2>/dev/null || true
-    run_as_user gsettings set org.gnome.settings-daemon.plugins.color night-light-schedule-automatic true 2>/dev/null || true
+    if [ "$enable_night_light" = "true" ]; then
+        run_as_user gsettings set org.gnome.settings-daemon.plugins.color night-light-enabled true 2>/dev/null || true
+        run_as_user gsettings set org.gnome.settings-daemon.plugins.color night-light-temperature 4000 2>/dev/null || true
+        run_as_user gsettings set org.gnome.settings-daemon.plugins.color night-light-schedule-automatic true 2>/dev/null || true
+        echo "  - Luz nocturna activada a 4000K con horario automático."
+    else
+        run_as_user gsettings set org.gnome.settings-daemon.plugins.color night-light-enabled false 2>/dev/null || true
+    fi
 
     # Evitar suspensión por inactividad al estar conectado a corriente alterna
     run_as_user gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing' 2>/dev/null || true
 
-    echo "  ✅ Barra superior, reloj y luz nocturna configurados."
+    echo "  ✅ Barra superior, reloj y políticas de pantalla configuradas."
 }
 
 # ------------------------------------------------------------------------------
-# 8. GESTOR DE ARCHIVOS NAUTILUS (ARCHIVOS)
+# 9. GESTOR DE ARCHIVOS NAUTILUS Y SCRIPTS CONTEXTUALES (GSettings y Scripts de Usuario)
 # ------------------------------------------------------------------------------
 apply_nautilus() {
-    echo "ℹ️ [5/6] Optimizando gestor de archivos Nautilus..."
+    local pref_term="${1:-auto}"
+    if [ "$pref_term" = "auto" ]; then
+        pref_term=$(detect_preferred_terminal)
+    fi
+
+    echo "📁 [5/6] Optimizando gestor de archivos Nautilus (Terminal: $pref_term)..."
     run_as_user gsettings set org.gnome.nautilus.preferences default-folder-viewer 'list-view' 2>/dev/null || true
-    # Habilitar opción directa de borrado permanente (Shift+Supr y menú contextual)
     run_as_user gsettings set org.gnome.nautilus.preferences show-delete-permanently true 2>/dev/null || true
-    # Habilitar "Crear enlace simbólico" en el menú contextual
     run_as_user gsettings set org.gnome.nautilus.preferences show-create-link true 2>/dev/null || true
 
-    # Creación de scripts contextuales de clic derecho en Nautilus
     local nautilus_scripts_dir="$USER_HOME/.local/share/nautilus/scripts"
     run_as_user mkdir -p "$nautilus_scripts_dir"
 
-    # Script 1: Abrir en Kitty
-    cat << 'EOF' | run_as_user tee "$nautilus_scripts_dir/Abrir en Kitty" > /dev/null
+    # Script 1: Abrir en Terminal Preferida
+    cat << EOF | run_as_user tee "$nautilus_scripts_dir/Abrir en Terminal" > /dev/null
+#!/usr/bin/env bash
+target=""
+if [ -n "\${NAUTILUS_SCRIPT_SELECTED_FILE_PATHS:-}" ]; then
+    first=\$(echo "\$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" | head -n1)
+    if [ -d "\$first" ]; then
+        target="\$first"
+    elif [ -f "\$first" ]; then
+        target="\$(dirname "\$first")"
+    fi
+fi
+if [ -z "\$target" ] && [ -n "\${NAUTILUS_SCRIPT_CURRENT_URI:-}" ]; then
+    target=\$(echo "\$NAUTILUS_SCRIPT_CURRENT_URI" | sed 's|^file://||' | python3 -c "import sys, urllib.parse; print(urllib.parse.unquote(sys.stdin.read().strip()))" 2>/dev/null || true)
+fi
+dir_to_open="\${target:-.}"
+
+if [ "$pref_term" = "kitty" ] && command -v kitty &>/dev/null; then
+    exec kitty --directory "\$dir_to_open" &
+elif [ "$pref_term" = "ptyxis" ] && command -v ptyxis &>/dev/null; then
+    exec ptyxis --working-directory="\$dir_to_open" &
+elif command -v gnome-terminal &>/dev/null; then
+    exec gnome-terminal --working-directory="\$dir_to_open" &
+elif command -v kitty &>/dev/null; then
+    exec kitty --directory "\$dir_to_open" &
+fi
+EOF
+    run_as_user chmod +x "$nautilus_scripts_dir/Abrir en Terminal"
+
+    # Script de compatibilidad directa si kitty está presente
+    if command -v kitty &>/dev/null || [ "$pref_term" = "kitty" ]; then
+        cat << 'EOF' | run_as_user tee "$nautilus_scripts_dir/Abrir en Kitty" > /dev/null
 #!/usr/bin/env bash
 target=""
 if [ -n "${NAUTILUS_SCRIPT_SELECTED_FILE_PATHS:-}" ]; then
     first=$(echo "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" | head -n1)
-    if [ -d "$first" ]; then
-        target="$first"
-    elif [ -f "$first" ]; then
-        target="$(dirname "$first")"
-    fi
+    if [ -d "$first" ]; then target="$first"; elif [ -f "$first" ]; then target="$(dirname "$first")"; fi
 fi
 if [ -z "$target" ] && [ -n "${NAUTILUS_SCRIPT_CURRENT_URI:-}" ]; then
     target=$(echo "$NAUTILUS_SCRIPT_CURRENT_URI" | sed 's|^file://||' | python3 -c "import sys, urllib.parse; print(urllib.parse.unquote(sys.stdin.read().strip()))" 2>/dev/null || true)
 fi
 exec kitty --directory "${target:-.}" &
 EOF
-    run_as_user chmod +x "$nautilus_scripts_dir/Abrir en Kitty"
+        run_as_user chmod +x "$nautilus_scripts_dir/Abrir en Kitty"
+    fi
 
     # Script 2: Abrir en Antigravity IDE
     cat << 'EOF' | run_as_user tee "$nautilus_scripts_dir/Abrir en Antigravity IDE" > /dev/null
@@ -395,20 +511,42 @@ exec code "${target:-.}" &
 EOF
     run_as_user chmod +x "$nautilus_scripts_dir/Abrir en VS Code"
 
-    echo "  ✅ Nautilus configurado con vista en lista, creación de enlaces y scripts de clic derecho."
+    echo "  ✅ Nautilus configurado con scripts de clic derecho."
 }
 
 # ------------------------------------------------------------------------------
-# 9. ATAJO GLOBAL CTRL+ALT+T PARA TERMINAL KITTY
+# 10. ATAJO GLOBAL CTRL+ALT+T PARA LA TERMINAL PREFERIDA (GSettings puro)
 # ------------------------------------------------------------------------------
 apply_keybindings() {
-    echo "ℹ️ [6/6] Configurando atajo global Ctrl+Alt+T para terminal Kitty..."
+    local target_term="${1:-auto}"
+    if [ "$target_term" = "auto" ]; then
+        target_term=$(detect_preferred_terminal)
+    fi
+
+    echo "⌨️ [6/6] Configurando atajo global Ctrl+Alt+T para terminal ($target_term)..."
     local kb_path="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
 
-    # 1. Desvincular el atajo predeterminado de terminal para evitar conflicto de atajos en GNOME
+    local term_cmd="kitty"
+    local term_name="Kitty Terminal"
+    case "$target_term" in
+        ptyxis)
+            term_cmd="ptyxis"
+            term_name="Ptyxis Terminal"
+            ;;
+        gnome-terminal)
+            term_cmd="gnome-terminal"
+            term_name="GNOME Terminal"
+            ;;
+        *)
+            term_cmd="kitty"
+            term_name="Kitty Terminal"
+            ;;
+    esac
+
+    # 1. Desvincular el atajo predeterminado de terminal para evitar conflicto en GNOME
     run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys terminal "[]" 2>/dev/null || true
 
-    # 2. Registrar custom0 de forma no destructiva preservando atajos previos
+    # 2. Registrar custom0 de forma idempotente preservando otros atajos
     local current_kb
     current_kb=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.media-keys custom-keybindings 2>/dev/null || echo "[]")
     if [[ "$current_kb" == "@as []" || "$current_kb" == "[]" ]]; then
@@ -420,68 +558,194 @@ apply_keybindings() {
     fi
 
     # 3. Definir nombre, comando y combinación de teclas
-    run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$kb_path name 'Kitty Terminal' 2>/dev/null || true
-    run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$kb_path command 'kitty' 2>/dev/null || true
+    run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$kb_path name "$term_name" 2>/dev/null || true
+    run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$kb_path command "$term_cmd" 2>/dev/null || true
     run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$kb_path binding '<Primary><Alt>t' 2>/dev/null || true
 
-    echo "  ✅ Atajo global Ctrl+Alt+T asignado a Kitty sin colisiones."
+    echo "  ✅ Atajo global Ctrl+Alt+T asignado a '$term_cmd' sin colisiones."
 }
 
 # ------------------------------------------------------------------------------
-# 10. ENTRADA PRINCIPAL
+# 11. MODO INTERACTIVO PERSONALIZADO
 # ------------------------------------------------------------------------------
-case "${1:-}" in
-    --status|-s|status)
-        show_status
-        exit 0
-        ;;
-    --dark|-d)
-        apply_dark
-        exit 0
-        ;;
-    --light|-l)
-        apply_light
-        exit 0
-        ;;
-    --appearance|-a)
-        apply_appearance
-        exit 0
-        ;;
-    --windows|-w)
-        apply_windows
-        exit 0
-        ;;
-    --nautilus|-n)
-        apply_nautilus
-        exit 0
-        ;;
-    --keybindings|-k)
-        apply_keybindings
-        exit 0
-        ;;
-    --help|-h|help)
-        show_help
-        exit 0
-        ;;
-    "")
-        echo "================================================================="
-        echo "🎨 CONFIGURANDO PERSONALIZACIÓN DE GNOME SHELL (DEBIAN WORKSTATION)"
-        echo "================================================================="
-        apply_packages
-        apply_appearance
-        apply_windows
-        apply_topbar_power
-        apply_nautilus
-        apply_keybindings
+run_interactive() {
+    clear
+    echo -e "${CYAN}${BOLD}=================================================================${NC}"
+    echo -e "${BOLD}🎨 ASISTENTE INTERACTIVO DE PERSONALIZACIÓN DE GNOME SHELL${NC}"
+    echo -e "${CYAN}${BOLD}=================================================================${NC}"
+    echo "Personaliza exactamente lo que quieres instalar y configurar en Debian 13."
+    echo ""
+
+    # 1. Instalación de paquetes APT
+    local do_apt="n"
+    read -rp "¿Deseas instalar/actualizar paquetes de soporte vía APT (Tweaks, GSConnect, wl-clipboard)? [s/N]: " do_apt
+    local install_kitty_pkg="false"
+    local install_ptyxis_pkg="false"
+    if [[ "$do_apt" =~ ^[sSyY]$ ]]; then
         echo ""
-        show_status
-        echo "================================================================="
-        echo "✅ Configuración de GNOME Shell completada con éxito."
-        echo "================================================================="
-        ;;
-    *)
-        echo "❌ Opción no reconocida: $1"
-        show_help
-        exit 1
-        ;;
-esac
+        read -rp "  ¿Instalar emulador de terminal Kitty vía APT? [S/n]: " ans_k
+        if [[ ! "$ans_k" =~ ^[nN]$ ]]; then install_kitty_pkg="true"; fi
+
+        read -rp "  ¿Instalar emulador de terminal Ptyxis vía APT? [s/N]: " ans_p
+        if [[ "$ans_p" =~ ^[sSyY]$ ]]; then install_ptyxis_pkg="true"; fi
+
+        apply_packages "$install_kitty_pkg" "$install_ptyxis_pkg"
+    else
+        echo "  ℹ️ Omitiendo instalación de paquetes APT (modo configuración de usuario)."
+    fi
+
+    # 2. Esquema de Color
+    echo ""
+    echo "Selecciona el esquema de color:"
+    echo "  1) Oscuro (prefer-dark + Adwaita-dark) [Recomendado]"
+    echo "  2) Claro (default + Adwaita)"
+    read -rp "Opción [1]: " ans_color
+    if [ "${ans_color:-1}" = "2" ]; then
+        apply_light
+    else
+        apply_dark
+    fi
+
+    # 3. Disposición de Botones de Ventana
+    echo ""
+    echo "Selecciona la posición de botones de ventana (minimizar, maximizar, cerrar):"
+    echo "  1) Derecha (:minimize,maximize,close) [Estándar]"
+    echo "  2) Izquierda (close,minimize,maximize:)"
+    read -rp "Opción [1]: " ans_btn
+    local btn_choice="right"
+    if [ "${ans_btn:-1}" = "2" ]; then btn_choice="left"; fi
+    apply_windows "$btn_choice"
+
+    # 4. Terminal preferida para Atajo Ctrl+Alt+T y Nautilus
+    echo ""
+    echo "Selecciona tu terminal preferida para atajos y menú de Nautilus:"
+    echo "  1) Kitty (acelerada por GPU, Catppuccin)"
+    echo "  2) Ptyxis (moderna nativa GNOME 48)"
+    echo "  3) GNOME Terminal"
+    read -rp "Opción [1]: " ans_term
+    local selected_term="kitty"
+    case "${ans_term:-1}" in
+        2) selected_term="ptyxis" ;;
+        3) selected_term="gnome-terminal" ;;
+        *) selected_term="kitty" ;;
+    esac
+
+    # 5. Confort Visual (Luz Nocturna)
+    echo ""
+    read -rp "¿Activar Luz Nocturna automática (4000K al anochecer para descanso visual)? [S/n]: " ans_nl
+    local nl_bool="true"
+    if [[ "$ans_nl" =~ ^[nN]$ ]]; then nl_bool="false"; fi
+    apply_topbar_power "$nl_bool"
+
+    # 6. Apariencia tipográfica, Nautilus y Atajos
+    apply_appearance
+    apply_nautilus "$selected_term"
+    apply_keybindings "$selected_term"
+
+    echo ""
+    echo -e "${GREEN}${BOLD}✅ ¡Personalización de GNOME Shell finalizada a tu gusto!${NC}"
+    echo ""
+    show_status
+}
+
+# ------------------------------------------------------------------------------
+# 12. ENTRADA PRINCIPAL Y PARSEO DE ARGUMENTOS
+# ------------------------------------------------------------------------------
+TARGET_TERMINAL="auto"
+TARGET_BUTTONS="right"
+ENABLE_PACKAGES="true"
+ENABLE_NIGHTLIGHT="true"
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --status|-s|status)
+            show_status
+            exit 0
+            ;;
+        --help|-h|help)
+            show_help
+            exit 0
+            ;;
+        --interactive|-i)
+            run_interactive
+            exit 0
+            ;;
+        --no-install|--config|--config-only)
+            ENABLE_PACKAGES="false"
+            shift
+            ;;
+        --packages|-p)
+            apply_packages "true" "false"
+            exit 0
+            ;;
+        --dark|-d)
+            apply_dark
+            exit 0
+            ;;
+        --light|-l)
+            apply_light
+            exit 0
+            ;;
+        --terminal)
+            if [ -n "${2:-}" ]; then
+                TARGET_TERMINAL="$2"
+                shift 2
+            else
+                echo -e "${RED}❌ Error: Debes especificar una terminal (kitty|ptyxis|gnome-terminal).${NC}"
+                exit 1
+            fi
+            ;;
+        --buttons)
+            if [ -n "${2:-}" ]; then
+                TARGET_BUTTONS="$2"
+                shift 2
+            else
+                TARGET_BUTTONS="right"
+                shift
+            fi
+            ;;
+        --appearance|-a)
+            apply_appearance
+            exit 0
+            ;;
+        --windows|-w)
+            apply_windows "$TARGET_BUTTONS"
+            exit 0
+            ;;
+        --nautilus|-n)
+            apply_nautilus "$TARGET_TERMINAL"
+            exit 0
+            ;;
+        --keybindings|-k)
+            apply_keybindings "$TARGET_TERMINAL"
+            exit 0
+            ;;
+        *)
+            echo -e "${RED}❌ Opción no reconocida: $1${NC}"
+            show_help
+            exit 1
+            ;;
+    esac
+done
+
+# Flujo predeterminado (sin argumentos o con modificadores combinados)
+echo "================================================================="
+echo "🎨 CONFIGURANDO PERSONALIZACIÓN DE GNOME SHELL (DEBIAN 13)"
+echo "================================================================="
+if [ "$ENABLE_PACKAGES" = "true" ]; then
+    apply_packages "true" "false"
+else
+    echo "ℹ️ Modo sin instalación APT activado (--no-install). Aplicando ajustes de usuario."
+fi
+
+apply_appearance
+apply_windows "$TARGET_BUTTONS"
+apply_topbar_power "$ENABLE_NIGHTLIGHT"
+apply_nautilus "$TARGET_TERMINAL"
+apply_keybindings "$TARGET_TERMINAL"
+
+echo ""
+show_status
+echo "================================================================="
+echo "✅ Configuración de GNOME Shell completada con éxito."
+echo "================================================================="

@@ -73,8 +73,8 @@ printer-status:
     ./Setup/hp-printer-setup.sh --status
 
 # Personalización y configuración de GNOME Shell (Modo oscuro, botones de ventana, scripts de Nautilus, atajos)
-gnome-setup:
-    ./Setup/gnome-settings.sh
+gnome-setup *args:
+    ./Setup/gnome-settings.sh {{args}}
 
 # Aplicar tema oscuro completo en GNOME Shell (prefer-dark + Adwaita-dark)
 gnome-theme-dark:
@@ -169,8 +169,8 @@ fastfetch-status:
     ./Setup/fastfetch.sh --status
 
 # Terminal Kitty acelerada por GPU (Tema Catppuccin Mocha, blur Wayland, JetBrainsMono)
-kitty:
-    ./Setup/kitty.sh
+kitty *args:
+    ./Setup/kitty.sh {{args}}
 
 # Diagnóstico y estado de la terminal Kitty
 kitty-status:

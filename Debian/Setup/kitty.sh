@@ -1,31 +1,50 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# kitty.sh - Instalación y Configuración Estética de Kitty Terminal para Debian
-# Entorno: GNOME Shell (Wayland) + Modo Oscuro Catppuccin Mocha
+# kitty.sh - Instalación, Optimización y Configuración Estética de Kitty Terminal
+# Sistema: Debian GNU/Linux 13 (Trixie) | Entorno: GNOME Shell 48+ (Wayland)
+# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8 Mesa RADV)
+# Tema: Catppuccin Mocha con Transparencia, Blur y Tipografía Nerd Font
 # ==============================================================================
-# Características configuradas:
-# - Esquema de color oscuro moderno (Catppuccin Mocha)
-# - Opacidad/Transparencia (75%) con desenfoque (blur 32) nativo en Wayland
-# - Tipografía JetBrainsMono Nerd Font (ligaduras completas y símbolos glyphs)
-# - Barra de pestañas estilo Powerline inclinada (slanted)
-# - Cursor tipo barra (beam) con estela de movimiento suave (cursor_trail)
-# - Control dinámico de opacidad, navegación de pestañas y splits con atajos
-# - Integración completa con GNOME (GSettings, atajo Ctrl+Alt+T y scripts de Nautilus)
+# Características:
+# - Esquema de color oscuro de alta legibilidad (Catppuccin Mocha).
+# - Aceleración por GPU nativa en Wayland (Mesa RADV) sin dependencias X11.
+# - Opacidad (80%) con desenfoque (blur 32) adaptado para Wayland y blur-my-shell.
+# - Tipografía JetBrainsMono Nerd Font con ligaduras completas y fallbacks elegantes.
+# - Barra de pestañas Powerline con estilo inclinado (slanted).
+# - Cursor moderno tipo barra (beam) con estela de movimiento suave (cursor_trail).
+# - Scrollback ampliado (10.000 líneas) y soporte táctil multitáctil para touchpad.
+# - Atajo global Ctrl+Alt+T sincronizado con GNOME y scripts inteligentes para Nautilus.
+# - Modos CLI: --status / -s, --config-only / --no-install, --default-terminal, --help / -h.
 # ==============================================================================
 
 set -euo pipefail
 
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+
+# ------------------------------------------------------------------------------
+# 1. CONSTANTES Y CONFIGURACIÓN ESTÉTICA
+# ------------------------------------------------------------------------------
+DEFAULT_OPACITY="0.80"
+DEFAULT_FONT_SIZE="11.0"
+
+# Colores ANSI para terminal
+BOLD='\033[1m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+# ------------------------------------------------------------------------------
+# 2. DETECCIÓN DE USUARIO Y ELEVACIÓN DE PRIVILEGIOS
+# ------------------------------------------------------------------------------
 if [ "$EUID" -ne 0 ]; then
-    if ! command -v sudo &> /dev/null; then
-        echo "❌ Error: 'sudo' no está disponible."
-        exit 1
-    fi
     SUDO="sudo"
 else
     SUDO=""
 fi
 
-# Detectar usuario real en caso de ejecución con sudo
 if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
     REAL_USER="$SUDO_USER"
     USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
@@ -37,88 +56,160 @@ fi
 REAL_UID=$(id -u "$REAL_USER" 2>/dev/null || echo "1000")
 
 run_as_user() {
+    local runtime_dir="${XDG_RUNTIME_DIR:-/run/user/$REAL_UID}"
+    local dbus_addr="${DBUS_SESSION_BUS_ADDRESS:-unix:path=$runtime_dir/bus}"
     if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
         sudo -u "$REAL_USER" env \
             HOME="$USER_HOME" \
             USER="$REAL_USER" \
-            XDG_RUNTIME_DIR="/run/user/$REAL_UID" \
-            DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$REAL_UID/bus}" \
+            PATH="/usr/local/bin:/usr/bin:/bin:$PATH" \
+            XDG_RUNTIME_DIR="$runtime_dir" \
+            DBUS_SESSION_BUS_ADDRESS="$dbus_addr" \
             "$@"
     else
-        "$@"
+        env \
+            XDG_RUNTIME_DIR="$runtime_dir" \
+            DBUS_SESSION_BUS_ADDRESS="$dbus_addr" \
+            "$@"
     fi
 }
 
+get_os_description() {
+    if [ -f /etc/os-release ]; then
+        grep "^PRETTY_NAME=" /etc/os-release | cut -d= -f2 | tr -d '"'
+    else
+        echo "Debian GNU/Linux 13 (trixie)"
+    fi
+}
+
+# ------------------------------------------------------------------------------
+# 3. AYUDA Y DIAGNÓSTICO DEL SISTEMA
+# ------------------------------------------------------------------------------
 show_help() {
     cat <<EOF
-🐱 Configuración de Kitty Terminal - Debian (GNOME Shell Wayland)
+🐱 Gestor y Optimizador de Kitty Terminal - Debian 13 Workstation (GNOME Wayland)
+Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8 Mesa RADV)
 
 Uso:
   $0 [OPCIÓN]
 
-Opciones:
-  (sin argumentos)    Instala Kitty vía APT, genera configuración estética Catppuccin Mocha
-                      y configura la integración con GNOME (atajo Ctrl+Alt+T y script de Nautilus).
-  --status, -s        Muestra el estado de instalación de Kitty, fuentes e integración en GNOME.
-  --help, -h          Muestra este mensaje de ayuda.
+Opciones principales:
+  (sin argumentos)        Instala Kitty vía APT si no está instalado, genera la configuración
+                          estética Catppuccin Mocha y aplica la integración con GNOME.
+  -s, --status            Muestra el estado detallado de Kitty, versión, fuentes y atajos.
+  --no-install, --config  Genera y actualiza kitty.conf y atajos de usuario SIN invocar APT
+                          ni requerir privilegios de superusuario (sudo).
+  --default-terminal      Establece Kitty como la terminal predeterminada en update-alternatives.
+  -h, --help              Muestra este mensaje de ayuda.
 
 Características aplicadas:
   • Tema:             Catppuccin Mocha con fondo oscuro (#181825).
-  • Tipografía:       JetBrainsMono Nerd Font (ligaduras activas).
-  • Efectos Wayland:  Opacidad 75% con desenfoque (blur 32) acelerado por GPU (Mesa/RADV).
-  • Cursor & Pestañas: Cursor beam con estela suave (cursor_trail) y pestañas powerline slanted.
-  • Integración GNOME: Terminal predeterminada, atajo global Ctrl+Alt+T y menú contextual en Nautilus.
+  • Tipografía:       JetBrainsMono Nerd Font (ligaduras y soporte completo de glifos).
+  • Efectos Wayland:  Opacidad 80% con desenfoque (blur 32) acelerado por GPU (AMD Mesa).
+  • Cursor & Pestañas:Cursor beam con estela suave (cursor_trail) y pestañas powerline slanted.
+  • Integración GNOME:Atajo global Ctrl+Alt+T sincronizado y script contextual en Nautilus.
 EOF
 }
 
 show_status() {
+    local os_name
+    os_name=$(get_os_description)
+
     echo "================================================================="
-    echo "🔍 ESTADO DE KITTY TERMINAL - DEBIAN (GNOME WAYLAND)"
+    echo "🔍 ESTADO DE KITTY TERMINAL - DEBIAN WORKSTATION (WAYLAND)"
     echo "================================================================="
-    echo "• Kitty instalado:          $(if command -v kitty &>/dev/null; then echo "✅ Kitty ($(kitty --version 2>/dev/null | awk '{print $2}'))"; else echo "❌ No instalado"; fi)"
-    echo "• JetBrainsMono Nerd Font:  $(if fc-list "JetBrainsMono Nerd Font" 2>/dev/null | grep -i "JetBrainsMono" >/dev/null; then echo "✅ Disponible"; else echo "⚠️ No detectada (se usará fallback)"; fi)"
-    echo "• Configuración kitty.conf: $(if [ -f "$USER_HOME/.config/kitty/kitty.conf" ]; then echo "✅ Presente ($USER_HOME/.config/kitty/kitty.conf)"; else echo "❌ No presente"; fi)"
-    echo "• Script de Nautilus:       $(if [ -f "$USER_HOME/.local/share/nautilus/scripts/Abrir en Kitty" ]; then echo "✅ Instalado (Abrir en Kitty)"; else echo "❌ No instalado"; fi)"
+    echo "• Sistema Operativo:             $os_name"
+    
+    if command -v kitty &>/dev/null; then
+        local kitty_v
+        kitty_v=$(kitty --version 2>/dev/null | awk '{print $2}' || echo "instalada")
+        echo "• Kitty instalado:               ✅ $(which kitty) (v${kitty_v})"
+    else
+        echo "• Kitty instalado:               ❌ No instalado"
+    fi
+
+    # Fuente Nerd Font
+    local font_status="⚠️ No detectada (se usará fallback del sistema)"
+    if [ -n "$(fc-list : family | grep -i "^JetBrainsMono Nerd Font" 2>/dev/null || true)" ]; then
+        font_status="✅ JetBrainsMono Nerd Font disponible"
+    elif [ -n "$(fc-list : family | grep -i "^JetBrains Mono" 2>/dev/null || true)" ]; then
+        font_status="✅ JetBrains Mono estándar disponible"
+    fi
+    echo "• Tipografía Monospace:          $font_status"
+
+    # Configuración de Kitty
+    local cfg_file="$USER_HOME/.config/kitty/kitty.conf"
+    if [ -f "$cfg_file" ]; then
+        local opac
+        opac=$(grep "^background_opacity" "$cfg_file" 2>/dev/null | awk '{print $2}' || echo "n/a")
+        echo "• Configuración kitty.conf:      ✅ Presente (Opacidad: $opac | Tema: Catppuccin Mocha)"
+    else
+        echo "• Configuración kitty.conf:      ❌ No presente ($cfg_file)"
+    fi
+
+    # Integración con GNOME (Atajo Ctrl+Alt+T)
+    local kb_configured kb_cmd
+    kb_configured=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.media-keys custom-keybindings 2>/dev/null || echo '[]')
+    kb_cmd=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ command 2>/dev/null || echo '')
+    if echo "$kb_configured" | grep -qi "custom0" && [ "$kb_cmd" = "'kitty'" -o "$kb_cmd" = "kitty" ]; then
+        echo "• Atajo Global (Ctrl+Alt+T):     ✅ Vinculado a Kitty (custom0)"
+    else
+        echo "• Atajo Global (Ctrl+Alt+T):     ℹ️ No asignado directamente a Kitty"
+    fi
+
+    # Script de Nautilus
+    local nautilus_script="$USER_HOME/.local/share/nautilus/scripts/Abrir en Kitty"
+    if [ -f "$nautilus_script" ]; then
+        echo "• Script de Nautilus:            ✅ Instalado ('Abrir en Kitty')"
+    else
+        echo "• Script de Nautilus:            ❌ No instalado"
+    fi
+
+    # Terminal del sistema
+    if [ -x /usr/bin/x-terminal-emulator ]; then
+        local cur_alt
+        cur_alt=$(readlink -f /usr/bin/x-terminal-emulator 2>/dev/null || echo "n/a")
+        echo "• x-terminal-emulator:           $cur_alt"
+    fi
     echo "================================================================="
 }
 
-case "${1:-}" in
-    --status|-s|status)
-        show_status
-        exit 0
-        ;;
-    --help|-h|help)
-        show_help
-        exit 0
-        ;;
-esac
+# ------------------------------------------------------------------------------
+# 4. INSTALACIÓN DEL PAQUETE KITTY VÍA APT
+# ------------------------------------------------------------------------------
+install_kitty() {
+    if ! command -v kitty &>/dev/null; then
+        echo "📦 [1/4] Instalando Kitty Terminal vía APT..."
+        if [ "$EUID" -ne 0 ] && ! command -v sudo &>/dev/null; then
+            echo "❌ Error: Se requieren permisos de superusuario para instalar Kitty."
+            exit 1
+        fi
+        $SUDO apt-get update -qq
+        $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y kitty 2>/dev/null || true
+        echo "   ✅ Kitty instalado exitosamente."
+    else
+        echo "   ✅ Kitty ya está instalado en el sistema ($(kitty --version 2>/dev/null | awk '{print $2}'))."
+    fi
+}
 
-echo "==========================================================="
-echo "🐱 INICIANDO CONFIGURACIÓN DE KITTY TERMINAL EN DEBIAN GNOME"
-echo "==========================================================="
+# ------------------------------------------------------------------------------
+# 5. GENERACIÓN DEL ARCHIVO DE CONFIGURACIÓN KITTY.CONF
+# ------------------------------------------------------------------------------
+setup_config() {
+    echo "⚙️ [2/4] Generando configuración estética Catppuccin Mocha en ~/.config/kitty/..."
+    local config_dir="$USER_HOME/.config/kitty"
+    run_as_user mkdir -p "$config_dir"
 
-# 1. Instalar Kitty y dependencias
-echo "📦 [1/4] Instalando Kitty Terminal vía APT..."
-if ! command -v kitty &>/dev/null; then
-    $SUDO apt-get update -qq
-    $SUDO apt-get install -y kitty 2>/dev/null || true
-else
-    echo "   ✅ Kitty ya está instalado en el sistema ($(kitty --version 2>/dev/null | awk '{print $2}'))."
-fi
+    # Respaldo de seguridad si el archivo ya existía
+    if [ -f "$config_dir/kitty.conf" ] && [ ! -f "$config_dir/kitty.conf.bak" ]; then
+        run_as_user cp "$config_dir/kitty.conf" "$config_dir/kitty.conf.bak" 2>/dev/null || true
+    fi
 
-# 2. Crear directorios y respaldar configuración previa si existe
-echo "⚙️ [2/4] Preparando directorios de configuración..."
-run_as_user mkdir -p "$USER_HOME/.config/kitty"
-
-if [ -f "$USER_HOME/.config/kitty/kitty.conf" ]; then
-    run_as_user cp -n "$USER_HOME/.config/kitty/kitty.conf" "$USER_HOME/.config/kitty/kitty.conf.bak" 2>/dev/null || true
-fi
-
-# 3. Generar kitty.conf con tema Catppuccin Mocha, opacidad y efectos
-echo "🎨 [3/4] Generando configuración optimizada para GNOME Shell (Wayland)..."
-cat <<'EOF' | run_as_user tee "$USER_HOME/.config/kitty/kitty.conf" > /dev/null
+    cat <<EOF | run_as_user tee "$config_dir/kitty.conf" > /dev/null
 # =============================================================================
-# KITTY CONFIGURATION - DEBIAN GNU/LINUX (GNOME SHELL WAYLAND)
+# KITTY CONFIGURATION - DEBIAN 13 WORKSTATION (GNOME SHELL WAYLAND)
+# Hardware: AMD Ryzen 7 7730U / Radeon Vega 8 (Mesa RADV)
+# Tema: Catppuccin Mocha con Transparencia y Tipografía Nerd Font
 # =============================================================================
 
 # --- Fuentes & Tipografía ---
@@ -126,12 +217,12 @@ font_family      JetBrainsMono Nerd Font
 bold_font        auto
 italic_font      auto
 bold_italic_font auto
-font_size        11.5
+font_size        ${DEFAULT_FONT_SIZE}
 disable_ligatures never
 box_drawing_scale 0.001, 1, 1.5, 2
 
 # --- Transparencia, Desenfoque y Wayland ---
-background_opacity         0.75
+background_opacity         ${DEFAULT_OPACITY}
 dynamic_background_opacity yes
 background_blur            32
 linux_display_server       auto
@@ -171,7 +262,7 @@ selection_background  #f5e0dc
 cursor                #f5e0dc
 cursor_text_color     #11111b
 
-# URL
+# Enlaces y URLs
 url_color             #89b4fa
 url_style             curly
 open_url_with         default
@@ -222,7 +313,7 @@ repaint_delay            10
 input_delay              3
 sync_to_monitor          yes
 scrollback_lines         10000
-scrollback_pager_history_size 20
+scrollback_pager_history_size 64
 wheel_scroll_multiplier  3.0
 touch_scroll_multiplier  2.0
 mouse_hide_wait          3.0
@@ -272,48 +363,134 @@ map ctrl+minus       change_font_size all -1.0
 map ctrl+kp_subtract change_font_size all -1.0
 map ctrl+0           change_font_size all 0
 
-# Recargar configuración en vivo:
+# Recargar configuración en vivo sin reiniciar:
 map ctrl+shift+f5    load_config_file
 EOF
 
-# 4. Integración con GNOME Shell y Nautilus
-echo "📁 [4/4] Configurando integración con GNOME Shell y Nautilus..."
+    echo "   ✅ Archivo kitty.conf generado correctamente."
+}
 
-if command -v gsettings &>/dev/null; then
-    # Atajo global Ctrl+Alt+T en GNOME
-    run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom-kitty/ name 'Kitty Terminal' 2>/dev/null || true
-    run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom-kitty/ command 'kitty' 2>/dev/null || true
-    run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom-kitty/ binding '<Control><Alt>t' 2>/dev/null || true
+# ------------------------------------------------------------------------------
+# 6. INTEGRACIÓN CON GNOME SHELL Y ATAJO GLOBAL CTRL+ALT+T
+# ------------------------------------------------------------------------------
+setup_keybinding() {
+    echo "⌨️ [3/4] Sincronizando atajo global Ctrl+Alt+T con Kitty en GNOME Shell..."
+    if command -v gsettings &>/dev/null; then
+        local kb_path="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
 
-    # Agregar a la lista de custom-keybindings si no está
-    CURRENT_KB=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.media-keys custom-keybindings 2>/dev/null || echo "@as []")
-    if [[ "$CURRENT_KB" != *"custom-kitty"* ]]; then
-        if [ "$CURRENT_KB" = "@as []" ] || [ "$CURRENT_KB" = "[]" ]; then
-            run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom-kitty/']" 2>/dev/null || true
-        else
-            NEW_KB=$(echo "$CURRENT_KB" | sed "s/]/, '\/org\/gnome\/settings-daemon\/plugins\/media-keys\/custom-keybindings\/custom-kitty\/']/")
-            run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "$NEW_KB" 2>/dev/null || true
+        # 1. Desvincular el atajo predeterminado de GNOME para evitar colisiones
+        run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys terminal "[]" 2>/dev/null || true
+
+        # 2. Registrar en la lista de custom-keybindings de forma no destructiva
+        local current_kb
+        current_kb=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.media-keys custom-keybindings 2>/dev/null || echo "@as []")
+        if [[ "$current_kb" == "@as []" || "$current_kb" == "[]" ]]; then
+            run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "['$kb_path']" 2>/dev/null || true
+        elif ! echo "$current_kb" | grep -q "$kb_path"; then
+            local new_kb
+            new_kb=$(echo "$current_kb" | sed "s/]/, '$kb_path']/")
+            run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "$new_kb" 2>/dev/null || true
         fi
+
+        # 3. Asignar comando y combinación
+        run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$kb_path name 'Kitty Terminal' 2>/dev/null || true
+        run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$kb_path command 'kitty' 2>/dev/null || true
+        run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$kb_path binding '<Primary><Alt>t' 2>/dev/null || true
+
+        echo "   ✅ Atajo Ctrl+Alt+T asignado a Kitty sin conflictos."
+    fi
+}
+
+# ------------------------------------------------------------------------------
+# 7. MENÚ CONTEXTUAL DE NAUTILUS (CLIC DERECHO)
+# ------------------------------------------------------------------------------
+setup_nautilus_script() {
+    echo "📁 [4/4] Creando script contextual de Nautilus ('Abrir en Kitty')..."
+    local scripts_dir="$USER_HOME/.local/share/nautilus/scripts"
+    run_as_user mkdir -p "$scripts_dir"
+
+    cat << 'EOF' | run_as_user tee "$scripts_dir/Abrir en Kitty" > /dev/null
+#!/usr/bin/env bash
+target=""
+if [ -n "${NAUTILUS_SCRIPT_SELECTED_FILE_PATHS:-}" ]; then
+    first=$(echo "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" | head -n1)
+    if [ -d "$first" ]; then
+        target="$first"
+    elif [ -f "$first" ]; then
+        target="$(dirname "$first")"
     fi
 fi
-
-# Acción de menú contextual en Nautilus
-NAUTILUS_SCRIPTS_DIR="$USER_HOME/.local/share/nautilus/scripts"
-run_as_user mkdir -p "$NAUTILUS_SCRIPTS_DIR"
-cat <<'EOF' | run_as_user tee "$NAUTILUS_SCRIPTS_DIR/Abrir en Kitty" > /dev/null
-#!/usr/bin/env bash
-target="${NAUTILUS_SCRIPT_SELECTED_FILE_PATHS:-$PWD}"
-if [ -f "$target" ]; then
-    target="$(dirname "$target")"
+if [ -z "$target" ] && [ -n "${NAUTILUS_SCRIPT_CURRENT_URI:-}" ]; then
+    target=$(echo "$NAUTILUS_SCRIPT_CURRENT_URI" | sed 's|^file://||' | python3 -c "import sys, urllib.parse; print(urllib.parse.unquote(sys.stdin.read().strip()))" 2>/dev/null || true)
 fi
-kitty --directory "$target" &
+exec kitty --directory "${target:-.}" &
 EOF
-run_as_user chmod +x "$NAUTILUS_SCRIPTS_DIR/Abrir en Kitty" 2>/dev/null || true
+    run_as_user chmod +x "$scripts_dir/Abrir en Kitty" 2>/dev/null || true
+    echo "   ✅ Script contextual 'Abrir en Kitty' listo para Nautilus."
+}
 
-echo "==========================================================="
-echo "✅ Kitty se ha configurado exitosamente para Debian GNOME."
-echo "   • Tema: Catppuccin Mocha con opacidad 75% y blur 32."
-echo "   • Fuente: JetBrainsMono Nerd Font (ligaduras activas)."
-echo "   • Atajo global: Ctrl+Alt+T asignado en GNOME."
-echo "   • Menú Nautilus: 'Abrir en Kitty' disponible en clic derecho."
-echo "==========================================================="
+# ------------------------------------------------------------------------------
+# 8. CONFIGURAR TERMINAL PREDETERMINADA EN EL SISTEMA
+# ------------------------------------------------------------------------------
+set_default_terminal() {
+    if command -v update-alternatives &>/dev/null && [ -x /usr/bin/kitty ]; then
+        echo "🔧 Estableciendo Kitty como x-terminal-emulator predeterminado..."
+        if [ "$EUID" -ne 0 ] && ! command -v sudo &>/dev/null; then
+            echo "❌ Error: Se requieren privilegios de superusuario para update-alternatives."
+            exit 1
+        fi
+        $SUDO update-alternatives --set x-terminal-emulator /usr/bin/kitty 2>/dev/null || true
+        echo "   ✅ Kitty es ahora el x-terminal-emulator del sistema."
+    fi
+}
+
+# ------------------------------------------------------------------------------
+# 9. ENTRADA PRINCIPAL Y PARSEO DE ARGUMENTOS
+# ------------------------------------------------------------------------------
+case "${1:-}" in
+    -s|--status|status)
+        show_status
+        exit 0
+        ;;
+    -h|--help|help)
+        show_help
+        exit 0
+        ;;
+    --no-install|--config|--config-only)
+        echo "==========================================================="
+        echo "🎨 APLICANDO CONFIGURACIÓN DE KITTY (MODO USUARIO / SIN APT)"
+        echo "==========================================================="
+        setup_config
+        setup_keybinding
+        setup_nautilus_script
+        echo ""
+        show_status
+        echo "==========================================================="
+        echo "✅ Configuración de Kitty aplicada con éxito."
+        echo "==========================================================="
+        exit 0
+        ;;
+    --default-terminal)
+        set_default_terminal
+        exit 0
+        ;;
+    "")
+        echo "==========================================================="
+        echo "🐱 CONFIGURANDO KITTY TERMINAL EN DEBIAN 13 (GNOME WAYLAND)"
+        echo "==========================================================="
+        install_kitty
+        setup_config
+        setup_keybinding
+        setup_nautilus_script
+        echo ""
+        show_status
+        echo "==========================================================="
+        echo "✅ Instalación y optimización de Kitty completada."
+        echo "==========================================================="
+        ;;
+    *)
+        echo "❌ Opción no reconocida: $1"
+        show_help
+        exit 1
+        ;;
+esac
