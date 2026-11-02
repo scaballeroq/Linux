@@ -231,9 +231,10 @@ net.ipv4.ping_group_range = 0 2147483647
 kernel.unprivileged_userns_clone = 1
 user.max_user_namespaces = 262144
 
-# Nota sobre Debian 24.04/26.10 y AppArmor:
-# Si herramientas rootless de contenedores requieren crear user namespaces no confinados,
-# se puede permitir explícitamente descomentando:
+# Nota sobre Debian 13 (Trixie) y AppArmor:
+# En Debian 13+, AppArmor restringe por defecto los user namespaces sin privilegios
+# (kernel.apparmor_restrict_unprivileged_userns = 1).
+# Podman rootless funciona mediante perfiles o, si se requiere deshabilitar la restricción global:
 # kernel.apparmor_restrict_unprivileged_userns = 0
 EOF
 

@@ -1,8 +1,8 @@
 #!/bin/bash
 # ==============================================================================
-# laptop-setup.sh - Optimización de Portátil para Debian Workstation (GNOME Shell 46 / 50 / 51)
+# laptop-setup.sh - Optimización de Portátil para Debian Workstation (GNOME Shell Wayland)
 # Optimizado para HP ProBook 455 G10 (AMD Ryzen 7 7730U / Vega 8)
-# Compatible con Debian 24.04 LTS (GNOME 46), Debian 26.04 LTS (GNOME 50) y superiores
+# Compatible con Debian 13 Trixie (GNOME Shell Wayland), Debian Testing y superiores
 # ==============================================================================
 # Características:
 #   - GNOME Shell (46/50/51) + Wayland nativo (GSettings)
@@ -70,7 +70,7 @@ get_os_description() {
 
 show_help() {
     cat <<EOF
-💻 Optimizador de Portátiles - Debian Workstation (GNOME Shell 46 / 50 / 51 Wayland)
+💻 Optimizador de Portátiles - Debian Workstation (GNOME Shell Wayland)
 
 Uso:
   $0 [OPCIÓN]
@@ -81,9 +81,9 @@ Opciones:
   --help, -h             Muestra este mensaje de ayuda.
 
 Compatibilidad de Versiones:
-  • Debian 24.04 LTS (GNOME Shell 46 Wayland)
-  • Debian 26.04 LTS (GNOME Shell 50 Wayland)
-  • Debian Rolling / GNOME Shell 51 Wayland
+  • Debian 12 Bookworm (GNOME Shell 43 Wayland)
+  • Debian 13 Trixie (GNOME Shell 47/48+ Wayland)
+  • Debian Testing / Forky / Sid (GNOME Shell Wayland)
 
 Optimizaciones incluidas:
   1. Servicios de Energía y Hardware:

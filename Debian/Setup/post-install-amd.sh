@@ -133,6 +133,7 @@ else
     if [ -f /etc/default/zramswap ]; then
         sudo sed -i 's/^#*ALGORITHM=.*/ALGORITHM=zstd/' /etc/default/zramswap
         sudo sed -i 's/^#*PERCENT=.*/PERCENT=50/' /etc/default/zramswap
+        sudo systemctl enable --now zramswap.service 2>/dev/null || true
         sudo systemctl restart zramswap.service 2>/dev/null || true
     fi
 fi

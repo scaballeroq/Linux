@@ -116,7 +116,7 @@ if [[ "${XDG_CURRENT_DESKTOP:-}" == *"GNOME"* ]] || [[ "${DESKTOP_SESSION:-}" ==
 
     # Nautilus: Vista detallada y borrado permanente
     gsettings set org.gnome.nautilus.preferences default-folder-viewer 'list-view' 2>/dev/null || true
-    gsettings set org.gnome.nautilus.preferences show-delete-permanent true 2>/dev/null || true
+    gsettings set org.gnome.nautilus.preferences show-delete-permanently true 2>/dev/null || true
 
     # Energía: No suspender en corriente alterna
     gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing' 2>/dev/null || true

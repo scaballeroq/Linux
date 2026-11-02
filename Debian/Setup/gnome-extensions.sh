@@ -76,17 +76,18 @@ Opciones:
   --help, -h             Muestra este mensaje de ayuda.
 
 Extensiones gestionadas por el ecosistema Debian:
-  • Sistema (/usr/share):
-      - ubuntu-dock@ubuntu.com           (Barra dock de Debian / Dash to Dock)
-      - ubuntu-appindicators@ubuntu.com  (Bandeja del sistema para iconos de apps)
-      - ding@rastersoft.com              (Iconos en el escritorio DING)
-      - tiling-assistant@ubuntu.com      (Acomodación de ventanas y mosaico)
-      - gsconnect@andyholmes.github.io   (KDE Connect nativo para GNOME)
-  • Usuario (~/.local/share):
-      - blur-my-shell@aunetx             (Efecto blur en panel, dash y overview)
-      - caffeine@patapon.info            (Prevenir suspensión y salvapantallas)
-      - lockkeys@vaina.lt                (Estado de Bloq Mayús / Bloq Num en panel)
-      - BingWallpaper@ineffable-gmail.com (Fondo diario automático de Bing)
+  • Sistema (/usr/share/gnome-shell/extensions):
+      - dash-to-dock@micxgx.gmail.com        (Barra dock y lanzador de aplicaciones)
+      - appindicatorsupport@rgcjonas.gmail.com (Bandeja del sistema para iconos de apps)
+      - ding@rastersoft.com                  (Iconos en el escritorio DING)
+      - tiling-assistant@leleat-on-github    (Acomodación de ventanas y mosaico avanzado)
+      - gsconnect@andyholmes.github.io       (KDE Connect nativo para GNOME)
+      - blur-my-shell@aunetx                 (Efecto blur en panel, dash y overview)
+      - caffeine@patapon.info                (Prevenir suspensión y salvapantallas)
+  • Herramientas de Gestión:
+      - Extension Manager (gnome-shell-extension-manager)
+      - GNOME Tweaks (gnome-tweaks)
+      - GNOME Browser Connector (gnome-browser-connector)
 EOF
 }
 
@@ -153,6 +154,12 @@ install_packages() {
     local pkgs=(
         gnome-shell-extensions
         gnome-shell-extension-gsconnect
+        gnome-shell-extension-dashtodock
+        gnome-shell-extension-appindicator
+        gnome-shell-extension-blur-my-shell
+        gnome-shell-extension-caffeine
+        gnome-shell-extension-tiling-assistant
+        gnome-shell-extension-manager
         gnome-browser-connector
         gnome-tweaks
     )
@@ -164,9 +171,11 @@ install_packages() {
     done
 
     if [ ${#to_install[@]} -gt 0 ]; then
-        echo "ℹ️ Instalando paquetes faltantes (${to_install[*]}) sin actualizar índices..."
-        $SUDO apt-get install -y --no-upgrade "${to_install[@]}" 2>/dev/null || true
-        echo "  ✅ Paquetes de extensiones instalados."
+        echo "ℹ️ Instalando paquetes disponibles (${to_install[*]}) sin actualizar índices..."
+        for pkg in "${to_install[@]}"; do
+            $SUDO apt-get install -y --no-upgrade "$pkg" 2>/dev/null || true
+        done
+        echo "  ✅ Paquetes de extensiones procesados."
     else
         echo "  ✅ Todos los paquetes base de extensiones ya están instalados."
     fi
@@ -265,8 +274,13 @@ case "${1:-}" in
         install_packages
 
         # Asegurar extensiones de productividad predeterminadas
-        for core_ext in gsconnect@andyholmes.github.io dash-to-dock@micxgx.gmail.com; do
-            if [ -d "$SYSTEM_EXT_DIR/$core_ext" ]; then
+        for core_ext in \
+            gsconnect@andyholmes.github.io \
+            dash-to-dock@micxgx.gmail.com \
+            appindicatorsupport@rgcjonas.gmail.com \
+            tiling-assistant@leleat-on-github \
+            caffeine@patapon.info; do
+            if [ -d "$SYSTEM_EXT_DIR/$core_ext" ] || [ -d "$USER_EXT_DIR/$core_ext" ]; then
                 enable_extension "$core_ext" >/dev/null 2>&1 || true
             fi
         done

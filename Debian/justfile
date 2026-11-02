@@ -15,6 +15,19 @@ setup-laptop-amd: post-install-amd multimedia flatpak chrome steam laptop tuning
 setup-media-desktop: post-install-intel multimedia chrome tuning gnome-setup shell security fonts fastfetch kitty yt-dlp kodi
     @echo "🚀 Entorno Sobremesa Intel (GNOME Shell) configurado con éxito. Por favor, reinicia el sistema."
 
+# Diagnóstico integral del sistema, hardware, energía, red y entorno de desarrollo
+status:
+    @echo "================================================================="
+    @echo "🔍 DIAGNÓSTICO INTEGRAL DEBIAN WORKSTATION (HP PROBOOK 455 G10)"
+    @echo "================================================================="
+    @./Setup/debian-tuning.sh --status
+    @echo ""
+    @./Setup/laptop-setup.sh --status
+    @echo ""
+    @./Setup/seguridad.sh --status
+    @echo ""
+    @./Setup/gnome-extensions.sh --status
+
 # =============================================================================
 # CONFIGURACIÓN BASE DEL SISTEMA
 # =============================================================================
@@ -98,6 +111,14 @@ tuning:
 # Estado actual de las optimizaciones y métricas de rendimiento
 tuning-status:
     ./Setup/debian-tuning.sh --status
+
+# Configuración de swap comprimida en RAM (ZRAM con ZSTD al 50% de RAM)
+zram *args:
+    ./Setup/zram-setup.sh {{args}}
+
+# Diagnóstico y estado de los dispositivos de memoria ZRAM
+zram-status:
+    ./Setup/zram-setup.sh --status
 
 # Utilidades de terminal modernas (eza, bat, fzf, zoxide, ripgrep, fd, duf, dust, btop)
 shell:

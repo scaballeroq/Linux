@@ -6,7 +6,7 @@
 # Características:
 # - Detección inteligente y modo rootless: no ejecuta sudo ni APT si ya está instalado.
 # - Soporte para múltiples temas estéticos:
-#   * 'debian' (Predeterminado): Logo de Debian oficial, acentos naranja Debian (#E95420) y aubergine.
+#   * 'debian' (Predeterminado): Logo de Debian oficial, acentos rojo rubí Debian (#D70A53 / RGB 215, 10, 83).
 #   * 'compact': Diseño de caja minimalista FastCat (sin logo ASCII) para terminales reducidas.
 # - Respaldo automático (.bak) si el usuario ya tenía una configuración modificada.
 # - Comandos CLI: --status, --run, --theme, --list-themes, --diff, --force, --help.

@@ -235,6 +235,7 @@ apply_zram() {
     if [ -f /etc/default/zramswap ]; then
         $SUDO sed -i 's/^#*ALGORITHM=.*/ALGORITHM=zstd/' /etc/default/zramswap
         $SUDO sed -i 's/^#*PERCENT=.*/PERCENT=50/' /etc/default/zramswap
+        $SUDO systemctl enable --now zramswap.service 2>/dev/null || true
         $SUDO systemctl restart zramswap.service 2>/dev/null || true
     fi
     echo "  ✅ Configuración de ZRAM (algoritmo zstd, 50% de RAM) asegurada."
