@@ -128,6 +128,18 @@ shell:
 shell-status:
     ./Setup/shell.sh --status
 
+# Replicación del entorno Zsh (Powerline prompt, syntax highlighting, autosuggestions, FZF, Zoxide)
+zsh:
+    ./Setup/zsh-setup.sh
+
+# Diagnóstico y estado del entorno Zsh y módulos ~/.zshrc.d
+zsh-status:
+    ./Setup/zsh-setup.sh --status
+
+# Establecer Zsh como shell por defecto para el usuario actual
+zsh-default:
+    ./Setup/zsh-setup.sh --default-shell
+
 # Starship Prompt moderno (Instalar / Activar)
 starship:
     ./Setup/starship.sh --enable
