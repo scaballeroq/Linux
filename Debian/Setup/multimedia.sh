@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # multimedia.sh - Suite Multimedia, Códecs y Aceleración HW para Debian Workstation
-# Optimizado para Debian (24.04 LTS / GNOME Shell Wayland)
+# Optimizado para Debian GNU/Linux 13 Trixie (GNOME Shell 48+ Wayland)
 # Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Graphics Vega 8)
 # ==============================================================================
 # Características:
-#   - Pila completa de códecs oficial: FFmpeg, libavcodec-extra, /extras
-#   - Pila GStreamer 1.0 Wayland: plugins-base, good, bad (módulo VA), ugly, libav, gl, gtk4 y pipewire
-#   - Aceleración por hardware VA-API / Vulkan en Wayland: libva-wayland2, mesa-va-drivers (radeonsi)
-#   - Reproductores Wayland nativos: Showtime (GNOME), Celluloid y MPV con config optimizada
-#   - Soporte desacoplado Flatpak / Flathub a nivel de sistema para reproductores sandbox
+#   - Pila completa de códecs oficial Debian 13: FFmpeg 7.x, libavcodec-extra, audio (FLAC/Opus/Vorbis/MP3)
+#   - Pila GStreamer 1.26 Wayland: base, good, bad (módulo VA nativo libgstva), ugly, libav, gl, gtk4 y pipewire
+#   - Miniaturas e Imágenes GNOME 48 (Nautilus / Loupe): glycin-loaders, ffmpegthumbnailer, HEIF y WebP
+#   - Aceleración HW VA-API / Vulkan RADV en Wayland: radeonsi (H.264, HEVC 10-bit, VP9 10-bit), libva-wayland2
+#   - Audio de baja latencia: PipeWire 1.4, WirePlumber 0.5 y códecs Bluetooth SPA (LDAC/aptX/AAC)
+#   - Reproductores GNOME 48 / Wayland nativos: Showtime, Loupe, Snapshot, Amberol, Celluloid, MPV y VLC
+#   - Soporte desacoplado Flatpak / Flathub a nivel de sistema y usuario
 #   - Opciones CLI: --status / -s, --codecs, --players, --flatpak, --help / -h
 # ==============================================================================
 
@@ -18,7 +20,7 @@ set -euo pipefail
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
 
 # ------------------------------------------------------------------------------
-# 1. DETECCIÓN DE USUARIO Y PRIVILEGIOS SUDO
+# 1. DETECCIÓN DE USUARIO, ENTORNO Y PRIVILEGIOS SUDO
 # ------------------------------------------------------------------------------
 if [ "$EUID" -ne 0 ]; then
     if ! command -v sudo &> /dev/null; then
@@ -41,139 +43,211 @@ fi
 REAL_UID=$(id -u "$REAL_USER" 2>/dev/null || echo "1000")
 
 run_as_user() {
+    local runtime_dir="${XDG_RUNTIME_DIR:-/run/user/$REAL_UID}"
+    local dbus_addr="${DBUS_SESSION_BUS_ADDRESS:-unix:path=$runtime_dir/bus}"
     if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
         sudo -u "$REAL_USER" env \
             HOME="$USER_HOME" \
             USER="$REAL_USER" \
             PATH="/usr/local/bin:/usr/bin:/bin:$PATH" \
-            XDG_RUNTIME_DIR="/run/user/$REAL_UID" \
-            DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$REAL_UID/bus}" \
+            XDG_RUNTIME_DIR="$runtime_dir" \
+            DBUS_SESSION_BUS_ADDRESS="$dbus_addr" \
             "$@"
     else
-        "$@"
+        env \
+            XDG_RUNTIME_DIR="$runtime_dir" \
+            DBUS_SESSION_BUS_ADDRESS="$dbus_addr" \
+            "$@"
+    fi
+}
+
+get_os_description() {
+    if [ -f /etc/os-release ]; then
+        grep "^PRETTY_NAME=" /etc/os-release | cut -d= -f2 | tr -d '"'
+    else
+        echo "Debian GNU/Linux 13 (trixie)"
+    fi
+}
+
+get_gnome_version() {
+    local ver
+    ver=$(gnome-shell --version 2>/dev/null | awk '{print $3}' || true)
+    if [ -z "$ver" ]; then
+        ver=$(run_as_user gnome-shell --version 2>/dev/null | awk '{print $3}' || true)
+    fi
+    echo "${ver:-48}"
+}
+
+check_user_service() {
+    local svc="$1"
+    local active_state enabled_state
+    active_state=$(run_as_user systemctl --user is-active "$svc" 2>/dev/null || true)
+    if [ "$active_state" = "active" ]; then
+        echo "✅ Activo (en ejecución)"
+        return
+    fi
+    enabled_state=$(systemctl --user is-enabled "$svc" 2>/dev/null || true)
+    if [ "$enabled_state" = "enabled" ] || [ "$enabled_state" = "enabled-runtime" ] || [ "$enabled_state" = "static" ]; then
+        echo "✅ Habilitado (systemd user: $enabled_state)"
+    else
+        echo "⚠️ Inactivo (${active_state:-desconocido})"
     fi
 }
 
 # ------------------------------------------------------------------------------
-# 2. AYUDA Y ESTADO DEL SISTEMA
+# 2. AYUDA Y DIAGNÓSTICO DEL SISTEMA
 # ------------------------------------------------------------------------------
 show_help() {
     cat <<EOF
-🎬 Suite Multimedia y Aceleración Gráfica - Debian Workstation (GNOME Wayland)
+🎬 Suite Multimedia y Aceleración Gráfica - Debian 13 Trixie (GNOME Shell Wayland)
 
 Uso:
   $0 [OPCIÓN]
 
 Opciones:
-  (sin argumentos)    Aplica toda la suite: Códecs, VA-API Wayland, Reproductores y Flatpak.
-  --status, -s        Muestra diagnóstico detallado de VA-API, códecs, PipeWire y reproductores.
-  --codecs            Instala y actualiza únicamente códecs APT, FFmpeg, GStreamer y VA-API.
-  --players           Instala y configura reproductores nativos Wayland (Showtime, Celluloid, MPV).
-  --flatpak           Configura el repositorio Flathub e instala reproductores desacoplados.
+  (sin argumentos)    Aplica toda la suite: Códecs, VA-API Wayland, Miniaturas GNOME, Reproductores y Flatpak.
+  --status, -s        Muestra diagnóstico detallado de VA-API, Vulkan, GStreamer, Miniaturas, PipeWire y Apps.
+  --codecs            Instala y configura códecs APT, FFmpeg, GStreamer 1.26, miniaturas GNOME y VA-API.
+  --players           Instala y optimiza reproductores nativos GNOME 48 / Wayland (Showtime, Celluloid, MPV, VLC).
+  --flatpak           Configura el repositorio Flathub e instala soporte Flatpak en GNOME Software.
   --help, -h          Muestra este mensaje de ayuda.
 
-Componentes gestionados:
-  • Aceleración HW:     Mesa VA-API (radeonsi Gallium), libva-wayland2, Vulkan RADV y vainfo.
-  • Códecs Audio/Video: FFmpeg, libavcodec-extra y plugins GStreamer completos.
-  • GStreamer Wayland:  plugins-base, good, bad (VA integrado), ugly, libav, gl, gtk4 y pipewire.
-  • Reproductores:      Showtime (GTK4/Adwaita nativo GNOME), Celluloid, MPV y VLC.
-  • Audio Moderno:      PipeWire y WirePlumber con integración en sinks GStreamer.
+Componentes gestionados en Debian 13 (Trixie):
+  • Aceleración HW:     Mesa VA-API (radeonsi Gallium), libva-wayland2, Vulkan RADV y variables de sesión.
+  • Códecs Audio/Video: FFmpeg 7.x, libavcodec-extra, FLAC, Opus, Vorbis, LAME y MediaInfo.
+  • GStreamer 1.26:     base, good, bad (libgstva nativo), ugly, libav, gl, gtk4 (gtk4paintablesink) y pipewire.
+  • GNOME 48 / Nautilus:glycin-loaders (Loupe), ffmpegthumbnailer, Totem (video-thumbnailer), HEIF y WebP.
+  • Audio PipeWire 1.4: pipewire-audio, pipewire-alsa, pipewire-pulse, wireplumber y libspa-0.2-bluetooth.
+  • Reproductores:      Showtime (GNOME Core GTK4), Loupe, Snapshot, Amberol, Celluloid, MPV (gpu-next) y VLC.
 EOF
 }
 
 show_status() {
+    local os_name gnome_ver
+    os_name=$(get_os_description)
+    gnome_ver=$(get_gnome_version)
+
     echo "================================================================="
     echo "🔍 ESTADO MULTIMEDIA Y ACELERACIÓN WAYLAND - DEBIAN WORKSTATION"
     echo "================================================================="
+    echo "• Sistema Operativo:     $os_name (Kernel $(uname -r))"
+    echo "• Entorno Gráfico:       GNOME Shell $gnome_ver (${XDG_SESSION_TYPE:-wayland} / Mutter)"
+    echo "• Hardware:              HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8)"
+    echo "-----------------------------------------------------------------"
 
-    echo "• Aceleración Gráfica por Hardware (VA-API / Vulkan):"
+    echo "• Aceleración Gráfica por Hardware (VA-API / Vulkan RADV):"
     if command -v vainfo &>/dev/null; then
-        local va_driver
-        va_driver=$(vainfo 2>&1 | grep "Driver version:" | sed "s/.*Driver version: //" || echo "n/a")
-        echo "  - Driver VA-API:    $va_driver"
-        local va_h264 va_hevc va_vp9
-        va_h264=$(vainfo 2>&1 | grep -q "VAProfileH264Main" && echo "✅ Soportado" || echo "❌ No disponible")
-        va_hevc=$(vainfo 2>&1 | grep -q "VAProfileHEVCMain" && echo "✅ Soportado" || echo "❌ No disponible")
-        va_vp9=$(vainfo 2>&1 | grep -q "VAProfileVP9Profile0" && echo "✅ Soportado" || echo "❌ No disponible")
-        echo "  - Decodificación:   H.264: $va_h264 | HEVC (H.265): $va_hevc | VP9: $va_vp9"
-        echo "  - libva-wayland2:   $(if dpkg -s libva-wayland2 &>/dev/null; then echo "✅ Instalado (soporte nativo Wayland)"; else echo "❌ No instalado"; fi)"
+        local va_out va_driver va_h264 va_hevc va_hevc10 va_vp9 va_enc
+        va_out=$(vainfo 2>&1 || true)
+        va_driver=$(echo "$va_out" | grep "Driver version:" | sed "s/.*Driver version: //" || echo "n/a")
+        va_h264=$(echo "$va_out" | grep -q "VAProfileH264Main" && echo "✅" || echo "❌")
+        va_hevc=$(echo "$va_out" | grep -q "VAProfileHEVCMain " && echo "✅" || echo "❌")
+        va_hevc10=$(echo "$va_out" | grep -q "VAProfileHEVCMain10" && echo "✅" || echo "❌")
+        va_vp9=$(echo "$va_out" | grep -q "VAProfileVP9Profile0" && echo "✅" || echo "❌")
+        va_enc=$(echo "$va_out" | grep -q "VAEntrypointEncSlice" && echo "✅ Activo (H.264/HEVC)" || echo "❌ No disponible")
+        echo "  - Driver VA-API:       $va_driver"
+        echo "  - Decodificación HW:   H.264: $va_h264 | HEVC 8-bit: $va_hevc | HEVC 10-bit: $va_hevc10 | VP9: $va_vp9"
+        echo "  - Codificación HW:     $va_enc"
+        echo "  - libva-wayland2:      $(if dpkg -s libva-wayland2 &>/dev/null; then echo "✅ Instalado (DMABUF Wayland)"; else echo "❌ No instalado"; fi)"
     else
-        echo "  - vainfo no instalado"
+        echo "  - vainfo:              ❌ No instalado"
     fi
 
     if command -v vulkaninfo &>/dev/null; then
-        echo "  - Vulkan Tools:     ✅ Instalado ($(vulkaninfo --summary 2>/dev/null | grep -i "deviceName" | head -n1 | sed 's/.*= //' || echo "RADV activo"))"
+        local vk_dev
+        vk_dev=$(vulkaninfo --summary 2>/dev/null | grep -i "deviceName" | head -n1 | sed 's/.*= //' || echo "RADV activo")
+        echo "  - Vulkan RADV:         ✅ Instalado ($vk_dev)"
     else
-        echo "  - Vulkan Tools:     ❌ No instalado"
+        echo "  - Vulkan RADV:         ❌ vulkan-tools no instalado"
     fi
+    echo "  - Entorno VA-API:      $(if [ -f "$USER_HOME/.config/environment.d/90-debian-multimedia.conf" ]; then echo "✅ Configurado (LIBVA_DRIVER_NAME=radeonsi)"; else echo "ℹ️ Automático por Mesa"; fi)"
 
     echo "-----------------------------------------------------------------"
-    echo "• Pila de Códecs y FFmpeg:"
-    echo "  - FFmpeg:           $(if command -v ffmpeg &>/dev/null; then echo "✅ Instalado ($(ffmpeg -version 2>/dev/null | head -n1 | awk '{print $3}'))"; else echo "❌ No instalado"; fi)"
-    echo "  - libavcodec-extra: $(if dpkg -s libavcodec-extra &>/dev/null; then echo "✅ Instalado"; else echo "❌ No instalado"; fi)"
-    echo "  - Plugins Libav:    $(if dpkg -s gstreamer1.0-libav &>/dev/null; then echo "✅ gstreamer1.0-libav"; else echo "❌ No instalado"; fi)"
+    echo "• Pila de Códecs, FFmpeg y Herramientas de Audio:"
+    echo "  - FFmpeg:              $(if command -v ffmpeg &>/dev/null; then echo "✅ Instalado ($(ffmpeg -version 2>/dev/null | head -n1 | awk '{print $3}'))"; else echo "❌ No instalado"; fi)"
+    echo "  - libavcodec-extra:    $(if dpkg -s libavcodec-extra &>/dev/null; then echo "✅ Instalado"; else echo "❌ No instalado"; fi)"
+    echo "  - Códecs Audio CLI:    $(if command -v flac &>/dev/null && command -v opusenc &>/dev/null; then echo "✅ Instalados (FLAC, Opus, Vorbis, LAME)"; else echo "⚠️ Parciales"; fi)"
+    echo "  - MediaInfo:           $(if command -v mediainfo &>/dev/null; then echo "✅ Instalado"; else echo "❌ No instalado"; fi)"
 
     echo "-----------------------------------------------------------------"
-    echo "• Pila GStreamer 1.0 (Wayland + PipeWire + GTK4):"
-    local gst_bad gst_gtk4 gst_pw
-    gst_bad=$(dpkg -s gstreamer1.0-plugins-bad &>/dev/null && echo "✅ Instalado (módulo VA)" || echo "❌ No instalado")
-    gst_gtk4=$(dpkg -s gstreamer1.0-gtk4 &>/dev/null && echo "✅ Instalado (gtk4paintablesink)" || echo "❌ No instalado")
-    gst_pw=$(dpkg -s gstreamer1.0-pipewire &>/dev/null && echo "✅ Instalado (pipewire-sink)" || echo "❌ No instalado")
-    echo "  - Plugins Base/Good:$(if dpkg -s gstreamer1.0-plugins-good &>/dev/null; then echo "✅ Instalado"; else echo "❌ No instalado"; fi)"
-    echo "  - Plugins Bad (VA): $gst_bad"
-    echo "  - Plugins Ugly/Libav:$(if dpkg -s gstreamer1.0-libav &>/dev/null; then echo "✅ Instalado"; else echo "❌ No instalado"; fi)"
-    echo "  - Render Wayland GTK4: $gst_gtk4"
-    echo "  - Enlace PipeWire:  $gst_pw"
+    echo "• Pila GStreamer 1.26 (GNOME Wayland + GTK4 + PipeWire):"
+    local gst_va_lib="/usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstva.so"
+    echo "  - Plugins Base/Good:   $(if dpkg -s gstreamer1.0-plugins-base &>/dev/null && dpkg -s gstreamer1.0-plugins-good &>/dev/null; then echo "✅ Instalados"; else echo "❌ No instalados"; fi)"
+    echo "  - Plugins Bad (VA HW): $(if [ -f "$gst_va_lib" ]; then echo "✅ Instalado (libgstva.so activo)"; elif dpkg -s gstreamer1.0-plugins-bad &>/dev/null; then echo "✅ Instalado"; else echo "❌ No instalado"; fi)"
+    echo "  - Plugins Ugly/Libav:  $(if dpkg -s gstreamer1.0-plugins-ugly &>/dev/null && dpkg -s gstreamer1.0-libav &>/dev/null; then echo "✅ Instalados"; else echo "❌ No instalados"; fi)"
+    echo "  - Render GTK4 Wayland: $(if dpkg -s gstreamer1.0-gtk4 &>/dev/null; then echo "✅ Instalado (gtk4paintablesink)"; else echo "❌ No instalado"; fi)"
+    echo "  - Enlace PipeWire:     $(if dpkg -s gstreamer1.0-pipewire &>/dev/null; then echo "✅ Instalado (pipewiresink)"; else echo "❌ No instalado"; fi)"
+    echo "  - GStreamer Tools:     $(if command -v gst-inspect-1.0 &>/dev/null; then echo "✅ Instalado (gstreamer1.0-tools)"; else echo "❌ No instalado"; fi)"
 
     echo "-----------------------------------------------------------------"
-    echo "• Servidor de Audio PipeWire:"
-    local pw_active wp_active
-    pw_active=$(run_as_user systemctl --user is-active pipewire 2>/dev/null || echo "inactivo")
-    wp_active=$(run_as_user systemctl --user is-active wireplumber 2>/dev/null || echo "inactivo")
-    echo "  - PipeWire Audio:   $(if [ "$pw_active" = "active" ]; then echo "✅ Activo"; else echo "⚠️ $pw_active"; fi)"
-    echo "  - WirePlumber:      $(if [ "$wp_active" = "active" ]; then echo "✅ Activo"; else echo "⚠️ $wp_active"; fi)"
+    echo "• Miniaturas e Imágenes en GNOME 48 (Nautilus & Loupe):"
+    echo "  - Glycin Loaders:      $(if dpkg -s glycin-loaders &>/dev/null; then echo "✅ Instalado ( Loupe sandboxed image decoding )"; else echo "❌ No instalado"; fi)"
+    echo "  - FFmpeg Thumbnailer:  $(if command -v ffmpegthumbnailer &>/dev/null; then echo "✅ Instalado (miniaturas de vídeo rápidas)"; else echo "❌ No instalado"; fi)"
+    echo "  - Soporte HEIF / AVIF: $(if dpkg -s heif-gdk-pixbuf &>/dev/null && dpkg -s heif-thumbnailer &>/dev/null; then echo "✅ Instalado (heif-gdk-pixbuf + thumbnailer)"; else echo "❌ No instalado"; fi)"
+    echo "  - Soporte WebP:        $(if dpkg -s webp-pixbuf-loader &>/dev/null; then echo "✅ Instalado (webp-pixbuf-loader)"; else echo "❌ No instalado"; fi)"
 
     echo "-----------------------------------------------------------------"
-    echo "• Reproductores Multimedia en Wayland:"
-    echo "  - Showtime (GNOME): $(if command -v showtime &>/dev/null; then echo "✅ Instalado (v$(dpkg -s showtime 2>/dev/null | grep -E '^Version:' | awk '{print $2}'))"; else echo "❌ No instalado"; fi)"
-    echo "  - Celluloid (GTK):  $(if command -v celluloid &>/dev/null; then echo "✅ Instalado"; else echo "❌ No instalado"; fi)"
-    echo "  - MPV Player:       $(if command -v mpv &>/dev/null; then echo "✅ Instalado ($(mpv --version 2>/dev/null | head -n1 | awk '{print $2}'))"; else echo "❌ No instalado"; fi)"
-    local vlc_info
-    vlc_info=""
+    echo "• Servidor de Audio PipeWire 1.4 & Bluetooth SPA:"
+    echo "  - PipeWire Core:       $(check_user_service pipewire)"
+    echo "  - PipeWire PulseAudio: $(check_user_service pipewire-pulse)"
+    echo "  - WirePlumber Session: $(check_user_service wireplumber)"
+    echo "  - Bluetooth Audio SPA: $(if dpkg -s libspa-0.2-bluetooth &>/dev/null; then echo "✅ Instalado (LDAC / aptX / AAC)"; else echo "❌ No instalado"; fi)"
+
+    echo "-----------------------------------------------------------------"
+    echo "• Reproductores y Aplicaciones Multimedia (GNOME 48 Wayland):"
+    echo "  - Showtime (Vídeo):    $(if command -v showtime &>/dev/null; then echo "✅ Instalado (GNOME Core GTK4 v$(dpkg-query -W -f='${Version}' showtime 2>/dev/null || echo '48'))"; else echo "❌ No instalado"; fi)"
+    echo "  - Loupe (Imágenes):    $(if command -v loupe &>/dev/null; then echo "✅ Instalado (GNOME Core GTK4 v$(dpkg-query -W -f='${Version}' loupe 2>/dev/null || echo '48'))"; else echo "❌ No instalado"; fi)"
+    echo "  - Snapshot (Cámara):   $(if dpkg -s gnome-snapshot &>/dev/null; then echo "✅ Instalado (PipeWire Camera GTK4)"; else echo "❌ No instalado"; fi)"
+    echo "  - Amberol (Música):    $(if command -v amberol &>/dev/null; then echo "✅ Instalado (GTK4/Libadwaita)"; else echo "❌ No instalado"; fi)"
+    echo "  - Celluloid (MPV GTK4):$(if command -v celluloid &>/dev/null; then echo "✅ Instalado (v$(dpkg-query -W -f='${Version}' celluloid 2>/dev/null || echo '0.28'))"; else echo "❌ No instalado"; fi)"
+    echo "  - MPV Media Player:    $(if command -v mpv &>/dev/null; then echo "✅ Instalado ($(mpv --version 2>/dev/null | head -n1 | awk '{print $2}'))"; else echo "❌ No instalado"; fi)"
+    echo "  - Config MPV Wayland:  $(if [ -f "$USER_HOME/.config/mpv/mpv.conf" ]; then echo "✅ Optimizado (vo=gpu-next / hwdec=vaapi / ao=pipewire)"; else echo "❌ Sin configurar"; fi)"
+    local vlc_info=""
     if dpkg -s vlc &>/dev/null; then
         local vlc_v
-        vlc_v=$(vlc --version 2>/dev/null | head -n1 | grep -o -E '[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || echo '3.x')
+        vlc_v=$(dpkg-query -W -f='${Version}' vlc 2>/dev/null | cut -d- -f1 || echo "3.0.x")
         vlc_info="✅ Instalado vía APT (v$vlc_v)"
     fi
-    if flatpak list 2>/dev/null | grep -q "org.videolan.VLC"; then
+    if flatpak list 2>/dev/null | grep -qi "org.videolan.VLC"; then
         vlc_info="${vlc_info:+$vlc_info | }✅ Instalado vía Flatpak"
     fi
-    echo "  - VLC Media Player: ${vlc_info:-❌ No instalado}"
+    echo "  - VLC Media Player:    ${vlc_info:-❌ No instalado}"
 
     echo "-----------------------------------------------------------------"
     echo "• Entorno Flatpak / Flathub:"
     local flathub_sys flathub_user
     flathub_sys=$(flatpak remotes --system 2>/dev/null | grep -qi "flathub" && echo "✅ Configurado (system)" || echo "❌ No configurado")
     flathub_user=$(run_as_user flatpak remotes --user 2>/dev/null | grep -qi "flathub" && echo "✅ Configurado (user)" || echo "no configurado")
-    echo "  - Remoto Flathub:   $flathub_sys | user: $flathub_user"
+    echo "  - Remoto Flathub:      $flathub_sys | user: $flathub_user"
     echo "================================================================="
 }
 
 # ------------------------------------------------------------------------------
-# 3. INSTALACIÓN DE CÓDECS Y ACELERACIÓN DE HARDWARE (VA-API / VULKAN)
+# 3. INSTALACIÓN DE CÓDECS, MINIATURAS GNOME Y ACELERACIÓN HW (VA-API / VULKAN)
 # ------------------------------------------------------------------------------
 install_codecs() {
-    echo "🎵 [1/3] Instalando suite de códecs multimedia y aceleración VA-API Wayland..."
-    $SUDO apt-get update -qq
+    echo "🎵 [1/3] Instalando suite de códecs, miniaturas GNOME 48 y aceleración VA-API Wayland..."
 
-    # Aceptar automáticamente la EULA de ttf-mscorefonts-installer para evitar prompts interactivos
-    echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | $SUDO debconf-set-selections 2>/dev/null || true
+    # Asegurar componentes contrib, non-free y non-free-firmware en Debian 13 (deb822 y clásico)
+    if [ -f /etc/apt/sources.list.d/debian.sources ]; then
+        $SUDO sed -i '/^Components:/ {/contrib/! s/$/ contrib/}' /etc/apt/sources.list.d/debian.sources 2>/dev/null || true
+        $SUDO sed -i '/^Components:/ {/non-free/! s/$/ non-free/}' /etc/apt/sources.list.d/debian.sources 2>/dev/null || true
+        $SUDO sed -i '/^Components:/ {/non-free-firmware/! s/$/ non-free-firmware/}' /etc/apt/sources.list.d/debian.sources 2>/dev/null || true
+    elif [ -f /etc/apt/sources.list ]; then
+        $SUDO sed -i '/^deb / {/contrib/! s/\(main\)/\1 contrib non-free non-free-firmware/}' /etc/apt/sources.list 2>/dev/null || true
+    fi
+
+    $SUDO apt-get update -qq
 
     $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y \
         ffmpeg \
         libavcodec-extra \
-         \
-         \
+        mediainfo \
+        flac \
+        lame \
+        vorbis-tools \
+        opus-tools \
+        sox \
         gstreamer1.0-plugins-base \
         gstreamer1.0-plugins-good \
         gstreamer1.0-plugins-bad \
@@ -182,64 +256,123 @@ install_codecs() {
         gstreamer1.0-gl \
         gstreamer1.0-gtk4 \
         gstreamer1.0-pipewire \
+        gstreamer1.0-vaapi \
         gstreamer1.0-tools \
+        glycin-loaders \
+        ffmpegthumbnailer \
+        totem \
+        webp-pixbuf-loader \
+        heif-gdk-pixbuf \
+        heif-thumbnailer \
+        libavif-bin \
         mesa-va-drivers \
         mesa-vdpau-drivers \
         mesa-vulkan-drivers \
         libva-wayland2 \
         vainfo \
         vulkan-tools \
+        mesa-utils \
         pipewire-audio \
-        wireplumber 2>/dev/null || true
+        pipewire-alsa \
+        pipewire-pulse \
+        wireplumber \
+        libspa-0.2-bluetooth \
+        libspa-0.2-jack
 
-    echo "  ✅ Códecs y aceleración por hardware instalados con éxito."
+    # Configurar variables de sesión Wayland para aceleración VA-API y Vulkan en AMD Radeon (Barcelo-R / Vega 8)
+    local env_dir="$USER_HOME/.config/environment.d"
+    run_as_user mkdir -p "$env_dir"
+    cat <<'EOF' | run_as_user tee "$env_dir/90-debian-multimedia.conf" > /dev/null
+# Aceleración por hardware VA-API / Vulkan RADV en Debian 13 (GNOME Wayland)
+LIBVA_DRIVER_NAME=radeonsi
+VDPAU_DRIVER=radeonsi
+AMD_VULKAN_ICD=RADV
+MOZ_ENABLE_WAYLAND=1
+GST_PLUGIN_FEATURE_RANK=vah264dec:MAX,vah265dec:MAX,vavp9dec:MAX,vaav1dec:MAX
+EOF
+
+    # Limpiar caché de miniaturas fallidas para que Nautilus regenere con ffmpegthumbnailer / HEIF / WebP
+    if [ -d "$USER_HOME/.cache/thumbnails/fail" ]; then
+        run_as_user rm -rf "$USER_HOME/.cache/thumbnails/fail"
+    fi
+
+    echo "  ✅ Códecs, GStreamer 1.26, miniaturas de Nautilus y aceleración VA-API configurados."
 }
 
 # ------------------------------------------------------------------------------
-# 4. INSTALACIÓN Y CONFIGURACIÓN DE REPRODUCTORES WAYLAND
+# 4. INSTALACIÓN Y OPTIMIZACIÓN DE REPRODUCTORES GNOME 48 WAYLAND
 # ------------------------------------------------------------------------------
 install_players() {
-    echo "🎬 [2/3] Instalando y optimizando reproductores nativos de Wayland..."
+    echo "🎬 [2/3] Instalando y optimizando reproductores nativos de GNOME 48 Wayland..."
     $SUDO apt-get update -qq
-    $SUDO apt-get install -y \
+    $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y \
         showtime \
+        loupe \
+        gnome-snapshot \
+        amberol \
+        gnome-music \
         celluloid \
         mpv \
-        vlc 2>/dev/null || true
+        vlc
 
-    # Configuración de rendimiento de MPV para AMD Radeon Vega 8 sobre Wayland y PipeWire
+    # Configuración de alto rendimiento de MPV 0.40 para AMD Radeon Vega 8 sobre GNOME Wayland y PipeWire
     local mpv_config_dir="$USER_HOME/.config/mpv"
     run_as_user mkdir -p "$mpv_config_dir"
-    
-    if [ ! -f "$mpv_config_dir/mpv.conf" ]; then
-        echo "⚙️ Configurando opciones óptimas de MPV para Wayland y VA-API..."
-        cat <<'EOF' | run_as_user tee "$mpv_config_dir/mpv.conf" > /dev/null
+
+    echo "⚙️ Aplicando perfil óptimo de MPV para GNOME Wayland (gpu-next + Vulkan + VA-API + PipeWire)..."
+    cat <<'EOF' | run_as_user tee "$mpv_config_dir/mpv.conf" > /dev/null
 # ==============================================================================
-# mpv.conf - Optimizado para Debian Workstation (GNOME Shell Wayland)
-# Hardware: AMD Ryzen 7 7730U / Radeon Vega 8 (Barcelo-R)
+# mpv.conf - Optimizado para Debian 13 Trixie (GNOME Shell 48 Wayland)
+# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8 Barcelo-R)
 # ==============================================================================
 
-# Contexto de vídeo nativo Wayland sin dependencias de X11
-gpu-context=wayland
+# Motor de vídeo de nueva generación sobre Wayland + Vulkan RADV
 vo=gpu-next
+gpu-api=vulkan
+gpu-context=waylandvk
 hwdec=vaapi
+hwdec-codecs=all
 
-# Servidor de audio PipeWire de baja latencia
+# Gestión de color y DMABUF nativo para Mutter (GNOME Wayland)
+target-colorspace-hint=yes
+
+# Servidor de audio PipeWire nativo de baja latencia
 ao=pipewire
+volume=100
+volume-max=150
 
-# Calidad y sincronización de tasa de refresco
-profile=fast
+# Calidad y fluidez de reproducción en topología Triple Monitor 1080p @ 60Hz
+profile=high-quality
 video-sync=display-resample
 interpolation=no
+deband=no
 
-# Capturas de pantalla en PNG sin compresión lenta
+# Interfaz OSD moderna y limpia
+osc=yes
+osd-bar=no
+border=yes
+keep-open=yes
+save-position-on-quit=yes
+
+# Idiomas preferidos de audio y subtítulos
+alang=es,spa,en,eng
+slang=es,spa,en,eng
+sub-auto=fuzzy
+
+# Capturas de pantalla en PNG sin pérdida
 screenshot-format=png
 screenshot-high-bit-depth=yes
 screenshot-directory=~/Pictures
 EOF
+
+    # Integrar Celluloid (GTK4/Libadwaita) con la configuración optimizada de MPV
+    if run_as_user gsettings list-schemas 2>/dev/null | grep -q "^io.github.celluloid_player.Celluloid$"; then
+        run_as_user gsettings set io.github.celluloid_player.Celluloid mpv-config-enable true 2>/dev/null || true
+        run_as_user gsettings set io.github.celluloid_player.Celluloid mpv-config-file "file://$mpv_config_dir/mpv.conf" 2>/dev/null || true
+        run_as_user gsettings set io.github.celluloid_player.Celluloid use-skip-buttons-for-playlist true 2>/dev/null || true
     fi
 
-    echo "  ✅ Reproductores nativos (Showtime, Celluloid, MPV, VLC) asegurados."
+    echo "  ✅ Reproductores GNOME 48 Wayland (Showtime, Loupe, Snapshot, Amberol, Celluloid, MPV, VLC) listos."
 }
 
 # ------------------------------------------------------------------------------
@@ -248,9 +381,13 @@ EOF
 setup_flatpak() {
     echo "📦 [3/3] Verificando soporte Flatpak y repositorio Flathub..."
     $SUDO apt-get update -qq
-    $SUDO apt-get install -y flatpak gnome-software-plugin-flatpak 2>/dev/null || true
+    $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y \
+        flatpak \
+        gnome-software-plugin-flatpak \
+        xdg-desktop-portal-gnome \
+        xdg-desktop-portal-gtk
 
-    # Registrar Flathub a nivel de sistema para acceso universal y desacoplado
+    # Registrar Flathub a nivel de sistema para acceso universal
     if ! flatpak remotes --system 2>/dev/null | grep -qi "flathub"; then
         $SUDO flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
     fi
@@ -264,7 +401,7 @@ setup_flatpak() {
         $SUDO flatpak install -y --noninteractive flathub org.videolan.VLC 2>/dev/null || true
     fi
 
-    echo "  ✅ Integración de Flatpak y Flathub verificada."
+    echo "  ✅ Integración de Flatpak, portales XDG de GNOME y Flathub verificada."
 }
 
 # ------------------------------------------------------------------------------
@@ -293,7 +430,7 @@ case "${1:-}" in
         ;;
     "")
         echo "================================================================="
-        echo "🎬 CONFIGURANDO SUITE MULTIMEDIA Y WAYLAND EN DEBIAN WORKSTATION"
+        echo "🎬 CONFIGURANDO SUITE MULTIMEDIA Y WAYLAND EN DEBIAN 13 (GNOME)"
         echo "================================================================="
         install_codecs
         install_players
@@ -301,11 +438,11 @@ case "${1:-}" in
         echo ""
         show_status
         echo "================================================================="
-        echo "✅ Configuración multimedia completada con éxito."
+        echo "✅ Configuración multimedia para Debian 13 GNOME completada."
         echo "================================================================="
         ;;
     *)
-        echo "Opción no reconocida: $1"
+        echo "❌ Opción no reconocida: $1"
         show_help
         exit 1
         ;;
