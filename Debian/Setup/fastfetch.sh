@@ -5,11 +5,17 @@
 # ==============================================================================
 # Características:
 # - Detección inteligente y modo rootless: no ejecuta sudo ni APT si ya está instalado.
-# - Soporte para múltiples temas estéticos:
-#   * 'debian' (Predeterminado): Logo de Debian oficial, acentos rojo rubí Debian (#D70A53 / RGB 215, 10, 83).
-#   * 'compact': Diseño de caja minimalista FastCat (sin logo ASCII) para terminales reducidas.
+# - Catálogo completo de temas disponibles en el repositorio:
+#   * 'debian' (Predeterminado / Oficial): Configuración oficial categorizada
+#     (Hardware, Sistema, Theming & Escritorio) con logo oficial Debian swirl,
+#     acentos rojo rubí (#D70A53) y barras de progreso.
+#   * 'modern': Diseño condensado clásico con logo Debian y paleta rubí.
+#   * 'compact' (FastCat): Caja minimalista con bordes redondeados (sin logo ASCII).
+#   * Personalizado: Soporta cualquier archivo config-<nombre>.jsonc o ruta externa.
+# - Selector interactivo (--menu / -i) para elegir e instalar temas en consola.
+# - Modo vista previa (--preview / -p) para probar cualquier tema sin alterar config.
 # - Respaldo automático (.bak) si el usuario ya tenía una configuración modificada.
-# - Comandos CLI: --status, --run, --theme, --list-themes, --diff, --force, --help.
+# - Comandos CLI: --status, --run, --theme, --list-themes, --preview, --menu, --diff, --force, --help.
 # - Integración completa con atajos y aliases de consola ('ff').
 # ==============================================================================
 
@@ -41,27 +47,70 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 USER_CONFIG_DIR="$USER_HOME/.config/fastfetch"
 USER_CONFIG_FILE="$USER_CONFIG_DIR/config.jsonc"
 
+# Resuelve el archivo de configuración a partir del nombre o ruta del tema
 get_theme_path() {
     local theme_name="$1"
+
+    # 1. Ruta absoluta o relativa directa existente
+    if [ -f "$theme_name" ]; then
+        echo "$theme_name"
+        return 0
+    fi
+
+    # 2. Alias conocidos
     case "$theme_name" in
-        debian|default)
+        debian|official|default)
             if [ -f "$SCRIPT_DIR/config-debian.jsonc" ]; then
                 echo "$SCRIPT_DIR/config-debian.jsonc"
-            else
+            elif [ -f "$SCRIPT_DIR/config.jsonc" ]; then
                 echo "$SCRIPT_DIR/config.jsonc"
             fi
+            return 0
+            ;;
+        modern)
+            if [ -f "$SCRIPT_DIR/config-modern.jsonc" ]; then
+                echo "$SCRIPT_DIR/config-modern.jsonc"
+            fi
+            return 0
             ;;
         compact|fastcat|minimal)
-            echo "$SCRIPT_DIR/config-compact.jsonc"
+            if [ -f "$SCRIPT_DIR/config-compact.jsonc" ]; then
+                echo "$SCRIPT_DIR/config-compact.jsonc"
+            fi
+            return 0
+            ;;
+    esac
+
+    # 3. Búsqueda por patrón de nombre en Setup/
+    if [ -f "$SCRIPT_DIR/config-${theme_name}.jsonc" ]; then
+        echo "$SCRIPT_DIR/config-${theme_name}.jsonc"
+    elif [ -f "$SCRIPT_DIR/${theme_name}.jsonc" ]; then
+        echo "$SCRIPT_DIR/${theme_name}.jsonc"
+    elif [ -f "$SCRIPT_DIR/${theme_name}" ]; then
+        echo "$SCRIPT_DIR/${theme_name}"
+    else
+        echo ""
+    fi
+}
+
+# Obtiene una etiqueta legible y descriptiva para cada archivo de tema
+get_theme_title() {
+    local file_path="$1"
+    local base_name
+    base_name=$(basename "$file_path")
+
+    case "$base_name" in
+        config-debian.jsonc|config.jsonc)
+            echo "Debian Oficial (Logo Debian Swirl + Categorías y Barras de Progreso)"
+            ;;
+        config-modern.jsonc)
+            echo "Debian Modern Minimal (Logo ASCII y paleta rubí condensada)"
+            ;;
+        config-compact.jsonc)
+            echo "Compact FastCat (Caja minimalista redondeada sin logo)"
             ;;
         *)
-            if [ -f "$SCRIPT_DIR/config-${theme_name}.jsonc" ]; then
-                echo "$SCRIPT_DIR/config-${theme_name}.jsonc"
-            elif [ -f "$theme_name" ]; then
-                echo "$theme_name"
-            else
-                echo ""
-            fi
+            echo "Tema personalizado (${base_name})"
             ;;
     esac
 }
@@ -70,25 +119,36 @@ get_theme_path() {
 # 3. VERIFICACIÓN E INSTALACIÓN DE DEPENDENCIAS
 # ------------------------------------------------------------------------------
 ensure_dependencies() {
-    if command -v fastfetch &>/dev/null; then
+    local missing_pkgs=()
+
+    if ! command -v fastfetch &>/dev/null; then
+        missing_pkgs+=("fastfetch")
+    fi
+
+    # Chafa permite renderizar imágenes y logos gráficos en terminales
+    if ! command -v chafa &>/dev/null; then
+        missing_pkgs+=("chafa")
+    fi
+
+    if [ ${#missing_pkgs[@]} -eq 0 ]; then
         local version_str
         version_str=$(fastfetch --version 2>/dev/null | head -n 1 || echo "instalado")
-        echo "  ✅ Fastfetch ya está instalado ($version_str)."
+        echo "  ✅ Fastfetch y utilidades gráficas listas ($version_str)."
         return 0
     fi
 
-    echo "📦 Fastfetch no está instalado en el sistema."
-    echo "   Instalando paquete oficial vía APT..."
+    echo "📦 Paquetes requeridos ausentes: ${missing_pkgs[*]}"
+    echo "   Instalando vía APT..."
     if [ "$EUID" -ne 0 ]; then
         if ! command -v sudo &>/dev/null; then
-            echo "❌ Error: Se requiere 'sudo' para instalar Fastfetch."
+            echo "❌ Error: Se requiere 'sudo' para instalar ${missing_pkgs[*]}."
             exit 1
         fi
         sudo apt-get update -qq
-        sudo apt-get install -y fastfetch
+        sudo apt-get install -y "${missing_pkgs[@]}"
     else
         apt-get update -qq
-        apt-get install -y fastfetch
+        apt-get install -y "${missing_pkgs[@]}"
     fi
 }
 
@@ -103,8 +163,8 @@ apply_config() {
     source_config=$(get_theme_path "$theme_name")
 
     if [ -z "$source_config" ] || [ ! -f "$source_config" ]; then
-        echo "❌ Error: No se encontró la plantilla para el tema '$theme_name'."
-        echo "   Usa '$(basename "$0") --list-themes' para consultar los temas disponibles."
+        echo "❌ Error: No se encontró la configuración para el tema '$theme_name'."
+        echo "   Usa '$(basename "$0") --list-themes' para consultar las configuraciones disponibles."
         return 1
     fi
 
@@ -118,13 +178,29 @@ apply_config() {
 
         # Si difiere y no se forzó, crear copia de respaldo
         local backup_file="${USER_CONFIG_FILE}.bak.$(date +%Y%m%d_%H%M%S)"
-        echo "  ℹ️ Creando respaldo de configuración previa en: $backup_file"
+        echo "  ℹ️ Creando respaldo de la configuración previa en: $backup_file"
         run_as_user cp "$USER_CONFIG_FILE" "$backup_file"
     fi
 
     run_as_user cp "$source_config" "$USER_CONFIG_FILE"
     run_as_user chmod 644 "$USER_CONFIG_FILE"
     echo "  ✅ Tema '$theme_name' aplicado correctamente en $USER_CONFIG_FILE."
+}
+
+preview_theme() {
+    local theme_name="${1:-debian}"
+    local source_config
+    source_config=$(get_theme_path "$theme_name")
+
+    if [ -z "$source_config" ] || [ ! -f "$source_config" ]; then
+        echo "❌ Error: No se encontró la configuración para '$theme_name'."
+        return 1
+    fi
+
+    echo "👁️  Vista previa de Fastfetch con el tema: $(get_theme_title "$source_config")"
+    echo "📁 Archivo fuente: $source_config"
+    echo "-----------------------------------------------------------------"
+    run_as_user fastfetch -c "$source_config"
 }
 
 show_diff() {
@@ -142,7 +218,7 @@ show_diff() {
     fi
 
     if cmp -s "$source_config" "$USER_CONFIG_FILE"; then
-        echo "✅ La configuración instalada es 100% idéntica a la plantilla del tema '$theme_name'."
+        echo "✅ La configuración instalada es 100% idéntica a la plantilla de '$theme_name'."
     else
         echo "⚠️ Diferencias entre la plantilla '$theme_name' y ~/.config/fastfetch/config.jsonc:"
         diff -u --color=auto "$source_config" "$USER_CONFIG_FILE" || true
@@ -153,20 +229,91 @@ list_themes() {
     echo "================================================================="
     echo "🎨 TEMAS ESTÉTICOS DISPONIBLES DE FASTFETCH"
     echo "================================================================="
-    echo "1) debian (Predeterminado / Activo)"
-    echo "   🟠 Protagonista: Logo de Debian con paleta oficial rubí (#D70A53)"
-    echo "   ✨ Diseño: Métricas completas de hardware AMD, GNOME Shell Wayland y red"
-    echo "   📁 Archivo: Setup/config-debian.jsonc"
+    echo "Directorio de plantillas: $SCRIPT_DIR"
     echo ""
-    echo "2) compact"
-    echo "   📦 Protagonista: Caja minimalista FastCat con bordes redondeados (sin logo ASCII)"
-    echo "   ✨ Diseño: Ideal para paneles divididos o ventanas pequeñas de terminal"
-    echo "   📁 Archivo: Setup/config-compact.jsonc"
+
+    local count=1
+    local current_active=""
+    local theme_key=""
+
+    for file in "$SCRIPT_DIR"/config-*.jsonc; do
+        [ -e "$file" ] || continue
+        local base
+        base=$(basename "$file")
+        theme_key="${base#config-}"
+        theme_key="${theme_key%.jsonc}"
+
+        local status_indicator="  "
+        if [ -f "$USER_CONFIG_FILE" ] && cmp -s "$file" "$USER_CONFIG_FILE"; then
+            status_indicator="🟢 [ACTIVO]"
+            current_active="$theme_key"
+        fi
+
+        echo "$count) $theme_key $status_indicator"
+        echo "   ✨ Descripción: $(get_theme_title "$file")"
+        echo "   📁 Archivo:     Setup/$base"
+        echo "   🚀 Aplicar:     $(basename "$0") --theme $theme_key"
+        echo "   👁️  Previsualizar: $(basename "$0") --preview $theme_key"
+        echo ""
+        ((count++))
+    done
+
     echo "-----------------------------------------------------------------"
-    echo "💡 Puedes alternar entre ellos fácilmente con:"
+    echo "💡 Atajos rápidos con Justfile:"
     echo "   just fastfetch --theme debian"
+    echo "   just fastfetch --theme modern"
     echo "   just fastfetch --theme compact"
+    echo "   just fastfetch --menu"
     echo "================================================================="
+}
+
+interactive_menu() {
+    echo "================================================================="
+    echo "🎛️  SELECTOR INTERACTIVO DE TEMAS FASTFETCH"
+    echo "================================================================="
+
+    local theme_keys=()
+    local theme_files=()
+    local index=1
+
+    for file in "$SCRIPT_DIR"/config-*.jsonc; do
+        [ -e "$file" ] || continue
+        local base
+        base=$(basename "$file")
+        local key="${base#config-}"
+        key="${key%.jsonc}"
+
+        theme_keys+=("$key")
+        theme_files+=("$file")
+
+        local active_tag=""
+        if [ -f "$USER_CONFIG_FILE" ] && cmp -s "$file" "$USER_CONFIG_FILE"; then
+            active_tag=" (🟢 Actualmente Activo)"
+        fi
+
+        echo "  $index) $key - $(get_theme_title "$file")$active_tag"
+        ((index++))
+    done
+
+    if [ ${#theme_keys[@]} -eq 0 ]; then
+        echo "❌ No se encontraron archivos de configuración en $SCRIPT_DIR."
+        return 1
+    fi
+
+    echo "  0) Cancelar y salir"
+    echo "-----------------------------------------------------------------"
+    read -rp "Selecciona el número del tema que deseas instalar [1-${#theme_keys[@]}]: " choice
+
+    if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "${#theme_keys[@]}" ]; then
+        local chosen_key="${theme_keys[$((choice - 1))]}"
+        echo ""
+        apply_config "$chosen_key" true
+        echo ""
+        echo "🚀 Mostrando Fastfetch con el tema '$chosen_key':"
+        run_as_user fastfetch 2>/dev/null || true
+    else
+        echo "ℹ️ Operación cancelada. No se modificó la configuración."
+    fi
 }
 
 # ------------------------------------------------------------------------------
@@ -188,13 +335,29 @@ show_status() {
         echo "📦 Estado de instalación:   ❌ No instalado"
     fi
 
+    # Dependencia gráfica Chafa
+    if command -v chafa &>/dev/null; then
+        local chafa_ver
+        chafa_ver=$(chafa --version 2>/dev/null | head -n 1 || echo "Instalado")
+        echo "🖼️  Soporte Chafa:          ✅ Disponible ($chafa_ver)"
+    else
+        echo "🖼️  Soporte Chafa:          ℹ️  No instalado (Opcional para renderizado de imágenes)"
+    fi
+
     # Configuración de usuario y detección de tema
     echo "📁 Archivo de configuración: $USER_CONFIG_FILE"
     if [ -f "$USER_CONFIG_FILE" ]; then
-        if [ -f "$SCRIPT_DIR/config-debian.jsonc" ] && cmp -s "$SCRIPT_DIR/config-debian.jsonc" "$USER_CONFIG_FILE"; then
-            echo "🎨 Tema activo:            🔴 Debian Official Theme (Ruby)"
-        elif [ -f "$SCRIPT_DIR/config-compact.jsonc" ] && cmp -s "$SCRIPT_DIR/config-compact.jsonc" "$USER_CONFIG_FILE"; then
-            echo "🎨 Tema activo:            📦 Compact FastCat (Minimalista sin logo)"
+        local detected_theme=""
+        for file in "$SCRIPT_DIR"/config-*.jsonc; do
+            [ -e "$file" ] || continue
+            if cmp -s "$file" "$USER_CONFIG_FILE"; then
+                detected_theme="$(get_theme_title "$file") ($(basename "$file"))"
+                break
+            fi
+        done
+
+        if [ -n "$detected_theme" ]; then
+            echo "🎨 Tema activo:            🟢 $detected_theme"
         else
             echo "🎨 Tema activo:            🛠️  Personalizado / Modificado manualmente"
         fi
@@ -224,22 +387,29 @@ para Debian GNU/Linux y GNOME Shell (Wayland).
 OPCIONES:
   -s, --status              Muestra el estado de instalación, versión y tema activo.
   -r, --run                 Ejecuta Fastfetch con la configuración de usuario activa.
-  -t, --theme <NOMBRE>      Aplica un tema específico ('debian' o 'compact').
-  -l, --list-themes         Lista los temas disponibles y sus características.
+  -t, --theme <NOMBRE|RUTA> Aplica un tema específico o un archivo .jsonc personalizado.
+  -p, --preview [TEMA]      Previsualiza un tema temporalmente sin modificar tu configuración.
+  -i, --menu, --select      Abre el selector interactivo numerado para elegir e instalar un tema.
+  -l, --list-themes         Lista todos los temas disponibles en el repositorio.
   -d, --diff [TEMA]         Compara la configuración instalada con la plantilla del tema.
   -f, --force               Fuerza la reinstalación del tema (creando respaldo previo .bak).
   -h, --help                Muestra esta ayuda.
 
-TEMAS SOPORTADOS:
-  debian   (Predeterminado) Logo de Debian con paleta oficial y métricas completas.
-  compact  Caja minimalista FastCat sin logo ASCII.
+TEMAS PREDEFINIDOS DISPONIBLES:
+  debian        (Predeterminado) Tema oficial Debian con métricas completas por categorías.
+  modern        Diseño condensado con logo Debian ASCII y acentos rubí.
+  compact       Caja minimalista redondeada FastCat sin logo, ideal para paneles reducidos.
+  <ruta.jsonc>  Cualquier ruta a un archivo de configuración Fastfetch personalizado.
 
 EJEMPLOS:
-  $(basename "$0")                     # Aplica el tema Debian y muestra el banner
-  $(basename "$0") --status            # Diagnóstico de versión y tema activo
-  $(basename "$0") --theme compact     # Cambia al diseño minimalista
-  $(basename "$0") --theme debian      # Cambia al diseño de Debian
-  $(basename "$0") --list-themes       # Información detallada de cada diseño
+  $(basename "$0")                         # Instala/Aplica el tema oficial de Debian
+  $(basename "$0") --menu                  # Selector interactivo de temas
+  $(basename "$0") --list-themes           # Muestra todos los temas disponibles con detalles
+  $(basename "$0") --preview compact       # Previsualiza el diseño minimalista sin aplicarlo
+  $(basename "$0") --preview modern        # Previsualiza el diseño condensado
+  $(basename "$0") --theme modern          # Cambia al diseño condensado
+  $(basename "$0") --theme compact         # Aplica la caja minimalista FastCat
+  $(basename "$0") --status                # Diagnóstico del entorno y tema activo
 EOF
 }
 
@@ -260,9 +430,21 @@ while [ $# -gt 0 ]; do
             ACTION="run"
             shift
             ;;
-        -l|--list-themes)
+        -l|--list-themes|--list)
             ACTION="list-themes"
             shift
+            ;;
+        -i|--menu|--select)
+            ACTION="menu"
+            shift
+            ;;
+        -p|--preview)
+            ACTION="preview"
+            shift
+            if [ $# -gt 0 ] && [[ ! "$1" =~ ^- ]]; then
+                THEME_NAME="$1"
+                shift
+            fi
             ;;
         -t|--theme)
             shift
@@ -270,7 +452,7 @@ while [ $# -gt 0 ]; do
                 THEME_NAME="$1"
                 shift
             else
-                echo "❌ Error: Debes especificar el nombre de un tema ('debian' o 'compact')."
+                echo "❌ Error: Debes especificar el nombre o archivo de un tema."
                 exit 1
             fi
             ;;
@@ -291,9 +473,15 @@ while [ $# -gt 0 ]; do
             exit 0
             ;;
         *)
-            echo "❌ Opción desconocida: $1"
-            echo "Usa '$(basename "$0") --help' para ver las opciones disponibles."
-            exit 1
+            # Si el argumento no empieza con -, asumimos que es el nombre de un tema
+            if [[ ! "$1" =~ ^- ]]; then
+                THEME_NAME="$1"
+                shift
+            else
+                echo "❌ Opción desconocida: $1"
+                echo "Usa '$(basename "$0") --help' para ver las opciones disponibles."
+                exit 1
+            fi
             ;;
     esac
 done
@@ -309,6 +497,14 @@ case "$ACTION" in
         ;;
     list-themes)
         list_themes
+        exit 0
+        ;;
+    menu)
+        interactive_menu
+        exit 0
+        ;;
+    preview)
+        preview_theme "$THEME_NAME"
         exit 0
         ;;
     diff)
