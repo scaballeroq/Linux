@@ -184,9 +184,13 @@ ghostty *args:
 ghostty-status:
     ./Setup/ghostty.sh --status
 
-# Terminal Ptyxis (Diseño estético oscuro y transparente)
-ptyxis:
-    ./Setup/ptyxis.sh
+# Terminal Ptyxis nativa GNOME (GTK4 / Libadwaita, Contenedores, Tema Catppuccin, Blur)
+ptyxis *args:
+    ./Setup/ptyxis.sh {{args}}
+
+# Diagnóstico y estado de la terminal Ptyxis
+ptyxis-status:
+    ./Setup/ptyxis.sh --status
 
 # Suite multimedia completa: códecs GStreamer, FFmpeg, VA-API Wayland y reproductores
 multimedia *args:
