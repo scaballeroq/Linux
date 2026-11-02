@@ -79,7 +79,7 @@ alias remove='sudo apt remove'
 alias purge='sudo apt purge'
 alias search='apt search'
 alias clean='sudo apt autoremove -y && sudo apt clean'
-alias list-upgradable='apt list --upgradable'
+alias list='apt list --upgradable'
 alias pkg-info='apt show'
 
 # -----------------------------------------------------------------------------
