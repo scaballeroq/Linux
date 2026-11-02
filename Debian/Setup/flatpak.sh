@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # flatpak.sh - Instalación, Gestión y Diagnóstico de Software Flatpak
-# Debian GNU/Linux | Escritorio: GNOME Shell (Wayland)
-# Hardware: AMD Ryzen 7 7730U / Radeon Graphics (Vega 8) (VA-API)
+# Sistema: Debian GNU/Linux 13 (Trixie) | Escritorio: GNOME Shell 48+ (Wayland)
+# Hardware: AMD Ryzen 7 7730U / Radeon Graphics (Vega 8 Barcelo-R) (VA-API)
 # ==============================================================================
 # Filosofía y Arquitectura:
 # - Enfoque desacoplado y seguro: aplicaciones multimedia, contenedores y herramientas
@@ -10,7 +10,8 @@
 #   contra los repositorios de Debian.
 # - Cero dependencias de KDE: 100% nativo GNOME y Wayland.
 # - Idempotencia absoluta: comprueba si la aplicación ya está instalada antes de descargar.
-# - Detección inteligente de objetivos (--system o --user) evitando conflictos.
+# - Detección inteligente de objetivos (--system o --user) evitando conflictos con sudo.
+# - Sincronización de tema oscuro (prefer-dark) y aceleración por GPU (Mesa DRI/VA-API).
 # ==============================================================================
 
 set -euo pipefail
@@ -42,11 +43,40 @@ else
     USER_HOME="${HOME:-/home/$REAL_USER}"
 fi
 
+REAL_UID=$(id -u "$REAL_USER" 2>/dev/null || echo "1000")
+
 if [ "$EUID" -ne 0 ]; then
     SUDO="sudo"
 else
     SUDO=""
 fi
+
+run_as_user() {
+    local runtime_dir="${XDG_RUNTIME_DIR:-/run/user/$REAL_UID}"
+    local dbus_addr="${DBUS_SESSION_BUS_ADDRESS:-unix:path=$runtime_dir/bus}"
+    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+        sudo -u "$REAL_USER" env \
+            HOME="$USER_HOME" \
+            USER="$REAL_USER" \
+            PATH="/usr/local/bin:/usr/bin:/bin:$PATH" \
+            XDG_RUNTIME_DIR="$runtime_dir" \
+            DBUS_SESSION_BUS_ADDRESS="$dbus_addr" \
+            "$@"
+    else
+        env \
+            XDG_RUNTIME_DIR="$runtime_dir" \
+            DBUS_SESSION_BUS_ADDRESS="$dbus_addr" \
+            "$@"
+    fi
+}
+
+get_os_description() {
+    if [ -f /etc/os-release ]; then
+        grep "^PRETTY_NAME=" /etc/os-release | cut -d= -f2 | tr -d '"'
+    else
+        echo "Debian GNU/Linux 13 (trixie)"
+    fi
+}
 
 # ------------------------------------------------------------------------------
 # 3. CATÁLOGO DE APLICACIONES RECOMENDADAS
@@ -100,7 +130,11 @@ ensure_flatpak_installed() {
     if ! command -v flatpak &>/dev/null; then
         echo -e "${YELLOW}📦 Flatpak no está instalado en el sistema. Instalando vía APT...${NC}"
         $SUDO apt-get update -qq
-        $SUDO apt-get install -y flatpak gnome-software-plugin-flatpak 2>/dev/null || $SUDO apt-get install -y flatpak
+        $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            flatpak \
+            gnome-software-plugin-flatpak \
+            xdg-desktop-portal-gnome \
+            xdg-desktop-portal-gtk
     fi
 }
 
@@ -108,12 +142,15 @@ ensure_flathub_remote() {
     local target="${1:---system}"
     ensure_flatpak_installed
 
-    if ! flatpak remotes "$target" 2>/dev/null | grep -q "^flathub"; then
-        echo -e "${YELLOW}🌐 Configurando repositorio Flathub (${target})...${NC}"
-        if [ "$target" = "--system" ]; then
+    if [ "$target" = "--system" ]; then
+        if ! flatpak remotes --system 2>/dev/null | grep -q "^flathub"; then
+            echo -e "${YELLOW}🌐 Configurando repositorio Flathub a nivel de sistema (--system)...${NC}"
             $SUDO flatpak remote-add --system --if-not-exists flathub "$FLATHUB_URL" 2>/dev/null || true
-        else
-            flatpak remote-add --user --if-not-exists flathub "$FLATHUB_URL" 2>/dev/null || true
+        fi
+    else
+        if ! run_as_user flatpak remotes --user 2>/dev/null | grep -q "^flathub"; then
+            echo -e "${YELLOW}🌐 Configurando repositorio Flathub para el usuario actual (--user)...${NC}"
+            run_as_user flatpak remote-add --user --if-not-exists flathub "$FLATHUB_URL" 2>/dev/null || true
         fi
     fi
 }
@@ -121,23 +158,6 @@ ensure_flathub_remote() {
 is_app_installed() {
     local app_id="$1"
     flatpak info "$app_id" &>/dev/null
-}
-
-get_app_details() {
-    local app_id="$1"
-    local version="desconocida"
-    local install_scope="-"
-    local size="-"
-
-    if is_app_installed "$app_id"; then
-        version=$(flatpak info "$app_id" 2>/dev/null | awk -F: '/Versión|Version/ {print $2; exit}' | tr -d ' ' || echo "instalada")
-        [ -z "$version" ] && version="instalada"
-        install_scope=$(flatpak info "$app_id" 2>/dev/null | awk -F: '/Instalación|Installation/ {print $2; exit}' | tr -d ' ' || echo "system")
-        size=$(flatpak info "$app_id" 2>/dev/null | awk -F: '/Tamaño instalado|Installed Size/ {print $2; exit}' | xargs || echo "-")
-        echo -e "${GREEN}✅ Instalado [${install_scope}] (v${version} | ${size})${NC}"
-    else
-        echo -e "${RED}❌ No instalado${NC}"
-    fi
 }
 
 resolve_app_id() {
@@ -182,13 +202,25 @@ resolve_app_name() {
     echo "$target_id"
 }
 
+apply_overrides() {
+    echo -e "${BLUE}ℹ️ Sincronizando temas de GNOME (prefer-dark) y aceleración GPU con Flatpak...${NC}"
+    run_as_user flatpak override --user --filesystem=xdg-config/gtk-4.0:ro 2>/dev/null || true
+    run_as_user flatpak override --user --filesystem=xdg-config/gtk-3.0:ro 2>/dev/null || true
+    run_as_user flatpak override --user --device=dri 2>/dev/null || true
+    echo -e "${GREEN}✅ Overrides de tema oscuro y aceleración GPU aplicados para el usuario.${NC}"
+}
+
 # ------------------------------------------------------------------------------
 # 5. DIAGNÓSTICO DEL SISTEMA (--status)
 # ------------------------------------------------------------------------------
 show_status() {
+    local os_name
+    os_name=$(get_os_description)
+
     echo -e "${BOLD}=================================================================${NC}"
-    echo -e "${CYAN}${BOLD}🔍 ESTADO DE FLATPAK Y FLATHUB - UBUNTU LINUX (GNOME)${NC}"
+    echo -e "${CYAN}${BOLD}🔍 ESTADO DE FLATPAK Y FLATHUB - DEBIAN WORKSTATION (GNOME)${NC}"
     echo -e "${BOLD}=================================================================${NC}"
+    echo -e "• Sistema Operativo:             $os_name"
     
     if command -v flatpak &>/dev/null; then
         local flatpak_ver
@@ -198,12 +230,17 @@ show_status() {
         echo -e "• Binario Flatpak:              ${RED}❌ No instalado${NC}"
     fi
 
+    # Versión de Flatpak en APT
+    local apt_flatpak_v
+    apt_flatpak_v=$(dpkg-query -W -f='${Version}' flatpak 2>/dev/null || echo "n/a")
+    echo -e "• Paquete APT flatpak:          ✅ v${apt_flatpak_v} (Debian 13 Trixie)"
+
     local flathub_sys
     flathub_sys=$(if flatpak remotes --system 2>/dev/null | grep -qi "^flathub"; then echo -e "${GREEN}✅ Configurado${NC}"; else echo -e "${RED}❌ No presente${NC}"; fi)
     echo -e "• Repositorio Flathub (System): $flathub_sys"
 
     local flathub_usr
-    flathub_usr=$(if flatpak remotes --user 2>/dev/null | grep -qi "^flathub"; then echo -e "${GREEN}✅ Configurado${NC}"; else echo -e "${YELLOW}⚠️ No configurado (opcional)${NC}"; fi)
+    flathub_usr=$(if run_as_user flatpak remotes --user 2>/dev/null | grep -qi "^flathub"; then echo -e "${GREEN}✅ Configurado${NC}"; else echo -e "${YELLOW}⚠️ No configurado (opcional)${NC}"; fi)
     echo -e "• Repositorio Flathub (User):   $flathub_usr"
 
     echo -e "${BOLD}-----------------------------------------------------------------${NC}"
@@ -213,17 +250,27 @@ show_status() {
     local total_installed=0
     local total_apps=0
 
+    # Caché rápida de aplicaciones instaladas para salida instantánea O(1)
+    local installed_cache
+    installed_cache=$(flatpak list --app --columns=application,version,size,installation 2>/dev/null || true)
+
     for item in "${APPS_CATALOG[@]}"; do
         IFS="|" read -r app_id app_name category is_default desc <<< "$item"
         total_apps=$((total_apps + 1))
         
         printf "• ${BOLD}%-22s${NC} " "${app_name}:"
-        local details
-        details=$(get_app_details "$app_id")
-        echo -e "$details"
-
-        if is_app_installed "$app_id"; then
+        
+        local match_line
+        match_line=$(echo "$installed_cache" | grep -m1 "^${app_id}[[:space:]]" 2>/dev/null || true)
+        if [ -n "$match_line" ]; then
             total_installed=$((total_installed + 1))
+            local ver size scope
+            ver=$(echo "$match_line" | awk '{print $2}' || echo "instalada")
+            size=$(echo "$match_line" | awk '{print $3, $4}' || echo "-")
+            scope=$(echo "$match_line" | awk '{print $NF}' || echo "system")
+            echo -e "${GREEN}✅ Instalado [${scope}] (v${ver} | ${size})${NC}"
+        else
+            echo -e "${RED}❌ No instalado${NC}"
         fi
     done
 
@@ -248,7 +295,18 @@ install_single_app() {
 
     echo -e "  ${YELLOW}⬇️ Instalando${NC} ${BOLD}${app_name}${NC} (${CYAN}${app_id}${NC}) [${target_scope}]..."
     
-    if flatpak install "$target_scope" -y flathub "$app_id"; then
+    local install_success=0
+    if [ "$target_scope" = "--system" ]; then
+        if $SUDO flatpak install "$target_scope" -y flathub "$app_id"; then
+            install_success=1
+        fi
+    else
+        if run_as_user flatpak install "$target_scope" -y flathub "$app_id"; then
+            install_success=1
+        fi
+    fi
+
+    if [ "$install_success" -eq 1 ]; then
         echo -e "  ${GREEN}✅ ${app_name} instalado correctamente.${NC}"
     else
         echo -e "  ${RED}❌ Error al instalar ${app_name} (${app_id}).${NC}" >&2
@@ -312,6 +370,9 @@ install_suite() {
         fi
     done
 
+    # Aplicar sincronización de temas y aceleración
+    apply_overrides
+
     echo -e "\n${BOLD}=================================================================${NC}"
     echo -e "${GREEN}✅ Proceso de instalación finalizado con éxito.${NC}"
     echo -e "💡 Recuerda que puedes gestionar los permisos de tus apps con ${BOLD}Flatseal${NC}."
@@ -323,7 +384,12 @@ update_all() {
     echo -e "${BOLD}=================================================================${NC}"
     echo -e "${CYAN}🔄 ACTUALIZANDO TODAS LAS APLICACIONES Y RUNTIMES FLATPAK...${NC}"
     echo -e "${BOLD}=================================================================${NC}"
-    flatpak update -y
+    if [ -n "$SUDO" ]; then
+        $SUDO flatpak update --system -y 2>/dev/null || true
+    else
+        flatpak update --system -y 2>/dev/null || true
+    fi
+    run_as_user flatpak update --user -y 2>/dev/null || true
     echo -e "${GREEN}✅ Todas las aplicaciones y runtimes están al día.${NC}"
 }
 
@@ -332,13 +398,18 @@ clean_unused() {
     echo -e "${BOLD}=================================================================${NC}"
     echo -e "${YELLOW}🧹 LIMPIANDO RUNTIMES Y DEPENDENCIAS HUÉRFANAS...${NC}"
     echo -e "${BOLD}=================================================================${NC}"
-    flatpak uninstall --unused -y
+    if [ -n "$SUDO" ]; then
+        $SUDO flatpak uninstall --system --unused -y 2>/dev/null || true
+    else
+        flatpak uninstall --system --unused -y 2>/dev/null || true
+    fi
+    run_as_user flatpak uninstall --user --unused -y 2>/dev/null || true
     echo -e "${GREEN}✅ Limpieza de runtimes no utilizados completada.${NC}"
 }
 
 show_help() {
     cat <<EOF
-📦 Gestor e Instalador de Software Flatpak - Debian GNU/Linux
+📦 Gestor e Instalador de Software Flatpak - Debian 13 Workstation (GNOME)
 
 Uso:
   $0 [OPCIÓN] [PARÁMETROS]
@@ -347,16 +418,17 @@ Opciones principales:
   (sin argumentos)        Instala el conjunto recomendado por defecto (Core + Multimedia + Comms).
   -s, --status            Muestra el estado de Flatpak, repositorios y aplicaciones instaladas.
   -a, --all               Instala todo el catálogo completo disponible.
-  -e, --essential, --core Instala únicamente las herramientas esenciales del sistema (Flatseal, Podman Desktop, Warehouse).
-  -m, --multimedia        Instala la suite multimedia desacoplada (VLC, Celluloid, OBS Studio, Shotcut, Kodi, Stremio, Audacity, Spotify).
+  -e, --essential, --core Instala únicamente las herramientas esenciales (Flatseal, Podman Desktop, Warehouse).
+  -m, --multimedia        Instala la suite multimedia desacoplada (VLC, Celluloid, OBS Studio, Spotify, etc.).
       --dev               Instala herramientas de desarrollo y APIs (Bruno, DBeaver).
-      --productivity      Instala utilidades de productividad y ofimática (LibreOffice, Obsidian, LocalSend, Pika Backup).
+      --productivity      Instala utilidades de productividad (LibreOffice, Obsidian, LocalSend, Pika Backup).
       --graphics          Instala suite de diseño gráfico (GIMP, Inkscape).
       --web               Instala navegadores web en sandbox (Mozilla Firefox).
-      --comms             Instala las herramientas de comunicación (Vesktop/Discord, Telegram).
+      --comms             Instala herramientas de comunicación (Vesktop/Discord, Telegram).
       --gaming            Instala herramientas de gaming (Proton-GE).
-  -u, --update            Actualiza todas las aplicaciones y runtimes instalados.
-  -c, --clean             Elimina runtimes y extensiones sin usar ('flatpak uninstall --unused').
+      --overrides         Aplica overrides de temas de GNOME (prefer-dark) y aceleración GPU.
+  -u, --update            Actualiza todas las aplicaciones y runtimes instalados (sistema y usuario).
+  -c, --clean             Elimina runtimes y extensiones huérfanas ('flatpak uninstall --unused').
   -h, --help              Muestra este mensaje de ayuda.
 
 Instalación individual:
@@ -397,6 +469,10 @@ case "${1:-}" in
         ;;
     --clean|-c|clean)
         clean_unused
+        exit 0
+        ;;
+    --overrides)
+        apply_overrides
         exit 0
         ;;
     --all|-a|all)
