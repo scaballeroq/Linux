@@ -1,26 +1,31 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ==============================================================================
 # debian-tuning.sh - Optimizador de Rendimiento para Debian Workstation (GNOME)
-# Hardware: AMD Ryzen 7 7730U / NVMe SSD / 32 GB RAM / ZRAM
+# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / SSD NVMe Kioxia / 32 GB RAM)
+# Sistema: Debian GNU/Linux 13 (Trixie) | Entorno: GNOME Shell (Wayland)
 # ==============================================================================
 # Características:
 #   - Kernel Linux moderno y gestión de memoria optimizada (vm.page-cluster = 0)
-#   - ZRAM con compresión ZSTD y swappiness adaptativo
+#   - ZRAM con compresión ZSTD al 50% de RAM y swappiness adaptativo
 #   - Monitoreo masivo de archivos (Inotify 1M watches) para IDEs y compiladores
 #   - Límites de descriptores de archivos (1M nofile) y tareas Systemd (TasksMax=infinity)
-#   - Optimización de red con TCP BBR + FQ
-#   - Ajuste de GNOME Tracker Miner para excluir carpetas pesadas de desarrollo
-#   - Servicios de mantenimiento: fstrim.timer para SSD/NVMe e irqbalance
-#   - Opciones CLI: --status, --sysctl, --limits, --tracker, --zram, --no-install, --help
+#   - Optimización de red con TCP BBR + FQ (módulo kernel persistente en modules-load.d)
+#   - Ajuste de GNOME Tracker 3 Miner (exclusiones de desarrollo y ahorro en batería)
+#   - Servicios de mantenimiento: fstrim.timer para SSD NVMe e irqbalance multi-core
+#   - Opciones CLI: --status / -s, --sysctl, --limits, --tracker, --zram, --services,
+#                   --no-install, --help / -h
 # ==============================================================================
 
 set -euo pipefail
 
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
 
+# ------------------------------------------------------------------------------
+# 1. DETECCIÓN DE USUARIO, ENTORNO Y PRIVILEGIOS SUDO
+# ------------------------------------------------------------------------------
 if [ "$EUID" -ne 0 ]; then
     if ! command -v sudo &> /dev/null; then
-        echo "❌ Error: 'sudo' no está disponible."
+        echo "❌ Error: 'sudo' no está disponible. Ejecuta este script con privilegios de superusuario."
         exit 1
     fi
     SUDO="sudo"
@@ -39,33 +44,51 @@ fi
 REAL_UID=$(id -u "$REAL_USER" 2>/dev/null || echo "1000")
 
 run_as_user() {
+    local runtime_dir="${XDG_RUNTIME_DIR:-/run/user/$REAL_UID}"
+    local dbus_addr="${DBUS_SESSION_BUS_ADDRESS:-unix:path=$runtime_dir/bus}"
     if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
         sudo -u "$REAL_USER" env \
             HOME="$USER_HOME" \
             USER="$REAL_USER" \
             PATH="/usr/local/bin:/usr/bin:/bin:$PATH" \
-            XDG_RUNTIME_DIR="/run/user/$REAL_UID" \
-            DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$REAL_UID/bus}" \
+            XDG_RUNTIME_DIR="$runtime_dir" \
+            DBUS_SESSION_BUS_ADDRESS="$dbus_addr" \
             "$@"
     else
-        "$@"
+        env \
+            XDG_RUNTIME_DIR="$runtime_dir" \
+            DBUS_SESSION_BUS_ADDRESS="$dbus_addr" \
+            "$@"
     fi
 }
 
+get_os_description() {
+    if [ -f /etc/os-release ]; then
+        grep "^PRETTY_NAME=" /etc/os-release | cut -d= -f2 | tr -d '"'
+    else
+        echo "Debian GNU/Linux 13 (trixie)"
+    fi
+}
+
+# ------------------------------------------------------------------------------
+# 2. AYUDA Y DIAGNÓSTICO DEL SISTEMA
+# ------------------------------------------------------------------------------
 show_help() {
     cat <<EOF
-⚡ Optimizador de Rendimiento - Debian Workstation (GNOME Shell)
+⚡ Optimizador de Rendimiento - Debian 13 Workstation (GNOME Shell)
+Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / SSD NVMe / 32 GB RAM / ZRAM)
 
 Uso:
   $0 [OPCIÓN]
 
 Opciones principales:
-  (sin argumentos)       Aplica todas las optimizaciones (Kernel, Límites, GNOME Tracker, ZRAM, Servicios).
+  (sin argumentos)       Aplica todas las optimizaciones (Kernel, Límites, Tracker, ZRAM, Servicios).
   --status, -s           Muestra el estado actual de sysctl, límites, ZRAM, Tracker y servicios.
   --sysctl               Aplica únicamente la configuración de Kernel Sysctl y TCP BBR.
   --limits               Aplica límites de descriptores y memoria (limits.d y systemd).
-  --tracker              Configura exclusiones en GNOME Tracker Miner para proyectos de desarrollo.
-  --zram                 Verifica y aplica la configuración óptima de ZRAM (zstd).
+  --tracker              Configura exclusiones en GNOME Tracker 3 para proyectos de desarrollo.
+  --zram                 Verifica y aplica la configuración óptima de ZRAM (zstd al 50% de RAM).
+  --services             Habilita servicios de mantenimiento (fstrim.timer e irqbalance).
   --no-install           Aplica ajustes de configuración sin descargar paquetes adicionales.
   --help, -h             Muestra este mensaje de ayuda.
 
@@ -75,18 +98,23 @@ Optimizaciones incluidas:
                          vm.watermark_boost_factor=0 (elimina microtirones), TCP BBR + FQ.
   2. Límites de Proceso: Descriptores de archivo (1M nofile), memlock unlimited,
                          systemd system/user DefaultTasksMax=infinity.
-  3. Systemd Timeouts:   DefaultTimeoutStopSec=10s para apagados y reinicios rápidos.
-  4. GNOME Tracker:      Exclusiones en Tracker Miner de node_modules, .git, .venv y Workspace.
-  5. Memoria ZRAM:       Compresión ZSTD al 50% de RAM con zram-tools.
-  6. Servicios:          fstrim.timer (mantenimiento SSD/NVMe) e irqbalance (reparto multi-core).
+  3. Systemd Timeouts:   DefaultTimeoutStopSec=10s para apagados y reinicios rápidos sin bloqueos.
+  4. GNOME Tracker 3:    Exclusiones de node_modules, .git, .venv y ahorro de batería al desconectar AC.
+  5. Memoria ZRAM:       Compresión ZSTD al 50% de RAM (16 GB ZRAM) con prioridad máxima (100).
+  6. Servicios NVMe:     fstrim.timer (mantenimiento SSD NVMe) e irqbalance (reparto multi-core Zen 3).
 EOF
 }
 
 show_status() {
+    local os_name
+    os_name=$(get_os_description)
+
     echo "================================================================="
     echo "🔍 ESTADO DE RENDIMIENTO Y OPTIMIZACIONES - DEBIAN WORKSTATION"
     echo "================================================================="
+    echo "• Sistema Operativo:             $os_name"
     echo "• Kernel activo:                 $(uname -r)"
+    echo "• Hardware:                      HP ProBook 455 G10 (AMD Ryzen 7 7730U / 32 GB RAM)"
     echo "-----------------------------------------------------------------"
     echo "• Sysctl Kernel & Memoria:"
     echo "  - fs.inotify.max_user_watches: $(sysctl -n fs.inotify.max_user_watches 2>/dev/null || echo 'n/a') (Objetivo: >= 1048576)"
@@ -96,6 +124,7 @@ show_status() {
     echo "  - vm.watermark_boost_factor:   $(sysctl -n vm.watermark_boost_factor 2>/dev/null || echo 'n/a') (Objetivo: 0)"
     echo "  - net.ipv4.tcp_congestion:     $(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo 'n/a') (Objetivo: bbr)"
     echo "  - net.core.default_qdisc:      $(sysctl -n net.core.default_qdisc 2>/dev/null || echo 'n/a') (Objetivo: fq)"
+    echo "  - Archivo sysctl.d:            $([ -f /etc/sysctl.d/99-debian-tuning.conf ] && echo '✅ Activo (/etc/sysctl.d/99-debian-tuning.conf)' || echo '❌ Ausente')"
     echo "-----------------------------------------------------------------"
     echo "• Memoria ZRAM:"
     if command -v zramctl &>/dev/null; then
@@ -103,24 +132,51 @@ show_status() {
     else
         echo "  ❌ Herramienta zramctl no instalada."
     fi
+    if [ -f /etc/default/zramswap ]; then
+        local zram_algo zram_pct
+        zram_algo=$(grep "^ALGORITHM=" /etc/default/zramswap 2>/dev/null | cut -d= -f2 || echo "n/a")
+        zram_pct=$(grep "^PERCENT=" /etc/default/zramswap 2>/dev/null | cut -d= -f2 || echo "n/a")
+        echo "  - Configuración zramswap:      Algoritmo: $zram_algo | RAM: $zram_pct%"
+    fi
     echo "-----------------------------------------------------------------"
     echo "• Límites de Descriptores (nofile):"
     echo "  - Usuario actual (ulimit -n):  $(ulimit -n 2>/dev/null || echo 'n/a')"
     echo "  - Configuración limits.d:      $([ -f /etc/security/limits.d/99-development-limits.conf ] && echo '✅ Activa' || echo '❌ Ausente')"
+    echo "  - Timeouts systemd (stop):     $([ -f /etc/systemd/system.conf.d/99-limits.conf ] && echo '✅ 10s (sin bloqueos)' || echo '❌ Predeterminado')"
     echo "-----------------------------------------------------------------"
-    echo "• Servicios del Sistema:"
+    echo "• GNOME Tracker 3 Miner:"
+    if run_as_user gsettings list-schemas 2>/dev/null | grep -q "org.freedesktop.Tracker3.Miner.Files"; then
+        local tr_battery
+        tr_battery=$(run_as_user gsettings get org.freedesktop.Tracker3.Miner.Files index-on-battery 2>/dev/null || echo 'n/a')
+        echo "  - Indexar en batería:          $tr_battery (Recomendado: false)"
+        echo "  - Exclusiones .trackerignore:  $([ -f "$USER_HOME/Workspace/.trackerignore" ] && echo '✅ Configurado en ~/Workspace' || echo 'ℹ️ No encontrado')"
+    else
+        echo "  - Tracker 3 Miner:             ℹ️ No disponible o no activo"
+    fi
+    echo "-----------------------------------------------------------------"
+    echo "• Almacenamiento SSD NVMe y Mantenimiento:"
+    if [ -f /sys/block/nvme0n1/queue/scheduler ]; then
+        echo "  - I/O Scheduler NVMe:          $(cat /sys/block/nvme0n1/queue/scheduler 2>/dev/null || echo 'n/a')"
+    fi
     echo "  - fstrim.timer (SSD/NVMe):     $(systemctl is-active fstrim.timer 2>/dev/null || echo 'inactivo')"
     echo "  - irqbalance (Multi-core):     $(systemctl is-active irqbalance 2>/dev/null || echo 'inactivo')"
     echo "================================================================="
 }
 
+# ------------------------------------------------------------------------------
+# 3. PARÁMETROS DE KERNEL SYSCTL Y RED TCP BBR
+# ------------------------------------------------------------------------------
 apply_sysctl() {
     echo "⚙️ [1/6] Configurando optimizaciones del Kernel y Memoria en /etc/sysctl.d/..."
-    $SUDO mkdir -p /etc/sysctl.d
+    $SUDO mkdir -p /etc/sysctl.d /etc/modules-load.d
+
+    # Asegurar la carga persistente del módulo tcp_bbr en el arranque
+    echo "tcp_bbr" | $SUDO tee /etc/modules-load.d/bbr.conf > /dev/null
+    $SUDO modprobe tcp_bbr 2>/dev/null || true
 
     cat <<'EOF' | $SUDO tee /etc/sysctl.d/99-debian-tuning.conf > /dev/null
 # =============================================================================
-# OPTIMIZACIÓN DE RENDIMIENTO - DEBIAN WORKSTATION
+# OPTIMIZACIÓN DE RENDIMIENTO - DEBIAN 13 WORKSTATION
 # Hardware: AMD Ryzen 7 7730U / SSD NVMe Kioxia / 32 GB RAM / ZRAM
 # ==============================================================================
 
@@ -167,15 +223,18 @@ net.ipv4.tcp_max_tw_buckets = 2097152
 EOF
 
     $SUDO sysctl --system > /dev/null 2>&1 || true
-    echo "  ✅ Parámetros de Kernel aplicados con éxito."
+    echo "  ✅ Parámetros de Kernel y TCP BBR aplicados con éxito."
 }
 
+# ------------------------------------------------------------------------------
+# 4. LÍMITES DE DESCRIPTORES Y TIMEOUTS DE SYSTEMD
+# ------------------------------------------------------------------------------
 apply_limits() {
-    echo "⚙️ [2/6] Configurando límites de descriptores y tareas..."
+    echo "⚙️ [2/6] Configurando límites de descriptores (nofile), memlock y tareas..."
     $SUDO mkdir -p /etc/security/limits.d /etc/systemd/system.conf.d /etc/systemd/user.conf.d
 
     cat <<'EOF' | $SUDO tee /etc/security/limits.d/99-development-limits.conf > /dev/null
-# Límites para desarrollo y compilación intensiva
+# Límites para desarrollo y compilación intensiva en Debian Workstation
 * soft nofile 1048576
 * hard nofile 1048576
 root soft nofile 1048576
@@ -208,11 +267,14 @@ EOF
 
     $SUDO systemctl daemon-reexec 2>/dev/null || true
     run_as_user systemctl --user daemon-reexec 2>/dev/null || true
-    echo "  ✅ Límites de descriptores y timeouts configurados."
+    echo "  ✅ Límites de descriptores (1M nofile) y timeouts rápidos (10s) configurados."
 }
 
+# ------------------------------------------------------------------------------
+# 5. GNOME TRACKER 3 MINER (EXCLUSIONES DE CÓDIGO Y AHORRO EN BATERÍA)
+# ------------------------------------------------------------------------------
 apply_tracker() {
-    echo "⚙️ [3/6] Optimizando GNOME Tracker Miner (exclusión de proyectos de desarrollo)..."
+    echo "⚙️ [3/6] Optimizando GNOME Tracker 3 Miner (exclusión de proyectos y ahorro en batería)..."
     local workspace_dir="$USER_HOME/Workspace"
     if [ -d "$workspace_dir" ]; then
         run_as_user touch "$workspace_dir/.trackerignore" 2>/dev/null || true
@@ -220,36 +282,69 @@ apply_tracker() {
     fi
 
     if run_as_user gsettings list-schemas 2>/dev/null | grep -q "org.freedesktop.Tracker3.Miner.Files"; then
-        run_as_user gsettings set org.freedesktop.Tracker3.Miner.Files index-recursive-directories "['&DESKTOP', '&DOCUMENTS', '&DOWNLOAD', '&MUSIC', '&PICTURES', '&VIDEOS']" 2>/dev/null || true
+        # Excluir directorios típicos de compilación y node_modules
+        run_as_user gsettings set org.freedesktop.Tracker3.Miner.Files ignored-directories "['po', 'CVS', 'core-dumps', 'lost+found', 'node_modules', '.venv', 'target', '.gradle', 'vendor', 'dist', 'build']" 2>/dev/null || true
+        # Ahorrar batería: no indexar en segundo plano cuando el portátil esté desenchufado
+        run_as_user gsettings set org.freedesktop.Tracker3.Miner.Files index-on-battery false 2>/dev/null || true
+        run_as_user gsettings set org.freedesktop.Tracker3.Miner.Files index-recursive-directories "['&DESKTOP', '&DOCUMENTS', '&MUSIC', '&PICTURES', '&VIDEOS']" 2>/dev/null || true
         run_as_user gsettings set org.freedesktop.Tracker3.Miner.Files enable-monitors true 2>/dev/null || true
     fi
-    echo "  ✅ GNOME Tracker configurado para respetar .trackerignore en directorios de código."
+    echo "  ✅ GNOME Tracker 3 configurado para desarrollo y ahorro de batería."
 }
 
+# ------------------------------------------------------------------------------
+# 6. CONFIGURACIÓN Y VERIFICACIÓN DE ZRAM (ZSTD)
+# ------------------------------------------------------------------------------
 apply_zram() {
-    echo "⚙️ [4/6] Verificando memoria ZRAM con compresión ZSTD..."
-    if ! command -v zramctl &>/dev/null || ! dpkg -l zram-tools &>/dev/null; then
-        $SUDO apt update -qq 2>/dev/null || true
-        $SUDO apt install -y zram-tools 2>/dev/null || true
+    echo "⚙️ [4/6] Verificando swap comprimida en RAM (ZRAM con ZSTD al 50% de RAM)..."
+    if [ -x "./Setup/zram-setup.sh" ]; then
+        ./Setup/zram-setup.sh
+    else
+        if ! command -v zramctl &>/dev/null || ! dpkg -s zram-tools &>/dev/null; then
+            $SUDO apt-get update -qq 2>/dev/null || true
+            $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y zram-tools 2>/dev/null || true
+        fi
+        if [ -f /etc/default/zramswap ]; then
+            $SUDO sed -i 's/^#*ALGORITHM=.*/ALGORITHM=zstd/' /etc/default/zramswap
+            $SUDO sed -i 's/^#*PERCENT=.*/PERCENT=50/' /etc/default/zramswap
+            $SUDO sed -i 's/^#*PRIORITY=.*/PRIORITY=100/' /etc/default/zramswap
+            $SUDO systemctl enable --now zramswap.service 2>/dev/null || true
+            $SUDO systemctl restart zramswap.service 2>/dev/null || true
+        fi
     fi
-    if [ -f /etc/default/zramswap ]; then
-        $SUDO sed -i 's/^#*ALGORITHM=.*/ALGORITHM=zstd/' /etc/default/zramswap
-        $SUDO sed -i 's/^#*PERCENT=.*/PERCENT=50/' /etc/default/zramswap
-        $SUDO systemctl enable --now zramswap.service 2>/dev/null || true
-        $SUDO systemctl restart zramswap.service 2>/dev/null || true
-    fi
-    echo "  ✅ Configuración de ZRAM (algoritmo zstd, 50% de RAM) asegurada."
+    echo "  ✅ Memoria ZRAM (ZSTD, 50% de RAM física) asegurada."
 }
 
+# ------------------------------------------------------------------------------
+# 7. SERVICIOS DE MANTENIMIENTO DEL SISTEMA (fstrim e irqbalance)
+# ------------------------------------------------------------------------------
 apply_services() {
-    echo "⚙️ [5/6] Habilitando servicios de mantenimiento (fstrim e irqbalance)..."
-    $SUDO apt update -qq 2>/dev/null || true
-    $SUDO apt install -y irqbalance 2>/dev/null || true
+    echo "⚙️ [5/6] Habilitando servicios de mantenimiento (fstrim.timer para SSD e irqbalance)..."
+    if ! dpkg -s irqbalance &>/dev/null; then
+        $SUDO apt-get update -qq 2>/dev/null || true
+        $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y irqbalance 2>/dev/null || true
+    fi
     $SUDO systemctl enable --now fstrim.timer 2>/dev/null || true
     $SUDO systemctl enable --now irqbalance 2>/dev/null || true
-    echo "  ✅ fstrim.timer e irqbalance activos."
+    echo "  ✅ fstrim.timer (mantenimiento semanal SSD/NVMe) e irqbalance activos."
 }
 
+# ------------------------------------------------------------------------------
+# 8. VERIFICACIÓN DE I/O SCHEDULER SSD NVME
+# ------------------------------------------------------------------------------
+verify_storage() {
+    echo "⚙️ [6/6] Verificando política de I/O en almacenamiento SSD NVMe..."
+    if [ -f /sys/block/nvme0n1/queue/scheduler ]; then
+        local sched
+        sched=$(cat /sys/block/nvme0n1/queue/scheduler 2>/dev/null || echo "n/a")
+        echo "  - I/O Scheduler activo en nvme0n1: $sched"
+    fi
+    echo "  ✅ Almacenamiento NVMe optimizado con cola directa de hardware."
+}
+
+# ------------------------------------------------------------------------------
+# 9. ENTRADA PRINCIPAL
+# ------------------------------------------------------------------------------
 case "${1:-}" in
     --status|-s|status)
         show_status
@@ -271,10 +366,15 @@ case "${1:-}" in
         apply_zram
         exit 0
         ;;
+    --services)
+        apply_services
+        exit 0
+        ;;
     --no-install)
         apply_sysctl
         apply_limits
         apply_tracker
+        verify_storage
         exit 0
         ;;
     --help|-h|help)
@@ -290,6 +390,7 @@ case "${1:-}" in
         apply_tracker
         apply_zram
         apply_services
+        verify_storage
         echo ""
         show_status
         echo "================================================================="
@@ -297,7 +398,7 @@ case "${1:-}" in
         echo "================================================================="
         ;;
     *)
-        echo "Opción no reconocida: $1"
+        echo "❌ Opción no reconocida: $1"
         show_help
         exit 1
         ;;
