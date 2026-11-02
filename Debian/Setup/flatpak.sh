@@ -92,6 +92,7 @@ APPS_CATALOG=(
     "org.videolan.VLC|VLC Media Player|multimedia|1|Reproductor multimedia universal con códecs completos integrados"
     "io.github.celluloid_player.Celluloid|Celluloid|multimedia|1|Reproductor GTK/MPV optimizado para Wayland y aceleración VA-API"
     "com.obsproject.Studio|OBS Studio|multimedia|1|Grabación y streaming con soporte Wayland PipeWire y códecs aislados"
+    "org.kde.kdenlive|Kdenlive|multimedia|1|Editor y montador de vídeo no lineal profesional (FFmpeg / MLT)"
     "org.shotcut.Shotcut|Shotcut|multimedia|0|Editor de vídeo profesional no lineal con códecs completos"
     "tv.kodi.Kodi|Kodi Media Center|multimedia|0|Centro multimedia avanzado para streaming y reproducción local"
     "com.stremio.Stremio|Stremio|multimedia|0|Plataforma moderna de agregación de contenido multimedia y streaming"
@@ -169,6 +170,7 @@ resolve_app_id() {
         vlc) echo "org.videolan.VLC" ;;
         celluloid) echo "io.github.celluloid_player.Celluloid" ;;
         obs|obs-studio) echo "com.obsproject.Studio" ;;
+        kdenlive) echo "org.kde.kdenlive" ;;
         shotcut) echo "org.shotcut.Shotcut" ;;
         kodi) echo "tv.kodi.Kodi" ;;
         stremio) echo "com.stremio.Stremio" ;;
@@ -435,6 +437,7 @@ Instalación individual:
   $0 install <app_id|alias> [--user|--system]
   Ejemplos:
     $0 install vlc
+    $0 install kdenlive
     $0 install warehouse
     $0 install dev.vencord.Vesktop
     $0 install obs --user
