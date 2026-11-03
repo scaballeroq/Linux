@@ -317,7 +317,8 @@ setup_touchpad() {
     run_as_user gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true 2>/dev/null || true
     run_as_user gsettings set org.gnome.desktop.peripherals.touchpad natural-scroll true 2>/dev/null || true
     run_as_user gsettings set org.gnome.desktop.peripherals.touchpad two-finger-scrolling-enabled true 2>/dev/null || true
-    run_as_user gsettings set org.gnome.desktop.peripherals.touchpad click-method 'fingers' 2>/dev/null || true
+    # Método de clic por áreas (permite usar la esquina inferior derecha como botón derecho físico tradicional)
+    run_as_user gsettings set org.gnome.desktop.peripherals.touchpad click-method 'areas' 2>/dev/null || true
     run_as_user gsettings set org.gnome.desktop.peripherals.touchpad tap-and-drag true 2>/dev/null || true
     run_as_user gsettings set org.gnome.desktop.peripherals.touchpad disable-while-typing true 2>/dev/null || true
 
