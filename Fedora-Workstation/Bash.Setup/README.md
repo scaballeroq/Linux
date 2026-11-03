@@ -1,4 +1,4 @@
-# 🚀 Bash.Setup (Fedora 44 Workstation + GNOME)
+# 🚀 Bash.Setup (Fedora 45 Workstation + GNOME)
 
 Colección de scripts modulares de configuración, aliases y funciones avanzadas para potenciar tu terminal en **Bash** (shell predeterminada en este proyecto) y **Zsh** (compatible si existe `~/.zshrc`).
 

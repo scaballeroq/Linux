@@ -2,7 +2,7 @@
 sidebar_position: 7
 ---
 
-# High-Performance Virtualization (KVM/QEMU) on Fedora 44
+# High-Performance Virtualization (KVM/QEMU) on Fedora 45
 
 This guide details the installation, configuration, and optimization of the virtualization stack automated in [`Virtualizacion/virtualization.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora-Workstation/Virtualizacion/virtualization.sh) and documented in [`Virtualizacion/notas_virtualizacion_fedora.md`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora-Workstation/Virtualizacion/notas_virtualizacion_fedora.md).
 

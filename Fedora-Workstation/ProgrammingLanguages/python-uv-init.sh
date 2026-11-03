@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==============================================================================
 # python-uv-init.sh - Creador rápido de proyectos Python aislados con 'uv'
-# Optimizado para Fedora 44 Workstation (Zero interferencia con el sistema)
+# Optimizado para Fedora 45 Workstation (Zero interferencia con el sistema)
 # ==============================================================================
 
 set -euo pipefail
@@ -82,7 +82,7 @@ from fastapi import FastAPI
 
 app = FastAPI(
     title="API con FastAPI & uv",
-    description="Proyecto Python aislado creado con uv en Fedora 44 Workstation",
+    description="Proyecto Python aislado creado con uv en Fedora 45 Workstation",
     version="1.0.0"
 )
 
@@ -91,7 +91,7 @@ def read_root():
     return {
         "status": "success",
         "message": "¡Hola desde FastAPI gestionado por uv!",
-        "system": "Fedora 44 Workstation Linux"
+        "system": "Fedora 45 Workstation Linux"
     }
 
 if __name__ == "__main__":
@@ -116,7 +116,7 @@ def saludo(nombre: str = "Usuario"):
     console.print(Panel.fit(
         f"[bold green]¡Bienvenido, {nombre}![/bold green]\n"
         "[cyan]Tu CLI en Python aislado con uv está lista para desarrollo.[/cyan]",
-        title="[bold yellow]Fedora 44 Workstation Python CLI[/bold yellow]"
+        title="[bold yellow]Fedora 45 Workstation Python CLI[/bold yellow]"
     ))
 
 if __name__ == "__main__":

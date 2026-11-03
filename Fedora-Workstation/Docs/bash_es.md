@@ -2,7 +2,7 @@
 sidebar_position: 3
 ---
 
-# Configuración de Terminal y Shells en Fedora 44 Workstation (Bash & Zsh)
+# Configuración de Terminal y Shells en Fedora 45 Workstation (Bash & Zsh)
 
 Esta guía detalla la configuración del entorno de terminal (optimizado para **Bash** como shell predeterminada del proyecto y compatible con **Zsh** si existe `~/.zshrc`) junto a las utilidades integradas en los scripts modulares de la carpeta `Bash.Setup`.
 

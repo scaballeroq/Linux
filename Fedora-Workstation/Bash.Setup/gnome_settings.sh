@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# CONFIGURACIÓN Y ALIASES PARA GNOME (gnome_settings.sh) - Fedora 44
+# CONFIGURACIÓN Y ALIASES PARA GNOME (gnome_settings.sh) - Fedora 45
 # =============================================================================
 # Configuración de sesión y atajos rápidos para GNOME en Zsh y Bash.
 # NOTA: Cero extensiones añadidas en esta fase.

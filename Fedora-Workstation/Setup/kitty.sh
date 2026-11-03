@@ -1,332 +1,313 @@
 #!/usr/bin/env bash
-#
-# kitty.sh - Instalacion y Configuracion Estetica de Kitty Terminal para Fedora 44 + GNOME
-#
-# Uso:
-#   ./kitty.sh                       -> Instala y aplica configuracion estetica con opacidad al 75% y blur 32
-#   ./kitty.sh --opacity 0.70        -> Configura una opacidad personalizada (ej: 0.70, 0.65, 0.80)
-#   ./kitty.sh 0.70                  -> Equivalente abreviado
-#   ./kitty.sh --help                -> Muestra la ayuda interactiva
-
 set -euo pipefail
 
-if command -v dnf5 &>/dev/null; then
-    DNF_CMD="dnf5"
-else
-    DNF_CMD="dnf"
-fi
+# ==============================================================================
+#  kitty.sh - Instalación y Optimización de Kitty en Fedora 45 Workstation
+#  Catppuccin Mocha + Opacidad/Blur Wayland + Extensión Nautilus Python
+# ==============================================================================
 
-if [ "$EUID" -ne 0 ]; then
-    if ! command -v sudo &> /dev/null; then
-        echo "❌ Error: 'sudo' no esta disponible. Ejecuta este script como root o instala sudo."
-        exit 1
-    fi
-    SUDO="sudo"
-else
-    SUDO=""
-fi
+BOLD='\033[1m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+CYAN='\033[0;36m'
+NC='\033[0m'
 
-# Detectar usuario real en caso de ejecucion con sudo
-if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-    REAL_USER="$SUDO_USER"
-    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
-else
-    REAL_USER="${USER:-$(id -un)}"
-    USER_HOME="${HOME:-/home/$REAL_USER}"
-fi
+log_info() { echo -e "${CYAN}ℹ️  $1${NC}"; }
+log_ok()   { echo -e "${GREEN}✅ $1${NC}"; }
+log_warn() { echo -e "${YELLOW}⚠️  $1${NC}"; }
+log_err()  { echo -e "${RED}❌ $1${NC}"; }
 
-REAL_UID=$(id -u "$REAL_USER" 2>/dev/null || echo "1000")
+if [[ $EUID -eq 0 ]]; then
+    REAL_USER="${SUDO_USER:-$(logname 2>/dev/null || echo "${USER:-root}")}"
+else
+    REAL_USER="${USER:-$(whoami)}"
+fi
+USER_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
+REAL_UID=$(id -u "$REAL_USER")
 
 run_as_user() {
-    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-        sudo -u "$REAL_USER" env \
-            HOME="$USER_HOME" \
-            USER="$REAL_USER" \
-            XDG_RUNTIME_DIR="/run/user/$REAL_UID" \
-            DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$REAL_UID/bus}" \
+    if [[ $EUID -eq 0 && "$REAL_USER" != "root" ]]; then
+        sudo -u "$REAL_USER" \
+            DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${REAL_UID}/bus" \
+            XDG_RUNTIME_DIR="/run/user/${REAL_UID}" \
             "$@"
     else
         "$@"
     fi
 }
 
-# Opacidad por defecto (0.75 = 75% opacidad / 25% transparencia translucida con blur)
-OPACITY="0.75"
-BLUR_RADIUS="32"
+DNF_BIN="dnf5"
+command -v dnf5 &>/dev/null || DNF_BIN="dnf"
 
-show_status() {
-    echo "================================================================="
-    echo "🔍 ESTADO DE KITTY TERMINAL - FEDORA WORKSTATION (GNOME)"
-    echo "================================================================="
-    echo "• Kitty instalado:          $(if command -v kitty &>/dev/null; then echo "✅ Kitty ($(kitty --version 2>/dev/null | awk '{print $2}'))"; else echo "❌ No instalado"; fi)"
-    echo "• Tipografía Nerd Font:     $(if fc-list "JetBrainsMono Nerd Font" 2>/dev/null | grep -qi "JetBrainsMono"; then echo "✅ JetBrainsMono Nerd Font disponible"; else echo "⚠️ No detectada (Ejecuta: ./Setup/fonts.sh)"; fi)"
-    echo "• Archivo de configuración: $(if [ -f "$USER_HOME/.config/kitty/kitty.conf" ]; then echo "✅ ~/.config/kitty/kitty.conf"; else echo "❌ No encontrado"; fi)"
-    echo "• Opacidad activa:          $(grep -E '^background_opacity\s+' "$USER_HOME/.config/kitty/kitty.conf" 2>/dev/null | awk '{print $2}' || echo "1.0 (opaco)")"
-    echo "• Atajo GNOME Ctrl+Alt+T:   $(if run_as_user gsettings get org.gnome.settings-daemon.plugins.media-keys custom-keybindings 2>/dev/null | grep -qi "custom0"; then echo "✅ Configurado para Kitty"; else echo "❌ No configurado"; fi)"
-    echo "================================================================="
-}
+KITTY_CONF_DIR="$USER_HOME/.config/kitty"
+KITTY_CONF_FILE="$KITTY_CONF_DIR/kitty.conf"
+NAUTILUS_EXT_DIR="$USER_HOME/.local/share/nautilus-python/extensions"
+NAUTILUS_EXT_FILE="$NAUTILUS_EXT_DIR/open-kitty.py"
+NAUTILUS_SCRIPT_DIR="$USER_HOME/.local/share/nautilus/scripts"
+
+OPACITY="0.75"
+DO_INSTALL=true
+SET_DEFAULT_TERM=true
+ACTION="run"
 
 show_help() {
-    cat <<EOF
-🐱 Configuracion Estetica de Kitty Terminal - Fedora 44 Workstation (GNOME Workstation)
+    cat << EOF
+${BOLD}🐱 Instalador y Optimizador de Kitty - Fedora 45 Workstation (GNOME Wayland)${NC}
 
-Uso:
-  $0 [OPCION]
+Instala Kitty y ${BOLD}nautilus-python${NC} mediante DNF5, aplica el tema ${BOLD}Catppuccin Mocha${NC},
+opacidad (${OPACITY}), desenfoque Wayland, atajo global Ctrl+Alt+T e integración en el menú
+contextual de primer nivel de Nautilus.
 
-Opciones:
-  (sin argumentos)           Instala Kitty y aplica opacidad al 75% (0.75) con desenfoque suave (blur 32).
-  --status, -s               Muestra el diagnóstico de Kitty, opacidad, configuración y atajos.
-  --opacity <VALOR>, -o      Configura un valor de opacidad personalizado entre 0.10 y 1.0 (ej: 0.70, 0.65).
-  <VALOR_NUMERICO>           Atajo directo para opacidad (ej: $0 0.70).
-  --help, -h                 Muestra este mensaje de ayuda.
+${BOLD}Uso:${NC}
+  $0 [OPCIONES]
 
-Atajos al vuelo dentro de Kitty:
-  • Ctrl+Alt+Arriba:         Aumentar opacidad (+5% mas opaco)
-  • Ctrl+Alt+Abajo:          Reducir opacidad (-5% mas transparente)
-  • Ctrl+Alt+0:              Restaurar opacidad predeterminada
-  • Ctrl+Alt+1:              Modo 100% opaco (sin transparencia)
-  • Ctrl+Shift+F5:           Recargar configuracion de Kitty en caliente
+${BOLD}Opciones:${NC}
+  (sin argumentos)       Instala Kitty y aplica toda la configuración
+  --no-install, --config Solo genera la configuración y extensión sin usar DNF5
+  --opacity <0.1-1.0>    Define la opacidad del fondo (por defecto: 0.75)
+  --default-terminal     Establece Kitty como terminal por defecto y asigna Ctrl+Alt+T
+  -s, --status           Muestra el estado actual de Kitty, configuración y Nautilus
+  -h, --help             Muestra esta ayuda
 EOF
 }
 
-# Procesar argumentos
-if [ $# -gt 0 ]; then
-    case "$1" in
-        --status|-s|status)
-            show_status
-            exit 0
-            ;;
-        --help|-h|help)
-            show_help
-            exit 0
-            ;;
-        --opacity|-o)
-            if [ -n "${2:-}" ]; then
-                OPACITY="$2"
-            else
-                echo "❌ Error: Debes especificar un valor de opacidad (ej: 0.70)."
-                exit 1
-            fi
-            ;;
-        0.*|1.0|1)
-            OPACITY="$1"
-            ;;
-        *)
-            echo "❌ Opcion no reconocida: $1"
-            show_help
-            exit 1
-            ;;
-    esac
-fi
+show_status() {
+    echo -e "${BOLD}======================================================================${NC}"
+    echo -e "  🐱 ${BOLD}ESTADO DE KITTY TERMINAL - FEDORA 45 WORKSTATION${NC}"
+    echo -e "${BOLD}======================================================================${NC}"
 
-OPACITY_PERCENT=$(awk "BEGIN {print int($OPACITY * 100)}")
-
-echo "==========================================================="
-echo "🐱 Configurando Kitty Terminal en Fedora 44 Workstation (GNOME)"
-echo "🎨 Nivel de opacidad seleccionado: ${OPACITY} (${OPACITY_PERCENT}% opaco, $((100 - OPACITY_PERCENT))% transparente)"
-echo "==========================================================="
-
-# 1. Instalar Kitty y dependencias solo si no esta instalado
-if ! command -v kitty &> /dev/null; then
-    echo "📦 [1/4] Instalando Kitty Terminal vía DNF5..."
-    if [ -n "$SUDO" ]; then
-        $SUDO $DNF_CMD install -y kitty
+    if command -v kitty &>/dev/null; then
+        echo -e "  • Binario Kitty:             ${GREEN}Instalado ($(kitty --version))${NC}"
     else
-        $DNF_CMD install -y kitty
+        echo -e "  • Binario Kitty:             ${RED}No instalado${NC}"
     fi
-else
-    echo "📦 [1/4] Kitty Terminal ya se encuentra instalado."
+
+    if [[ -f "$KITTY_CONF_FILE" ]]; then
+        local cur_op
+        cur_op=$(grep -E '^background_opacity' "$KITTY_CONF_FILE" 2>/dev/null | awk '{print $2}' || echo "N/A")
+        echo -e "  • Configuración:             ${GREEN}${KITTY_CONF_FILE}${NC} (opacidad: ${BOLD}${cur_op}${NC})"
+    else
+        echo -e "  • Configuración:             ${YELLOW}No configurada${NC}"
+    fi
+
+    if rpm -q nautilus-python &>/dev/null; then
+        echo -e "  • Paquete nautilus-python:   ${GREEN}Instalado${NC}"
+    else
+        echo -e "  • Paquete nautilus-python:   ${YELLOW}No instalado${NC}"
+    fi
+
+    if [[ -f "$NAUTILUS_EXT_FILE" ]]; then
+        echo -e "  • Menú contextual Nautilus:  ${GREEN}Activo (${NAUTILUS_EXT_FILE})${NC}"
+    else
+        echo -e "  • Menú contextual Nautilus:  ${YELLOW}No configurado${NC}"
+    fi
+
+    local default_term
+    default_term=$(run_as_user gsettings get org.gnome.desktop.default-applications.terminal exec 2>/dev/null || echo "N/A")
+    echo -e "  • Terminal por defecto GNOME:${CYAN} ${default_term}${NC}"
+    echo -e "${BOLD}======================================================================${NC}"
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -s|--status)           ACTION="status"; shift ;;
+        --no-install|--config) DO_INSTALL=false; shift ;;
+        --default-terminal)    SET_DEFAULT_TERM=true; shift ;;
+        --opacity)             OPACITY="${2:-0.75}"; shift 2 ;;
+        -h|--help)             show_help; exit 0 ;;
+        *) log_err "Opción desconocida: $1"; show_help; exit 1 ;;
+    esac
+done
+
+if [[ "$ACTION" == "status" ]]; then
+    show_status
+    exit 0
 fi
 
-# 2. Crear directorio de configuracion
-echo "⚙️ [2/4] Creando directorios de configuracion en $USER_HOME/.config/kitty..."
-run_as_user mkdir -p "$USER_HOME/.config/kitty"
+if [[ "$DO_INSTALL" == true ]]; then
+    PKGS_TO_INSTALL=()
+    rpm -q kitty &>/dev/null || PKGS_TO_INSTALL+=(kitty)
+    rpm -q wl-clipboard &>/dev/null || PKGS_TO_INSTALL+=(wl-clipboard)
+    rpm -q nautilus-python &>/dev/null || PKGS_TO_INSTALL+=(nautilus-python)
 
-# 3. Generar kitty.conf con tema oscuro, opacidad translucida y efectos
-echo "🎨 [3/4] Generando configuracion (Opacidad ${OPACITY}, Blur ${BLUR_RADIUS})..."
-cat <<EOF | run_as_user tee "$USER_HOME/.config/kitty/kitty.conf" > /dev/null
-# =============================================================================
-# KITTY CONFIGURATION - FEDORA 44 + GNOME
-# =============================================================================
+    if [[ ${#PKGS_TO_INSTALL[@]} -gt 0 ]]; then
+        log_info "Instalando paquetes en Fedora 45 ($DNF_BIN): ${PKGS_TO_INSTALL[*]}..."
+        sudo "$DNF_BIN" install -y "${PKGS_TO_INSTALL[@]}"
+    else
+        log_ok "Kitty, wl-clipboard y nautilus-python ya están instalados."
+    fi
+fi
 
-# --- Fuentes & Tipografia ---
+log_info "Generando configuración de Kitty en $KITTY_CONF_FILE (opacidad: $OPACITY)..."
+mkdir -p "$KITTY_CONF_DIR"
+
+cat << EOF > "$KITTY_CONF_FILE"
+# ==============================================================================
+#  Kitty Terminal Configuration - Fedora 45 Workstation (GNOME Wayland)
+#  Theme: Catppuccin Mocha | Font: JetBrainsMono Nerd Font
+# ==============================================================================
+
+# Tipografía
 font_family      JetBrainsMono Nerd Font
 bold_font        auto
 italic_font      auto
 bold_italic_font auto
-font_size        11.5
+font_size        11.0
 disable_ligatures never
 
-# --- Transparencia y Opacidad ---
-background_opacity         ${OPACITY}
+# Transparencia y Desenfoque en Wayland
+background_opacity ${OPACITY}
+background_blur    32
 dynamic_background_opacity yes
-background_blur            ${BLUR_RADIUS}
 
-# --- Ventana y Margenes ---
-window_padding_width 10
+# Ventana y Diseño (GNOME Wayland)
+linux_display_server wayland
+wayland_titlebar_color background
+window_padding_width 8 10
 hide_window_decorations no
+remember_window_size  yes
+initial_window_width  110c
+initial_window_height 32c
 confirm_os_window_close 0
-remember_window_size   yes
-initial_window_width   950
-initial_window_height  600
-
-# --- Cursor ---
-cursor_shape          beam
-cursor_beam_thickness 1.8
-cursor_blink_interval 0.5
-cursor_trail          3
-
-# --- Barra de Pestanas (Tab Bar) ---
-tab_bar_edge          top
-tab_bar_style         powerline
-tab_powerline_style   slanted
-tab_title_template    " {title}{' [' + num_windows.__str__() + ']' if num_windows > 1 else ''} "
-active_tab_font_style bold
-
-# --- Esquema de Color Oscuro (Tokyo Night / Catppuccin Mocha) ---
-foreground            #cdd6f4
-background            #181825
-selection_foreground  #1e1e2e
-selection_background  #f5e0dc
-
-# Cursor
-cursor                #f5e0dc
-cursor_text_color     #11111b
-
-# URL
-url_color             #89b4fa
-url_style             curly
-
-# Colores de pestanas
-active_tab_foreground   #11111b
-active_tab_background   #cba6f7
-inactive_tab_foreground #cdd6f4
-inactive_tab_background #181825
-tab_bar_background      #11111b
-
-# Colores ANSI Estandar
-# Black
-color0  #45475a
-color8  #585b70
-
-# Red
-color1  #f38ba8
-color9  #f38ba8
-
-# Green
-color2  #a6e3a1
-color10 #a6e3a1
-
-# Yellow
-color3  #f9e2af
-color11 #f9e2af
-
-# Blue
-color4  #89b4fa
-color12 #89b4fa
-
-# Magenta
-color5  #f5c2e7
-color13 #f5c2e7
-
-# Cyan
-color6  #94e2d5
-color14 #94e2d5
-
-# White
-color7  #bac2de
-color15 #a6adc8
-
-# --- Rendimiento y Graficos ---
-repaint_delay   10
-input_delay     3
-sync_to_monitor yes
-
-# --- Desactivar campana acustica/visual molesta ---
 enable_audio_bell no
-visual_bell_duration 0.0
 
-# --- Atajos de teclado utiles ---
-# 1. Control directo de opacidad (Ctrl+Alt + Flechas / +/-):
-map ctrl+alt+up          set_background_opacity +0.05
-map ctrl+alt+down        set_background_opacity -0.05
-map ctrl+alt+equal       set_background_opacity +0.05
-map ctrl+alt+plus        set_background_opacity +0.05
-map ctrl+alt+minus       set_background_opacity -0.05
-map ctrl+alt+kp_add      set_background_opacity +0.05
-map ctrl+alt+kp_subtract set_background_opacity -0.05
-map ctrl+alt+0           set_background_opacity default
-map ctrl+alt+1           set_background_opacity 1.0
+# Cursor y Rendimiento (AMD Radeon RADV)
+cursor_shape block
+cursor_blink_interval 0
+repaint_delay 8
+input_delay 2
+sync_to_monitor yes
+scrollback_lines 15000
+copy_on_select clipboard
 
-# 2. Control de opacidad mediante teclas de funcion (F9-F12):
-map ctrl+shift+f11       set_background_opacity +0.05
-map ctrl+shift+f10       set_background_opacity -0.05
-map ctrl+shift+f9        set_background_opacity default
-map ctrl+shift+f12       set_background_opacity 1.0
+# Barra de Pestañas (Powerline)
+tab_bar_edge top
+tab_bar_style powerline
+tab_powerline_style slanted
 
-# 3. Secuencia de dos pasos (Ctrl+Shift+A seguido de M/L/D/1):
-map ctrl+shift+a>m       set_background_opacity +0.05
-map ctrl+shift+a>shift+m set_background_opacity +0.05
-map ctrl+shift+a>l       set_background_opacity -0.05
-map ctrl+shift+a>shift+l set_background_opacity -0.05
-map ctrl+shift+a>d       set_background_opacity default
-map ctrl+shift+a>shift+d set_background_opacity default
-map ctrl+shift+a>1       set_background_opacity 1.0
-map ctrl+shift+a>0       set_background_opacity default
+# Atajos de Teclado
+map ctrl+shift+c copy_to_clipboard
+map ctrl+shift+v paste_from_clipboard
+map ctrl+shift+t new_tab_with_cwd
+map ctrl+shift+enter new_window_with_cwd
+map ctrl+plus change_font_size all +1.0
+map ctrl+minus change_font_size all -1.0
+map ctrl+0 change_font_size all 0
 
-# Gestion de pestanas y splits:
-map ctrl+shift+t         new_tab_with_cwd
-map ctrl+shift+enter     new_window_with_cwd
-map ctrl+shift+f5        load_config_file
+# Paleta Catppuccin Mocha
+foreground              #CDD6F4
+background              #1E1E2E
+selection_foreground    #1E1E2E
+selection_background    #F5E0DC
+cursor                  #F5E0DC
+cursor_text_color       #1E1E2E
+url_color               #F5E0DC
+active_border_color     #B4BEFE
+inactive_border_color   #6C7086
+bell_border_color       #F9E2AF
+active_tab_foreground   #11111B
+active_tab_background   #CBA6F7
+inactive_tab_foreground #CDD6F4
+inactive_tab_background #181825
+tab_bar_background      #11111B
+
+color0  #45475A
+color8  #585B70
+color1  #F38BA8
+color9  #F38BA8
+color2  #A6E3A1
+color10 #A6E3A1
+color3  #F9E2AF
+color11 #F9E2AF
+color4  #89B4FA
+color12 #89B4FA
+color5  #F5C2E7
+color13 #F5C2E7
+color6  #94E2D5
+color14 #94E2D5
+color7  #BAC2DE
+color15 #A6ADC8
 EOF
 
-# 4. Integracion con GNOME y Nautilus
-echo "📁 [4/4] Configurando integracion con GNOME y Nautilus..."
+# Limpiar scripts antiguos de Nautilus en submenú para evitar duplicados
+rm -f "$NAUTILUS_SCRIPT_DIR/Abrir en Kitty" "$NAUTILUS_SCRIPT_DIR/Open in Kitty" 2>/dev/null || true
 
-# Establecer Kitty como terminal predeterminada en GNOME
-run_as_user gsettings set org.gnome.desktop.default-applications.terminal exec 'kitty' 2>/dev/null || true
-run_as_user gsettings set org.gnome.desktop.default-applications.terminal exec-arg "" 2>/dev/null || true
+log_info "Instalando extensión de menú contextual para Nautilus en $NAUTILUS_EXT_FILE..."
+mkdir -p "$NAUTILUS_EXT_DIR"
 
-# Configurar atajo de teclado global Ctrl+Alt+T para Kitty en GNOME
-KB_PATH="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
-run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "['$KB_PATH']" 2>/dev/null || true
-run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$KB_PATH name 'Kitty Terminal' 2>/dev/null || true
-run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$KB_PATH command 'kitty' 2>/dev/null || true
-run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$KB_PATH binding '<Primary><Alt>t' 2>/dev/null || true
+cat << 'EOF' > "$NAUTILUS_EXT_FILE"
+import os
+import subprocess
+import shutil
+from urllib.parse import unquote, urlparse
+from gi.repository import Nautilus, GObject
 
-# Añadir script nativo de menu contextual para Nautilus (Scripts -> "Abrir en Kitty")
-NAUTILUS_SCRIPTS_DIR="$USER_HOME/.local/share/nautilus/scripts"
-run_as_user mkdir -p "$NAUTILUS_SCRIPTS_DIR"
 
-cat <<'EOF' | run_as_user tee "$NAUTILUS_SCRIPTS_DIR/Abrir en Kitty" > /dev/null
-#!/bin/sh
-target=""
-if [ -n "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" ]; then
-    first=$(echo "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" | head -n1)
-    if [ -d "$first" ]; then
-        target="$first"
-    elif [ -f "$first" ]; then
-        target="$(dirname "$first")"
+class OpenKittyExtension(GObject.GObject, Nautilus.MenuProvider):
+    def _open_kitty(self, menu, folder_path):
+        subprocess.Popen(["kitty", "--directory", folder_path])
+
+    def _get_path(self, file_info):
+        uri = file_info.get_uri()
+        if not uri.startswith("file://"):
+            return None
+        return unquote(urlparse(uri).path)
+
+    def get_file_items(self, *args):
+        files = args[-1]
+        if len(files) != 1 or not files[0].is_directory():
+            return []
+        if not shutil.which("kitty"):
+            return []
+        path = self._get_path(files[0])
+        if not path:
+            return []
+        item = Nautilus.MenuItem(
+            name="KittyNautilus::OpenFolder",
+            label="Abrir en Kitty",
+            tip=f"Abrir {path} en Kitty",
+        )
+        item.connect("activate", self._open_kitty, path)
+        return [item]
+
+    def get_background_items(self, *args):
+        current_folder = args[-1]
+        if not shutil.which("kitty"):
+            return []
+        path = self._get_path(current_folder)
+        if not path:
+            return []
+        item = Nautilus.MenuItem(
+            name="KittyNautilus::OpenBackground",
+            label="Abrir en Kitty",
+            tip=f"Abrir {path} en Kitty",
+        )
+        item.connect("activate", self._open_kitty, path)
+        return [item]
+EOF
+
+if [[ $EUID -eq 0 && "$REAL_USER" != "root" ]]; then
+    chown -R "$REAL_USER:$REAL_USER" "$KITTY_CONF_DIR" "$USER_HOME/.local/share/nautilus-python"
+fi
+
+if [[ "$SET_DEFAULT_TERM" == true ]]; then
+    log_info "Configurando Kitty como terminal predeterminada en GNOME y atajo Ctrl+Alt+T..."
+    run_as_user gsettings set org.gnome.desktop.default-applications.terminal exec 'kitty'
+    run_as_user gsettings set org.gnome.desktop.default-applications.terminal exec-arg ''
+
+    KEY_PATH="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
+    CURRENT_LIST=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.media-keys custom-keybindings 2>/dev/null || echo "@as []")
+    if [[ "$CURRENT_LIST" == "@as []" || -z "$CURRENT_LIST" ]]; then
+        run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "['$KEY_PATH']"
+    elif [[ "$CURRENT_LIST" != *"$KEY_PATH"* ]]; then
+        NEW_LIST="${CURRENT_LIST%]*}, '$KEY_PATH']"
+        run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "$NEW_LIST"
     fi
+    run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$KEY_PATH name 'Terminal (Kitty)'
+    run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$KEY_PATH command 'kitty'
+    run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$KEY_PATH binding '<Control><Alt>t'
 fi
-if [ -z "$target" ] && [ -n "$NAUTILUS_SCRIPT_CURRENT_URI" ]; then
-    target=$(echo "$NAUTILUS_SCRIPT_CURRENT_URI" | sed 's|^file://||' | python3 -c "import sys, urllib.parse; print(urllib.parse.unquote(sys.stdin.read().strip()))" 2>/dev/null || true)
-fi
-exec kitty --directory "${target:-${1:-.}}" &
-EOF
-run_as_user chmod +x "$NAUTILUS_SCRIPTS_DIR/Abrir en Kitty" 2>/dev/null || true
 
-# Recargar configuracion en caliente si hay instancias activas de Kitty
-killall -USR1 kitty 2>/dev/null || true
-
-echo "==========================================================="
-echo "✅ Kitty se ha configurado con opacidad al ${OPACITY} (${OPACITY_PERCENT}%) y blur ${BLUR_RADIUS}."
-echo "💡 Atajos rapidos en Kitty:"
-echo "   - Opacidad directa: Ctrl+Alt+Arriba (+5%) | Ctrl+Alt+Abajo (-5%) | Ctrl+Alt+0 (Default) | Ctrl+Alt+1 (100% Opaco)"
-echo "   - Opacidad por F-Keys: Ctrl+Shift+F11 (+5%) | Ctrl+Shift+F10 (-5%) | Ctrl+Shift+F9 (Default)"
-echo "   - Atajo global en GNOME: Ctrl+Alt+T para abrir Kitty en cualquier momento."
-echo "   - Menu contextual en Nautilus: Clic derecho -> Scripts -> 'Abrir en Kitty'."
-echo "   - Recargar configuracion en vivo: Ctrl+Shift+F5"
-echo "   - Nueva pestana en mismo directorio: Ctrl+Shift+T"
-echo "   - Nueva ventana dividida: Ctrl+Shift+Enter"
-echo "==========================================================="
+nautilus -q 2>/dev/null || true
+log_ok "Kitty configurado correctamente en Fedora 45 Workstation."

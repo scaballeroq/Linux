@@ -2,7 +2,7 @@
 sidebar_position: 6
 ---
 
-# Programming Languages Management on Fedora 44 Workstation
+# Programming Languages Management on Fedora 45 Workstation
 
 This guide details the installation, control, and maintenance of programming languages and their development environments managed in the `ProgrammingLanguages` folder.
 

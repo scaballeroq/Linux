@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# podman-utils - CLI para gestión de proyectos y servicios Quadlets con Podman en Fedora 44 Workstation
+# podman-utils - CLI para gestión de proyectos y servicios Quadlets con Podman en Fedora 45 Workstation
 # =============================================================================
 
 set -euo pipefail
@@ -449,7 +449,7 @@ cmd_doctor() {
 # =============================================================================
 usage() {
     cat <<EOF
-🐳 podman-utils - Gestor de Proyectos y Contenedores Quadlets (Fedora 44 Workstation)
+🐳 podman-utils - Gestor de Proyectos y Contenedores Quadlets (Fedora 45 Workstation)
 
 Uso:
   podman-utils <comando> [argumentos]

@@ -1,270 +1,287 @@
 #!/usr/bin/env bash
-# ==============================================================================
-# apariencia.sh - Instalación y Configuración de Temas, Iconos y Cursores
-# Fedora Workstation (GNOME Shell + Wayland / Adwaita)
-# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8)
-# ==============================================================================
-# Características:
-#  - Instalación de temas de iconos: Papirus y Adwaita nativo de GNOME.
-#  - Instalación de cursores modernos: Bibata y Adwaita cursor.
-#  - Por defecto: SOLO instala los paquetes disponibles sin alterar la personalización del usuario.
-#  - Cambio de temas bajo demanda explícita: --papirus, --adwaita, --bibata, --dark, --light.
-#  - Instalación idempotente: solo invoca DNF si los paquetes no están presentes.
-#  - Soporte CLI completo: --status / -s, --dark / -d, --light / -l, --papirus,
-#                          --adwaita, --bibata, --install / -i, --help / -h.
-# ==============================================================================
-
 set -euo pipefail
 
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+# ==============================================================================
+#  apariencia.sh - Gestor de Temas, Iconos y Cursores en Fedora 45 Workstation
+#  GNOME Shell Wayland | adw-gtk3 | Papirus | Bibata Cursor | Modo Interactivo
+# ==============================================================================
 
-# ------------------------------------------------------------------------------
-# 1. DETECCIÓN DE USUARIO Y PRIVILEGIOS SUDO
-# ------------------------------------------------------------------------------
-if [ "$EUID" -ne 0 ]; then
-    if ! command -v sudo &> /dev/null; then
-        echo "❌ Error: 'sudo' no está disponible. Ejecuta este script con privilegios de superusuario."
-        exit 1
-    fi
-    SUDO="sudo"
+BOLD='\033[1m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+log_info() { echo -e "${CYAN}ℹ️  $1${NC}"; }
+log_ok()   { echo -e "${GREEN}✅ $1${NC}"; }
+log_warn() { echo -e "${YELLOW}⚠️  $1${NC}"; }
+log_err()  { echo -e "${RED}❌ $1${NC}"; }
+
+if [[ $EUID -eq 0 ]]; then
+    REAL_USER="${SUDO_USER:-$(logname 2>/dev/null || echo "${USER:-root}")}"
 else
-    SUDO=""
+    REAL_USER="${USER:-$(whoami)}"
 fi
-
-if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-    REAL_USER="$SUDO_USER"
-    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
-else
-    REAL_USER="${USER:-$(id -un)}"
-    USER_HOME="${HOME:-/home/$REAL_USER}"
-fi
-
-REAL_UID=$(id -u "$REAL_USER" 2>/dev/null || echo "1000")
-
-if command -v dnf5 &>/dev/null; then
-    DNF_CMD="dnf5"
-else
-    DNF_CMD="dnf"
-fi
+USER_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
+REAL_UID=$(id -u "$REAL_USER")
 
 run_as_user() {
-    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-        sudo -u "$REAL_USER" env \
-            HOME="$USER_HOME" \
-            USER="$REAL_USER" \
-            PATH="/usr/local/bin:/usr/bin:/bin:$PATH" \
-            XDG_RUNTIME_DIR="/run/user/$REAL_UID" \
-            DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$REAL_UID/bus}" \
+    if [[ $EUID -eq 0 && "$REAL_USER" != "root" ]]; then
+        sudo -u "$REAL_USER" \
+            DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${REAL_UID}/bus" \
+            XDG_RUNTIME_DIR="/run/user/${REAL_UID}" \
             "$@"
     else
         "$@"
     fi
 }
 
-# ------------------------------------------------------------------------------
-# 2. AYUDA Y ESTADO DEL SISTEMA
-# ------------------------------------------------------------------------------
+DNF_BIN="dnf5"
+command -v dnf5 &>/dev/null || DNF_BIN="dnf"
+
+MODE_COLOR="dark"
+MODE_ICONS="Papirus-Dark"
+MODE_CURSOR="Bibata-Modern-Classic"
+CURSOR_SIZE=24
+DO_INSTALL=true
+ONLY_INSTALL=false
+INTERACTIVE=false
+ACTION="apply"
+
 show_help() {
-    cat <<EOF
-🎨 Gestor de Apariencia, Temas e Iconos - Fedora Workstation (GNOME Wayland)
+    cat << EOF
+${BOLD}🎨 Gestor de Apariencia (Temas, Iconos y Cursores) - Fedora 45 Workstation${NC}
 
-Uso:
-  $0 [OPCIÓN]
+Instala paquetes visuales mediante DNF5 (${BOLD}adw-gtk3-theme${NC}, ${BOLD}papirus-icon-theme${NC}) y el
+cursor ${BOLD}Bibata Modern${NC} (Classic e Ice), aplicando la configuración en GNOME Wayland
+y sincronizando GTK3/GTK4.
 
-Opciones:
-  (sin argumentos)    Instala paquetes estéticos (Papirus, Bibata, Adwaita) sin modificar la configuración activa.
-  --status, -s        Muestra el estado detallado de temas, iconos, cursores y paquetes.
-  --dark, -d          Aplica el modo oscuro en el sistema (prefer-dark + tema GTK oscuro, sin alterar iconos).
-  --light, -l         Aplica el modo claro en el sistema (default + tema GTK claro, sin alterar iconos).
-  --papirus           Aplica explícitamente Papirus como tema de iconos activo.
-  --adwaita           Restablece explícitamente los iconos nativos de GNOME (Adwaita).
-  --bibata            Aplica explícitamente el cursor moderno Bibata-Modern-Classic.
-  --install, -i       Instala únicamente los paquetes estéticos sin actualizar el sistema ni repositorios.
-  --help, -h          Muestra este mensaje de ayuda.
+${BOLD}Uso:${NC}
+  $0 [OPCIONES]
 
-Paquetes gestionados:
-  • Iconos:   papirus-icon-theme, adwaita-icon-theme.
-  • Cursores: bibata-cursor-theme, adwaita-cursor-theme.
-  • GTK/Shell: adw-gtk3-theme / adw-gtk3 (si está disponible) o Adwaita.
+${BOLD}Opciones:${NC}
+  (sin argumentos)       Instala temas y aplica perfil predeterminado (Dark + Papirus-Dark + Bibata Classic 24px)
+  -i, --interactive      Inicia el selector interactivo paso a paso
+  --no-install, --config Aplica temas en GSettings/GTK sin ejecutar DNF5 ni descargas
+  --install              Solo instala los paquetes y cursores sin alterar GSettings
+  --dark                 Activa Modo Oscuro (prefer-dark + adw-gtk3-dark)
+  --light                Activa Modo Claro (default + adw-gtk3)
+  --papirus-dark         Usa iconos Papirus-Dark
+  --papirus              Usa iconos Papirus estándar
+  --adwaita              Usa iconos nativos Adwaita
+  --bibata               Usa cursor Bibata-Modern-Classic (Negro)
+  --bibata-ice           Usa cursor Bibata-Modern-Ice (Blanco)
+  --adwaita-cursor       Usa cursor nativo Adwaita
+  --cursor-size <px>     Define tamaño del cursor (ej. 24, 32)
+  -s, --status           Muestra el estado actual de temas, iconos y cursor en GNOME
+  -h, --help             Muestra esta ayuda
 EOF
 }
 
 show_status() {
-    echo "================================================================="
-    echo "🔍 ESTADO DE APARIENCIA Y TEMAS - FEDORA WORKSTATION"
-    echo "================================================================="
-    echo "• Esquema de color:       $(run_as_user gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null || echo 'n/a')"
-    echo "• Tema GTK:               $(run_as_user gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null || echo 'n/a')"
-    echo "• Tema de Iconos:         $(run_as_user gsettings get org.gnome.desktop.interface icon-theme 2>/dev/null || echo 'n/a')"
-    echo "• Tema de Cursor:         $(run_as_user gsettings get org.gnome.desktop.interface cursor-theme 2>/dev/null || echo 'n/a')"
-    echo "• Tamaño de Cursor:       $(run_as_user gsettings get org.gnome.desktop.interface cursor-size 2>/dev/null || echo '24') px"
-    echo "-----------------------------------------------------------------"
-    echo "• Paquetes Estéticos Instalados:"
-    echo "  - Papirus Icon Theme:   $(if rpm -q papirus-icon-theme &>/dev/null; then echo "✅ Instalado"; else echo "❌ No instalado"; fi)"
-    echo "  - Bibata Cursor Theme:  $(if rpm -q bibata-cursor-theme &>/dev/null || [ -d "/usr/share/icons/Bibata-Modern-Classic" ] || [ -d "$USER_HOME/.local/share/icons/Bibata-Modern-Classic" ]; then echo "✅ Instalado"; else echo "❌ No instalado"; fi)"
-    echo "  - Adwaita Icon Theme:   $(if rpm -q adwaita-icon-theme &>/dev/null; then echo "✅ Instalado"; else echo "❌ No instalado"; fi)"
-    echo "================================================================="
-}
+    echo -e "${BOLD}======================================================================${NC}"
+    echo -e "  🎨 ${BOLD}ESTADO DE APARIENCIA EN GNOME - FEDORA 45 WORKSTATION${NC}"
+    echo -e "${BOLD}======================================================================${NC}"
 
-# ------------------------------------------------------------------------------
-# 3. INSTALACIÓN IDEMPOTENTE DE PAQUETES
-# ------------------------------------------------------------------------------
-install_packages() {
-    echo "📦 Comprobando paquetes de temas e iconos en Fedora..."
-    local to_install=()
+    local color_scheme gtk_theme icon_theme cursor_theme cursor_sz
+    color_scheme=$(run_as_user gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null || echo "N/A")
+    gtk_theme=$(run_as_user gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null || echo "N/A")
+    icon_theme=$(run_as_user gsettings get org.gnome.desktop.interface icon-theme 2>/dev/null || echo "N/A")
+    cursor_theme=$(run_as_user gsettings get org.gnome.desktop.interface cursor-theme 2>/dev/null || echo "N/A")
+    cursor_sz=$(run_as_user gsettings get org.gnome.desktop.interface cursor-size 2>/dev/null || echo "N/A")
 
-    for pkg in papirus-icon-theme adwaita-icon-theme; do
-        if ! rpm -q "$pkg" &>/dev/null; then
-            to_install+=("$pkg")
+    echo -e "  • Esquema de color:          ${CYAN}${color_scheme}${NC}"
+    echo -e "  • Tema GTK3/Legacy:          ${CYAN}${gtk_theme}${NC}"
+    echo -e "  • Tema de Iconos:            ${CYAN}${icon_theme}${NC}"
+    echo -e "  • Tema de Cursor:            ${CYAN}${cursor_theme}${NC} (${cursor_sz}px)"
+
+    echo ""
+    echo -e "${BOLD}📦 Paquetes y Recursos Instalados (DNF5 / Local):${NC}"
+    for pkg in adw-gtk3-theme papirus-icon-theme gnome-tweaks; do
+        if rpm -q "$pkg" &>/dev/null; then
+            echo -e "  • $(printf '%-25s' "$pkg"): ${GREEN}Instalado${NC}"
+        else
+            echo -e "  • $(printf '%-25s' "$pkg"): ${YELLOW}No instalado${NC}"
         fi
     done
 
-    if [ ${#to_install[@]} -gt 0 ]; then
-        echo "ℹ️ Instalando paquetes faltantes (${to_install[*]}) vía $DNF_CMD..."
-        $SUDO $DNF_CMD install -y "${to_install[@]}" 2>/dev/null || true
-    else
-        echo "  ✅ Paquetes de iconos oficiales ya están satisfechos."
-    fi
-
-    # Bibata Cursor check
-    if ! rpm -q bibata-cursor-theme &>/dev/null && [ ! -d "/usr/share/icons/Bibata-Modern-Classic" ] && [ ! -d "$USER_HOME/.local/share/icons/Bibata-Modern-Classic" ]; then
-        echo "ℹ️ Intentando instalar bibata-cursor-theme..."
-        if ! $SUDO $DNF_CMD install -y bibata-cursor-theme 2>/dev/null; then
-            echo "  ⬇️ Descargando e instalando Bibata-Modern-Classic desde GitHub..."
-            local tmp_dir
-            tmp_dir=$(mktemp -d)
-            if curl -fsSL "https://github.com/ful1e5/Bibata_Cursor/releases/latest/download/Bibata-Modern-Classic.tar.xz" -o "$tmp_dir/bibata.tar.xz" 2>/dev/null; then
-                $SUDO mkdir -p /usr/share/icons
-                $SUDO tar -xf "$tmp_dir/bibata.tar.xz" -C /usr/share/icons/ 2>/dev/null || true
-                echo "  ✅ Bibata Cursor instalado en /usr/share/icons/Bibata-Modern-Classic."
-            fi
-            rm -rf "$tmp_dir"
+    for cur in Bibata-Modern-Classic Bibata-Modern-Ice; do
+        if [[ -d "/usr/share/icons/$cur" || -d "$USER_HOME/.local/share/icons/$cur" ]]; then
+            echo -e "  • Cursor $(printf '%-18s' "$cur"): ${GREEN}Instalado${NC}"
+        else
+            echo -e "  • Cursor $(printf '%-18s' "$cur"): ${YELLOW}No instalado${NC}"
         fi
-    fi
-
-    # adw-gtk3 si está disponible en Fedora
-    if ! rpm -q adw-gtk3-theme &>/dev/null && ! rpm -q adw-gtk3 &>/dev/null; then
-        $SUDO $DNF_CMD install -y adw-gtk3-theme 2>/dev/null || $SUDO $DNF_CMD install -y adw-gtk3 2>/dev/null || true
-    fi
-
-    echo "  ✅ Verificación e instalación de paquetes estéticos finalizada."
+    done
+    echo -e "${BOLD}======================================================================${NC}"
 }
 
-# ------------------------------------------------------------------------------
-# 4. APLICACIÓN DE TEMAS, ICONOS Y CURSORES (SOLO BAJO DEMANDA EXPLÍCITA)
-# ------------------------------------------------------------------------------
-apply_dark() {
-    echo "🌙 Aplicando modo oscuro en GTK y color-scheme..."
-    run_as_user gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null || true
-
-    local gtk_target="Adwaita-dark"
-    if [ -d "/usr/share/themes/adw-gtk3-dark" ]; then
-        gtk_target="adw-gtk3-dark"
-    elif [ -d "/usr/share/themes/Adwaita-dark" ]; then
-        gtk_target="Adwaita-dark"
+install_bibata_cursors() {
+    local target_dir="/usr/share/icons"
+    if [[ -d "$target_dir/Bibata-Modern-Classic" && -d "$target_dir/Bibata-Modern-Ice" ]]; then
+        log_ok "Cursores Bibata-Modern-Classic y Bibata-Modern-Ice ya están instalados."
+        return 0
     fi
-    run_as_user gsettings set org.gnome.desktop.interface gtk-theme "$gtk_target" 2>/dev/null || true
 
-    echo "  ✅ Modo oscuro activado (GTK: $gtk_target). Iconos conservados sin cambios."
+    log_info "Instalando cursores Bibata Modern (Classic e Ice)..."
+    local tmp_dir
+    tmp_dir=$(mktemp -d)
+    for variant in Bibata-Modern-Classic Bibata-Modern-Ice; do
+        if [[ ! -d "$target_dir/$variant" ]]; then
+            local url="https://github.com/ful1e5/Bibata_Cursor/releases/latest/download/${variant}.tar.xz"
+            if curl -fsSL "$url" -o "$tmp_dir/${variant}.tar.xz"; then
+                sudo tar -xJf "$tmp_dir/${variant}.tar.xz" -C "$target_dir"
+                log_ok "Cursor $variant instalado en $target_dir/$variant."
+            else
+                log_warn "No se pudo descargar $variant desde GitHub."
+            fi
+        fi
+    done
+    rm -rf "$tmp_dir"
 }
 
-apply_light() {
-    echo "☀️ Aplicando modo claro en GTK y color-scheme..."
-    run_as_user gsettings set org.gnome.desktop.interface color-scheme 'default' 2>/dev/null || true
-    
-    local gtk_target="Adwaita"
-    if [ -d "/usr/share/themes/adw-gtk3" ]; then
-        gtk_target="adw-gtk3"
-    fi
-    run_as_user gsettings set org.gnome.desktop.interface gtk-theme "$gtk_target" 2>/dev/null || true
-
-    echo "  ✅ Modo claro activado. Iconos conservados sin cambios."
-}
-
-apply_icons_papirus() {
-    echo "🎨 Aplicando iconos Papirus..."
-    local cs
-    cs=$(run_as_user gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null || echo "'default'")
-    if [ "$cs" = "'prefer-dark'" ] && [ -d "/usr/share/icons/Papirus-Dark" ]; then
-        run_as_user gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark' 2>/dev/null || true
-        echo "  ✅ Iconos configurados: Papirus-Dark."
-    elif [ -d "/usr/share/icons/Papirus" ]; then
-        run_as_user gsettings set org.gnome.desktop.interface icon-theme 'Papirus' 2>/dev/null || true
-        echo "  ✅ Iconos configurados: Papirus."
+install_packages() {
+    log_info "Verificando paquetes de temas e iconos en Fedora 45 ($DNF_BIN)..."
+    local pkgs=(adw-gtk3-theme papirus-icon-theme gnome-tweaks curl tar xz)
+    local missing=()
+    for p in "${pkgs[@]}"; do
+        rpm -q "$p" &>/dev/null || missing+=("$p")
+    done
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        sudo "$DNF_BIN" install -y "${missing[@]}"
     else
-        echo "  ⚠️ Papirus no encontrado en el sistema. Ejecuta '$0 --install' primero."
+        log_ok "Paquetes adw-gtk3-theme, papirus-icon-theme y gnome-tweaks ya instalados."
     fi
+    install_bibata_cursors
 }
 
-apply_icons_adwaita() {
-    echo "🎨 Restableciendo iconos nativos Adwaita de GNOME..."
-    run_as_user gsettings set org.gnome.desktop.interface icon-theme 'Adwaita' 2>/dev/null || true
-    echo "  ✅ Iconos configurados: Adwaita (predeterminado de GNOME)."
+run_interactive() {
+    echo -e "${BOLD}======================================================================${NC}"
+    echo -e "  🎨 ${BOLD}SELECTOR INTERACTIVO DE APARIENCIA - FEDORA 45 WORKSTATION${NC}"
+    echo -e "${BOLD}======================================================================${NC}"
+
+    echo -e "\n${BOLD}1) Selecciona el Esquema de Color:${NC}"
+    echo "   1) Oscuro (prefer-dark + adw-gtk3-dark) [Recomendado]"
+    echo "   2) Claro  (default + adw-gtk3)"
+    read -rp "Opción [1]: " opt_color
+    case "${opt_color:-1}" in
+        2) MODE_COLOR="light" ;;
+        *) MODE_COLOR="dark" ;;
+    esac
+
+    echo -e "\n${BOLD}2) Selecciona el Tema de Iconos:${NC}"
+    echo "   1) Papirus-Dark [Recomendado para modo oscuro]"
+    echo "   2) Papirus"
+    echo "   3) Adwaita (Nativo GNOME)"
+    read -rp "Opción [1]: " opt_icons
+    case "${opt_icons:-1}" in
+        2) MODE_ICONS="Papirus" ;;
+        3) MODE_ICONS="Adwaita" ;;
+        *) MODE_ICONS="Papirus-Dark" ;;
+    esac
+
+    echo -e "\n${BOLD}3) Selecciona el Tema de Cursor:${NC}"
+    echo "   1) Bibata-Modern-Classic (Negro con borde blanco) [Recomendado]"
+    echo "   2) Bibata-Modern-Ice (Blanco)"
+    echo "   3) Adwaita (Nativo GNOME)"
+    read -rp "Opción [1]: " opt_cursor
+    case "${opt_cursor:-1}" in
+        2) MODE_CURSOR="Bibata-Modern-Ice" ;;
+        3) MODE_CURSOR="Adwaita" ;;
+        *) MODE_CURSOR="Bibata-Modern-Classic" ;;
+    esac
+
+    echo -e "\n${BOLD}4) Tamaño del Cursor en píxeles (24, 32, 48):${NC}"
+    read -rp "Tamaño [24]: " opt_size
+    CURSOR_SIZE="${opt_size:-24}"
 }
 
-apply_cursor_bibata() {
-    echo "🖱️ Aplicando cursor moderno Bibata..."
-    if [ -d "/usr/share/icons/Bibata-Modern-Classic" ] || [ -d "$USER_HOME/.local/share/icons/Bibata-Modern-Classic" ]; then
-        run_as_user gsettings set org.gnome.desktop.interface cursor-theme 'Bibata-Modern-Classic' 2>/dev/null || true
-        echo "  ✅ Cursor configurado: Bibata-Modern-Classic."
-    elif [ -d "/usr/share/icons/Bibata-Modern-Ice" ] || [ -d "$USER_HOME/.local/share/icons/Bibata-Modern-Ice" ]; then
-        run_as_user gsettings set org.gnome.desktop.interface cursor-theme 'Bibata-Modern-Ice' 2>/dev/null || true
-        echo "  ✅ Cursor configurado: Bibata-Modern-Ice."
-    else
-        echo "  ⚠️ Bibata no encontrado en el sistema. Ejecuta '$0 --install' primero."
-    fi
-}
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -s|--status)           ACTION="status"; shift ;;
+        -i|--interactive)      INTERACTIVE=true; shift ;;
+        --no-install|--config) DO_INSTALL=false; shift ;;
+        --install)             ONLY_INSTALL=true; shift ;;
+        --dark)                MODE_COLOR="dark"; shift ;;
+        --light)               MODE_COLOR="light"; shift ;;
+        --papirus-dark)        MODE_ICONS="Papirus-Dark"; shift ;;
+        --papirus)             MODE_ICONS="Papirus"; shift ;;
+        --adwaita)             MODE_ICONS="Adwaita"; shift ;;
+        --bibata)              MODE_CURSOR="Bibata-Modern-Classic"; shift ;;
+        --bibata-ice)          MODE_CURSOR="Bibata-Modern-Ice"; shift ;;
+        --adwaita-cursor)      MODE_CURSOR="Adwaita"; shift ;;
+        --cursor-size)         CURSOR_SIZE="${2:-24}"; shift 2 ;;
+        -h|--help)             show_help; exit 0 ;;
+        *) log_err "Opción desconocida: $1"; show_help; exit 1 ;;
+    esac
+done
 
-# ------------------------------------------------------------------------------
-# 5. ENTRADA PRINCIPAL
-# ------------------------------------------------------------------------------
-case "${1:-}" in
-    --status|-s|status)
-        show_status
-        exit 0
-        ;;
-    --dark|-d)
-        apply_dark
-        exit 0
-        ;;
-    --light|-l)
-        apply_light
-        exit 0
-        ;;
-    --papirus)
-        apply_icons_papirus
-        exit 0
-        ;;
-    --adwaita)
-        apply_icons_adwaita
-        exit 0
-        ;;
-    --bibata)
-        apply_cursor_bibata
-        exit 0
-        ;;
-    --install|-i)
-        install_packages
-        exit 0
-        ;;
-    --help|-h|help)
-        show_help
-        exit 0
-        ;;
-    "")
-        echo "================================================================="
-        echo "📦 INSTALACIÓN DE PAQUETES DE APARIENCIA (FEDORA WORKSTATION)"
-        echo "================================================================="
-        install_packages
-        echo ""
-        show_status
-        echo "================================================================="
-        echo "✅ Paquetes instalados con éxito sin modificar la configuración activa de temas ni iconos."
-        echo "================================================================="
-        ;;
-    *)
-        echo "Opción no reconocida: $1"
-        show_help
-        exit 1
-        ;;
-esac
+if [[ "$ACTION" == "status" ]]; then
+    show_status
+    exit 0
+fi
+
+if [[ "$INTERACTIVE" == true ]]; then
+    run_interactive
+fi
+
+if [[ "$DO_INSTALL" == true ]]; then
+    install_packages
+fi
+
+if [[ "$ONLY_INSTALL" == true ]]; then
+    log_ok "Instalación de paquetes y cursores completada."
+    exit 0
+fi
+
+if [[ "$MODE_COLOR" == "light" ]]; then
+    COLOR_SCHEME_VAL="default"
+    GTK_THEME_VAL="adw-gtk3"
+    GTK_PREFER_DARK=0
+else
+    COLOR_SCHEME_VAL="prefer-dark"
+    GTK_THEME_VAL="adw-gtk3-dark"
+    GTK_PREFER_DARK=1
+fi
+
+log_info "Aplicando configuración en GNOME Wayland ($COLOR_SCHEME_VAL | $GTK_THEME_VAL | $MODE_ICONS | $MODE_CURSOR ${CURSOR_SIZE}px)..."
+run_as_user gsettings set org.gnome.desktop.interface color-scheme "$COLOR_SCHEME_VAL"
+run_as_user gsettings set org.gnome.desktop.interface gtk-theme "$GTK_THEME_VAL"
+run_as_user gsettings set org.gnome.desktop.interface icon-theme "$MODE_ICONS"
+run_as_user gsettings set org.gnome.desktop.interface cursor-theme "$MODE_CURSOR"
+run_as_user gsettings set org.gnome.desktop.interface cursor-size "$CURSOR_SIZE"
+
+# Sincronizar archivos settings.ini de GTK 3.0 y GTK 4.0
+for gtk_ver in gtk-3.0 gtk-4.0; do
+    mkdir -p "$USER_HOME/.config/$gtk_ver"
+    cat << EOF > "$USER_HOME/.config/$gtk_ver/settings.ini"
+[Settings]
+gtk-application-prefer-dark-theme=${GTK_PREFER_DARK}
+gtk-theme-name=${GTK_THEME_VAL}
+gtk-icon-theme-name=${MODE_ICONS}
+gtk-cursor-theme-name=${MODE_CURSOR}
+gtk-cursor-theme-size=${CURSOR_SIZE}
+EOF
+done
+
+# Configurar índice global de cursor del usuario en ~/.icons/default/index.theme
+mkdir -p "$USER_HOME/.icons/default"
+cat << EOF > "$USER_HOME/.icons/default/index.theme"
+[Icon Theme]
+Name=Default
+Comment=Default Cursor Theme
+Inherits=${MODE_CURSOR}
+EOF
+
+if [[ $EUID -eq 0 && "$REAL_USER" != "root" ]]; then
+    chown -R "$REAL_USER:$REAL_USER" "$USER_HOME/.config/gtk-3.0" "$USER_HOME/.config/gtk-4.0" "$USER_HOME/.icons"
+fi
+
+# Aplicar overrides a Flatpak si está disponible
+if command -v flatpak &>/dev/null; then
+    run_as_user flatpak override --user --filesystem=xdg-config/gtk-3.0:ro --filesystem=xdg-config/gtk-4.0:ro --filesystem=/usr/share/icons:ro --filesystem=~/.icons:ro 2>/dev/null || true
+    run_as_user flatpak override --user --env=GTK_THEME="$GTK_THEME_VAL" --env=XCURSOR_THEME="$MODE_CURSOR" --env=XCURSOR_SIZE="$CURSOR_SIZE" 2>/dev/null || true
+fi
+
+log_ok "Apariencia aplicada correctamente en Fedora 45 Workstation."
+show_status

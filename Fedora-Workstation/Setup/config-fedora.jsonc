@@ -1,154 +1,155 @@
-//  _____         _                  ____ _  ______ 
-// |  ___|__   __| | ___  _ __ __ _  |  _ \ |/ / ___|
-// | |_ / _ \ / _` |/ _ \| '__/ _` | | |_) | ' /|  _|  
-// |  _|  __/| (_| | (_) | | | (_| | |  __/| . \| |___ 
-// |_|  \___| \__,_|\___/|_|  \__,_| |_|   |_|\_\____|
-//                                                     
-// Fedora 44 (Rawhide/Workstation) - KDE Plasma 6 Wayland Hero Theme
 {
     "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+    // =========================================================================
+    //  Fedora 45 Workstation (GNOME Wayland) - Categorized Hero Theme
+    //  Color Primario: Fedora Official Blue (RGB: 60, 110, 180 -> 38;2;60;110;180)
+    // =========================================================================
     "logo": {
+        "type": "small",
         "source": "fedora",
-        "type": "builtin",
         "color": {
-            "1": "blue",
-            "2": "white"
+            "1": "38;2;60;110;180",
+            "2": "38;2;255;255;255"
         },
         "padding": {
-            "top": 0,
+            "top": 1,
+            "left": 2,
             "right": 3
         }
     },
     "display": {
-        "separator": "  ➜  ",
+        "separator": "  ",
         "color": {
-            "separator": "blue"
+            "keys": "38;2;60;110;180",
+            "title": "1;38;2;60;110;180"
         },
         "key": {
-            "width": 15
+            "width": 16
+        },
+        "bar": {
+            "char": {
+                "elapsed": "■",
+                "total": "･"
+            },
+            "width": 14,
+            "border": {
+                "left": "[",
+                "right": "]"
+            }
+        },
+        "percent": {
+            "type": 3
         }
     },
     "modules": [
-        {
-            "type": "title",
-            "format": "{#1}{#34} {#37}{user-name}{#34}@{#36}{host-name}{#0}"
-        },
+        "title",
+        "separator",
         {
             "type": "custom",
-            "format": "{#34}──────────────────────────────────────────{#0}"
+            "format": "\u001b[1;38;2;60;110;180m┌────────────────── HARDWARE ──────────────────┐\u001b[0m"
         },
         {
             "type": "host",
-            "key": "󰍹 Host",
-            "keyColor": "blue"
-        },
-        {
-            "type": "os",
-            "key": " OS",
-            "keyColor": "blue"
-        },
-        {
-            "type": "kernel",
-            "key": " Kernel",
-            "keyColor": "blue"
-        },
-        {
-            "type": "uptime",
-            "key": "󰅐 Uptime",
-            "keyColor": "blue"
-        },
-        {
-            "type": "packages",
-            "key": "󰏖 Packages",
-            "keyColor": "blue"
-        },
-        {
-            "type": "shell",
-            "key": " Shell",
-            "keyColor": "blue"
-        },
-        {
-            "type": "display",
-            "key": "󰍹 Display",
-            "keyColor": "blue",
-            "compactType": "original"
-        },
-        {
-            "type": "de",
-            "key": "󰇄 Desktop",
-            "keyColor": "blue"
-        },
-        {
-            "type": "wm",
-            "key": "󱂬 Window Mgr",
-            "keyColor": "blue"
-        },
-        {
-            "type": "wmtheme",
-            "key": "󰉼 WM Theme",
-            "keyColor": "blue"
-        },
-        {
-            "type": "theme",
-            "key": "󰉼 Theme",
-            "keyColor": "blue"
-        },
-        {
-            "type": "icons",
-            "key": "󰀻 Icons",
-            "keyColor": "blue"
-        },
-        {
-            "type": "font",
-            "key": " Font",
-            "keyColor": "blue"
-        },
-        {
-            "type": "terminal",
-            "key": " Terminal",
-            "keyColor": "blue"
+            "key": "  󰌢 Equipo"
         },
         {
             "type": "cpu",
-            "key": "󰍛 CPU",
-            "keyColor": "blue",
+            "key": "  󰻠 CPU",
             "showPeCoreCount": true
         },
         {
             "type": "gpu",
-            "key": "󰢮 GPU",
-            "keyColor": "blue"
+            "key": "  󰢮 GPU"
+        },
+        {
+            "type": "display",
+            "key": "  󰍹 Pantalla",
+            "compactType": "original-with-refresh-rate"
         },
         {
             "type": "memory",
-            "key": " Memory",
-            "keyColor": "blue"
+            "key": "  󰑭 Memoria RAM"
         },
         {
             "type": "swap",
-            "key": "󰓡 Swap (ZRAM)",
-            "keyColor": "blue"
+            "key": "  󰓡 Swap (ZRAM)"
         },
         {
             "type": "disk",
-            "key": "󰉉 Disk",
-            "keyColor": "blue",
-            "folders": "/"
+            "key": "  󰋊 Disco (/)"
         },
         {
-            "type": "localip",
-            "key": "󰩟 Network",
-            "keyColor": "blue",
-            "showIpv4": true,
-            "showIpv6": false,
-            "showLoopback": false
+            "type": "battery",
+            "key": "  󰁹 Batería"
         },
         {
             "type": "custom",
-            "format": "{#34}──────────────────────────────────────────{#0}"
+            "format": "\u001b[1;38;2;60;110;180m├─────────────────── SYSTEM ───────────────────┤\u001b[0m"
+        },
+        {
+            "type": "os",
+            "key": "   Sistema"
+        },
+        {
+            "type": "kernel",
+            "key": "  󰌽 Kernel"
+        },
+        {
+            "type": "packages",
+            "key": "  󰏖 Paquetes"
+        },
+        {
+            "type": "uptime",
+            "key": "  󰅐 Uptime"
+        },
+        {
+            "type": "localip",
+            "key": "  󰩟 IP Local",
+            "compact": true
+        },
+        {
+            "type": "custom",
+            "format": "\u001b[1;38;2;60;110;180m├───────────── THEMING & DESKTOP ──────────────┤\u001b[0m"
+        },
+        {
+            "type": "de",
+            "key": "  󰕮 Escritorio"
+        },
+        {
+            "type": "wm",
+            "key": "  󱂬 Compositor"
+        },
+        {
+            "type": "theme",
+            "key": "  󰉼 Tema GTK"
+        },
+        {
+            "type": "icons",
+            "key": "  󰀻 Iconos"
+        },
+        {
+            "type": "cursor",
+            "key": "  󰇀 Cursor"
+        },
+        {
+            "type": "terminal",
+            "key": "  󰆍 Terminal"
+        },
+        {
+            "type": "terminalfont",
+            "key": "  󰛖 Fuente"
+        },
+        {
+            "type": "shell",
+            "key": "  󰞷 Shell"
+        },
+        {
+            "type": "custom",
+            "format": "\u001b[1;38;2;60;110;180m└──────────────────────────────────────────────┘\u001b[0m"
         },
         {
             "type": "colors",
+            "paddingLeft": 2,
             "symbol": "circle"
         }
     ]

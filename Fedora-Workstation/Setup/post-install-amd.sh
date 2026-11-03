@@ -1,208 +1,182 @@
 #!/usr/bin/env bash
-# ==============================================================================
-# post-install-amd.sh - Post-instalación para Fedora Workstation con AMD Ryzen y Radeon Graphics
-# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8)
-# (Configurado con ZRAM, DNF paralelo, RPM Fusion, Microcódigo AMD, Mesa RADV/VA-API, PipeWire)
-# ==============================================================================
-
 set -euo pipefail
 
-if command -v dnf5 &>/dev/null; then
-    DNF_CMD="dnf5"
-else
-    DNF_CMD="dnf"
-fi
+# ==============================================================================
+#  post-install-amd.sh - Post-Instalación Base para Estaciones AMD Ryzen / Radeon
+#  Sistema: Fedora 45 Workstation (GNOME Wayland + DNF5 + RPM Fusion Obligatorio)
+#  Optimizado para HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Graphics / 32GB)
+# ==============================================================================
+
+BOLD='\033[1m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+log_info() { echo -e "${CYAN}ℹ️  $1${NC}"; }
+log_ok()   { echo -e "${GREEN}✅ $1${NC}"; }
+log_warn() { echo -e "${YELLOW}⚠️  $1${NC}"; }
+log_err()  { echo -e "${RED}❌ $1${NC}"; }
+
+DNF_BIN="dnf5"
+command -v dnf5 &>/dev/null || DNF_BIN="dnf"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 show_help() {
-    cat <<EOF
-🚀 Post-Instalación y Optimización - Fedora Workstation (AMD Ryzen / Radeon)
+    cat << EOF
+${BOLD}🚀 Post-Instalación AMD Ryzen & Radeon - Fedora 45 Workstation (GNOME Wayland)${NC}
 
-Uso:
-  $0 [OPCIÓN]
+Configura DNF5 para descargas paralelas, instala obligatoriamente ${BOLD}RPM Fusion
+(Free, Non-Free, Tainted y AppStream)${NC} + Cisco OpenH264, actualiza el sistema,
+instala microcódigo y firmware AMD, drivers Vulkan RADV + VA-API Freeworld,
+ZRAM (zstd), Flathub y herramientas esenciales de compilación y sistema.
 
-Opciones:
-  (sin argumentos)    Ejecuta el aprovisionamiento completo (DNF paralelo, RPM Fusion, ZRAM, Kernel, Mesa/RADV, PipeWire, utilidades y Flatpak).
-  --status, -s        Muestra el diagnóstico del sistema (CPU, ZRAM, RPM Fusion, Mesa y PipeWire).
-  --help, -h          Muestra este mensaje de ayuda.
+${BOLD}Uso:${NC}
+  $0 [--status | --help]
 EOF
 }
 
 show_status() {
-    echo "================================================================="
-    echo "🔍 ESTADO DE POST-INSTALACIÓN - FEDORA WORKSTATION (AMD RYZEN)"
-    echo "================================================================="
-    echo "• Procesador (CPU):         $(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs || echo 'n/a')"
-    echo "• Kernel Linux:             $(uname -r)"
-    echo "• ZRAM activo:              $(swapon --show 2>/dev/null | grep -i zram || echo 'No activo')"
-    echo "• RPM Fusion Free:          $(rpm -q rpmfusion-free-release 2>/dev/null || echo 'No instalado')"
-    echo "• RPM Fusion Non-Free:      $(rpm -q rpmfusion-nonfree-release 2>/dev/null || echo 'No instalado')"
-    echo "• Mesa VA-API Freeworld:    $(rpm -q mesa-va-drivers-freeworld 2>/dev/null || echo 'No instalado')"
-    echo "• FFmpeg Completo:          $(rpm -q ffmpeg 2>/dev/null || echo 'No instalado')"
-    echo "• Audio PipeWire:           $(systemctl --user is-active pipewire 2>/dev/null || echo 'inactivo')"
-    echo "• Flatpak Flathub:          $(flatpak remotes 2>/dev/null | grep -qi flathub && echo '✅ Configurado' || echo 'No configurado')"
-    echo "================================================================="
+    echo -e "${BOLD}======================================================================${NC}"
+    echo -e "  🚀 ${BOLD}ESTADO DE POST-INSTALACIÓN AMD - FEDORA 45 WORKSTATION${NC}"
+    echo -e "${BOLD}======================================================================${NC}"
+    echo -e "  • Sistema Operativo:         ${GREEN}$(cat /etc/fedora-release 2>/dev/null || echo 'Fedora 45 Workstation')${NC}"
+    echo -e "  • Kernel activo:             ${CYAN}$(uname -r)${NC}"
+    for repo in rpmfusion-free-release rpmfusion-nonfree-release; do
+        if rpm -q "$repo" &>/dev/null; then
+            echo -e "  • $(printf '%-26s' "$repo"): ${GREEN}Instalado${NC}"
+        else
+            echo -e "  • $(printf '%-26s' "$repo"): ${RED}No instalado (OBLIGATORIO)${NC}"
+        fi
+    done
+    for pkg in amd-gpu-firmware amd-ucode-firmware mesa-vulkan-drivers mesa-va-drivers-freeworld ffmpeg zram-generator flatpak just; do
+        if rpm -q "$pkg" &>/dev/null; then
+            echo -e "  • Paquete $(printf '%-18s' "$pkg"): ${GREEN}Instalado${NC}"
+        else
+            echo -e "  • Paquete $(printf '%-18s' "$pkg"): ${YELLOW}No instalado${NC}"
+        fi
+    done
+    echo -e "${BOLD}======================================================================${NC}"
 }
 
-case "${1:-}" in
-    --status|-s|status)
-        show_status
-        exit 0
-        ;;
-    --help|-h|help)
-        show_help
-        exit 0
-        ;;
-esac
+if [[ "${1:-}" == "-s" || "${1:-}" == "--status" ]]; then
+    show_status
+    exit 0
+elif [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+    show_help
+    exit 0
+fi
 
-echo "================================================================="
-echo "INICIANDO POST-INSTALACION: FEDORA WORKSTATION - AMD RYZEN"
-echo "================================================================="
+echo -e "${BOLD}======================================================================${NC}"
+echo -e "  🚀 ${BOLD}INICIANDO POST-INSTALACIÓN FEDORA 45 WORKSTATION (PERFIL AMD RYZEN)${NC}"
+echo -e "${BOLD}======================================================================${NC}"
 
-# 1. Optimizacion DNF (Paralelismo de descargas)
-echo "Configurando optimizaciones en DNF..."
-for conf in "/etc/dnf/dnf.conf" "/etc/dnf5/dnf5.conf"; do
-    if [ -f "$conf" ]; then
-        if ! grep -q "^max_parallel_downloads=" "$conf"; then
-            echo "max_parallel_downloads=10" | sudo tee -a "$conf" > /dev/null
-        fi
-        if ! grep -q "^defaultyes=" "$conf"; then
-            echo "defaultyes=True" | sudo tee -a "$conf" > /dev/null
-        fi
-    fi
-done
+# 1. Optimización de DNF5 (/etc/dnf/dnf.conf)
+log_info "Optimizando DNF5 (max_parallel_downloads=10, fastestmirror=True, keepcache=False)..."
+DNF_CONF="/etc/dnf/dnf.conf"
+if [[ -f "$DNF_CONF" ]]; then
+    grep -q "^max_parallel_downloads=" "$DNF_CONF" || echo "max_parallel_downloads=10" | sudo tee -a "$DNF_CONF" >/dev/null
+    grep -q "^fastestmirror=" "$DNF_CONF" || echo "fastestmirror=True" | sudo tee -a "$DNF_CONF" >/dev/null
+    grep -q "^defaultyes=" "$DNF_CONF" || echo "defaultyes=True" | sudo tee -a "$DNF_CONF" >/dev/null
+fi
 
-# 2. Habilitar Repositorios RPM Fusion (Free, Non-Free y Tainted)
-echo "Habilitando repositorios oficiales RPM Fusion Free, Non-Free y Tainted..."
-sudo $DNF_CMD install -y \
-    https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
-    https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm 2>/dev/null || true
+# 2. Instalación OBLIGATORIA de RPM Fusion (Free, Non-Free, Tainted & Cisco OpenH264)
+FEDORA_VER=$(rpm -E %fedora)
+log_info "Activando repositorios obligatorios RPM Fusion (Free y Non-Free) para Fedora ${FEDORA_VER}..."
+if ! rpm -q rpmfusion-free-release &>/dev/null || ! rpm -q rpmfusion-nonfree-release &>/dev/null; then
+    sudo "$DNF_BIN" install -y \
+        "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${FEDORA_VER}.noarch.rpm" \
+        "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${FEDORA_VER}.noarch.rpm"
+fi
 
-sudo $DNF_CMD install -y \
-    rpmfusion-free-release-tainted \
-    rpmfusion-nonfree-release-tainted \
+sudo "$DNF_BIN" config-manager setopt fedora-cisco-openh264.enabled=1 2>/dev/null || true
+sudo "$DNF_BIN" install -y --skip-unavailable \
     rpmfusion-free-appstream-data \
-    rpmfusion-nonfree-appstream-data 2>/dev/null || true
+    rpmfusion-nonfree-appstream-data \
+    rpmfusion-free-release-tainted \
+    rpmfusion-nonfree-release-tainted
+log_ok "Repositorios RPM Fusion Free, Non-Free, Tainted y AppStream activos."
 
-# Actualizar metadatos y sistema
-echo "Actualizando base del sistema..."
-sudo $DNF_CMD upgrade --refresh -y
+# 3. Actualización base del sistema
+log_info "Actualizando paquetes del sistema Fedora 45 Workstation..."
+sudo "$DNF_BIN" upgrade --refresh -y
 
-# 3. Compresion de Memoria ZRAM (Nativa en Fedora con zram-generator)
-echo "Configurando ZRAM con algoritmo ZSTD al 50% de RAM..."
-sudo $DNF_CMD install -y zram-generator zram-generator-defaults 2>/dev/null || true
-sudo tee /etc/systemd/zram-generator.conf > /dev/null << 'EOF'
-[zram0]
-zram-size = min(ram / 2, 8192)
-compression-algorithm = zstd
-swap-priority = 100
-EOF
-sudo systemctl restart systemd-zram-setup@zram0.service 2>/dev/null || true
-
-# 4. Kernel Linux, Firmware y Microcodigo para AMD
-echo "Instalando Kernel Linux, Firmware oficial y Microcodigo para AMD Ryzen..."
-sudo $DNF_CMD install -y \
-    kernel \
-    kernel-core \
-    kernel-modules \
-    kernel-devel \
-    kernel-headers \
+# 4. Firmware, Microcódigo AMD Ryzen y Gráficos Radeon (Vulkan RADV + VA-API Freeworld)
+log_info "Instalando microcódigo AMD Ryzen, firmware Radeon y aceleración gráfica RADV / VA-API Freeworld..."
+sudo "$DNF_BIN" install -y --skip-unavailable \
     linux-firmware \
-    microcode_ctl 2>/dev/null || true
-
-# 5. Stack Grafico y Aceleracion HW para AMD (Mesa / RADV / VA-API / Vulkan)
-echo "Instalando controladores graficos AMD Mesa (RADV/RadeonSI) y aceleracion de hardware..."
-sudo $DNF_CMD install -y \
+    amd-gpu-firmware \
+    amd-ucode-firmware \
+    microcode_ctl \
     mesa-dri-drivers \
     mesa-vulkan-drivers \
-    mesa-va-drivers-freeworld \
-    mesa-vdpau-drivers-freeworld \
+    vulkan-loader \
     vulkan-tools \
+    libva \
     libva-utils \
-    radeontop 2>/dev/null || true
+    lm_sensors
 
-# Vulkan 32-bit (solo para Wine/Proton gaming)
-if command -v wine &>/dev/null || command -v proton &>/dev/null; then
-    echo "Wine/Proton detectado. Instalando drivers Vulkan 32-bit..."
-    sudo $DNF_CMD install -y mesa-vulkan-drivers.i686 2>/dev/null || true
+sudo "$DNF_BIN" swap -y mesa-va-drivers mesa-va-drivers-freeworld 2>/dev/null || \
+    sudo "$DNF_BIN" install -y --allowerasing mesa-va-drivers-freeworld
+sudo "$DNF_BIN" swap -y mesa-vdpau-drivers mesa-vdpau-drivers-freeworld 2>/dev/null || \
+    sudo "$DNF_BIN" install -y --allowerasing mesa-vdpau-drivers-freeworld
+sudo "$DNF_BIN" install -y --allowerasing ffmpeg ffmpeg-libs
+
+# 5. Herramientas esenciales de sistema, desarrollo y GNOME Wayland
+log_info "Instalando herramientas base de desarrollo, compilación y utilidades de sistema..."
+BASE_PKGS=(
+    gcc
+    gcc-c++
+    make
+    cmake
+    ninja-build
+    pkgconf-pkg-config
+    git
+    curl
+    wget
+    jq
+    unzip
+    zip
+    tar
+    xz
+    zstd
+    p7zip
+    p7zip-plugins
+    unrar
+    rsync
+    just
+    btop
+    htop
+    fastfetch
+    wl-clipboard
+    flatpak
+    gnome-software
+    bash-completion
+    bind-utils
+    net-tools
+    pciutils
+    usbutils
+    nvme-cli
+    smartmontools
+    fwupd
+)
+sudo "$DNF_BIN" install -y --skip-unavailable "${BASE_PKGS[@]}"
+
+# 6. Configurar ZRAM Swap (zstd, 50% RAM)
+if [[ -x "$SCRIPT_DIR/zram-setup.sh" ]]; then
+    "$SCRIPT_DIR/zram-setup.sh"
 fi
 
-# 6. Codecs Multimedia y FFmpeg completo (RPM Fusion)
-echo "Instalando FFmpeg completo y codecs multimedia de alto rendimiento..."
-sudo $DNF_CMD config-manager setopt fedora-cisco-openh264.enabled=1 2>/dev/null || true
-sudo $DNF_CMD swap -y ffmpeg-free ffmpeg --allowerasing 2>/dev/null || sudo $DNF_CMD install -y ffmpeg 2>/dev/null || true
-sudo $DNF_CMD update @multimedia --setopt="install_weak_deps=False" --exclude=PackageKit-gstreamer-plugin,libheif-freeworld -y 2>/dev/null || true
-sudo $DNF_CMD install -y \
-    gstreamer1-plugins-base \
-    gstreamer1-plugins-good \
-    gstreamer1-plugins-bad-free \
-    gstreamer1-plugins-bad-freeworld \
-    gstreamer1-plugins-ugly \
-    gstreamer1-plugin-openh264 \
-    gstreamer1-vaapi \
-    gstreamer1-libav \
-    lame \
-    faac \
-    faad2 \
-    x264 \
-    x265 \
-    libde265 \
-    libdvdcss \
-    libdvdread \
-    libdvdnav \
-    libheif-ffmpeg \
-    lsdvd 2>/dev/null || true
-
-# Resolver conflicto de versión con libheif-freeworld si estuviera presente
-if rpm -q libheif-freeworld &>/dev/null; then
-    sudo $DNF_CMD swap -y libheif-freeworld libheif-ffmpeg --allowerasing 2>/dev/null || true
+# 7. Configurar repositorio oficial Flathub
+if command -v flatpak &>/dev/null; then
+    log_info "Asegurando repositorio Flathub habilitado..."
+    sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+    sudo flatpak remote-modify --enable flathub 2>/dev/null || true
 fi
 
-# 7. Sistema de Audio de Alta Fidelidad (PipeWire + WirePlumber)
-echo "Verificando y habilitando PipeWire y WirePlumber..."
-sudo $DNF_CMD install -y \
-    pipewire \
-    pipewire-pulseaudio \
-    pipewire-alsa \
-    pipewire-jack-audio-connection-kit \
-    wireplumber 2>/dev/null || true
+# 8. Activar TRIM periódico para SSD NVMe
+sudo systemctl enable --now fstrim.timer 2>/dev/null || true
 
-systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
-
-# 8. Software Esencial de Sistema
-echo "Instalando utilidades esenciales para Fedora Workstation..."
-sudo $DNF_CMD install -y \
-    @development-tools \
-    cmake \
-    curl \
-    btop \
-    htop \
-    inxi \
-    fuse-libs \
-    exfatprogs \
-    hfsplus-tools \
-    vlc \
-    gimp \
-    gparted \
-    p7zip \
-    p7zip-plugins \
-    unrar \
-    zip \
-    unzip \
-    bzip2 \
-    xz \
-    fastfetch 2>/dev/null || true
-
-# 9. Integracion de Flatpak & Flathub
-echo "Configurando Flatpak y Flathub..."
-sudo $DNF_CMD install -y flatpak 2>/dev/null || true
-sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
-
-# 10. Limpieza de Paquetes Antiguos
-echo "Limpiando cache y paquetes obsoletos..."
-sudo $DNF_CMD autoremove -y 2>/dev/null || true
-sudo $DNF_CMD clean all 2>/dev/null || true
-
-echo "================================================================="
-echo "Fedora Workstation (AMD Ryzen) configurado con éxito."
-echo "Se recomienda reiniciar el equipo para arrancar con el nuevo Kernel, drivers AMD y ZRAM."
-echo "================================================================="
+log_ok "Post-instalación de Fedora 45 Workstation (AMD Ryzen / Radeon) completada con éxito."
+show_status

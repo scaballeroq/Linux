@@ -1,6 +1,6 @@
-# Manual de Virtualización de Alto Rendimiento (KVM/QEMU) en Fedora 44 Workstation
+# Manual de Virtualización de Alto Rendimiento (KVM/QEMU) en Fedora 45 Workstation
 
-Este manual detalla la configuración, optimización y mejores prácticas para **KVM / QEMU / virt-manager / GNOME Boxes** en **Fedora 44 Workstation (GNOME Wayland)** con audio nativo PipeWire, aceleración por hardware (AMD Ryzen e Intel Core), aceleración 3D VirGL, almacenamiento Btrfs NoCoW y demonios modulares de Libvirt 12+.
+Este manual detalla la configuración, optimización y mejores prácticas para **KVM / QEMU / virt-manager / GNOME Boxes** en **Fedora 45 Workstation (GNOME Wayland)** con audio nativo PipeWire, aceleración por hardware (AMD Ryzen e Intel Core), aceleración 3D VirGL, almacenamiento Btrfs NoCoW y demonios modulares de Libvirt 12+.
 
 ---
 
@@ -82,9 +82,9 @@ dynamic_ownership = 1
 
 ---
 
-## 4. Backend de Red y Firewall Nftables en Fedora 44
+## 4. Backend de Red y Firewall Nftables en Fedora 45
 
-Fedora 44 utiliza `nftables` y `firewalld` por defecto.
+Fedora 45 utiliza `nftables` y `firewalld` por defecto.
 
 ### 4.1. Configuración de Libvirt (`/etc/libvirt/network.conf`)
 ```ini

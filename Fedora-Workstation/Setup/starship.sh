@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# starship.sh - Instalador y Gestor de Starship Prompt para Fedora 44
+# starship.sh - Instalador y Gestor de Starship Prompt para Fedora 45
 # ==============================================================================
 # Script para instalar, configurar y gestionar Starship prompt en Bash y Zsh.
 # Soporta habilitación/deshabilitación modular en ~/.bashrc.d y ~/.zshrc.d
@@ -47,7 +47,7 @@ SOURCE_CONFIG="$SCRIPT_DIR/starship.toml"
 
 show_help() {
     cat <<EOF
-🚀 Gestor de Starship Prompt - Fedora 44 (GNOME Shell)
+🚀 Gestor de Starship Prompt - Fedora 45 (GNOME Shell)
 
 Uso:
   $0 [OPCIÓN]
@@ -89,7 +89,7 @@ enable_starship() {
     run_as_user mkdir -p "$BASHRC_D"
     cat << 'EOF' | run_as_user tee "$BASHRC_D/starship.sh" > /dev/null
 # =============================================================================
-# STARSHIP PROMPT (Fedora 44)
+# STARSHIP PROMPT (Fedora 45)
 # =============================================================================
 if command -v starship &>/dev/null; then
     eval "$(starship init bash)"
@@ -122,7 +122,7 @@ EOF
         run_as_user mkdir -p "$ZSHRC_D"
         cat << 'EOF' | run_as_user tee "$ZSHRC_D/starship.zsh" > /dev/null
 # =============================================================================
-# STARSHIP PROMPT (Fedora 44)
+# STARSHIP PROMPT (Fedora 45)
 # =============================================================================
 if command -v starship &>/dev/null; then
     eval "$(starship init zsh)"
@@ -217,7 +217,7 @@ show_status() {
 
 install_starship() {
     echo "================================================================="
-    echo "🚀 Configurando Starship Prompt en Fedora 44"
+    echo "🚀 Configurando Starship Prompt en Fedora 45"
     echo "================================================================="
 
     # 1. Instalar binario de Starship vía DNF5 o instalador oficial

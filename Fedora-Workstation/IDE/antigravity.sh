@@ -9,7 +9,7 @@
 #  - Detección inteligente de versión: evita descargar si ya está al día.
 #  - Helper /usr/local/bin/update-antigravity modular con rollback atómico.
 #  - Extracción automática de icono nativo desde app.asar.
-#  - Integración nativa con KDE Plasma 6 (Dolphin context menu, KBuildSycoca6).
+#  - Integración nativa con GNOME Shell (Nautilus context menu).
 #  - Permisos correctos de SUID para chrome-sandbox (4755).
 #  - Opciones de estado (--status), comprobación (--check), forzado (--force) y desinstalación (--uninstall).
 # ==============================================================================
@@ -130,7 +130,7 @@ check_dependencies() {
 # ------------------------------------------------------------------------------
 show_status() {
     echo -e "${BOLD}=================================================================${NC}"
-    echo -e "🪐 ${BOLD}Estado de Google Antigravity Desktop 2.0 (Fedora 44)${NC}"
+    echo -e "🪐 ${BOLD}Estado de Google Antigravity Desktop 2.0 (Fedora 45 Workstation)${NC}"
     echo -e "${BOLD}=================================================================${NC}"
 
     local installed_v
@@ -181,7 +181,7 @@ show_status() {
     fi
 
     echo ""
-    echo -e "${BOLD}🖥️  Integración KDE Plasma 6 / Dolphin / Wayland:${NC}"
+    echo -e "${BOLD}🖥️  Integración GNOME Shell / Nautilus / Wayland:${NC}"
     if [ -f "$DESKTOP_FILE" ]; then
         echo -e "  • Lanzador de escritorio: ${GREEN}$DESKTOP_FILE${NC}"
     else
@@ -194,10 +194,10 @@ show_status() {
         echo -e "  • Icono de aplicación:   ${YELLOW}No presente${NC}"
     fi
 
-    if [ -f "$KIO_USER_FILE" ] || [ -f "$KIO_SYS_FILE" ]; then
-        echo -e "  • Menú contextual Dolphin: ${GREEN}Activo (KIO ServiceMenu)${NC}"
+    if [ -f "$USER_HOME/.local/share/nautilus/scripts/Abrir con Antigravity" ] || [ -f "$USER_HOME/.local/share/nautilus-python/extensions/open-code-editors.py" ]; then
+        echo -e "  • Menú contextual Nautilus: ${GREEN}Activo (GNOME Files)${NC}"
     else
-        echo -e "  • Menú contextual Dolphin: ${YELLOW}No instalado${NC}"
+        echo -e "  • Menú contextual Nautilus: ${YELLOW}No instalado${NC}"
     fi
 
     echo ""
@@ -749,7 +749,7 @@ install_or_update() {
     if [ -x "$launcher" ]; then
         echo -e "${GREEN}✅ Antigravity Desktop verificado y disponible en:${NC} $launcher"
         echo -e "💡 Ejecutable: ${BOLD}antigravity${NC}"
-        echo -e "💡 Dolphin: Click derecho en carpetas -> 'Abrir con Antigravity'"
+        echo -e "💡 Nautilus: Click derecho en carpetas -> 'Abrir en Antigravity'"
     else
         echo -e "${YELLOW}ℹ️  Instalación lista. Para iniciar la descarga use './IDE/antigravity.sh' con privilegios o '--force'.${NC}"
     fi
@@ -766,7 +766,7 @@ show_help() {
     echo -e "  ${CYAN}-s, --status${NC}        Muestra el estado completo de la instalación e integraciones (rootless)"
     echo -e "  ${CYAN}-c, --check${NC}         Comprueba si hay actualizaciones disponibles sin instalar (exit code)"
     echo -e "  ${CYAN}-f, --force${NC}         Fuerza la descarga y reinstalación de la versión más reciente"
-    echo -e "  ${CYAN}--uninstall${NC}         Desinstala Antigravity Desktop y elimina accesos e integración con Dolphin"
+    echo -e "  ${CYAN}--uninstall${NC}         Desinstala Antigravity Desktop y elimina accesos e integración con Nautilus"
     echo -e "  ${CYAN}-h, --help${NC}          Muestra este mensaje de ayuda"
     echo ""
     echo -e "${BOLD}Ejemplos:${NC}"

@@ -1,501 +1,224 @@
 #!/usr/bin/env bash
-# ==============================================================================
-# flatpak.sh - Instalación, Gestión y Diagnóstico de Software Flatpak
-# Fedora 44 Workstation | Escritorio: GNOME Shell (Wayland)
-# Hardware: AMD Ryzen 7 7730U / Radeon Vega 8 (Barcelo-R)
-# ==============================================================================
-# Filosofía y Arquitectura:
-# - Enfoque desacoplado y seguro: aplicaciones multimedia, contenedores y herramientas
-#   de escritorio aisladas vía Flatpak (Flathub), manteniendo el sistema base 100% puro
-#   contra los servidores oficiales de Fedora (sin conflictos en 'dnf5 upgrade').
-# - Idempotencia absoluta: comprueba si la aplicación ya está instalada antes de descargar.
-# - Detección inteligente de objetivos (--system o --user) evitando conflictos de resolución.
-# - Integración nativa con GNOME Shell (tema Adwaita Dark y aceleración gráfica RADV/VA-API).
-# ==============================================================================
-
 set -euo pipefail
 
-# ------------------------------------------------------------------------------
-# 1. CONSTANTES Y CONFIGURACIÓN ESTÉTICA
-# ------------------------------------------------------------------------------
-FLATPAK_BIN="/usr/bin/flatpak"
-FLATHUB_URL="https://dl.flathub.org/repo/flathub.flatpakrepo"
+# ==============================================================================
+#  flatpak.sh - Gestor e Instalador de Catálogo Flatpak (Flathub)
+#  Sistema: Fedora 45 Workstation (GNOME Shell Wayland)
+# ==============================================================================
 
-# Colores ANSI para terminal
 BOLD='\033[1m'
 GREEN='\033[0;32m'
-BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 CYAN='\033[0;36m'
-MAGENTA='\033[0;35m'
-NC='\033[0m' # Sin color
+NC='\033[0m'
 
-# ------------------------------------------------------------------------------
-# 2. DETECCIÓN DE USUARIO Y ELEVACIÓN DE PRIVILEGIOS
-# ------------------------------------------------------------------------------
-if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-    REAL_USER="$SUDO_USER"
-    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+log_info() { echo -e "${CYAN}ℹ️  $1${NC}"; }
+log_ok()   { echo -e "${GREEN}✅ $1${NC}"; }
+log_warn() { echo -e "${YELLOW}⚠️  $1${NC}"; }
+log_err()  { echo -e "${RED}❌ $1${NC}"; }
+
+if [[ $EUID -eq 0 ]]; then
+    REAL_USER="${SUDO_USER:-$(logname 2>/dev/null || echo "${USER:-root}")}"
 else
-    REAL_USER="${USER:-$(id -un)}"
-    USER_HOME="${HOME:-/home/$REAL_USER}"
+    REAL_USER="${USER:-$(whoami)}"
 fi
+USER_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
+REAL_UID=$(id -u "$REAL_USER")
 
-if [ "$EUID" -ne 0 ]; then
-    SUDO="sudo"
-else
-    SUDO=""
-fi
+run_as_user() {
+    if [[ $EUID -eq 0 && "$REAL_USER" != "root" ]]; then
+        sudo -u "$REAL_USER" \
+            DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${REAL_UID}/bus" \
+            XDG_RUNTIME_DIR="/run/user/${REAL_UID}" \
+            "$@"
+    else
+        "$@"
+    fi
+}
 
-# ------------------------------------------------------------------------------
-# 3. CATÁLOGO DE APLICACIONES RECOMENDADAS
-# Formato: ID|NOMBRE|CATEGORÍA|PERFIL_DEFAULT (1=Sí, 0=No)|DESCRIPCIÓN
-# ------------------------------------------------------------------------------
-APPS_CATALOG=(
-    # Gestión del Sistema y Contenedores (Core)
-    "com.github.tchx84.Flatseal|Flatseal|core|1|Gestor gráfico de permisos y sandbox para Flatpaks"
-    "io.podman_desktop.PodmanDesktop|Podman Desktop|core|1|Panel gráfico de gestión para Podman, contenedores y Quadlets"
-    "io.github.flattool.Warehouse|Warehouse|core|1|Gestor versátil de Flatpaks, limpieza de restos y control de runtimes"
-    
-    # Multimedia Desacoplado
-    "org.videolan.VLC|VLC Media Player|multimedia|1|Reproductor multimedia universal con códecs completos integrados"
-    "io.github.celluloid_player.Celluloid|Celluloid|multimedia|1|Reproductor GTK/MPV optimizado para Wayland y aceleración VA-API"
-    "com.obsproject.Studio|OBS Studio|multimedia|1|Grabación y streaming con soporte Wayland PipeWire y códecs aislados"
-    "org.kde.kdenlive|Kdenlive|multimedia|0|Editor de vídeo profesional no lineal con códecs completos"
-    "tv.kodi.Kodi|Kodi Media Center|multimedia|0|Centro multimedia avanzado para streaming y reproducción local"
-    "com.stremio.Stremio|Stremio|multimedia|0|Plataforma moderna de agregación de contenido multimedia y streaming"
-    "org.audacityteam.Audacity|Audacity|multimedia|0|Editor y grabador de audio profesional multi-pista"
-    "com.spotify.Client|Spotify|multimedia|1|Cliente oficial de reproducción de música en streaming"
-    
-    # Comunicación y Colaboración (Aislamiento Wayland)
-    "dev.vencord.Vesktop|Vesktop (Discord)|comms|1|Discord optimizado para Wayland con soporte PipeWire screen sharing"
-    "org.telegram.desktop|Telegram Desktop|comms|0|Mensajería rápida y segura en sandbox Flatpak"
+DNF_BIN="dnf5"
+command -v dnf5 &>/dev/null || DNF_BIN="dnf"
 
-    # Desarrollo y Bases de Datos
-    "com.usebruno.Bruno|Bruno (API Client)|dev|0|Cliente API REST y GraphQL ligero, offline y versionable en Git"
-    "io.dbeaver.DBeaverCommunity|DBeaver Community|dev|0|Gestor universal de bases de datos (SQL, NoSQL, Podman containers)"
-
-    # Productividad, Notas y Copias de Seguridad
-    "org.libreoffice.LibreOffice|LibreOffice|productivity|0|Suite ofimática completa desacoplada del sistema"
-    "md.obsidian.Obsidian|Obsidian|productivity|0|Bóveda de conocimiento y notas interconectadas en Markdown local"
-    "org.localsend.localsend_app|LocalSend|productivity|0|Transferencia segura y rápida de archivos en red local (LAN/Wi-Fi)"
-    "org.gnome.World.PikaBackup|Pika Backup|productivity|0|Copias de seguridad incrementales y cifradas basadas en BorgBackup"
-
-    # Navegadores Web y Privacidad
-    "org.mozilla.firefox|Mozilla Firefox|web|0|Navegador web con sandbox estricto y códecs multimedia completos"
-
-    # Diseño y Creatividad
-    "org.gimp.GIMP|GIMP|graphics|0|Editor avanzado de imágenes con códecs y runtimes desacoplados"
-    "org.inkscape.Inkscape|Inkscape|graphics|0|Editor profesional de gráficos vectoriales (SVG)"
-    
-    # Compatibilidad y Gaming
-    "com.valvesoftware.Steam.CompatibilityTool.Proton-GE|Proton-GE|gaming|0|Capa de compatibilidad avanzada para Steam Play"
+ESSENTIAL_APPS=(
+    "com.github.tchx84.Flatseal"
+    "io.github.flattool.Warehouse"
+    "com.mattjakeman.ExtensionManager"
+    "org.localsend.localsend_app"
 )
 
-# ------------------------------------------------------------------------------
-# 4. FUNCIONES AUXILIARES Y DE ENTORNO
-# ------------------------------------------------------------------------------
-ensure_flatpak_installed() {
-    if ! command -v flatpak &>/dev/null; then
-        echo -e "${YELLOW}📦 Flatpak no está instalado en el sistema. Instalando vía DNF5...${NC}"
-        $SUDO dnf5 install -y flatpak 
-    fi
-}
+DEV_APPS=(
+    "io.podman_desktop.PodmanDesktop"
+    "com.usebruno.Bruno"
+    "io.dbeaver.DBeaverCommunity"
+)
 
-ensure_flathub_remote() {
-    local target="${1:---system}"
-    ensure_flatpak_installed
+MULTIMEDIA_APPS=(
+    "org.kde.kdenlive"
+    "org.shotcut.Shotcut"
+    "com.obsproject.Studio"
+    "org.videolan.VLC"
+    "io.github.celluloid_player.Celluloid"
+    "com.spotify.Client"
+)
 
-    if ! flatpak remotes "$target" 2>/dev/null | grep -q "^flathub"; then
-        echo -e "${YELLOW}🌐 Configurando repositorio Flathub (${target})...${NC}"
-        if [ "$target" = "--system" ]; then
-            $SUDO flatpak remote-add --system --if-not-exists flathub "$FLATHUB_URL" 2>/dev/null || true
-        else
-            flatpak remote-add --user --if-not-exists flathub "$FLATHUB_URL" 2>/dev/null || true
-        fi
-    fi
-}
+OFFICE_SOCIAL_APPS=(
+    "md.obsidian.Obsidian"
+    "org.onlyoffice.desktopeditors"
+    "dev.vencord.Vesktop"
+    "org.telegram.desktop"
+)
 
-is_app_installed() {
-    local app_id="$1"
-    flatpak info "$app_id" &>/dev/null
-}
+DEFAULT_APPS=(
+    "${ESSENTIAL_APPS[@]}"
+    "io.podman_desktop.PodmanDesktop"
+    "org.kde.kdenlive"
+    "com.obsproject.Studio"
+    "org.videolan.VLC"
+    "md.obsidian.Obsidian"
+)
 
-get_app_details() {
-    local app_id="$1"
-    local version="desconocida"
-    local install_scope="-"
-    local size="-"
-
-    if is_app_installed "$app_id"; then
-        version=$(flatpak info "$app_id" 2>/dev/null | awk -F: '/Versión|Version/ {print $2; exit}' | tr -d ' ' || echo "instalada")
-        [ -z "$version" ] && version="instalada"
-        install_scope=$(flatpak info "$app_id" 2>/dev/null | awk -F: '/Instalación|Installation/ {print $2; exit}' | tr -d ' ' || echo "system")
-        size=$(flatpak info "$app_id" 2>/dev/null | awk -F: '/Tamaño instalado|Installed Size/ {print $2; exit}' | xargs || echo "-")
-        echo -e "${GREEN}✅ Instalado [${install_scope}] (v${version} | ${size})${NC}"
-    else
-        echo -e "${RED}❌ No instalado${NC}"
-    fi
-}
-
-resolve_app_id() {
-    local query="$1"
-    case "${query,,}" in
-        flatseal) echo "com.github.tchx84.Flatseal" ;;
-        podman|podman-desktop|podmandesktop) echo "io.podman_desktop.PodmanDesktop" ;;
-        warehouse) echo "io.github.flattool.Warehouse" ;;
-        vlc) echo "org.videolan.VLC" ;;
-        celluloid) echo "io.github.celluloid_player.Celluloid" ;;
-        obs|obs-studio) echo "com.obsproject.Studio" ;;
-        kdenlive) echo "org.kde.kdenlive" ;;
-        kodi) echo "tv.kodi.Kodi" ;;
-        stremio) echo "com.stremio.Stremio" ;;
-        audacity) echo "org.audacityteam.Audacity" ;;
-        spotify) echo "com.spotify.Client" ;;
-        vesktop|discord) echo "dev.vencord.Vesktop" ;;
-        telegram|telegram-desktop) echo "org.telegram.desktop" ;;
-        proton|proton-ge) echo "com.valvesoftware.Steam.CompatibilityTool.Proton-GE" ;;
-        bruno) echo "com.usebruno.Bruno" ;;
-        dbeaver) echo "io.dbeaver.DBeaverCommunity" ;;
-        obsidian) echo "md.obsidian.Obsidian" ;;
-        localsend) echo "org.localsend.localsend_app" ;;
-        pika|pika-backup|pikabackup) echo "org.gnome.World.PikaBackup" ;;
-        gimp) echo "org.gimp.GIMP" ;;
-        inkscape) echo "org.inkscape.Inkscape" ;;
-        libreoffice|office) echo "org.libreoffice.LibreOffice" ;;
-        firefox) echo "org.mozilla.firefox" ;;
-        *) echo "$query" ;;
-    esac
-}
-
-resolve_app_name() {
-    local target_id="$1"
-    for item in "${APPS_CATALOG[@]}"; do
-        IFS="|" read -r c_id c_name c_cat c_def c_desc <<< "$item"
-        if [ "$c_id" = "$target_id" ]; then
-            echo "$c_name"
-            return 0
-        fi
-    done
-    echo "$target_id"
-}
-
-# ------------------------------------------------------------------------------
-# 5. DIAGNÓSTICO DEL SISTEMA (--status)
-# ------------------------------------------------------------------------------
-show_status() {
-    echo -e "${BOLD}=================================================================${NC}"
-    echo -e "${CYAN}${BOLD}🔍 ESTADO DE FLATPAK Y FLATHUB - FEDORA 44 (KDE PLASMA 6)${NC}"
-    echo -e "${BOLD}=================================================================${NC}"
-    
-    if command -v flatpak &>/dev/null; then
-        local flatpak_ver
-        flatpak_ver=$(flatpak --version 2>/dev/null || echo "flatpak")
-        echo -e "• Binario Flatpak:              ${GREEN}✅ $(which flatpak) (${flatpak_ver})${NC}"
-    else
-        echo -e "• Binario Flatpak:              ${RED}❌ No instalado${NC}"
-    fi
-
-    local flathub_sys
-    flathub_sys=$(if flatpak remotes --system 2>/dev/null | grep -qi "^flathub"; then echo -e "${GREEN}✅ Configurado${NC}"; else echo -e "${RED}❌ No presente${NC}"; fi)
-    echo -e "• Repositorio Flathub (System): $flathub_sys"
-
-    local flathub_usr
-    flathub_usr=$(if flatpak remotes --user 2>/dev/null | grep -qi "^flathub"; then echo -e "${GREEN}✅ Configurado${NC}"; else echo -e "${YELLOW}⚠️ No configurado (opcional)${NC}"; fi)
-    echo -e "• Repositorio Flathub (User):   $flathub_usr"
-
-    local gtk_breeze
-    gtk_breeze=$(if flatpak list 2>/dev/null | grep -qi "org.gtk.Gtk3theme.Breeze"; then echo -e "${GREEN}✅ Instalado (Adwaita Dark GTK)${NC}"; else echo -e "${YELLOW}No instalado${NC}"; fi)
-    echo -e "• Tema Breeze para Flatpak GTK: $gtk_breeze"
-
-    echo -e "${BOLD}-----------------------------------------------------------------${NC}"
-    echo -e "${BOLD}📦 CATÁLOGO DE APLICACIONES FLATPAK:${NC}"
-    echo -e "${BOLD}-----------------------------------------------------------------${NC}"
-
-    local total_installed=0
-    local total_apps=0
-
-    for item in "${APPS_CATALOG[@]}"; do
-        IFS="|" read -r app_id app_name category is_default desc <<< "$item"
-        total_apps=$((total_apps + 1))
-        
-        printf "• ${BOLD}%-22s${NC} " "${app_name}:"
-        local details
-        details=$(get_app_details "$app_id")
-        echo -e "$details"
-
-        if is_app_installed "$app_id"; then
-            total_installed=$((total_installed + 1))
-        fi
-    done
-
-    echo -e "${BOLD}=================================================================${NC}"
-    echo -e "📊 Resumen: ${GREEN}${total_installed}${NC} de ${BOLD}${total_apps}${NC} aplicaciones instaladas."
-    echo -e "💡 Consejo: Ejecuta '${BOLD}$0 --help${NC}' para opciones de instalación modular o mantenimiento."
-    echo -e "${BOLD}=================================================================${NC}"
-}
-
-# ------------------------------------------------------------------------------
-# 6. INSTALACIÓN DE APLICACIONES
-# ------------------------------------------------------------------------------
-install_single_app() {
-    local app_id="$1"
-    local app_name="$2"
-    local target_scope="$3"
-
-    if is_app_installed "$app_id"; then
-        echo -e "  ${GREEN}✔${NC} ${BOLD}${app_name}${NC} (${CYAN}${app_id}${NC}) ya está instalado. Omitiendo."
-        return 0
-    fi
-
-    echo -e "  ${YELLOW}⬇️ Instalando${NC} ${BOLD}${app_name}${NC} (${CYAN}${app_id}${NC}) [${target_scope}]..."
-    
-    if flatpak install "$target_scope" -y flathub "$app_id"; then
-        echo -e "  ${GREEN}✅ ${app_name} instalado correctamente.${NC}"
-    else
-        echo -e "  ${RED}❌ Error al instalar ${app_name} (${app_id}).${NC}" >&2
-    fi
-}
-
-install_suite() {
-    local filter_mode="${1:-default}"
-    local target_scope="${2:---system}"
-
-    ensure_flatpak_installed
-    ensure_flathub_remote "$target_scope"
-
-    echo -e "${BOLD}=================================================================${NC}"
-    echo -e "${CYAN}${BOLD}🚀 INSTALANDO SOFTWARE VÍA FLATPAK (${target_scope})${NC}"
-    echo -e "Modo de selección: ${BOLD}${filter_mode}${NC}"
-    echo -e "${BOLD}=================================================================${NC}"
-
-    local count=0
-    for item in "${APPS_CATALOG[@]}"; do
-        IFS="|" read -r app_id app_name category is_default desc <<< "$item"
-        local should_install=0
-
-        case "$filter_mode" in
-            default)
-                if [ "$is_default" -eq 1 ]; then should_install=1; fi
-                ;;
-            all)
-                should_install=1
-                ;;
-            essential|core)
-                if [ "$category" = "core" ]; then should_install=1; fi
-                ;;
-            multimedia)
-                if [ "$category" = "multimedia" ]; then should_install=1; fi
-                ;;
-            comms)
-                if [ "$category" = "comms" ]; then should_install=1; fi
-                ;;
-            gaming)
-                if [ "$category" = "gaming" ]; then should_install=1; fi
-                ;;
-            dev)
-                if [ "$category" = "dev" ]; then should_install=1; fi
-                ;;
-            productivity)
-                if [ "$category" = "productivity" ]; then should_install=1; fi
-                ;;
-            graphics)
-                if [ "$category" = "graphics" ]; then should_install=1; fi
-                ;;
-            web)
-                if [ "$category" = "web" ]; then should_install=1; fi
-                ;;
-        esac
-
-        if [ "$should_install" -eq 1 ]; then
-            count=$((count + 1))
-            echo -e "\n${BOLD}[$count] Procesando ${app_name}...${NC}"
-            install_single_app "$app_id" "$app_name" "$target_scope"
-        fi
-    done
-
-    echo -e "\n${BOLD}=================================================================${NC}"
-    echo -e "${GREEN}✅ Proceso de instalación finalizado con éxito.${NC}"
-    echo -e "💡 Recuerda que puedes gestionar los permisos de tus apps con ${BOLD}Flatseal${NC}."
-    echo -e "${BOLD}=================================================================${NC}"
-}
-
-# ------------------------------------------------------------------------------
-# 7. TAREAS DE MANTENIMIENTO (UPDATE / CLEAN)
-# ------------------------------------------------------------------------------
-update_all() {
-    ensure_flatpak_installed
-    echo -e "${BOLD}=================================================================${NC}"
-    echo -e "${CYAN}🔄 ACTUALIZANDO TODAS LAS APLICACIONES Y RUNTIMES FLATPAK...${NC}"
-    echo -e "${BOLD}=================================================================${NC}"
-    flatpak update -y
-    echo -e "${GREEN}✅ Todas las aplicaciones y runtimes están al día.${NC}"
-}
-
-clean_unused() {
-    ensure_flatpak_installed
-    echo -e "${BOLD}=================================================================${NC}"
-    echo -e "${YELLOW}🧹 LIMPIANDO RUNTIMES Y DEPENDENCIAS HUÉRFANAS...${NC}"
-    echo -e "${BOLD}=================================================================${NC}"
-    flatpak uninstall --unused -y
-    echo -e "${GREEN}✅ Limpieza de runtimes no utilizados completada.${NC}"
-}
-
-# ------------------------------------------------------------------------------
-# 8. MENSAJE DE AYUDA (--help)
-# ------------------------------------------------------------------------------
 show_help() {
-    cat <<EOF
-📦 Gestor e Instalador de Software Flatpak - Fedora 44 (GNOME Shell)
-(Mantiene el sistema base limpio y libre de conflictos en 'dnf5 upgrade')
+    cat << EOF
+${BOLD}📦 Gestor e Instalador de Software Flatpak (Flathub) - Fedora 45 Workstation (GNOME Wayland)${NC}
 
-Uso:
-  $0 [OPCIÓN] [PARÁMETROS]
+Configura el repositorio oficial Flathub (reemplazando el filtro limitado de Fedora),
+instala perfiles de aplicaciones desacopladas y aplica overrides para temas GTK oscuros,
+cursores Bibata y aceleración GPU Wayland.
 
-Opciones principales:
-  (sin argumentos)        Instala el conjunto recomendado por defecto (Core + Multimedia + Comms).
-  -s, --status            Muestra el estado de Flatpak, repositorios y aplicaciones instaladas.
-  -a, --all               Instala todo el catálogo completo disponible.
-  -e, --essential, --core Instala únicamente las herramientas esenciales del sistema (Flatseal, Podman Desktop, Warehouse).
-  -m, --multimedia        Instala la suite multimedia desacoplada (VLC, Celluloid, OBS Studio, Kdenlive, Kodi, Stremio, Audacity, Spotify).
-      --dev               Instala herramientas de desarrollo y APIs (Bruno, DBeaver).
-      --productivity      Instala utilidades de productividad y ofimática (LibreOffice, Obsidian, LocalSend, Pika Backup).
-      --graphics          Instala suite de diseño gráfico (GIMP, Inkscape).
-      --web               Instala navegadores web en sandbox (Mozilla Firefox).
-      --comms             Instala las herramientas de comunicación (Vesktop/Discord, Telegram).
-      --gaming            Instala herramientas de gaming (Proton-GE).
-  -u, --update            Actualiza todas las aplicaciones y runtimes instalados.
-  -c, --clean             Elimina runtimes y extensiones sin usar ('flatpak uninstall --unused').
-  -h, --help              Muestra este mensaje de ayuda.
+${BOLD}Uso:${NC}
+  $0 [OPCIONES]
 
-Instalación individual:
-  $0 install <app_id|alias> [--user|--system]
-  Ejemplos:
-    $0 install vlc
-    $0 install warehouse
-    $0 install dev.vencord.Vesktop
-    $0 install obs --user
-
-Modificadores de ámbito:
-  --system                Instala a nivel de sistema (/var/lib/flatpak) [Predeterminado].
-  --user                  Instala en el directorio del usuario actual (~/.local/share/flatpak).
+${BOLD}Opciones:${NC}
+  (sin argumentos)   Instala el perfil estándar recomendado + overrides Wayland/GTK
+  --all              Instala el catálogo completo (Esenciales + Dev + Multimedia + Productividad)
+  --essential        Instala solo utilidades esenciales (Flatseal, Warehouse, Extension Manager, LocalSend)
+  --dev              Instala aplicaciones de desarrollo (Podman Desktop, Bruno, DBeaver)
+  --multimedia       Instala suite multimedia (Kdenlive, Shotcut, OBS Studio, VLC, Celluloid, Spotify)
+  --office           Instala suite productividad y comunicación (Obsidian, OnlyOffice, Vesktop, Telegram)
+  --update           Actualiza todas las aplicaciones y runtimes Flatpak
+  --clean            Elimina runtimes huérfanos y limpia caché de Flatpak
+  -s, --status       Muestra el estado de Flathub y de todo el catálogo en tiempo O(1)
+  -h, --help         Muestra esta ayuda
 EOF
 }
 
-# ------------------------------------------------------------------------------
-# 9. PROCESAMIENTO DE ARGUMENTOS CLI
-# ------------------------------------------------------------------------------
-TARGET_SCOPE="--system"
+ensure_flatpak_flathub() {
+    if ! command -v flatpak &>/dev/null; then
+        log_info "Instalando flatpak mediante $DNF_BIN..."
+        sudo "$DNF_BIN" install -y flatpak gnome-software
+    fi
+    sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+    sudo flatpak remote-modify --enable flathub --no-filter 2>/dev/null || true
+}
 
-for arg in "$@"; do
-    case "$arg" in
-        --user) TARGET_SCOPE="--user" ;;
-        --system) TARGET_SCOPE="--system" ;;
+apply_overrides() {
+    log_info "Aplicando overrides de Flatpak para tema oscuro GNOME (adw-gtk3-dark), cursores y DRI GPU..."
+    run_as_user flatpak override --user \
+        --filesystem=xdg-config/gtk-3.0:ro \
+        --filesystem=xdg-config/gtk-4.0:ro \
+        --filesystem=/usr/share/icons:ro \
+        --filesystem=~/.icons:ro \
+        --device=dri \
+        --env=GTK_THEME=adw-gtk3-dark \
+        --env=XCURSOR_THEME=Bibata-Modern-Classic \
+        --env=XCURSOR_SIZE=24 2>/dev/null || true
+    log_ok "Overrides de integración Wayland/GTK aplicados."
+}
+
+show_status() {
+    echo -e "${BOLD}======================================================================${NC}"
+    echo -e "  🔍 ${BOLD}ESTADO DE FLATPAK Y FLATHUB - FEDORA 45 WORKSTATION (GNOME WAYLAND)${NC}"
+    echo -e "${BOLD}======================================================================${NC}"
+
+    if ! command -v flatpak &>/dev/null; then
+        echo -e "  • Binario Flatpak: ${RED}No instalado${NC}"
+        return 0
+    fi
+
+    echo -e "  • Versión Flatpak:           ${GREEN}$(flatpak --version)${NC}"
+    if flatpak remotes | grep -q "flathub"; then
+        echo -e "  • Repositorio Flathub:       ${GREEN}Habilitado sin filtros${NC}"
+    else
+        echo -e "  • Repositorio Flathub:       ${YELLOW}No configurado${NC}"
+    fi
+
+    local installed_list
+    installed_list=$(flatpak list --app --columns=application 2>/dev/null || true)
+
+    echo ""
+    echo -e "${BOLD}📋 Estado del Catálogo de Aplicaciones:${NC}"
+    local all_catalog=("${ESSENTIAL_APPS[@]}" "${DEV_APPS[@]}" "${MULTIMEDIA_APPS[@]}" "${OFFICE_SOCIAL_APPS[@]}")
+    for app_id in "${all_catalog[@]}"; do
+        if echo "$installed_list" | grep -qx "$app_id"; then
+            echo -e "  • $(printf '%-42s' "$app_id"): ${GREEN}Instalado${NC}"
+        else
+            echo -e "  • $(printf '%-42s' "$app_id"): ${YELLOW}No instalado${NC}"
+        fi
+    done
+    echo -e "${BOLD}======================================================================${NC}"
+}
+
+install_list() {
+    ensure_flatpak_flathub
+    local apps=("$@")
+    local installed_list
+    installed_list=$(flatpak list --app --columns=application 2>/dev/null || true)
+
+    local to_install=()
+    for app in "${apps[@]}"; do
+        if echo "$installed_list" | grep -qx "$app"; then
+            log_ok "$app ya está instalado."
+        else
+            to_install+=("$app")
+        fi
+    done
+
+    if [[ ${#to_install[@]} -gt 0 ]]; then
+        log_info "Instalando desde Flathub: ${to_install[*]}..."
+        sudo flatpak install -y --noninteractive flathub "${to_install[@]}"
+    fi
+    apply_overrides
+}
+
+MODE="default"
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -s|--status)  MODE="status"; shift ;;
+        --all)        MODE="all"; shift ;;
+        --essential)  MODE="essential"; shift ;;
+        --dev)        MODE="dev"; shift ;;
+        --multimedia) MODE="multimedia"; shift ;;
+        --office)     MODE="office"; shift ;;
+        --update)     MODE="update"; shift ;;
+        --clean)      MODE="clean"; shift ;;
+        -h|--help)    show_help; exit 0 ;;
+        *) log_err "Opción desconocida: $1"; show_help; exit 1 ;;
     esac
 done
 
-case "${1:-}" in
-    --status|-s|status)
+case "$MODE" in
+    status)     show_status ;;
+    all)        install_list "${ESSENTIAL_APPS[@]}" "${DEV_APPS[@]}" "${MULTIMEDIA_APPS[@]}" "${OFFICE_SOCIAL_APPS[@]}" ;;
+    essential)  install_list "${ESSENTIAL_APPS[@]}" ;;
+    dev)        install_list "${DEV_APPS[@]}" ;;
+    multimedia) install_list "${MULTIMEDIA_APPS[@]}" ;;
+    office)     install_list "${OFFICE_SOCIAL_APPS[@]}" ;;
+    update)
+        ensure_flatpak_flathub
+        log_info "Actualizando aplicaciones y runtimes Flatpak..."
+        sudo flatpak update -y
+        run_as_user flatpak update --user -y 2>/dev/null || true
+        log_ok "Flatpak actualizado."
+        ;;
+    clean)
+        log_info "Limpiando runtimes huérfanos de Flatpak..."
+        sudo flatpak uninstall --unused -y
+        run_as_user flatpak uninstall --user --unused -y 2>/dev/null || true
+        log_ok "Limpieza de Flatpak completada."
+        ;;
+    default)
+        install_list "${DEFAULT_APPS[@]}"
         show_status
-        exit 0
-        ;;
-    --help|-h|help)
-        show_help
-        exit 0
-        ;;
-    --update|-u|update)
-        update_all
-        exit 0
-        ;;
-    --clean|-c|clean)
-        clean_unused
-        exit 0
-        ;;
-    --all|-a|all)
-        install_suite "all" "$TARGET_SCOPE"
-        exit 0
-        ;;
-    --essential|-e|essential|--core|core)
-        install_suite "core" "$TARGET_SCOPE"
-        exit 0
-        ;;
-    --multimedia|-m|multimedia)
-        install_suite "multimedia" "$TARGET_SCOPE"
-        exit 0
-        ;;
-    --comms|comms)
-        install_suite "comms" "$TARGET_SCOPE"
-        exit 0
-        ;;
-    --gaming|gaming)
-        install_suite "gaming" "$TARGET_SCOPE"
-        exit 0
-        ;;
-    --dev|dev)
-        install_suite "dev" "$TARGET_SCOPE"
-        exit 0
-        ;;
-    --productivity|productivity)
-        install_suite "productivity" "$TARGET_SCOPE"
-        exit 0
-        ;;
-    --graphics|graphics)
-        install_suite "graphics" "$TARGET_SCOPE"
-        exit 0
-        ;;
-    --web|web)
-        install_suite "web" "$TARGET_SCOPE"
-        exit 0
-        ;;
-    install)
-        shift
-        if [ $# -eq 0 ]; then
-            echo -e "${RED}❌ Error: Debes especificar el nombre o ID de la aplicación.${NC}" >&2
-            echo -e "Ejemplo: $0 install vlc" >&2
-            exit 1
-        fi
-        
-        target_app=""
-        for arg in "$@"; do
-            if [ "$arg" != "--user" ] && [ "$arg" != "--system" ]; then
-                target_app="$arg"
-                break
-            fi
-        done
-
-        if [ -z "$target_app" ]; then
-            echo -e "${RED}❌ Error: No se especificó ninguna aplicación válida.${NC}" >&2
-            exit 1
-        fi
-
-        app_id=$(resolve_app_id "$target_app")
-        app_name=$(resolve_app_name "$app_id")
-        ensure_flatpak_installed
-        ensure_flathub_remote "$TARGET_SCOPE"
-        install_single_app "$app_id" "$app_name" "$TARGET_SCOPE"
-        exit 0
-        ;;
-    --user|--system)
-        install_suite "default" "$TARGET_SCOPE"
-        exit 0
-        ;;
-    "")
-        install_suite "default" "$TARGET_SCOPE"
-        exit 0
-        ;;
-    *)
-        resolved=$(resolve_app_id "$1")
-        if [ "$resolved" != "$1" ] || [[ "$1" == *.*.* ]]; then
-            app_name=$(resolve_app_name "$resolved")
-            ensure_flatpak_installed
-            ensure_flathub_remote "$TARGET_SCOPE"
-            install_single_app "$resolved" "$app_name" "$TARGET_SCOPE"
-            exit 0
-        fi
-
-        echo -e "${RED}❌ Opción no reconocida: '$1'${NC}\n" >&2
-        show_help
-        exit 1
         ;;
 esac

@@ -2,7 +2,7 @@
 sidebar_position: 4
 ---
 
-# Git & Version Control Configuration on Fedora 44
+# Git & Version Control Configuration on Fedora 45
 
 This guide details the version control environment and optimized toolchain configured in [IDE/git.sh](../IDE/git.sh).
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# podman-install.sh - Optimización y configuración de Podman Rootless + Socket + Quadlets para Fedora 44 + GNOME
+# podman-install.sh - Optimización y configuración de Podman Rootless + Socket + Quadlets para Fedora 45 + GNOME
 #
 # Uso:
 #   ./podman-install.sh              -> Configura el entorno Podman rootless, socket, linger, registries y symlink de podman-utils
@@ -32,7 +32,7 @@ require_non_root() {
 
 show_help() {
     cat <<EOF
-🐳 Optimizador y Configurador de Podman Rootless - Fedora 44 (GNOME)
+🐳 Optimizador y Configurador de Podman Rootless - Fedora 45 (GNOME)
 
 Uso:
   $0 [OPCIÓN]
@@ -43,7 +43,7 @@ Opciones:
   --help, -h             Muestra este mensaje de ayuda.
 
 Características configuradas:
-  • Base Fedora 44:      Verifica e instala complementos opcionales (podman-compose, podman-docker, cockpit-podman, passt).
+  • Base Fedora 45:      Verifica e instala complementos opcionales (podman-compose, podman-docker, cockpit-podman, passt).
   • Persistencia Linger: Habilita loginctl linger para que contenedores y Quadlets sigan corriendo sin sesión de terminal abierta.
   • Docker Socket API:   Activa podman.socket en systemd user (/run/user/\$UID/podman/podman.sock).
   • Sesión GNOME / GUI:  Inyecta DOCKER_HOST en ~/.config/environment.d/10-podman.conf para VS Code, DevContainers y Antigravity.

@@ -1,5 +1,5 @@
 #!/bin/bash
-# quadlets-setup.sh - Configuración de directorios y servicios systemd Quadlets para Podman en Fedora 44 + GNOME
+# quadlets-setup.sh - Configuración de directorios y servicios systemd Quadlets para Podman en Fedora 45 + GNOME
 #
 # Uso:
 #   ./quadlets-setup.sh              -> Prepara los directorios de Quadlets e instala los servicios compartidos
@@ -32,7 +32,7 @@ require_podman() {
 
 show_help() {
     cat <<EOF
-⚙️ Gestor de Quadlets para Podman - Fedora 44 (GNOME)
+⚙️ Gestor de Quadlets para Podman - Fedora 45 (GNOME)
 
 Uso:
   $0 [OPCION]
@@ -122,7 +122,7 @@ verify_quadlets() {
     local podman_version
     podman_version=$(podman --version | grep -oP '\d+\.\d+' | head -1)
     
-    log_ok "Quadlets soportado nativamente (Podman $podman_version en Fedora 44)."
+    log_ok "Quadlets soportado nativamente (Podman $podman_version en Fedora 45)."
     echo ""
     echo "============================================"
     log_ok "Quadlets configurado correctamente"
@@ -154,7 +154,7 @@ case "${1:-}" in
         ;;
     "")
         echo "============================================"
-        echo "  Configurador de Quadlets - Fedora 44"
+        echo "  Configurador de Quadlets - Fedora 45"
         echo "============================================"
         echo ""
         require_podman

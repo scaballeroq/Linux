@@ -2,9 +2,9 @@
 sidebar_position: 1
 ---
 
-# Security Hardening & Firewall on Fedora 44 (GNOME)
+# Security Hardening & Firewall on Fedora 45 (GNOME)
 
-This guide details the security, privacy, and system hardening process automated in [`Setup/seguridad.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora/Setup/seguridad.sh), tailored for developer laptops and workstations running **Fedora 44** with **GNOME**.
+This guide details the security, privacy, and system hardening process automated in [`Setup/seguridad.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora/Setup/seguridad.sh), tailored for developer laptops and workstations running **Fedora 45** with **GNOME**.
 
 ---
 

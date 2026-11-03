@@ -4,7 +4,7 @@
 
 Esta guía detalla el conjunto de **12 extensiones de GNOME Shell** y herramientas auxiliares que se instalan y configuran de forma automatizada a través del script [`Setup/gnome-extensions.sh`](file:///home/caballero/Workspace/Repositorios/Linux/FedoraTesting/Setup/gnome-extensions.sh) y el comando `just extensions`.
 
-El objetivo de esta selección es optimizar el entorno de escritorio GNOME en Fedora 44 (Trixie), combinando **gestión avanzada de ventanas**, **mejora de la productividad**, **soporte de bandeja del sistema** y una **estética visual moderna** (glassmorphism/blur, fondos dinámicos y audio mixer), utilizando **Dash to Dock** como lanzador y dock principal nativo.
+El objetivo de esta selección es optimizar el entorno de escritorio GNOME en Fedora 45 (Trixie), combinando **gestión avanzada de ventanas**, **mejora de la productividad**, **soporte de bandeja del sistema** y una **estética visual moderna** (glassmorphism/blur, fondos dinámicos y audio mixer), utilizando **Dash to Dock** como lanzador y dock principal nativo.
 
 ---
 

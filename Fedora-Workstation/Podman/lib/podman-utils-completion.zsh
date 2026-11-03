@@ -1,6 +1,6 @@
 #compdef podman-utils
 # =============================================================================
-# Zsh Completion for podman-utils (Fedora 44 Workstation + GNOME)
+# Zsh Completion for podman-utils (Fedora 45 Workstation + GNOME)
 # =============================================================================
 
 _podman_utils_get_repo_dir() {

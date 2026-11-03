@@ -2,7 +2,7 @@
 sidebar_position: 8
 ---
 
-# Container Management with Podman & Quadlets on Fedora 44
+# Container Management with Podman & Quadlets on Fedora 45
 
 This guide details the professional **Rootless Podman** and **Systemd Quadlets** container ecosystem managed in the `Podman` folder.
 
@@ -47,7 +47,7 @@ just podman-setup
 ```
 
 The script automates:
-1. **Packages**: `podman`, `podman-compose`, `podman-docker`, `passt` (high-performance networking stack for Fedora 44), and `fuse-overlayfs`.
+1. **Packages**: `podman`, `podman-compose`, `podman-docker`, `passt` (high-performance networking stack for Fedora 45), and `fuse-overlayfs`.
 2. **User Persistence (Linger)**: `loginctl enable-linger $USER` (keeps background containers running after logout).
 3. **User Socket**: Enables `systemctl --user enable --now podman.socket` for Docker API emulation.
 4. **IDE Integration**: Injects `DOCKER_HOST="unix:///run/user/$UID/podman/podman.sock"` into `~/.config/environment.d/10-podman.conf` for seamless VS Code, JetBrains, and DevContainer integration in GNOME.

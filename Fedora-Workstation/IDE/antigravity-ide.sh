@@ -115,7 +115,7 @@ check_dependencies() {
 # ------------------------------------------------------------------------------
 show_status() {
     echo -e "${BOLD}=================================================================${NC}"
-    echo -e "🚀 ${BOLD}Estado de Google Antigravity IDE Engine (Fedora 44)${NC}"
+    echo -e "🚀 ${BOLD}Estado de Google Antigravity IDE Engine (Fedora 45 Workstation)${NC}"
     echo -e "${BOLD}=================================================================${NC}"
 
     local installed_v
@@ -166,7 +166,7 @@ show_status() {
     fi
 
     echo ""
-    echo -e "${BOLD}🖥️  Integración GNOME Shell / Dolphin / Wayland:${NC}"
+    echo -e "${BOLD}🖥️  Integración GNOME Shell / Nautilus / Wayland:${NC}"
     if [ -f "$DESKTOP_FILE" ]; then
         echo -e "  • Lanzador de escritorio: ${GREEN}$DESKTOP_FILE${NC}"
     else
@@ -179,10 +179,10 @@ show_status() {
         echo -e "  • Icono de aplicación:   ${YELLOW}No presente${NC}"
     fi
 
-    if [ -f "$KIO_USER_FILE" ] || [ -f "$KIO_SYS_FILE" ]; then
-        echo -e "  • Menú contextual Dolphin: ${GREEN}Activo (KIO ServiceMenu)${NC}"
+    if [ -f "$KIO_USER_FILE" ] || [ -f "$KIO_SYS_FILE" ] || [ -f "$USER_HOME/.local/share/nautilus-python/extensions/open-code-editors.py" ]; then
+        echo -e "  • Menú contextual Nautilus: ${GREEN}Activo (GNOME Files)${NC}"
     else
-        echo -e "  • Menú contextual Dolphin: ${YELLOW}No instalado${NC}"
+        echo -e "  • Menú contextual Nautilus: ${YELLOW}No instalado${NC}"
     fi
 
     echo ""

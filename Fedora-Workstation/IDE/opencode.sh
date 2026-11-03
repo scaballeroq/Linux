@@ -83,7 +83,7 @@ show_help() {
 
 show_status() {
     echo -e "${BOLD}=================================================================${NC}"
-    echo -e "🤖 ${BOLD}Estado de OpenCode AI CLI en Fedora 44${NC}"
+    echo -e "🤖 ${BOLD}Estado de OpenCode AI CLI en Fedora 45 Workstation${NC}"
     echo -e "${BOLD}=================================================================${NC}"
     
     local installed_version="No detectada"
@@ -146,9 +146,9 @@ show_status() {
     fi
     
     if [ -f "$ENV_FILE" ]; then
-        echo -e "  • KDE Plasma / Wayland:   ${GREEN}Configurado ($ENV_FILE)${NC}"
+        echo -e "  • GNOME Shell / Wayland:  ${GREEN}Configurado ($ENV_FILE)${NC}"
     else
-        echo -e "  • KDE Plasma / Wayland:   ${YELLOW}No configurado${NC}"
+        echo -e "  • GNOME Shell / Wayland:  ${YELLOW}No configurado${NC}"
     fi
     
     if [ -d "$USER_HOME/.zshrc.d" ] || [ -f "$USER_HOME/.zshrc" ]; then

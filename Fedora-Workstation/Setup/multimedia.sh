@@ -1,335 +1,319 @@
 #!/usr/bin/env bash
-# ==============================================================================
-# multimedia.sh - Suite Multimedia, Códecs y Aceleración HW para Fedora Workstation
-# Optimizado para Fedora Workstation (GNOME Shell Wayland)
-# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Graphics Vega 8)
-# ==============================================================================
-# Características:
-#   - Habilita RPM Fusion (Free, Non-Free y Tainted) y Cisco OpenH264.
-#   - Sustituye ffmpeg-free por FFmpeg completo de RPM Fusion.
-#   - Pila GStreamer 1.0 Wayland: plugins-base, good, bad-freeworld, ugly, libav, openh264 y vaapi.
-#   - Aceleración por hardware VA-API / Vulkan en Wayland: mesa-va-drivers-freeworld, mesa-vdpau-drivers-freeworld.
-#   - Reproductores Wayland nativos: Celluloid, MPV (con mpv.conf optimizado) y VLC.
-#   - Soporte desacoplado Flatpak / Flathub a nivel de sistema para reproductores sandbox.
-#   - Opciones CLI: --status / -s, --codecs, --players, --flatpak, --help / -h
-# ==============================================================================
-
 set -euo pipefail
 
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+# ==============================================================================
+#  multimedia.sh - Suite Multimedia Completa + RPM Fusion Obligatorio + VA-API
+#  Sistema: Fedora 45 Workstation (GNOME Wayland / AMD Radeon & Intel GPU)
+# ==============================================================================
 
-# ------------------------------------------------------------------------------
-# 1. DETECCIÓN DE USUARIO Y PRIVILEGIOS SUDO
-# ------------------------------------------------------------------------------
-if [ "$EUID" -ne 0 ]; then
-    if ! command -v sudo &> /dev/null; then
-        echo "❌ Error: 'sudo' no está disponible. Ejecuta este script con privilegios de superusuario."
-        exit 1
-    fi
-    SUDO="sudo"
+BOLD='\033[1m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+log_info() { echo -e "${CYAN}ℹ️  $1${NC}"; }
+log_ok()   { echo -e "${GREEN}✅ $1${NC}"; }
+log_warn() { echo -e "${YELLOW}⚠️  $1${NC}"; }
+log_err()  { echo -e "${RED}❌ $1${NC}"; }
+
+if [[ $EUID -eq 0 ]]; then
+    REAL_USER="${SUDO_USER:-$(logname 2>/dev/null || echo "${USER:-root}")}"
 else
-    SUDO=""
+    REAL_USER="${USER:-$(whoami)}"
 fi
-
-if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-    REAL_USER="$SUDO_USER"
-    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
-else
-    REAL_USER="${USER:-$(id -un)}"
-    USER_HOME="${HOME:-/home/$REAL_USER}"
-fi
-
-REAL_UID=$(id -u "$REAL_USER" 2>/dev/null || echo "1000")
-
-if command -v dnf5 &>/dev/null; then
-    DNF_CMD="dnf5"
-else
-    DNF_CMD="dnf"
-fi
+USER_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
+REAL_UID=$(id -u "$REAL_USER")
 
 run_as_user() {
-    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-        sudo -u "$REAL_USER" env \
-            HOME="$USER_HOME" \
-            USER="$REAL_USER" \
-            PATH="/usr/local/bin:/usr/bin:/bin:$PATH" \
-            XDG_RUNTIME_DIR="/run/user/$REAL_UID" \
-            DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$REAL_UID/bus}" \
+    if [[ $EUID -eq 0 && "$REAL_USER" != "root" ]]; then
+        sudo -u "$REAL_USER" \
+            DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${REAL_UID}/bus" \
+            XDG_RUNTIME_DIR="/run/user/${REAL_UID}" \
             "$@"
     else
         "$@"
     fi
 }
 
-# ------------------------------------------------------------------------------
-# 2. AYUDA Y ESTADO DEL SISTEMA
-# ------------------------------------------------------------------------------
+DNF_BIN="dnf5"
+command -v dnf5 &>/dev/null || DNF_BIN="dnf"
+
+MPV_CONF_DIR="$USER_HOME/.config/mpv"
+ENV_D_DIR="$USER_HOME/.config/environment.d"
+ENV_D_FILE="$ENV_D_DIR/90-fedora-multimedia.conf"
+
+ACTION="install"
+
 show_help() {
-    cat <<EOF
-🎬 Suite Multimedia y Aceleración Gráfica - Fedora Workstation (GNOME Wayland)
+    cat << EOF
+${BOLD}🎬 Suite Multimedia, RPM Fusion Obligatorio y Aceleración VA-API - Fedora 45 Workstation${NC}
 
-Uso:
-  $0 [OPCIÓN]
+Configura obligatoriamente ${BOLD}RPM Fusion (Free, Non-Free y Tainted)${NC} + Cisco OpenH264,
+reemplaza ${BOLD}ffmpeg-free${NC} por ${BOLD}ffmpeg${NC} completo, activa ${BOLD}mesa-va-drivers-freeworld${NC}
+(H.264/HEVC/AV1 por hardware en AMD Radeon), instala GStreamer completo, miniaturas
+para Nautilus (${BOLD}glycin-loaders${NC}, ${BOLD}ffmpegthumbnailer${NC}, ${BOLD}libheif-ffmpeg${NC}) y optimiza
+reproductores nativos Wayland (${BOLD}Showtime${NC}, ${BOLD}Loupe${NC}, ${BOLD}Amberol${NC}, ${BOLD}Celluloid${NC}, ${BOLD}MPV${NC} y ${BOLD}VLC${NC}).
 
-Opciones:
-  (sin argumentos)    Aplica toda la suite: RPM Fusion, Códecs, VA-API, Reproductores y Flatpak.
-  --status, -s        Muestra diagnóstico detallado de RPM Fusion, VA-API, FFmpeg, códecs y reproductores.
-  --codecs            Instala y actualiza únicamente repositorios RPM Fusion, FFmpeg, GStreamer y VA-API freeworld.
-  --players           Instala y configura reproductores nativos Wayland (Celluloid, MPV con config optimizada, VLC).
-  --flatpak           Configura el repositorio Flathub e instala reproductores desacoplados.
-  --help, -h          Muestra este mensaje de ayuda.
+${BOLD}Uso:${NC}
+  $0 [OPCIONES]
 
-Componentes gestionados:
-  • Repositorios:       RPM Fusion (Free, Non-Free, Tainted) y Cisco OpenH264.
-  • Aceleración HW:     mesa-va-drivers-freeworld, mesa-vdpau-drivers-freeworld, libva-utils y vulkan-tools.
-  • Códecs Audio/Video: FFmpeg completo, GStreamer bad-freeworld/ugly/libav, libdvdcss, x264, x265.
-  • Reproductores:      Celluloid (GTK4), MPV (gpu-next + Wayland + PipeWire) y VLC.
-  • Audio Moderno:      PipeWire y WirePlumber con integración en MPV.
+${BOLD}Opciones:${NC}
+  (sin argumentos)   Instala RPM Fusion, códecs, drivers VA-API y reproductores
+  -s, --status       Muestra el diagnóstico completo de RPM Fusion, códecs y VA-API
+  --mpv-only         Solo genera la configuración optimizada de MPV y Celluloid
+  -h, --help         Muestra esta ayuda
 EOF
+}
+
+ensure_rpmfusion() {
+    local fed_ver
+    fed_ver=$(rpm -E %fedora)
+    log_info "Verificando repositorios obligatorios RPM Fusion (Free & Non-Free) para Fedora ${fed_ver}..."
+    if ! rpm -q rpmfusion-free-release &>/dev/null || ! rpm -q rpmfusion-nonfree-release &>/dev/null; then
+        log_info "Instalando RPM Fusion Free y Non-Free..."
+        sudo "$DNF_BIN" install -y \
+            "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${fed_ver}.noarch.rpm" \
+            "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${fed_ver}.noarch.rpm"
+    else
+        log_ok "RPM Fusion Free y Non-Free ya están instalados."
+    fi
+
+    sudo "$DNF_BIN" config-manager setopt fedora-cisco-openh264.enabled=1 2>/dev/null || true
+
+    local extra_repos=()
+    for pkg in rpmfusion-free-appstream-data rpmfusion-nonfree-appstream-data rpmfusion-free-release-tainted rpmfusion-nonfree-release-tainted; do
+        rpm -q "$pkg" &>/dev/null || extra_repos+=("$pkg")
+    done
+    if [[ ${#extra_repos[@]} -gt 0 ]]; then
+        sudo "$DNF_BIN" install -y "${extra_repos[@]}" 2>/dev/null || true
+    fi
 }
 
 show_status() {
-    echo "================================================================="
-    echo "🔍 ESTADO MULTIMEDIA Y ACELERACIÓN WAYLAND - FEDORA WORKSTATION"
-    echo "================================================================="
-    echo "• Repositorios Multimedia y Drivers Propietarios:"
-    echo "  - RPM Fusion Free:          $(rpm -q rpmfusion-free-release 2>/dev/null || echo 'No instalado')"
-    echo "  - RPM Fusion Non-Free:      $(rpm -q rpmfusion-nonfree-release 2>/dev/null || echo 'No instalado')"
-    echo "  - RPM Fusion Free Tainted:  $(rpm -q rpmfusion-free-release-tainted 2>/dev/null || echo 'No instalado')"
-    echo "  - RPM Fusion NonFree Tainted: $(rpm -q rpmfusion-nonfree-release-tainted 2>/dev/null || echo 'No instalado')"
-    echo "-----------------------------------------------------------------"
+    echo -e "${BOLD}======================================================================${NC}"
+    echo -e "  🎬 ${BOLD}ESTADO MULTIMEDIA, RPM FUSION Y VA-API - FEDORA 45 WORKSTATION${NC}"
+    echo -e "${BOLD}======================================================================${NC}"
 
-    echo "• Aceleración Gráfica por Hardware (VA-API / Vulkan):"
-    if command -v vainfo &>/dev/null; then
-        local va_driver
-        va_driver=$(vainfo 2>&1 | grep "Driver version:" | sed "s/.*Driver version: //" || echo "n/a")
-        echo "  - Driver VA-API:    $va_driver"
-        local va_h264 va_hevc va_vp9
-        va_h264=$(vainfo 2>&1 | grep -q "VAProfileH264Main" && echo "✅ Soportado" || echo "❌ No disponible")
-        va_hevc=$(vainfo 2>&1 | grep -q "VAProfileHEVCMain" && echo "✅ Soportado" || echo "❌ No disponible")
-        va_vp9=$(vainfo 2>&1 | grep -q "VAProfileVP9Profile0" && echo "✅ Soportado" || echo "❌ No disponible")
-        echo "  - Decodificación:   H.264: $va_h264 | HEVC (H.265): $va_hevc | VP9: $va_vp9"
-        echo "  - Mesa VA freeworld: $(rpm -q mesa-va-drivers-freeworld 2>/dev/null || echo 'No instalado')"
+    echo -e "${BOLD}📦 Repositorios RPM Fusion (Obligatorios en Fedora):${NC}"
+    for repo_pkg in rpmfusion-free-release rpmfusion-nonfree-release rpmfusion-free-release-tainted rpmfusion-nonfree-release-tainted; do
+        if rpm -q "$repo_pkg" &>/dev/null; then
+            echo -e "  • $(printf '%-33s' "$repo_pkg"): ${GREEN}Activo ($(rpm -q --queryformat '%{VERSION}' "$repo_pkg"))${NC}"
+        else
+            echo -e "  • $(printf '%-33s' "$repo_pkg"): ${RED}No instalado${NC}"
+        fi
+    done
+
+    echo ""
+    echo -e "${BOLD}🎞️  Códecs, Drivers VA-API y Miniaturas:${NC}"
+    for pkg in ffmpeg mesa-va-drivers-freeworld gstreamer1-plugins-bad-freeworld gstreamer1-plugin-openh264 gstreamer1-plugin-libav ffmpegthumbnailer glycin-loaders; do
+        if rpm -q "$pkg" &>/dev/null; then
+            echo -e "  • $(printf '%-33s' "$pkg"): ${GREEN}Instalado${NC}"
+        else
+            echo -e "  • $(printf '%-33s' "$pkg"): ${YELLOW}No instalado${NC}"
+        fi
+    done
+
+    echo ""
+    echo -e "${BOLD}📺 Aplicaciones Multimedia GNOME Wayland:${NC}"
+    for app in mpv celluloid vlc showtime loupe snapshot amberol; do
+        if rpm -q "$app" &>/dev/null || command -v "$app" &>/dev/null; then
+            echo -e "  • $(printf '%-33s' "$app"): ${GREEN}Instalado${NC}"
+        else
+            echo -e "  • $(printf '%-33s' "$app"): ${YELLOW}No instalado${NC}"
+        fi
+    done
+
+    echo ""
+    echo -e "${BOLD}🔊 Audio PipeWire y Configuración MPV:${NC}"
+    if systemctl --user is-active --quiet pipewire 2>/dev/null || pgrep -x pipewire &>/dev/null; then
+        echo -e "  • PipeWire / WirePlumber:          ${GREEN}Activo${NC}"
     else
-        echo "  - vainfo:           ❌ No instalado (ejecuta con --codecs para diagnosticar)"
+        echo -e "  • PipeWire / WirePlumber:          ${YELLOW}No detectado en sesión actual${NC}"
     fi
-
-    echo "-----------------------------------------------------------------"
-    echo "• Pila de Códecs y Bibliotecas:"
-    echo "  - FFmpeg:           $(if rpm -q ffmpeg &>/dev/null; then echo "✅ FFmpeg completo ($(rpm -q --qf '%{VERSION}' ffmpeg))"; elif rpm -q ffmpeg-free &>/dev/null; then echo "⚠️ ffmpeg-free (limitado)"; else echo "❌ No instalado"; fi)"
-    echo "  - libdvdcss (DVD):  $(rpm -q libdvdcss 2>/dev/null || echo 'No instalado')"
-    echo "  - GStreamer Ugly:   $(rpm -q gstreamer1-plugins-ugly 2>/dev/null || echo 'No instalado')"
-    echo "  - GStreamer Freeworld: $(rpm -q gstreamer1-plugins-bad-freeworld 2>/dev/null || echo 'No instalado')"
-
-    echo "-----------------------------------------------------------------"
-    echo "• Reproductores de Vídeo:"
-    local celluloid_info mpv_info vlc_info
-    celluloid_info=$(rpm -q celluloid 2>/dev/null || flatpak list 2>/dev/null | grep -i "celluloid" | head -n1 || echo "")
-    mpv_info=$(rpm -q mpv 2>/dev/null || echo "")
-    vlc_info=$(rpm -q vlc 2>/dev/null || flatpak list 2>/dev/null | grep -i "org.videolan.VLC" | head -n1 || echo "")
-    echo "  - Celluloid:        ${celluloid_info:-❌ No instalado}"
-    if [ -n "$mpv_info" ]; then
-        local mpv_cfg
-        mpv_cfg=$([ -f "$USER_HOME/.config/mpv/mpv.conf" ] && echo " (config Wayland activa)" || echo " (sin config personalizada)")
-        echo "  - MPV Media Player: ✅ $mpv_info$mpv_cfg"
-    else
-        echo "  - MPV Media Player: ❌ No instalado"
-    fi
-    echo "  - VLC Media Player: ${vlc_info:-❌ No instalado}"
-
-    echo "-----------------------------------------------------------------"
-    echo "• Entorno Flatpak / Flathub:"
-    local flathub_sys flathub_user
-    flathub_sys=$(flatpak remotes --system 2>/dev/null | grep -qi "flathub" && echo "✅ Configurado (system)" || echo "❌ No configurado")
-    flathub_user=$(run_as_user flatpak remotes --user 2>/dev/null | grep -qi "flathub" && echo "✅ Configurado (user)" || echo "no configurado")
-    echo "  - Remoto Flathub:   $flathub_sys | user: $flathub_user"
-    echo "================================================================="
+    [[ -f "$MPV_CONF_DIR/mpv.conf" ]] && echo -e "  • Perfil MPV Vulkan/VA-API:        ${GREEN}${MPV_CONF_DIR}/mpv.conf${NC}" || echo -e "  • Perfil MPV Vulkan/VA-API:        ${YELLOW}No configurado${NC}"
+    echo -e "${BOLD}======================================================================${NC}"
 }
 
-# ------------------------------------------------------------------------------
-# 3. INSTALACIÓN DE CÓDECS, RPM FUSION Y ACELERACIÓN DE HARDWARE (VA-API / VULKAN)
-# ------------------------------------------------------------------------------
-install_codecs() {
-    echo "🎵 [1/3] Habilitando RPM Fusion, códecs multimedia y aceleración VA-API freeworld..."
+configure_mpv_and_env() {
+    log_info "Configurando MPV (gpu-next + Vulkan Wayland + VA-API + PipeWire) en $MPV_CONF_DIR..."
+    mkdir -p "$MPV_CONF_DIR" "$ENV_D_DIR"
 
-    # 1. Habilitar Repositorios Oficiales RPM Fusion (Free y Non-Free)
-    echo "  📦 Habilitando repositorios oficiales RPM Fusion (Free y Non-Free)..."
-    $SUDO $DNF_CMD install -y \
-        https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
-        https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm 2>/dev/null || true
-
-    $SUDO $DNF_CMD install -y \
-        rpmfusion-free-appstream-data \
-        rpmfusion-nonfree-appstream-data 2>/dev/null || true
-
-    # 2. Habilitar Repositorios Tainted (libdvdcss y patentes adicionales)
-    echo "  🔓 Habilitando repositorios RPM Fusion Tainted..."
-    $SUDO $DNF_CMD install -y \
-        rpmfusion-free-release-tainted \
-        rpmfusion-nonfree-release-tainted 2>/dev/null || true
-
-    # 3. Habilitar repositorio Cisco OpenH264
-    echo "  🌐 Habilitando repositorio fedora-cisco-openh264..."
-    $SUDO $DNF_CMD config-manager setopt fedora-cisco-openh264.enabled=1 2>/dev/null || true
-
-    # 4. Sustituir FFmpeg-free por FFmpeg Completo
-    echo "  🔄 Sustituyendo ffmpeg-free por FFmpeg completo de RPM Fusion..."
-    $SUDO $DNF_CMD swap -y ffmpeg-free ffmpeg --allowerasing 2>/dev/null || \
-        $SUDO $DNF_CMD install -y ffmpeg --allowerasing 2>/dev/null || true
-
-    # 5. Instalar controladores freeworld con soporte completo de aceleración HW
-    echo "  ⚡ Instalando controladores freeworld con soporte completo VA-API/VDPAU..."
-    local CPU_VENDOR
-    CPU_VENDOR=$(grep -m1 'vendor_id' /proc/cpuinfo | awk '{print $3}' || true)
-
-    $SUDO $DNF_CMD install -y \
-        mesa-va-drivers-freeworld \
-        mesa-vdpau-drivers-freeworld \
-        libva-utils \
-        vulkan-tools 2>/dev/null || true
-
-    if [ "$CPU_VENDOR" == "GenuineIntel" ]; then
-        echo "  ℹ️ CPU Intel detectada: instalando intel-media-driver..."
-        $SUDO $DNF_CMD install -y \
-            intel-media-driver \
-            libva-intel-driver 2>/dev/null || true
-    fi
-
-    # 6. Pila Completa de Plugins GStreamer, Codecs Privativos y Reproducción DVD
-    echo "  🎵 Instalando codecs multimedia y plugins GStreamer..."
-    $SUDO $DNF_CMD install -y \
-        gstreamer1-plugins-base \
-        gstreamer1-plugins-good \
-        gstreamer1-plugins-bad-free \
-        gstreamer1-plugins-bad-freeworld \
-        gstreamer1-plugins-ugly \
-        gstreamer1-plugin-openh264 \
-        gstreamer1-vaapi \
-        gstreamer1-libav \
-        lame \
-        lame-mp3x \
-        faac \
-        faad2 \
-        x264 \
-        x265 \
-        libde265 \
-        libdvdcss \
-        libdvdread \
-        libdvdnav \
-        libheif-ffmpeg \
-        lsdvd 2>/dev/null || true
-
-    # Resolver conflicto de versión libheif-freeworld si existiera
-    if rpm -q libheif-freeworld &>/dev/null; then
-        $SUDO $DNF_CMD swap -y libheif-freeworld libheif-ffmpeg --allowerasing 2>/dev/null || true
-    fi
-
-    echo "  ✅ Códecs y aceleración por hardware instalados con éxito."
-}
-
-# ------------------------------------------------------------------------------
-# 4. INSTALACIÓN Y CONFIGURACIÓN DE REPRODUCTORES WAYLAND
-# ------------------------------------------------------------------------------
-install_players() {
-    echo "🎬 [2/3] Instalando y optimizando reproductores nativos de Wayland..."
-    $SUDO $DNF_CMD install -y \
-        celluloid \
-        mpv \
-        vlc 2>/dev/null || true
-
-    # Configuración de rendimiento de MPV para AMD Radeon Vega 8 sobre Wayland y PipeWire
-    local mpv_config_dir="$USER_HOME/.config/mpv"
-    run_as_user mkdir -p "$mpv_config_dir"
-    
-    if [ ! -f "$mpv_config_dir/mpv.conf" ]; then
-        echo "⚙️ Configurando opciones óptimas de MPV para Wayland y VA-API..."
-        cat <<'EOF' | run_as_user tee "$mpv_config_dir/mpv.conf" > /dev/null
+    cat << 'EOF' > "$MPV_CONF_DIR/mpv.conf"
 # ==============================================================================
-# mpv.conf - Optimizado para Fedora Workstation (GNOME Shell Wayland)
-# Hardware: AMD Ryzen 7 7730U / Radeon Vega 8 (Barcelo-R)
+#  MPV Configuration - Fedora 45 Workstation (GNOME Wayland / AMD Radeon RADV)
 # ==============================================================================
 
-# Contexto de vídeo nativo Wayland sin dependencias de X11
-gpu-context=wayland
+# Renderizado de vídeo nativo Wayland + Vulkan
 vo=gpu-next
+gpu-api=vulkan
+gpu-context=waylandvk
 hwdec=vaapi
+hwdec-codecs=all
 
-# Servidor de audio PipeWire de baja latencia
-ao=pipewire
-
-# Calidad y sincronización de tasa de refresco
-profile=fast
+# Calidad de escalado
+profile=high-quality
+scale=ewa_lanczossharp
+cscale=ewa_lanczossharp
 video-sync=display-resample
-interpolation=no
+interpolation=yes
+tscale=oversample
 
-# Capturas de pantalla en PNG sin compresión lenta
-screenshot-format=png
-screenshot-high-bit-depth=yes
-screenshot-directory=~/Pictures
+# Audio nativo PipeWire
+ao=pipewire
+volume=100
+volume-max=150
+
+# Interfaz y subtítulos
+osc=yes
+osd-bar=yes
+sub-auto=fuzzy
+sub-font="Sans"
+sub-font-size=42
+save-position-on-quit=yes
+keep-open=yes
+EOF
+
+    cat << 'EOF' > "$MPV_CONF_DIR/input.conf"
+WHEEL_UP      add volume 2
+WHEEL_DOWN    add volume -2
+UP            add volume 5
+DOWN          add volume -5
+RIGHT         seek 5
+LEFT          seek -5
+f             cycle fullscreen
+s             screenshot
+EOF
+
+    # Configurar Celluloid para usar decodificación por hardware si el esquema existe
+    if run_as_user gsettings list-schemas 2>/dev/null | grep -q "^io.github.celluloid_player.Celluloid$"; then
+        run_as_user gsettings set io.github.celluloid_player.Celluloid mpv-config-enable true 2>/dev/null || true
+        run_as_user gsettings set io.github.celluloid_player.Celluloid mpv-config-file "file://$MPV_CONF_DIR/mpv.conf" 2>/dev/null || true
+    fi
+
+    # Variables de entorno multimedia para aceleración en sesión Wayland
+    local gpu_vendor="amd"
+    if lspci 2>/dev/null | grep -qiE "VGA|3D" && lspci 2>/dev/null | grep -E "VGA|3D" | grep -qi "Intel" && ! lspci 2>/dev/null | grep -E "VGA|3D" | grep -qiE "AMD|ATI|Radeon"; then
+        gpu_vendor="intel"
+    fi
+
+    if [[ "$gpu_vendor" == "amd" ]]; then
+        cat << 'EOF' > "$ENV_D_FILE"
+# Aceleración VA-API y Vulkan para AMD Radeon en Fedora 45 Workstation (Wayland)
+LIBVA_DRIVER_NAME=radeonsi
+VDPAU_DRIVER=radeonsi
+AMD_VULKAN_ICD=RADV
+MOZ_ENABLE_WAYLAND=1
+GST_VAAPI_ALL_DRIVERS=1
+EOF
+    else
+        cat << 'EOF' > "$ENV_D_FILE"
+# Aceleración VA-API para Intel Graphics en Fedora 45 Workstation (Wayland)
+MOZ_ENABLE_WAYLAND=1
+GST_VAAPI_ALL_DRIVERS=1
 EOF
     fi
 
-    echo "  ✅ Reproductores nativos (Celluloid, MPV, VLC) asegurados."
-}
-
-# ------------------------------------------------------------------------------
-# 5. INTEGRACIÓN DE FLATPAK Y FLATHUB
-# ------------------------------------------------------------------------------
-setup_flatpak() {
-    echo "📦 [3/3] Verificando soporte Flatpak y repositorio Flathub..."
-    $SUDO $DNF_CMD install -y flatpak 2>/dev/null || true
-
-    # Registrar Flathub a nivel de sistema para acceso universal y desacoplado
-    if ! flatpak remotes --system 2>/dev/null | grep -qi "flathub"; then
-        $SUDO flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+    if [[ $EUID -eq 0 && "$REAL_USER" != "root" ]]; then
+        chown -R "$REAL_USER:$REAL_USER" "$MPV_CONF_DIR" "$ENV_D_DIR"
     fi
-
-    # Registrar Flathub para el usuario actual (idempotente)
-    run_as_user flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
-
-    echo "  ✅ Integración de Flatpak y Flathub verificada."
+    log_ok "MPV, Celluloid y variables de entorno multimedia configurados."
 }
 
-# ------------------------------------------------------------------------------
-# 6. ENTRADA PRINCIPAL
-# ------------------------------------------------------------------------------
-case "${1:-}" in
-    --status|-s|status)
-        show_status
-        exit 0
-        ;;
-    --codecs)
-        install_codecs
-        exit 0
-        ;;
-    --players)
-        install_players
-        exit 0
-        ;;
-    --flatpak)
-        setup_flatpak
-        exit 0
-        ;;
-    --help|-h|help)
-        show_help
-        exit 0
-        ;;
-    "")
-        echo "================================================================="
-        echo "🎬 CONFIGURANDO SUITE MULTIMEDIA Y WAYLAND EN FEDORA WORKSTATION"
-        echo "================================================================="
-        install_codecs
-        install_players
-        setup_flatpak
-        echo ""
-        show_status
-        echo "================================================================="
-        echo "✅ Configuración multimedia completada con éxito."
-        echo "================================================================="
-        ;;
-    *)
-        echo "Opción no reconocida: $1"
-        show_help
-        exit 1
-        ;;
-esac
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -s|--status) ACTION="status"; shift ;;
+        --mpv-only)  ACTION="mpv-only"; shift ;;
+        -h|--help)   show_help; exit 0 ;;
+        *) log_err "Opción desconocida: $1"; show_help; exit 1 ;;
+    esac
+done
+
+if [[ "$ACTION" == "status" ]]; then
+    show_status
+    exit 0
+elif [[ "$ACTION" == "mpv-only" ]]; then
+    configure_mpv_and_env
+    exit 0
+fi
+
+# 1. Asegurar obligatoriamente RPM Fusion Free, Non-Free y Tainted
+ensure_rpmfusion
+
+# 2. Reemplazar ffmpeg-free por ffmpeg completo de RPM Fusion
+log_info "Instalando FFmpeg completo desde RPM Fusion (--allowerasing)..."
+sudo "$DNF_BIN" install -y --allowerasing ffmpeg ffmpeg-libs libavcodec-freeworld 2>/dev/null || \
+    sudo "$DNF_BIN" install -y --allowerasing ffmpeg ffmpeg-libs
+
+# 3. Activar aceleración por hardware VA-API / VDPAU (AMD Radeon Freeworld / Intel)
+log_info "Configurando aceleración por hardware VA-API y Vulkan..."
+if lspci 2>/dev/null | grep -E "VGA|3D" | grep -qiE "AMD|ATI|Radeon"; then
+    sudo "$DNF_BIN" swap -y mesa-va-drivers mesa-va-drivers-freeworld 2>/dev/null || \
+        sudo "$DNF_BIN" install -y --allowerasing mesa-va-drivers-freeworld
+    sudo "$DNF_BIN" swap -y mesa-vdpau-drivers mesa-vdpau-drivers-freeworld 2>/dev/null || \
+        sudo "$DNF_BIN" install -y --allowerasing mesa-vdpau-drivers-freeworld
+fi
+
+if lspci 2>/dev/null | grep -E "VGA|3D" | grep -qi "Intel"; then
+    sudo "$DNF_BIN" install -y intel-media-driver libva-intel-driver 2>/dev/null || true
+fi
+
+# 4. Instalar pila GStreamer 1.26+, PipeWire, miniaturas Nautilus y reproductores GNOME
+log_info "Instalando pila GStreamer completa, códecs de imagen/vídeo y reproductores Wayland..."
+MULTIMEDIA_PKGS=(
+    gstreamer1-plugins-base
+    gstreamer1-plugins-good
+    gstreamer1-plugins-good-extras
+    gstreamer1-plugins-bad-free
+    gstreamer1-plugins-bad-free-extras
+    gstreamer1-plugins-bad-freeworld
+    gstreamer1-plugins-ugly
+    gstreamer1-plugins-ugly-free
+    gstreamer1-plugin-libav
+    gstreamer1-plugin-openh264
+    gstreamer1-plugin-gtk4
+    gstreamer1-vaapi
+    mozilla-openh264
+    libva-utils
+    vulkan-tools
+    pipewire-alsa
+    pipewire-pulseaudio
+    pipewire-jack-audio-connection-kit
+    pipewire-plugin-libcamera
+    wireplumber
+    ffmpegthumbnailer
+    glycin-loaders
+    gdk-pixbuf2-modules-extra
+    libheif-freeworld
+    libheif-tools
+    libwebp-tools
+     ImageMagick
+    lame
+    flac
+    opus-tools
+    vorbis-tools
+    mpv
+    celluloid
+    vlc
+    loupe
+)
+
+# Filtrar paquetes disponibles e instalar de forma resiliente
+sudo "$DNF_BIN" install -y --skip-unavailable "${MULTIMEDIA_PKGS[@]}" 2>/dev/null || \
+    sudo "$DNF_BIN" install -y mpv celluloid vlc ffmpegthumbnailer libva-utils vulkan-tools
+
+# Aplicaciones modernas de GNOME 48+/50 (Showtime, Snapshot, Amberol, SoundConverter)
+sudo "$DNF_BIN" install -y --skip-unavailable showtime snapshot amberol soundconverter 2>/dev/null || true
+
+# Soporte de DVD cifrado desde RPM Fusion Tainted
+sudo "$DNF_BIN" install -y --enablerepo=rpmfusion-free-tainted libdvdcss 2>/dev/null || true
+
+# 5. Configurar MPV, Celluloid y variables de entorno
+configure_mpv_and_env
+
+# Limpiar caché de miniaturas fallidas para que Nautilus regenere vistas previas con ffmpegthumbnailer y glycin
+rm -rf "$USER_HOME/.cache/thumbnails/fail" 2>/dev/null || true
+
+log_ok "Suite multimedia completa y RPM Fusion configurados en Fedora 45 Workstation."
+show_status

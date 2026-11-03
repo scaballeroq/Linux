@@ -1,82 +1,66 @@
-#!/bin/bash
-# post-install.sh - Despachador y selector inteligente de post-instalacion para Fedora 44 Workstation + GNOME
-# Detecta automaticamente la arquitectura de CPU (AMD Ryzen vs Intel Core) o permite seleccion manual
-
+#!/usr/bin/env bash
 set -euo pipefail
+
+# ==============================================================================
+#  post-install.sh - Despachador Inteligente de Post-Instalación
+#  Sistema: Fedora 45 Workstation (GNOME Shell Wayland + DNF5 + RPM Fusion)
+# ==============================================================================
+
+BOLD='\033[1m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+CYAN='\033[0;36m'
+NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 show_help() {
-    cat <<EOF
-Despachador de Post-Instalacion para Fedora 44 Workstation + GNOME
+    cat << EOF
+${BOLD}🚀 Despachador de Post-Instalación - Fedora 45 Workstation (GNOME Wayland)${NC}
 
-Uso:
-  $0 [OPCION]
+Detecta automáticamente la arquitectura del procesador (AMD Ryzen vs Intel Core)
+y ejecuta el perfil de post-instalación correspondiente con DNF5 y RPM Fusion.
 
-Opciones:
-  (sin argumentos)   Auto-detecta el procesador (AMD o Intel) y ejecuta el instalador correspondiente.
-  --amd, -a          Ejecuta la configuracion optimizada para AMD Ryzen y Radeon Graphics.
-  --intel, -i        Ejecuta la configuracion optimizada para Intel Core (Haswell/i7-4790) + Multimedia (Kodi/Streaming).
-  --help, -h         Muestra este mensaje de ayuda.
-
-Scripts independientes disponibles:
-  - Setup/post-install-amd.sh   -> Optimizado para AMD Ryzen (firmware AMD, RADV, Mesa, DNF5)
-  - Setup/post-install-intel.sh -> Optimizado para Intel Core / HD Graphics (microcodigo Intel, i965/Media VA-API, Kodi, sin virtualizacion)
+${BOLD}Uso:${NC}
+  $0 [--amd | --intel | --status | --help]
 EOF
 }
 
-# Procesar argumentos de linea de comandos
-if [ $# -gt 0 ]; then
+CPU_VENDOR=$(grep -m1 "vendor_id" /proc/cpuinfo 2>/dev/null | awk '{print $3}' || echo "Unknown")
+CPU_MODEL=$(grep -m1 "model name" /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs || echo "Unknown")
+
+TARGET="auto"
+while [[ $# -gt 0 ]]; do
     case "$1" in
-        --amd|-a|amd)
-            echo "Opcion manual seleccionada: AMD Ryzen"
-            exec "$SCRIPT_DIR/post-install-amd.sh"
-            ;;
-        --intel|-i|intel)
-            echo "Opcion manual seleccionada: Intel Core / Media Center"
-            exec "$SCRIPT_DIR/post-install-intel.sh"
-            ;;
-        --help|-h|help)
-            show_help
+        --amd)       TARGET="amd"; shift ;;
+        --intel)     TARGET="intel"; shift ;;
+        -s|--status)
+            echo -e "${BOLD}🔍 Diagnóstico de Plataforma - Fedora 45 Workstation:${NC}"
+            echo -e "  • CPU Detectada: ${CYAN}${CPU_MODEL}${NC} (${CPU_VENDOR})"
+            echo -e "  • Fedora Release:${GREEN} $(cat /etc/fedora-release 2>/dev/null || echo 'Fedora Linux')${NC}"
+            rpm -q rpmfusion-free-release &>/dev/null && echo -e "  • RPM Fusion Free:    ${GREEN}Instalado${NC}" || echo -e "  • RPM Fusion Free:    ${RED}No instalado${NC}"
+            rpm -q rpmfusion-nonfree-release &>/dev/null && echo -e "  • RPM Fusion NonFree: ${GREEN}Instalado${NC}" || echo -e "  • RPM Fusion NonFree: ${RED}No instalado${NC}"
             exit 0
             ;;
-        *)
-            echo "Opcion no reconocida: $1"
-            show_help
-            exit 1
-            ;;
+        -h|--help)   show_help; exit 0 ;;
+        *)           echo -e "${RED}❌ Opción desconocida: $1${NC}"; show_help; exit 1 ;;
     esac
+done
+
+if [[ "$TARGET" == "auto" ]]; then
+    if [[ "$CPU_VENDOR" == "AuthenticAMD" ]] || echo "$CPU_MODEL" | grep -qi "AMD"; then
+        TARGET="amd"
+    elif [[ "$CPU_VENDOR" == "GenuineIntel" ]] || echo "$CPU_MODEL" | grep -qi "Intel"; then
+        TARGET="intel"
+    else
+        TARGET="amd"
+    fi
 fi
 
-# Auto-deteccion de procesador
-echo "Analizando procesador y arquitectura del sistema..."
-CPU_VENDOR=$(grep -m1 'vendor_id' /proc/cpuinfo | awk '{print $3}' || true)
-CPU_MODEL=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs || echo "Desconocido")
-
-echo "CPU Detectado: $CPU_MODEL (Vendor: $CPU_VENDOR)"
-
-if [ "$CPU_VENDOR" == "AuthenticAMD" ]; then
-    echo "Procesador AMD detectado. Ejecutando post-install-amd.sh..."
-    exec "$SCRIPT_DIR/post-install-amd.sh"
-elif [ "$CPU_VENDOR" == "GenuineIntel" ]; then
-    echo "Procesador Intel detectado. Ejecutando post-install-intel.sh..."
+echo -e "${CYAN}ℹ️  Procesador detectado: ${BOLD}${CPU_MODEL}${NC} -> Ejecutando perfil ${BOLD}${TARGET^^}${NC} en Fedora 45 Workstation..."
+if [[ "$TARGET" == "intel" ]]; then
     exec "$SCRIPT_DIR/post-install-intel.sh"
 else
-    echo "No se pudo determinar automaticamente el fabricante del procesador."
-    echo "Que configuracion deseas aplicar?"
-    echo "1) AMD Ryzen / Radeon Graphics"
-    echo "2) Intel Core / Intel HD Graphics (Haswell / Media Center)"
-    read -rp "Selecciona una opcion (1 o 2): " CHOICE
-    case "$CHOICE" in
-        1)
-            exec "$SCRIPT_DIR/post-install-amd.sh"
-            ;;
-        2)
-            exec "$SCRIPT_DIR/post-install-intel.sh"
-            ;;
-        *)
-            echo "Seleccion invalida. Abortando."
-            exit 1
-            ;;
-    esac
+    exec "$SCRIPT_DIR/post-install-amd.sh"
 fi

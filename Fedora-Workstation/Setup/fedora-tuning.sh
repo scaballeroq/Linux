@@ -1,316 +1,242 @@
-#!/bin/bash
-# ==============================================================================
-# fedora-tuning.sh - Optimizador y Ajuste de Rendimiento para Fedora 44 + GNOME
-# ==============================================================================
-#
-# Uso:
-#   ./fedora-tuning.sh               -> Aplica todas las optimizaciones recomendadas
-#   ./fedora-tuning.sh --status      -> Muestra el estado actual de los parámetros de rendimiento
-#   ./fedora-tuning.sh --no-install  -> Aplica optimizaciones sin instalar paquetes adicionales
-#   ./fedora-tuning.sh --sysctl      -> Aplica únicamente los ajustes de Kernel Sysctl
-#   ./fedora-tuning.sh --limits      -> Aplica límites de descriptores (limits.d y systemd)
-#   ./fedora-tuning.sh --gnome       -> Aplica optimizaciones de fluidez de GNOME y Tracker
-#   ./fedora-tuning.sh --tracker-fast -> Configura Tracker para excluir carpetas de desarrollo
-#   ./fedora-tuning.sh --help        -> Muestra la ayuda interactiva
-#
-# ==============================================================================
-
+#!/usr/bin/env bash
 set -euo pipefail
 
-if command -v dnf5 &>/dev/null; then
-    DNF_CMD="dnf5"
-else
-    DNF_CMD="dnf"
-fi
+# ==============================================================================
+#  fedora-tuning.sh - Optimización de Kernel, Límites, ZRAM y GNOME Tracker
+#  Sistema: Fedora 45 Workstation (GNOME Wayland / 32 GB RAM / AMD Ryzen)
+# ==============================================================================
 
-if [ "$EUID" -ne 0 ]; then
-    if ! command -v sudo &> /dev/null; then
-        echo "❌ Error: 'sudo' no está disponible. Ejecuta este script como root o instala sudo."
-        exit 1
-    fi
-    SUDO="sudo"
-else
-    SUDO=""
-fi
+BOLD='\033[1m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+CYAN='\033[0;36m'
+NC='\033[0m'
 
-# Detectar usuario real en caso de sudo para configuraciones de usuario de GNOME
-if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-    REAL_USER="$SUDO_USER"
-    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
-else
-    REAL_USER="${USER:-$(id -un)}"
-    USER_HOME="${HOME:-/home/$REAL_USER}"
-fi
+log_info() { echo -e "${CYAN}ℹ️  $1${NC}"; }
+log_ok()   { echo -e "${GREEN}✅ $1${NC}"; }
+log_warn() { echo -e "${YELLOW}⚠️  $1${NC}"; }
+log_err()  { echo -e "${RED}❌ $1${NC}"; }
 
-REAL_UID=$(id -u "$REAL_USER" 2>/dev/null || echo "1000")
+if [[ $EUID -eq 0 ]]; then
+    REAL_USER="${SUDO_USER:-$(logname 2>/dev/null || echo "${USER:-root}")}"
+else
+    REAL_USER="${USER:-$(whoami)}"
+fi
+USER_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
+REAL_UID=$(id -u "$REAL_USER")
 
 run_as_user() {
-    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-        sudo -u "$REAL_USER" env \
-            HOME="$USER_HOME" \
-            USER="$REAL_USER" \
-            XDG_RUNTIME_DIR="/run/user/$REAL_UID" \
-            DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$REAL_UID/bus}" \
+    if [[ $EUID -eq 0 && "$REAL_USER" != "root" ]]; then
+        sudo -u "$REAL_USER" \
+            DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${REAL_UID}/bus" \
+            XDG_RUNTIME_DIR="/run/user/${REAL_UID}" \
             "$@"
     else
         "$@"
     fi
 }
 
+DNF_BIN="dnf5"
+command -v dnf5 &>/dev/null || DNF_BIN="dnf"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+SYSCTL_FILE="/etc/sysctl.d/99-fedora-workstation-tuning.conf"
+LIMITS_FILE="/etc/security/limits.d/99-fedora-workstation-limits.conf"
+SYSTEMD_TIMEOUT_FILE="/etc/systemd/system.conf.d/99-fast-shutdown.conf"
+
+DO_INSTALL=true
+RUN_ALL=true
+RUN_SYSCTL=false
+RUN_LIMITS=false
+RUN_TRACKER=false
+RUN_ZRAM=false
+RUN_SERVICES=false
+ACTION="run"
+
 show_help() {
-    cat <<EOF
-⚡ Optimizador y Ajuste de Rendimiento - Fedora 44 (GNOME Workstation)
+    cat << EOF
+${BOLD}⚡ Optimizador de Rendimiento del Sistema - Fedora 45 Workstation (GNOME Wayland)${NC}
 
-Uso:
-  $0 [OPCIÓN]
+Aplica ajustes de Kernel (${BOLD}sysctl${NC}: inotify 1M, max_map_count 16M, TCP BBR, swappiness),
+límites de descriptores (${BOLD}limits.d${NC}), timeouts rápidos de systemd, exclusión de
+directorios de desarrollo en ${BOLD}GNOME Tracker / LocalSearch${NC} y compresión ${BOLD}ZRAM (zstd)${NC}.
 
-Opciones principales:
-  (sin argumentos)       Aplica todas las optimizaciones recomendadas (Kernel, Límites, GNOME/Tracker, Systemd y Distrobox).
-  --status, -s           Muestra el estado actual de sysctl, límites, ZRAM, Tracker y servicios.
-  --no-install           Aplica las configuraciones de kernel, límites y entorno sin descargar paquetes DNF5.
-  --sysctl               Aplica únicamente la configuración de parámetros de Kernel Sysctl.
-  --limits               Aplica límites de descriptores y memoria (limits.d y systemd system/user).
-  --gnome                Aplica optimizaciones de respuesta de GNOME Mutter (VRR) y exclusiones de Tracker.
-  --tracker-fast         Configura Tracker para excluir carpetas pesadas de desarrollo (node_modules, target, etc.).
-  --help, -h             Muestra este mensaje de ayuda.
+${BOLD}Uso:${NC}
+  $0 [OPCIONES]
 
-Optimizaciones incluidas:
-  1. Sysctl Kernel:      Inotify ampliado (1M watches, 8K instancias), max_map_count (16M), ZRAM swappiness (180),
-                         vm.page-cluster=0 (crítico para ZRAM), dirty ratios equilibrados y TCP BBR + FastOpen.
-  2. Límites de Proceso: Descriptores (1M nofile), memoria bloqueada (memlock) y límites en systemd system/user
-                         para que aplicaciones GUI (IDEs, compiladores, navegadores) hereden los límites.
-  3. Systemd Timeouts:   Reducción de DefaultTimeoutStopSec y AbortSec a 10s para apagados/reinicios instantáneos.
-  4. GNOME / Mutter:     Habilitación de VRR (Variable Refresh Rate) y escalado framebuffer para multi-monitor.
-  5. Tracker Indexer:    Exclusiones masivas de directorios de desarrollo para prevenir saturación de CPU/disco.
-  6. Contenedores:       Instalación de Distrobox y Podman para entornos aislados.
+${BOLD}Opciones:${NC}
+  (sin argumentos)   Ejecuta todos los módulos de optimización en Fedora 45
+  -s, --status       Muestra el diagnóstico completo de sysctl, límites, ZRAM y Tracker
+  --no-install       Omite la instalación de paquetes adicionales vía DNF5
+  --sysctl           Aplica solo optimizaciones de Kernel en $SYSCTL_FILE
+  --limits           Aplica solo límites ulimit/nofile/memlock en $LIMITS_FILE
+  --tracker          Aplica solo exclusiones de indexación en GNOME Tracker / LocalSearch
+  --zram             Configura solo ZRAM Swap (invoca ./Setup/zram-setup.sh)
+  --services         Habilita fstrim.timer, irqbalance y reduce timeouts de apagado
+  -h, --help         Muestra esta ayuda
 EOF
 }
 
-# 1. Mostrar estado actual
 show_status() {
-    echo "================================================================="
-    echo "🔍 ESTADO DE RENDIMIENTO Y OPTIMIZACIONES - FEDORA 44 (GNOME)"
-    echo "================================================================="
-    echo "• Kernel:                        $(uname -r)"
-    echo "• Planificador CPU Governor:     $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null || echo 'n/a')"
-    echo "-----------------------------------------------------------------"
-    echo "• fs.inotify.max_user_watches:   $(sysctl -n fs.inotify.max_user_watches 2>/dev/null || echo 'n/a')"
-    echo "• fs.inotify.max_user_instances: $(sysctl -n fs.inotify.max_user_instances 2>/dev/null || echo 'n/a')"
-    echo "• fs.file-max:                   $(sysctl -n fs.file-max 2>/dev/null || echo 'n/a')"
-    echo "• vm.max_map_count:              $(sysctl -n vm.max_map_count 2>/dev/null || echo 'n/a')"
-    echo "• vm.swappiness (ZRAM):          $(sysctl -n vm.swappiness 2>/dev/null || echo 'n/a')"
-    echo "• vm.page-cluster (ZRAM):        $(sysctl -n vm.page-cluster 2>/dev/null || echo 'n/a')"
-    echo "• vm.vfs_cache_pressure:         $(sysctl -n vm.vfs_cache_pressure 2>/dev/null || echo 'n/a')"
-    echo "• vm.dirty_ratio / background:   $(sysctl -n vm.dirty_ratio 2>/dev/null || echo 'n/a') / $(sysctl -n vm.dirty_background_ratio 2>/dev/null || echo 'n/a')"
-    echo "• net.ipv4.tcp_congestion_ctrl:  $(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo 'n/a')"
-    echo "• net.ipv4.tcp_fastopen:         $(sysctl -n net.ipv4.tcp_fastopen 2>/dev/null || echo 'n/a')"
-    echo "-----------------------------------------------------------------"
-    echo "• Límite nofile (ulimit -n):     $(ulimit -n 2>/dev/null || echo 'n/a')"
-    echo "• Systemd DefaultLimitNOFILE:    $(grep -h "DefaultLimitNOFILE" /etc/systemd/system.conf.d/*.conf /etc/systemd/user.conf.d/*.conf 2>/dev/null | head -n1 || echo 'Por defecto')"
-    echo "• Systemd Stop Timeout:          $(grep -h "DefaultTimeoutStopSec" /etc/systemd/system.conf.d/*.conf 2>/dev/null | head -n1 || echo 'Por defecto')"
-    echo "-----------------------------------------------------------------"
-    echo "• ZRAM Swap Activo:              $(if command -v zramctl &>/dev/null && [ -n "$(zramctl 2>/dev/null)" ]; then echo 'Sí ('"$(zramctl --noheadings -o ALGORITHM,DISKSIZE 2>/dev/null | head -n1)"')'; else echo 'No / Inactivo'; fi)"
-    echo "• Fstrim Timer (Mantenimiento):  $(systemctl is-enabled --quiet fstrim.timer 2>/dev/null && echo 'Habilitado' || echo 'Inactivo')"
-    echo "• Distrobox instalado:           $(command -v distrobox &>/dev/null && echo 'Sí' || echo 'No')"
-    echo "-----------------------------------------------------------------"
-    echo "• GNOME Mutter VRR / Scaling:    $(run_as_user gsettings get org.gnome.mutter experimental-features 2>/dev/null || echo 'n/a')"
-    echo "• GNOME Tema de Color:           $(run_as_user gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null || echo 'n/a')"
-    echo "================================================================="
+    echo -e "${BOLD}======================================================================${NC}"
+    echo -e "  ⚡ ${BOLD}ESTADO DE OPTIMIZACIÓN DEL SISTEMA - FEDORA 45 WORKSTATION${NC}"
+    echo -e "${BOLD}======================================================================${NC}"
+
+    echo -e "${BOLD}🧠 Parámetros del Kernel (sysctl):${NC}"
+    echo -e "  • vm.swappiness:             ${CYAN}$(sysctl -n vm.swappiness 2>/dev/null || echo 'N/A')${NC}"
+    echo -e "  • vm.vfs_cache_pressure:     ${CYAN}$(sysctl -n vm.vfs_cache_pressure 2>/dev/null || echo 'N/A')${NC}"
+    echo -e "  • vm.max_map_count:          ${CYAN}$(sysctl -n vm.max_map_count 2>/dev/null || echo 'N/A')${NC}"
+    echo -e "  • fs.inotify.max_user_watches:${CYAN} $(sysctl -n fs.inotify.max_user_watches 2>/dev/null || echo 'N/A')${NC}"
+    echo -e "  • net.ipv4.tcp_congestion:   ${CYAN}$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo 'N/A')${NC}"
+
+    echo ""
+    echo -e "${BOLD}📂 Archivos de Ajuste y Servicios:${NC}"
+    [[ -f "$SYSCTL_FILE" ]] && echo -e "  • Perfil sysctl:             ${GREEN}${SYSCTL_FILE}${NC}" || echo -e "  • Perfil sysctl:             ${YELLOW}No aplicado${NC}"
+    [[ -f "$LIMITS_FILE" ]] && echo -e "  • Perfil limits.d:           ${GREEN}${LIMITS_FILE}${NC}" || echo -e "  • Perfil limits.d:           ${YELLOW}No aplicado${NC}"
+    [[ -f "$SYSTEMD_TIMEOUT_FILE" ]] && echo -e "  • Systemd Fast Shutdown:     ${GREEN}${SYSTEMD_TIMEOUT_FILE}${NC}" || echo -e "  • Systemd Fast Shutdown:     ${YELLOW}Por defecto${NC}"
+
+    if systemctl is-enabled --quiet fstrim.timer 2>/dev/null; then
+        echo -e "  • NVMe TRIM (fstrim.timer):  ${GREEN}Habilitado${NC}"
+    else
+        echo -e "  • NVMe TRIM (fstrim.timer):  ${YELLOW}No habilitado${NC}"
+    fi
+
+    echo ""
+    echo -e "${BOLD}🔍 Indexador GNOME Tracker / LocalSearch:${NC}"
+    local ignored_dirs
+    ignored_dirs=$(run_as_user gsettings get org.freedesktop.Tracker3.Miner.Files ignored-directories 2>/dev/null || echo "N/A")
+    echo -e "  • Directorios excluidos:     ${CYAN}${ignored_dirs}${NC}"
+    echo -e "${BOLD}======================================================================${NC}"
 }
 
-# 2. Configuración de Parámetros de Kernel Sysctl
-apply_sysctl_tuning() {
-    echo "⚙️ [1/5] Configurando optimizaciones del Kernel (Sysctl)..."
+apply_sysctl() {
+    log_info "Aplicando optimizaciones de Kernel en $SYSCTL_FILE..."
+    sudo tee "$SYSCTL_FILE" > /dev/null << 'EOF'
+# ==============================================================================
+#  Optimización de Kernel para Fedora 45 Workstation (32 GB RAM / ZRAM / NVMe)
+# ==============================================================================
 
-    $SUDO tee /etc/sysctl.d/99-fedora-tuning.conf > /dev/null << 'EOF'
-# =============================================================================
-# FEDORA 44 HIGH-PERFORMANCE SYSCTL TUNING (GNOME Workstation)
-# =============================================================================
-
-# 1. Monitoreo de Sistema y Descriptores de Inotify
-fs.inotify.max_user_watches = 1048576
-fs.inotify.max_user_instances = 8192
-fs.file-max = 2097152
-
-# 2. Memoria Virtual y Gestor de Mapas de Memoria
-vm.max_map_count = 16777216
-
-# 3. ZRAM y Swappiness agresivo optimizado para memoria comprimida
-vm.swappiness = 180
-vm.watermark_boost_factor = 0
-vm.watermark_scale_factor = 125
-vm.page-cluster = 0
-
-# 4. Presión de Caché VFS y Gestión de Páginas Sucias (Dirty Ratio)
+# Gestión de memoria virtual y ZRAM (con 32 GB RAM y ZRAM zstd)
+vm.swappiness = 100
 vm.vfs_cache_pressure = 50
 vm.dirty_background_ratio = 5
 vm.dirty_ratio = 10
+vm.page-cluster = 0
 
-# 5. Red TCP / Stack de Red de Alta Velocidad (BBR y FastOpen)
-net.core.default_qdisc = fq_codel
+# Mapas de memoria (requerido para IDEs pesados, contenedores, compiladores y Proton/Steam)
+vm.max_map_count = 16777216
+
+# Observadores de archivos inotify (Antigravity, VS Code, Vite, Next.js, Cargo, Podman)
+fs.inotify.max_user_watches = 1048576
+fs.inotify.max_user_instances = 8192
+fs.inotify.max_queued_events = 65536
+fs.file-max = 2097152
+
+# Red de baja latencia y alto rendimiento (TCP BBR + fq)
+net.core.default_qdisc = fq
 net.ipv4.tcp_congestion_control = bbr
 net.ipv4.tcp_fastopen = 3
-net.ipv4.tcp_slow_start_after_idle = 0
-net.ipv4.tcp_notsent_lowat = 16384
 net.core.somaxconn = 8192
-net.ipv4.tcp_max_syn_backlog = 8192
 EOF
 
-    # Asegurar que el módulo tcp_bbr se cargue en el arranque para sysctl
-    $SUDO mkdir -p /etc/modules-load.d
-    echo "tcp_bbr" | $SUDO tee /etc/modules-load.d/bbr.conf > /dev/null
-    $SUDO modprobe tcp_bbr 2>/dev/null || true
-
-    $SUDO sysctl --system > /dev/null || true
-    echo "✅ Parámetros de Kernel Sysctl aplicados correctamente."
+    sudo sysctl --system >/dev/null 2>&1 || true
+    log_ok "Parámetros sysctl aplicados."
 }
 
-# 3. Configuración de Límites de Descriptores de Proceso (limits.d y systemd)
-apply_limits_tuning() {
-    echo "📈 [2/5] Configurando límites de descriptores de archivos, memoria y sesiones Systemd..."
-
-    $SUDO mkdir -p /etc/security/limits.d
-    $SUDO tee /etc/security/limits.d/99-nofile.conf > /dev/null << 'EOF'
-# Límites ampliados de descriptores y memoria bloqueada para desarrollo intensivo
-* soft nofile 1048576
+apply_limits() {
+    log_info "Configurando límites de descriptores y memoria en $LIMITS_FILE..."
+    sudo tee "$LIMITS_FILE" > /dev/null << 'EOF'
+# Límites extendidos para desarrollo, contenedores Podman, KVM y audio PipeWire
+* soft nofile 524288
 * hard nofile 1048576
-root soft nofile 1048576
+root soft nofile 524288
 root hard nofile 1048576
 * soft memlock unlimited
 * hard memlock unlimited
 EOF
-
-    $SUDO mkdir -p /etc/systemd/system.conf.d /etc/systemd/user.conf.d
-
-    $SUDO tee /etc/systemd/system.conf.d/30-nofile.conf > /dev/null << 'EOF'
-[Manager]
-DefaultLimitNOFILE=1048576
-DefaultLimitMEMLOCK=infinity
-EOF
-
-    $SUDO tee /etc/systemd/user.conf.d/30-nofile.conf > /dev/null << 'EOF'
-[Manager]
-DefaultLimitNOFILE=1048576
-DefaultLimitMEMLOCK=infinity
-EOF
-
-    echo "✅ Límites de descriptores y memoria aplicados a nivel de sistema y usuario."
+    log_ok "Límites de sistema configurados."
 }
 
-# 4. Reducción de Timeouts en Systemd
-apply_systemd_tuning() {
-    echo "⏱️ [3/5] Configurando timeouts rápidos en Systemd (apagado/reinicio sin demoras)..."
+apply_tracker() {
+    log_info "Optimizando GNOME Tracker / LocalSearch para excluir directorios de código y build..."
+    mkdir -p "$USER_HOME/Workspace"
+    touch "$USER_HOME/Workspace/.nomedia"
+    [[ $EUID -eq 0 && "$REAL_USER" != "root" ]] && chown -R "$REAL_USER:$REAL_USER" "$USER_HOME/Workspace"
 
-    $SUDO mkdir -p /etc/systemd/system.conf.d /etc/systemd/user.conf.d
-
-    $SUDO tee /etc/systemd/system.conf.d/20-timeout.conf > /dev/null << 'EOF'
-[Manager]
-DefaultTimeoutStopSec=10s
-DefaultTimeoutAbortSec=10s
-EOF
-
-    $SUDO tee /etc/systemd/user.conf.d/20-timeout.conf > /dev/null << 'EOF'
-[Manager]
-DefaultTimeoutStopSec=10s
-DefaultTimeoutAbortSec=10s
-EOF
-
-    $SUDO systemctl daemon-reload 2>/dev/null || true
-    echo "✅ Timeouts de Systemd configurados a 10s."
-}
-
-# 5. Optimización de GNOME (Mutter VRR y exclusiones de Tracker)
-apply_gnome_tuning() {
-    echo "🎨 [4/5] Configurando optimizaciones de fluidez de GNOME y exclusiones del indexador Tracker..."
-
-    run_as_user gsettings set org.gnome.mutter experimental-features "['variable-refresh-rate', 'scale-monitor-framebuffer']" 2>/dev/null || true
-    run_as_user gsettings set org.gnome.mutter center-new-windows true 2>/dev/null || true
-
-    # Optimización del indexador Tracker 3 (LocalSearch) para estaciones de desarrollo:
-    # Excluir carpetas masivas de dependencias y compilación para no saturar I/O
-    if run_as_user gsettings list-schemas | grep -q "org.freedesktop.Tracker3.Miner.Files"; then
-        run_as_user gsettings set org.freedesktop.Tracker3.Miner.Files index-on-battery false 2>/dev/null || true
+    if run_as_user gsettings list-schemas 2>/dev/null | grep -q "^org.freedesktop.Tracker3.Miner.Files$"; then
         run_as_user gsettings set org.freedesktop.Tracker3.Miner.Files ignored-directories \
-            "['node_modules', '.git', '.venv', '.cargo', 'target', 'build', 'dist', '.cache', '.npm', '.rustup', '.local/share/Steam']" 2>/dev/null || true
-        echo "ℹ️ Tracker 3 configurado con exclusiones inteligentes para desarrollo."
+            "['po', 'CVS', 'core-dumps', 'lost+found', 'node_modules', '.git', '.hg', '.svn', '.venv', 'venv', '__pycache__', 'target', 'build', 'dist', '.next', '.nuxt', '.angular', '.gradle', '.m2', '.cargo', '.rustup', 'vendor', '.cache', 'tmp']"
+        run_as_user gsettings set org.freedesktop.Tracker3.Miner.Files enable-monitors true
+        run_as_user gsettings set org.freedesktop.Tracker3.Miner.Files crawling-interval -2 2>/dev/null || true
+    fi
+    log_ok "Exclusiones de GNOME Tracker configuradas."
+}
+
+apply_services() {
+    log_info "Configurando servicios de mantenimiento NVMe, IRQ y timeouts de Systemd..."
+    if [[ "$DO_INSTALL" == true ]]; then
+        local pkgs=()
+        rpm -q irqbalance &>/dev/null || pkgs+=(irqbalance)
+        rpm -q distrobox &>/dev/null || pkgs+=(distrobox)
+        if [[ ${#pkgs[@]} -gt 0 ]]; then
+            sudo "$DNF_BIN" install -y "${pkgs[@]}"
+        fi
     fi
 
-    echo "✅ Optimizaciones de GNOME y Tracker aplicadas."
+    sudo systemctl enable --now fstrim.timer 2>/dev/null || true
+    sudo systemctl enable --now irqbalance.service 2>/dev/null || true
+
+    sudo mkdir -p "$(dirname "$SYSTEMD_TIMEOUT_FILE")"
+    sudo tee "$SYSTEMD_TIMEOUT_FILE" > /dev/null << 'EOF'
+[Manager]
+DefaultTimeoutStopSec=15s
+DefaultTimeoutStartSec=30s
+EOF
+    sudo systemctl daemon-reload
+    log_ok "Servicios NVMe fstrim.timer, irqbalance y timeouts configurados."
 }
 
-# 6. Herramientas de Desarrollo y Contenedores (Distrobox + Podman)
-install_dev_tools() {
-    echo "📦 [5/5] Verificando e instalando Distrobox y Podman para entornos aislados..."
-    $SUDO $DNF_CMD install -y distrobox podman 2>/dev/null || true
-    echo "✅ Distrobox y Podman listos."
+apply_zram() {
+    if [[ -x "$SCRIPT_DIR/zram-setup.sh" ]]; then
+        "$SCRIPT_DIR/zram-setup.sh"
+    else
+        log_warn "No se encontró $SCRIPT_DIR/zram-setup.sh."
+    fi
 }
 
-# Procesar argumentos de línea de comandos
-case "${1:-}" in
-    --help|-h|help)
-        show_help
-        exit 0
-        ;;
-    --status|-s|status)
-        show_status
-        exit 0
-        ;;
-    --sysctl)
-        echo "================================================================="
-        echo "⚙️ APLICANDO SYSCTL TUNING - FEDORA 44 (GNOME)"
-        echo "================================================================="
-        apply_sysctl_tuning
-        echo "✅ Sysctl aplicado con éxito."
-        ;;
-    --limits)
-        echo "================================================================="
-        echo "📈 APLICANDO LÍMITES DE PROCESO Y SYSTEMD - FEDORA 44"
-        echo "================================================================="
-        apply_limits_tuning
-        echo "✅ Límites aplicados con éxito."
-        ;;
-    --gnome)
-        echo "================================================================="
-        echo "🎨 OPTIMIZANDO GNOME Y TRACKER INDEXER"
-        echo "================================================================="
-        apply_gnome_tuning
-        echo "✅ Optimizaciones de GNOME aplicadas con éxito."
-        ;;
-    --tracker-fast)
-        echo "================================================================="
-        echo "🗂️ CONFIGURANDO EXCLUSIONES DE TRACKER 3 PARA DESARROLLO"
-        echo "================================================================="
-        apply_gnome_tuning
-        echo "✅ Exclusiones de Tracker aplicadas."
-        ;;
-    --no-install)
-        echo "================================================================="
-        echo "⚡ APLICANDO OPTIMIZACIONES FEDORA 44 (GNOME) [SIN PAQUETES]"
-        echo "================================================================="
-        apply_sysctl_tuning
-        apply_limits_tuning
-        apply_systemd_tuning
-        apply_gnome_tuning
-        echo ""
-        echo "✅ Optimizaciones de sistema aplicadas con éxito."
-        ;;
-    "")
-        echo "================================================================="
-        echo "⚡ INICIANDO OPTIMIZACIÓN AVANZADA - FEDORA 44 (GNOME)"
-        echo "================================================================="
-        apply_sysctl_tuning
-        apply_limits_tuning
-        apply_systemd_tuning
-        apply_gnome_tuning
-        install_dev_tools
-        echo ""
-        echo "================================================================="
-        echo "✅ Optimización completa de Fedora 44 Workstation (GNOME) finalizada."
-        echo "================================================================="
-        ;;
-    *)
-        echo "❌ Opción no reconocida: $1"
-        show_help
-        exit 1
-        ;;
-esac
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -s|--status)   ACTION="status"; shift ;;
+        --no-install)  DO_INSTALL=false; shift ;;
+        --sysctl)      RUN_ALL=false; RUN_SYSCTL=true; shift ;;
+        --limits)      RUN_ALL=false; RUN_LIMITS=true; shift ;;
+        --tracker)     RUN_ALL=false; RUN_TRACKER=true; shift ;;
+        --zram)        RUN_ALL=false; RUN_ZRAM=true; shift ;;
+        --services)    RUN_ALL=false; RUN_SERVICES=true; shift ;;
+        -h|--help)     show_help; exit 0 ;;
+        *) log_err "Opción desconocida: $1"; show_help; exit 1 ;;
+    esac
+done
+
+if [[ "$ACTION" == "status" ]]; then
+    show_status
+    exit 0
+fi
+
+if [[ "$RUN_ALL" == true ]]; then
+    apply_sysctl
+    apply_limits
+    apply_tracker
+    apply_services
+    apply_zram
+else
+    [[ "$RUN_SYSCTL" == true ]]   && apply_sysctl
+    [[ "$RUN_LIMITS" == true ]]   && apply_limits
+    [[ "$RUN_TRACKER" == true ]]  && apply_tracker
+    [[ "$RUN_SERVICES" == true ]] && apply_services
+    [[ "$RUN_ZRAM" == true ]]     && apply_zram
+fi
+
+log_ok "Optimización completa de Fedora 45 Workstation finalizada."
+show_status

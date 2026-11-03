@@ -2,7 +2,7 @@
 sidebar_position: 6
 ---
 
-# Gestión de Lenguajes de Programación en Fedora 44 Workstation
+# Gestión de Lenguajes de Programación en Fedora 45 Workstation
 
 Esta guía detalla la instalación, control y mantenimiento de lenguajes de programación y sus herramientas de desarrollo en la carpeta `ProgrammingLanguages`.
 

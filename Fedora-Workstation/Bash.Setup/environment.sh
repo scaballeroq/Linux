@@ -1,5 +1,5 @@
 # =============================================================================
-# VARIABLES DE ENTORNO (environment.sh) - Adaptado para Fedora 44 Workstation (GNOME)
+# VARIABLES DE ENTORNO (environment.sh) - Adaptado para Fedora 45 Workstation (GNOME)
 # =============================================================================
 # Este archivo define variables de entorno globales para la sesión de usuario.
 

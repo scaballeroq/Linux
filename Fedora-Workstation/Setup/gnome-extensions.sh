@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==============================================================================
-# gnome-extensions.sh - Gestor de Extensiones de GNOME Shell para Fedora 44
+# gnome-extensions.sh - Gestor de Extensiones de GNOME Shell para Fedora 45
 # Instala y activa extensiones desde repositorios oficiales (DNF5) y
 # directamente desde extensions.gnome.org (EGO) con compilación de esquemas.
 # ==============================================================================
@@ -20,7 +20,7 @@ APP_PKGS=(
 )
 
 # ------------------------------------------------------------------------------
-# Lista de paquetes oficiales de extensiones en Fedora 44
+# Lista de paquetes oficiales de extensiones en Fedora 45
 # ------------------------------------------------------------------------------
 EXTENSION_PKGS=(
     gnome-shell-extension-dash-to-dock      # Dock accesible fuera del overview
@@ -321,7 +321,7 @@ show_status() {
 
 show_help() {
     cat <<EOF
-🧩 Gestor de Extensiones de GNOME Shell - Fedora 44 Workstation
+🧩 Gestor de Extensiones de GNOME Shell - Fedora 45 Workstation
 
 Uso:
   $0 [OPCIÓN]

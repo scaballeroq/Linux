@@ -2,9 +2,9 @@
 sidebar_position: 2
 ---
 
-# Fedora 44 Workstation System Configuration
+# Fedora 45 Workstation System Configuration
 
-This guide details the base system setup, terminal optimization, essential software installation, multimedia support, and desktop user environment customization applied to a **Fedora 44 Workstation** system (powered by DNF5 package management) with **GNOME** (Dark Mode).
+This guide details the base system setup, terminal optimization, essential software installation, multimedia support, and desktop user environment customization applied to a **Fedora 45 Workstation** system (powered by DNF5 package management) with **GNOME** (Dark Mode).
 
 These settings are automated through the scripts located in the `Setup` folder.
 
@@ -154,7 +154,7 @@ Configures tools for video downloads and digital audio processing.
 
 ## 7. GNOME Shell Extensions (`gnome-extensions.sh`)
 
-Installs and manages official extensions directly from Fedora 44 Workstation repositories (`dnf5`):
+Installs and manages official extensions directly from Fedora 45 Workstation repositories (`dnf5`):
 
 1. **Included Tools and Extensions**:
    - `extension-manager`: Native GTK application to browse, install, and manage GNOME Shell extensions.

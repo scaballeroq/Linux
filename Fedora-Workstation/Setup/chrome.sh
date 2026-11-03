@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # chrome.sh - Instalación, Optimización y Diagnóstico de Google Chrome
-# Sistema: Fedora 44 Workstation | Escritorio: GNOME Shell (Wayland)
+# Sistema: Fedora 45 Workstation | Escritorio: GNOME Shell (Wayland)
 # Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8 / VA-API)
 # ==============================================================================
 # Características:
@@ -79,7 +79,7 @@ if [ "$EUID" -ne 0 ]; then
 # 3. FUNCIONES DE AYUDA Y DIAGNÓSTICO
 # ------------------------------------------------------------------------------
 show_help() {
-    echo -e "${BOLD}🌐 Instalador y Optimizador de Google Chrome - Fedora 44 (GNOME)${NC}
+    echo -e "${BOLD}🌐 Instalador y Optimizador de Google Chrome - Fedora 45 (GNOME)${NC}
 
 ${BOLD}Uso:${NC}
   $0 [OPCIÓN]

@@ -162,7 +162,7 @@ EOF
 # ------------------------------------------------------------------------------
 show_status() {
     echo -e "${BOLD}=================================================================${NC}"
-    echo -e "🛸 ${BOLD}Estado de Google Antigravity CLI (agy) en Fedora 44${NC}"
+    echo -e "🛸 ${BOLD}Estado de Google Antigravity CLI (agy) en Fedora 45 Workstation${NC}"
     echo -e "${BOLD}=================================================================${NC}"
 
     local installed_v
@@ -217,9 +217,9 @@ show_status() {
     fi
 
     if [ -f "$ENV_FILE" ]; then
-        echo -e "  • Sesión Wayland/KDE:   ${GREEN}Configurado ($ENV_FILE)${NC}"
+        echo -e "  • Sesión Wayland/GNOME: ${GREEN}Configurado ($ENV_FILE)${NC}"
     else
-        echo -e "  • Sesión Wayland/KDE:   ${YELLOW}No presente${NC}"
+        echo -e "  • Sesión Wayland/GNOME: ${YELLOW}No presente${NC}"
     fi
 
     if command -v agy &>/dev/null; then

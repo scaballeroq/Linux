@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # yt-dlp-setup.sh - Instalación, Optimización y Diagnóstico de yt-dlp y FFmpeg
-# Sistema: Fedora 44 Workstation | Escritorio: GNOME Shell (Wayland)
+# Sistema: Fedora 45 Workstation | Escritorio: GNOME Shell (Wayland)
 # Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8)
 # ==============================================================================
 # Características:
@@ -221,7 +221,7 @@ get_js_engine_info() {
 # 4. DIAGNÓSTICO Y AYUDA
 # ------------------------------------------------------------------------------
 show_help() {
-    echo -e "${BOLD}🎬 Gestor y Optimizador Multimedia yt-dlp - Fedora 44 (GNOME Shell)${NC}
+    echo -e "${BOLD}🎬 Gestor y Optimizador Multimedia yt-dlp - Fedora 45 (GNOME Shell)${NC}
 
 ${BOLD}Uso:${NC}
   $0 [OPCIÓN]

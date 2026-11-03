@@ -1,145 +1,185 @@
 #!/usr/bin/env bash
-# ==============================================================================
-# ENDURECIMIENTO DE SEGURIDAD (seguridad.sh) - Fedora Workstation + GNOME
-# ==============================================================================
-# Configuración de Firewall (Firewalld - Zona FedoraWorkstation), DNS-over-TLS,
-# MAC Randomization, Endurecimiento del Kernel sysctl y compatibilidad con Podman rootless y KVM.
-# Optimizado para HP ProBook 455 G10 (AMD Ryzen 7 7730U) - Desarrollo y contenedores.
-# ==============================================================================
-
 set -euo pipefail
 
-if [ "$EUID" -ne 0 ]; then
-    if ! command -v sudo &> /dev/null; then
-        echo "❌ Error: 'sudo' no está disponible. Ejecuta este script como root o instala sudo."
-        exit 1
-    fi
-    SUDO="sudo"
-else
-    SUDO=""
-fi
+# ==============================================================================
+#  seguridad.sh - Endurecimiento de Red, Firewalld Exclusivo y Sysctl
+#  Sistema: Fedora 45 Workstation (GNOME Wayland / Podman Rootless / Libvirt)
+# ==============================================================================
+
+BOLD='\033[1m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+log_info() { echo -e "${CYAN}ℹ️  $1${NC}"; }
+log_ok()   { echo -e "${GREEN}✅ $1${NC}"; }
+log_warn() { echo -e "${YELLOW}⚠️  $1${NC}"; }
+log_err()  { echo -e "${RED}❌ $1${NC}"; }
+
+DNF_BIN="dnf5"
+command -v dnf5 &>/dev/null || DNF_BIN="dnf"
+
+SYSCTL_SEC_FILE="/etc/sysctl.d/99-fedora-security-podman.conf"
+RESOLVED_DROPIN_DIR="/etc/systemd/resolved.conf.d"
+RESOLVED_DROPIN_FILE="$RESOLVED_DROPIN_DIR/99-dns-over-tls.conf"
+
+OPEN_DEV_PORTS=false
+ACTION="apply"
 
 show_help() {
-    cat <<EOF
-🛡️ Endurecimiento de Seguridad y Cortafuegos - Fedora Workstation (GNOME)
+    cat << EOF
+${BOLD}🛡️  Endurecimiento de Seguridad y Firewalld - Fedora 45 Workstation${NC}
 
-Uso:
-  $0 [OPCIÓN]
+Configura ${BOLD}Firewalld${NC} como cortafuegos exclusivo (enmascarando ${BOLD}ufw${NC}),
+habilita servicios para GSConnect/KDE Connect, mDNS, interfaz ${BOLD}podman+${NC} en zona
+${BOLD}trusted${NC}, interfaz ${BOLD}virbr0${NC} en zona ${BOLD}libvirt${NC}, DNS-over-TLS oportunista y
+endurecimiento de red sysctl compatible con IPv6 Router Advertisements (${BOLD}accept_ra=2${NC}).
 
-Opciones:
-  (sin argumentos)    Aplica endurecimiento de seguridad: Firewalld, DoT, MAC random, sysctl y Podman/KVM.
-  --status, -s        Muestra diagnóstico del estado de seguridad, cortafuegos y parámetros de red.
-  --help, -h          Muestra este mensaje de ayuda.
+${BOLD}Uso:${NC}
+  $0 [OPCIONES]
+
+${BOLD}Opciones:${NC}
+  (sin argumentos)     Aplica configuración completa de Firewalld, DNS-over-TLS y sysctl
+  -d, --dev-ports      Abre además puertos locales de desarrollo (3000, 5173, 8000, 8080 TCP)
+  -s, --status         Muestra el estado de Firewalld, zonas, servicios y sysctl
+  -h, --help           Muestra esta ayuda
 EOF
 }
 
 show_status() {
-    echo "================================================================="
-    echo "🔍 VERIFICACIÓN DE ESTADO DE SEGURIDAD - FEDORA WORKSTATION"
-    echo "================================================================="
-    echo "• Firewalld activo:              $(timeout 1 firewall-cmd --state 2>/dev/null || echo 'inactivo o no disponible')"
-    echo "• DNS-over-TLS:                  $(grep -o 'DNSOverTLS=.*' /etc/systemd/resolved.conf.d/dot.conf 2>/dev/null || echo 'no configurado')"
-    echo "• MAC Randomization:             $(grep -o 'wifi.cloned-mac-address=.*' /etc/NetworkManager/conf.d/00-macrandomize.conf 2>/dev/null || echo 'no configurado')"
-    echo "• Puertos sin privilegios Podman:$(sysctl -n net.ipv4.ip_unprivileged_port_start 2>/dev/null || echo 'no disponible')"
-    echo "• Reenvío IP (Podman/KVM):       $(sysctl -n net.ipv4.ip_forward 2>/dev/null || echo 'no disponible')"
-    echo "• User namespaces (Podman):      $(sysctl -n user.max_user_namespaces 2>/dev/null || echo 'no disponible')"
-    echo "================================================================="
+    echo -e "${BOLD}======================================================================${NC}"
+    echo -e "  🛡️  ${BOLD}ESTADO DE SEGURIDAD Y FIREWALLD - FEDORA 45 WORKSTATION${NC}"
+    echo -e "${BOLD}======================================================================${NC}"
+
+    if systemctl is-active --quiet firewalld 2>/dev/null; then
+        local def_zone
+        def_zone=$(sudo firewall-cmd --get-default-zone 2>/dev/null || echo "FedoraWorkstation")
+        echo -e "  • Servicio Firewalld:        ${GREEN}Activo (Zona por defecto: ${BOLD}${def_zone}${NC}${GREEN})${NC}"
+        echo -e "  • Servicios permitidos:      ${CYAN}$(sudo firewall-cmd --list-services 2>/dev/null || echo 'N/A')${NC}"
+        echo -e "  • Puertos abiertos:          ${CYAN}$(sudo firewall-cmd --list-ports 2>/dev/null || echo 'ninguno')${NC}"
+        echo -e "  • Interfaces zona trusted:   ${CYAN}$(sudo firewall-cmd --zone=trusted --list-interfaces 2>/dev/null || echo 'ninguna')${NC}"
+    else
+        echo -e "  • Servicio Firewalld:        ${RED}Inactivo${NC}"
+    fi
+
+    local ufw_state
+    ufw_state=$(systemctl is-enabled ufw 2>/dev/null || echo "no-instalado")
+    echo -e "  • Estado de UFW (prohibido): ${GREEN}${ufw_state}${NC}"
+
+    [[ -f "$SYSCTL_SEC_FILE" ]]     && echo -e "  • Endurecimiento Sysctl:     ${GREEN}${SYSCTL_SEC_FILE}${NC}"     || echo -e "  • Endurecimiento Sysctl:     ${YELLOW}No aplicado${NC}"
+    [[ -f "$RESOLVED_DROPIN_FILE" ]] && echo -e "  • DNS-over-TLS (resolved):   ${GREEN}${RESOLVED_DROPIN_FILE}${NC}" || echo -e "  • DNS-over-TLS (resolved):   ${YELLOW}Por defecto${NC}"
+    echo -e "${BOLD}======================================================================${NC}"
 }
 
-case "${1:-}" in
-    --status|-s|status)
-        show_status
-        exit 0
-        ;;
-    --help|-h|help)
-        show_help
-        exit 0
-        ;;
-esac
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -s|--status)    ACTION="status"; shift ;;
+        -d|--dev-ports) OPEN_DEV_PORTS=true; shift ;;
+        -h|--help)      show_help; exit 0 ;;
+        *) log_err "Opción desconocida: $1"; show_help; exit 1 ;;
+    esac
+done
 
-echo "================================================================="
-echo "🛡️ Iniciando endurecimiento de seguridad y Firewall (GNOME)..."
-echo "================================================================="
+if [[ "$ACTION" == "status" ]]; then
+    show_status
+    exit 0
+fi
 
-# 1. Configuración de Firewall (Firewalld)
-echo "ℹ️ [1/5] Configurando Firewalld (Zona FedoraWorkstation, Podman y KVM)..."
-$SUDO systemctl enable --now firewalld
+log_info "Verificando Firewalld y deshabilitando/enmascarando UFW (regla del monorepo)..."
+if ! rpm -q firewalld &>/dev/null; then
+    sudo "$DNF_BIN" install -y firewalld
+fi
 
-# Eliminar servicios innecesarios en FedoraWorkstation
-$SUDO firewall-cmd --permanent --zone=FedoraWorkstation --remove-service=samba-client 2>/dev/null || true
+if systemctl list-unit-files | grep -q "^ufw.service"; then
+    sudo systemctl disable --now ufw.service 2>/dev/null || true
+fi
+sudo systemctl mask ufw.service 2>/dev/null || true
 
-# Servicios útiles para desarrollo, GNOME (GSConnect), mDNS y SSH
-$SUDO firewall-cmd --permanent --zone=FedoraWorkstation --add-service=kdeconnect 2>/dev/null || true
-$SUDO firewall-cmd --permanent --zone=FedoraWorkstation --add-service=mdns 2>/dev/null || true
-$SUDO firewall-cmd --permanent --zone=FedoraWorkstation --add-service=ssh 2>/dev/null || true
+sudo systemctl unmask firewalld.service 2>/dev/null || true
+sudo systemctl enable --now firewalld.service
 
-# Configurar zona 'trusted' para interfaces de red de Podman Rootless
-$SUDO firewall-cmd --permanent --zone=trusted --add-interface=podman+ 2>/dev/null || true
-$SUDO firewall-cmd --permanent --zone=trusted --add-interface=cni-podman+ 2>/dev/null || true
+DEFAULT_ZONE=$(sudo firewall-cmd --get-default-zone 2>/dev/null || echo "FedoraWorkstation")
+log_info "Configurando reglas permanentes en zona activa ($DEFAULT_ZONE)..."
 
-# Configurar zona 'libvirt' para puente virtual de KVM (virbr0)
-$SUDO firewall-cmd --permanent --zone=libvirt --add-interface=virbr0 2>/dev/null || true
-$SUDO firewall-cmd --permanent --zone=libvirt --add-forward 2>/dev/null || true
-$SUDO firewall-cmd --permanent --zone=FedoraWorkstation --add-masquerade 2>/dev/null || true
+# Servicios esenciales en la estación de trabajo: GSConnect / KDE Connect, mDNS, SSH y Samba client
+sudo firewall-cmd --permanent --zone="$DEFAULT_ZONE" --add-service=kdeconnect 2>/dev/null || {
+    sudo firewall-cmd --permanent --zone="$DEFAULT_ZONE" --add-port=1714-1764/tcp
+    sudo firewall-cmd --permanent --zone="$DEFAULT_ZONE" --add-port=1714-1764/udp
+}
+sudo firewall-cmd --permanent --zone="$DEFAULT_ZONE" --add-service=mdns
+sudo firewall-cmd --permanent --zone="$DEFAULT_ZONE" --add-service=ssh
+sudo firewall-cmd --permanent --zone="$DEFAULT_ZONE" --add-service=samba-client 2>/dev/null || true
 
-# Recargar firewalld
-$SUDO firewall-cmd --reload
-echo "  ✅ Firewalld configurado (FedoraWorkstation, trusted: podman, libvirt: virbr0)."
+# LocalSend (53317 TCP/UDP)
+sudo firewall-cmd --permanent --zone="$DEFAULT_ZONE" --add-port=53317/tcp
+sudo firewall-cmd --permanent --zone="$DEFAULT_ZONE" --add-port=53317/udp
 
-# 2. DNS-over-TLS y Privacidad DNS (Systemd-resolved)
-echo "ℹ️ [2/5] Configurando DNS seguro (Systemd-resolved con DoT)..."
-$SUDO mkdir -p /etc/systemd/resolved.conf.d/
-cat <<EOF | $SUDO tee /etc/systemd/resolved.conf.d/dot.conf > /dev/null
+# Puertos de desarrollo opcionales (--dev-ports): Next.js/React (3000), Vite (5173), FastAPI/Django (8000), Web/Admin (8080)
+if [[ "$OPEN_DEV_PORTS" == true ]]; then
+    log_info "Habilitando puertos de desarrollo local (3000, 5173, 8000, 8080 TCP)..."
+    for port in 3000 5173 8000 8080; do
+        sudo firewall-cmd --permanent --zone="$DEFAULT_ZONE" --add-port="${port}/tcp"
+    done
+fi
+
+# Confiar en interfaces de contenedores Podman (podman+) y bridge KVM (virbr0)
+sudo firewall-cmd --permanent --zone=trusted --add-interface=podman+ 2>/dev/null || true
+if sudo firewall-cmd --get-zones | grep -qw "libvirt"; then
+    sudo firewall-cmd --permanent --zone=libvirt --add-interface=virbr0 2>/dev/null || true
+else
+    sudo firewall-cmd --permanent --zone=trusted --add-interface=virbr0 2>/dev/null || true
+fi
+
+sudo firewall-cmd --reload
+log_ok "Reglas de Firewalld aplicadas y recargadas."
+
+# Configurar DNS-over-TLS oportunista en systemd-resolved
+log_info "Configurando DNS-over-TLS oportunista y DNSSEC en $RESOLVED_DROPIN_FILE..."
+sudo mkdir -p "$RESOLVED_DROPIN_DIR"
+sudo tee "$RESOLVED_DROPIN_FILE" > /dev/null << 'EOF'
 [Resolve]
-DNS=9.9.9.9#dns.quad9.net 1.1.1.1#cloudflare-dns.com 2620:fe::fe#dns.quad9.net 2606:4700:4700::1111#cloudflare-dns.com
-FallbackDNS=8.8.8.8#dns.google 1.0.0.1#cloudflare-dns.com
+FallbackDNS=1.1.1.1#cloudflare-dns.com 9.9.9.9#dns.quad9.net 8.8.8.8#dns.google
 DNSOverTLS=opportunistic
 DNSSEC=allow-downgrade
 EOF
-$SUDO systemctl restart systemd-resolved 2>/dev/null || true
+sudo systemctl reload-or-restart systemd-resolved 2>/dev/null || true
 
-# 3. Privacidad en Redes (Wi-Fi MAC Randomization)
-echo "ℹ️ [3/5] Configurando privacidad Wi-Fi (MAC Randomization)..."
-$SUDO mkdir -p /etc/NetworkManager/conf.d
-cat <<EOF | $SUDO tee /etc/NetworkManager/conf.d/00-macrandomize.conf > /dev/null
-[device]
-wifi.scan-rand-mac-address=yes
+# Endurecimiento de red y soporte para contenedores Podman Rootless + KVM/IPv6 (accept_ra=2)
+log_info "Aplicando endurecimiento de red y sysctl para Podman Rootless en $SYSCTL_SEC_FILE..."
+sudo tee "$SYSCTL_SEC_FILE" > /dev/null << 'EOF'
+# ==============================================================================
+#  Seguridad de Red y Soporte Podman Rootless - Fedora 45 Workstation
+# ==============================================================================
 
-[connection]
-wifi.cloned-mac-address=stable
+# Permitir a Podman Rootless exponer puertos desde el 80 (HTTP/HTTPS/Reverse Proxy)
+net.ipv4.ip_unprivileged_port_start = 80
+net.ipv4.ping_group_range = 0 2147483647
+
+# Protección contra ataques de red e IP spoofing
+net.ipv4.tcp_syncookies = 1
+net.ipv4.tcp_rfc1337 = 1
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.default.rp_filter = 1
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.default.accept_redirects = 0
+net.ipv4.conf.all.secure_redirects = 0
+net.ipv4.conf.default.secure_redirects = 0
+net.ipv6.conf.all.accept_redirects = 0
+net.ipv6.conf.default.accept_redirects = 0
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.default.send_redirects = 0
+
+# Mantener conectividad IPv6 SLAAC cuando IPv6 forwarding está activo (Podman / Libvirt)
+net.ipv6.conf.all.accept_ra = 2
+net.ipv6.conf.default.accept_ra = 2
+
+# Endurecimiento de memoria de Kernel
+kernel.kptr_restrict = 2
+kernel.dmesg_restrict = 1
 EOF
-$SUDO systemctl reload NetworkManager 2>/dev/null || true
 
-# 4. Endurecimiento del Kernel (sysctl) - Compatible con Podman rootless y KVM
-echo "ℹ️ [4/5] Aplicando parámetros de Kernel (sysctl) para desarrollo, KVM y Podman..."
-cat <<EOF | $SUDO tee /etc/sysctl.d/99-security.conf > /dev/null
-# Restricciones de kernel (equilibrado para desarrollo y depuración)
-kernel.dmesg_restrict=1
-kernel.kptr_restrict=1
-
-# Protección contra spoofing y ataques de red
-net.ipv4.conf.all.rp_filter=1
-net.ipv4.conf.default.rp_filter=1
-net.ipv4.tcp_syncookies=1
-
-# Reenvío de paquetes para redes de contenedores (Podman) y VMs (KVM)
-net.ipv4.ip_forward=1
-net.ipv6.conf.all.forwarding=1
-
-# Soporte para contenedores Podman Rootless y puertos de desarrollo (<1024)
-net.ipv4.ip_unprivileged_port_start=80
-net.ipv4.ping_group_range=0 2147483647
-kernel.unprivileged_userns_clone=1
-user.max_user_namespaces=65536
-EOF
-$SUDO sysctl --system > /dev/null || true
-
-# 5. Auditoría de permisos
-echo "ℹ️ [5/5] Verificando permisos de directorios críticos..."
-$SUDO chmod 700 /root
-
-echo ""
+sudo sysctl --system >/dev/null 2>&1 || true
+log_ok "Endurecimiento de seguridad completado para Fedora 45 Workstation."
 show_status
-echo "================================================================="
-echo "✅ Configuración de seguridad para Fedora Workstation (GNOME + Podman + KVM) completada."
-echo "================================================================="

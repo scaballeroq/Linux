@@ -77,11 +77,13 @@ echo "================================================================="
 echo "🎮 CONFIGURANDO ENTORNO DE GAMING Y STEAM - FEDORA WORKSTATION"
 echo "================================================================="
 
-# 1. Asegurar RPM Fusion Non-Free
-echo "⚡ [1/3] Verificando repositorio RPM Fusion Non-Free..."
-if ! is_pkg_installed rpmfusion-nonfree-release; then
-    FEDORA_VER=$(rpm -E %fedora 2>/dev/null || echo "44")
-    $SUDO $DNF_CMD install -y "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${FEDORA_VER}.noarch.rpm" 2>/dev/null || true
+# 1. Asegurar RPM Fusion Free y Non-Free (Obligatorio en Fedora 45)
+echo "⚡ [1/3] Verificando repositorios obligatorios RPM Fusion (Free y Non-Free)..."
+if ! is_pkg_installed rpmfusion-free-release || ! is_pkg_installed rpmfusion-nonfree-release; then
+    FEDORA_VER=$(rpm -E %fedora 2>/dev/null || echo "45")
+    $SUDO $DNF_CMD install -y \
+        "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${FEDORA_VER}.noarch.rpm" \
+        "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${FEDORA_VER}.noarch.rpm" 2>/dev/null || true
 fi
 
 # Habilitar repositorio steam de RPM Fusion si está disponible

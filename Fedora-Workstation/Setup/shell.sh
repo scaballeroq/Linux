@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # shell.sh - Instalación y Optimización de Herramientas Modernas de Terminal
-# Fedora 44 Workstation + GNOME Shell (Wayland)
+# Fedora 45 Workstation + GNOME Shell (Wayland)
 # (eza, bat, fzf, zoxide, ripgrep, fd-find, duf, du-dust, procs, btop, jq)
 # ==============================================================================
 
@@ -65,7 +65,7 @@ is_pkg_installed() {
 
 show_help() {
     cat <<EOF
-🐚 Optimizador y Gestor de Shell Moderna - Fedora 44 (GNOME Shell)
+🐚 Optimizador y Gestor de Shell Moderna - Fedora 45 (GNOME Shell)
 
 Uso:
   $0 [OPCIÓN]
@@ -309,7 +309,7 @@ if [ -d "$BASH_SETUP_DIR" ]; then
 fi
 
 echo "================================================================="
-echo "✅ Entorno de terminal configurado con éxito para Fedora 44."
+echo "✅ Entorno de terminal configurado con éxito para Fedora 45."
 echo "💡 Para cargar las nuevas configuraciones en tu sesión actual:"
 echo "   source ~/.bashrc"
 if [ -f "$ZSHRC" ]; then

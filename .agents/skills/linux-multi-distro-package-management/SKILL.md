@@ -38,11 +38,22 @@ sudo apt --fix-broken install
 
 ---
 
-## 2. Familia Fedora / Red Hat (DNF5)
+## 2. Familia Fedora / Red Hat (DNF5 + RPM Fusion Obligatorio)
 
-Aplica a: `Fedora-KDE`, `Fedora-Workstation`.
+Aplica a: `Fedora-KDE` (Fedora 44), `Fedora-Workstation` (Fedora 45 Workstation).
+
+> **Requisito Obligatorio en Fedora:** Fedora es una distribución basada en RPM que usa `dnf5` (en lugar de `apt`). Es **obligatorio** instalar y habilitar **RPM Fusion (Free y Non-Free)** junto con `fedora-cisco-openh264` para que el soporte multimedia (`ffmpeg`, códecs GStreamer), la aceleración por hardware VA-API/VDPAU (`mesa-va-drivers-freeworld`, `mesa-vdpau-drivers-freeworld`) y aplicaciones como Steam o VLC funcionen correctamente.
 
 ```bash
+# 0. Instalación obligatoria e idempotente de RPM Fusion (Free + Non-Free + Tainted + AppStream)
+sudo dnf5 install -y \
+  "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm" \
+  "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
+sudo dnf5 config-manager setopt fedora-cisco-openh264.enabled=1 2>/dev/null || true
+sudo dnf5 install -y rpmfusion-free-appstream-data rpmfusion-nonfree-appstream-data \
+  rpmfusion-free-release-tainted rpmfusion-nonfree-release-tainted
+sudo dnf5 install -y --allowerasing ffmpeg ffmpeg-libs mesa-va-drivers-freeworld mesa-vdpau-drivers-freeworld
+
 # 1. Comprobar actualizaciones refrescando metadatos
 sudo dnf5 check-upgrade --refresh
 

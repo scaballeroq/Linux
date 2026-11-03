@@ -1,5 +1,5 @@
 #!/bin/bash
-# cockpit.sh - Instalación, configuración y gestión de la consola web Cockpit en Fedora 44 + GNOME
+# cockpit.sh - Instalación, configuración y gestión de la consola web Cockpit en Fedora 45 + GNOME
 #
 # Uso:
 #   ./cockpit.sh                     -> Instala Cockpit, módulos avanzados, activa el socket y configura el firewall
@@ -38,7 +38,7 @@ fi
 
 show_help() {
     cat <<EOF
-🌐 Administrador de Consola Web Cockpit - Fedora 44 (GNOME)
+🌐 Administrador de Consola Web Cockpit - Fedora 45 (GNOME)
 
 Uso:
   $0 [OPCIÓN]

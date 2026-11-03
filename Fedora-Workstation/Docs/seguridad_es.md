@@ -2,9 +2,9 @@
 sidebar_position: 1
 ---
 
-# Endurecimiento de Seguridad y Cortafuegos en Fedora 44 (GNOME)
+# Endurecimiento de Seguridad y Cortafuegos en Fedora 45 (GNOME)
 
-Esta guía detalla el proceso de seguridad, privacidad y endurecimiento del sistema (hardening) automatizado en [`Setup/seguridad.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora/Setup/seguridad.sh), optimizado para una estación de trabajo y portátil de desarrollo con **Fedora 44** y **GNOME**.
+Esta guía detalla el proceso de seguridad, privacidad y endurecimiento del sistema (hardening) automatizado en [`Setup/seguridad.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora/Setup/seguridad.sh), optimizado para una estación de trabajo y portátil de desarrollo con **Fedora 45** y **GNOME**.
 
 ---
 

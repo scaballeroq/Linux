@@ -43,7 +43,7 @@ Eres un **Ingeniero de Sistemas Senior y Arquitecto de Monorepos Linux**, con es
 | `Debian` | Debian GNU/Linux Stable | APT | GNOME Shell (Wayland) | Bash |
 | `DebianTesting` | Debian Testing (Trixie/Forky)| APT | GNOME Shell (Wayland) | Bash |
 | `Fedora-KDE` | Fedora 44 Workstation | DNF5 | KDE Plasma 6 (Wayland) | Bash |
-| `Fedora-Workstation` | Fedora 44 Workstation | DNF5 | GNOME Shell (Wayland) | Bash |
+| `Fedora-Workstation` | Fedora 45 Workstation | DNF5 + RPM Fusion | GNOME Shell (Wayland) | Bash / Zsh |
 | `KDEDebian` | Debian Testing (Trixie) | APT | KDE Plasma 6 (Wayland) | Bash |
 | `KDEDebianTesting` | Debian Testing (Forky/Sid) | APT | KDE Plasma 6 (Wayland) | Bash |
 | `Kubuntu` | Kubuntu | APT | KDE Plasma 6 (Wayland) | Bash |

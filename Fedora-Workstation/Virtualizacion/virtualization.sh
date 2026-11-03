@@ -1,5 +1,5 @@
 #!/bin/bash
-# virtualization.sh - Instalación y Optimización Avanzada de Virtualización (KVM/QEMU) para Fedora 44 Workstation
+# virtualization.sh - Instalación y Optimización Avanzada de Virtualización (KVM/QEMU) para Fedora 45 Workstation
 # Optimizado para Fedora Workstation con GNOME Wayland (Kernel 6.x/7.x, AMD Ryzen/Intel, GPU Vega/Radeon/Intel, 3D VirGL, Btrfs NoCoW, Firewalld, Modular Daemons, Tuned)
 
 set -euo pipefail
@@ -18,7 +18,7 @@ show_help() {
     cat <<EOF
 Uso: $0 [OPCIONES]
 
-Script de aprovisionamiento y optimización de virtualización KVM/QEMU en Fedora 44 (GNOME Workstation),
+Script de aprovisionamiento y optimización de virtualización KVM/QEMU en Fedora 45 (GNOME Workstation),
 diseñado para maximizar el rendimiento y la integración de distribuciones Linux invitadas bajo entornos
 GNOME (Wayland) y el ecosistema Fedora.
 
@@ -243,7 +243,7 @@ if [ "$STATUS_ONLY" = true ]; then
     exit 0
 fi
 
-echo "🚀 Configurando entorno de virtualización de alto rendimiento (KVM/QEMU) en Fedora 44..."
+echo "🚀 Configurando entorno de virtualización de alto rendimiento (KVM/QEMU) en Fedora 45..."
 echo "🎯 Optimizado para Fedora Workstation con GNOME Wayland y distribuciones Linux invitadas..."
 
 # ---------------------------------------------------------------------------
@@ -598,7 +598,7 @@ echo "✅ Configuración de Virtualización creada con éxito en el perfil de $T
 # Resumen y Recomendaciones para VMs Linux en GNOME Wayland
 # ---------------------------------------------------------------------------
 echo "================================================================="
-echo "✅ Entorno KVM/QEMU en Fedora 44 con GNOME configurado y optimizado."
+echo "✅ Entorno KVM/QEMU en Fedora 45 con GNOME configurado y optimizado."
 echo "================================================================="
 echo "💡 OPCIONES GRÁFICAS DISPONIBLES EN GNOME:"
 echo "  • GNOME Boxes: Aplicación nativa y minimalista integrada en GNOME."

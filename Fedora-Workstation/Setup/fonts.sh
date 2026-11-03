@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # fonts.sh - Instalación, Verificación y Gestión de Fuentes de Desarrollo (Nerd Fonts)
-# Sistema: Fedora 44 Workstation | Escritorio: GNOME Shell (Wayland)
+# Sistema: Fedora 45 Workstation | Escritorio: GNOME Shell (Wayland)
 # ==============================================================================
 # Características:
 # - Soporte para fuentes de desarrollo con ligaduras y glifos Nerd Fonts:
@@ -258,7 +258,7 @@ update_cache() {
 # ------------------------------------------------------------------------------
 show_status() {
     echo "================================================================="
-    echo "🔤 ESTADO DE FUENTES NERD FONTS (Fedora 44 / GNOME Shell)"
+    echo "🔤 ESTADO DE FUENTES NERD FONTS (Fedora 45 / GNOME Shell)"
     echo "================================================================="
     echo "👤 Usuario:         $REAL_USER"
     echo "📁 Directorio:      $FONT_DIR"
@@ -314,7 +314,7 @@ show_help() {
 Uso: $(basename "$0") [OPCIONES] [FUENTES...]
 
 Instalación, verificación y gestión optimizada de fuentes de desarrollo (Nerd Fonts)
-para Fedora 44 y GNOME Shell.
+para Fedora 45 y GNOME Shell.
 
 OPCIONES:
   -s, --status         Muestra el estado detallado de las fuentes instaladas y fontconfig.

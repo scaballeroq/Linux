@@ -1,194 +1,100 @@
 #!/usr/bin/env bash
-# ==============================================================================
-# post-install-intel.sh - Post-instalación para Fedora con Intel Core (Haswell/i7-4790) + Multimedia
-# (Configurado con ZRAM, DNF paralelo, RPM Fusion, Microcódigo Intel, VA-API Intel HD, Codecs, Kodi, PipeWire)
-# ==============================================================================
-
 set -euo pipefail
 
-if command -v dnf5 &>/dev/null; then
-    DNF_CMD="dnf5"
-else
-    DNF_CMD="dnf"
+# ==============================================================================
+#  post-install-intel.sh - Post-Instalación Base para Sistemas Intel Core / Media
+#  Sistema: Fedora 45 Workstation (GNOME Wayland + DNF5 + RPM Fusion Obligatorio)
+# ==============================================================================
+
+BOLD='\033[1m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+log_info() { echo -e "${CYAN}ℹ️  $1${NC}"; }
+log_ok()   { echo -e "${GREEN}✅ $1${NC}"; }
+log_warn() { echo -e "${YELLOW}⚠️  $1${NC}"; }
+log_err()  { echo -e "${RED}❌ $1${NC}"; }
+
+DNF_BIN="dnf5"
+command -v dnf5 &>/dev/null || DNF_BIN="dnf"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [[ "${1:-}" == "-s" || "${1:-}" == "--status" ]]; then
+    echo -e "${BOLD}🚀 Estado Post-Instalación Intel - Fedora 45 Workstation:${NC}"
+    rpm -q rpmfusion-free-release rpmfusion-nonfree-release microcode_ctl intel-media-driver libva-intel-driver ffmpeg || true
+    exit 0
 fi
 
-show_help() {
-    cat <<EOF
-🚀 Post-Instalación y Optimización - Fedora (Intel Core / Media Center)
+echo -e "${BOLD}======================================================================${NC}"
+echo -e "  🚀 ${BOLD}INICIANDO POST-INSTALACIÓN FEDORA 45 WORKSTATION (PERFIL INTEL)${NC}"
+echo -e "${BOLD}======================================================================${NC}"
 
-Uso:
-  $0 [OPCIÓN]
+# 1. Optimización de DNF5
+DNF_CONF="/etc/dnf/dnf.conf"
+if [[ -f "$DNF_CONF" ]]; then
+    grep -q "^max_parallel_downloads=" "$DNF_CONF" || echo "max_parallel_downloads=10" | sudo tee -a "$DNF_CONF" >/dev/null
+    grep -q "^fastestmirror=" "$DNF_CONF" || echo "fastestmirror=True" | sudo tee -a "$DNF_CONF" >/dev/null
+    grep -q "^defaultyes=" "$DNF_CONF" || echo "defaultyes=True" | sudo tee -a "$DNF_CONF" >/dev/null
+fi
 
-Opciones:
-  (sin argumentos)    Ejecuta el aprovisionamiento completo para Intel (DNF paralelo, RPM Fusion, ZRAM, Kernel, VA-API Intel, Kodi y PipeWire).
-  --status, -s        Muestra el diagnóstico del sistema (CPU, ZRAM, RPM Fusion, Intel VA-API y Kodi).
-  --help, -h          Muestra este mensaje de ayuda.
-EOF
-}
+# 2. Instalación OBLIGATORIA de RPM Fusion (Free, Non-Free & Tainted)
+FEDORA_VER=$(rpm -E %fedora)
+log_info "Activando repositorios obligatorios RPM Fusion (Free y Non-Free) para Fedora ${FEDORA_VER}..."
+if ! rpm -q rpmfusion-free-release &>/dev/null || ! rpm -q rpmfusion-nonfree-release &>/dev/null; then
+    sudo "$DNF_BIN" install -y \
+        "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${FEDORA_VER}.noarch.rpm" \
+        "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${FEDORA_VER}.noarch.rpm"
+fi
 
-show_status() {
-    echo "================================================================="
-    echo "🔍 ESTADO DE POST-INSTALACIÓN - FEDORA (INTEL CORE / MEDIA CENTER)"
-    echo "================================================================="
-    echo "• Procesador (CPU):         $(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs || echo 'n/a')"
-    echo "• Kernel Linux:             $(uname -r)"
-    echo "• ZRAM activo:              $(swapon --show 2>/dev/null | grep -i zram || echo 'No activo')"
-    echo "• RPM Fusion Free:          $(rpm -q rpmfusion-free-release 2>/dev/null || echo 'No instalado')"
-    echo "• RPM Fusion Non-Free:      $(rpm -q rpmfusion-nonfree-release 2>/dev/null || echo 'No instalado')"
-    echo "• Driver VA-API Intel:      $(rpm -q intel-media-driver 2>/dev/null || rpm -q libva-intel-driver 2>/dev/null || echo 'No instalado')"
-    echo "• Kodi Media Center:        $(rpm -q kodi 2>/dev/null || echo 'No instalado')"
-    echo "• Audio PipeWire:           $(systemctl --user is-active pipewire 2>/dev/null || echo 'inactivo')"
-    echo "================================================================="
-}
-
-case "${1:-}" in
-    --status|-s|status)
-        show_status
-        exit 0
-        ;;
-    --help|-h|help)
-        show_help
-        exit 0
-        ;;
-esac
-
-echo "================================================================="
-echo "INICIANDO POST-INSTALACION: FEDORA - INTEL CORE / MEDIA CENTER"
-echo "Optimizado para sobremesa Intel Haswell (i7-4790 / HD Graphics 4600)"
-echo "Configuracion multimedia para Kodi, Netflix, Prime Video y streaming"
-echo "================================================================="
-
-# 1. Optimizacion DNF
-echo "Configurando optimizaciones en DNF..."
-for conf in "/etc/dnf/dnf.conf" "/etc/dnf5/dnf5.conf"; do
-    if [ -f "$conf" ]; then
-        if ! grep -q "^max_parallel_downloads=" "$conf"; then
-            echo "max_parallel_downloads=10" | sudo tee -a "$conf" > /dev/null
-        fi
-        if ! grep -q "^defaultyes=" "$conf"; then
-            echo "defaultyes=True" | sudo tee -a "$conf" > /dev/null
-        fi
-    fi
-done
-
-# 2. Habilitar Repositorios RPM Fusion (Free, Non-Free y Tainted)
-echo "Habilitando repositorios oficiales RPM Fusion Free, Non-Free y Tainted..."
-sudo $DNF_CMD install -y \
-    https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
-    https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm 2>/dev/null || true
-
-sudo $DNF_CMD install -y \
-    rpmfusion-free-release-tainted \
-    rpmfusion-nonfree-release-tainted \
+sudo "$DNF_BIN" config-manager setopt fedora-cisco-openh264.enabled=1 2>/dev/null || true
+sudo "$DNF_BIN" install -y --skip-unavailable \
     rpmfusion-free-appstream-data \
-    rpmfusion-nonfree-appstream-data 2>/dev/null || true
+    rpmfusion-nonfree-appstream-data \
+    rpmfusion-free-release-tainted \
+    rpmfusion-nonfree-release-tainted
 
-# Actualizar metadatos y sistema
-echo "Actualizando base del sistema..."
-sudo $DNF_CMD upgrade --refresh -y
+# 3. Actualización del sistema
+sudo "$DNF_BIN" upgrade --refresh -y
 
-# 3. Compresion de Memoria ZRAM (Nativa en Fedora con zram-generator)
-echo "Configurando ZRAM con algoritmo ZSTD al 50% de RAM..."
-sudo $DNF_CMD install -y zram-generator zram-generator-defaults 2>/dev/null || true
-sudo tee /etc/systemd/zram-generator.conf > /dev/null << 'EOF'
-[zram0]
-zram-size = min(ram / 2, 8192)
-compression-algorithm = zstd
-swap-priority = 100
-EOF
-sudo systemctl restart systemd-zram-setup@zram0.service 2>/dev/null || true
-
-# 4. Kernel Linux, Firmware y Microcodigo para Intel
-echo "Instalando Kernel Linux, Firmware oficial y Microcodigo para Intel..."
-sudo $DNF_CMD install -y \
-    kernel \
-    kernel-core \
-    kernel-modules \
-    kernel-devel \
-    kernel-headers \
+# 4. Microcódigo Intel, VA-API (iHD + i965), Vulkan ANV y FFmpeg completo
+log_info "Instalando microcódigo Intel, aceleración VA-API (intel-media-driver / libva-intel-driver) y FFmpeg..."
+sudo "$DNF_BIN" install -y --skip-unavailable \
     linux-firmware \
-    microcode_ctl 2>/dev/null || true
-
-# 5. Stack Grafico y Aceleracion HW para Intel HD Graphics
-echo "Instalando controladores graficos Intel y aceleracion VA-API..."
-sudo $DNF_CMD install -y \
+    microcode_ctl \
+    intel-media-driver \
+    libva-intel-driver \
     mesa-dri-drivers \
     mesa-vulkan-drivers \
-    libva-intel-driver \
-    intel-media-driver \
+    vulkan-loader \
+    vulkan-tools \
+    libva \
     libva-utils \
-    vulkan-tools 2>/dev/null || true
-
-# 6. Codecs Multimedia y FFmpeg completo (RPM Fusion)
-echo "Instalando FFmpeg completo y codecs multimedia de alto rendimiento..."
-sudo $DNF_CMD config-manager setopt fedora-cisco-openh264.enabled=1 2>/dev/null || true
-sudo $DNF_CMD swap -y ffmpeg-free ffmpeg --allowerasing 2>/dev/null || sudo $DNF_CMD install -y ffmpeg 2>/dev/null || true
-sudo $DNF_CMD update @multimedia --setopt="install_weak_deps=False" --exclude=PackageKit-gstreamer-plugin,libheif-freeworld -y 2>/dev/null || true
-sudo $DNF_CMD install -y \
-    gstreamer1-plugins-base \
-    gstreamer1-plugins-good \
-    gstreamer1-plugins-bad-free \
-    gstreamer1-plugins-bad-freeworld \
-    gstreamer1-plugins-ugly \
-    gstreamer1-plugin-openh264 \
-    gstreamer1-vaapi \
-    gstreamer1-libav \
-    lame \
-    faac \
-    faad2 \
-    x264 \
-    x265 \
-    libde265 \
-    libdvdcss \
-    libdvdread \
-    libdvdnav \
-    libheif-ffmpeg \
-    lsdvd 2>/dev/null || true
-
-# 7. Centro Multimedia Kodi y Streaming (Inputstream Adaptive)
-echo "Instalando centro multimedia Kodi y complementos para streaming adaptativo..."
-sudo $DNF_CMD install -y \
-    kodi \
-    kodi-inputstream-adaptive \
-    kodi-inputstream-rtmp 2>/dev/null || true
-
-# 8. Sistema de Audio de Alta Fidelidad (PipeWire + WirePlumber)
-echo "Verificando y habilitando PipeWire y WirePlumber..."
-sudo $DNF_CMD install -y \
-    pipewire \
-    pipewire-pulseaudio \
-    pipewire-alsa \
-    wireplumber 2>/dev/null || true
-
-systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
-
-# 9. Software Esencial de Sistema
-echo "Instalando utilidades esenciales para Fedora..."
-sudo $DNF_CMD install -y \
+    thermald \
+    lm_sensors \
+    just \
+    git \
     curl \
+    wget \
+    jq \
     btop \
-    htop \
-    inxi \
-    vlc \
-    p7zip \
-    p7zip-plugins \
-    unrar \
-    zip \
-    unzip \
-    bzip2 \
-    xz \
-    fastfetch 2>/dev/null || true
+    fastfetch \
+    wl-clipboard \
+    flatpak
 
-# 10. Integracion de Flatpak & Flathub
-echo "Configurando Flatpak y Flathub..."
-sudo $DNF_CMD install -y flatpak 2>/dev/null || true
-sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+sudo "$DNF_BIN" install -y --allowerasing ffmpeg ffmpeg-libs
+sudo systemctl enable --now thermald.service 2>/dev/null || true
+sudo systemctl enable --now fstrim.timer 2>/dev/null || true
 
-# 11. Limpieza de Paquetes Antiguos
-echo "Limpiando cache y paquetes obsoletos..."
-sudo $DNF_CMD autoremove -y 2>/dev/null || true
-sudo $DNF_CMD clean all 2>/dev/null || true
+if [[ -x "$SCRIPT_DIR/zram-setup.sh" ]]; then
+    "$SCRIPT_DIR/zram-setup.sh"
+fi
 
-echo "================================================================="
-echo "Fedora (Intel Core / Media Center) configurado con éxito."
-echo "================================================================="
+if command -v flatpak &>/dev/null; then
+    sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+    sudo flatpak remote-modify --enable flathub 2>/dev/null || true
+fi
+
+log_ok "Post-instalación de Fedora 45 Workstation (Perfil Intel) completada."

@@ -1,332 +1,209 @@
 #!/usr/bin/env bash
-# ==============================================================================
-# fastfetch.sh - Instalación y Configuración Estética de Fastfetch
-# Sistema: Fedora 44 Workstation | Escritorio: GNOME Shell (Wayland)
-# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8 / ext4-btrfs)
-# ==============================================================================
-# Características:
-# - Detección inteligente y modo rootless: no ejecuta sudo ni DNF5 si ya está instalado.
-# - Soporte para múltiples temas estéticos:
-#   * 'fedora' (Predeterminado): Logo oficial de Fedora con acentos azules/cian y métricas completas.
-#   * 'compact': Diseño de caja minimalista FastCat (sin logo ASCII) para paneles reducidos.
-# - Respaldo automático (.bak) si el usuario ya tenía una configuración modificada.
-# - Comandos CLI: --status, --run, --theme, --list-themes, --diff, --force, --help.
-# - Integración completa con atajos y aliases de consola ('ff').
-# ==============================================================================
-
 set -euo pipefail
 
-# ------------------------------------------------------------------------------
-# 1. DETECCIÓN DE USUARIO Y PERMISOS
-# ------------------------------------------------------------------------------
-if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-    REAL_USER="$SUDO_USER"
-    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+# ==============================================================================
+#  fastfetch.sh - Instalador y Gestor de Temas de Fastfetch
+#  Sistema: Fedora 45 Workstation (GNOME Shell Wayland)
+# ==============================================================================
+
+BOLD='\033[1m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+log_info() { echo -e "${CYAN}ℹ️  $1${NC}"; }
+log_ok()   { echo -e "${GREEN}✅ $1${NC}"; }
+log_warn() { echo -e "${YELLOW}⚠️  $1${NC}"; }
+log_err()  { echo -e "${RED}❌ $1${NC}"; }
+
+if [[ $EUID -eq 0 ]]; then
+    REAL_USER="${SUDO_USER:-$(logname 2>/dev/null || echo "${USER:-root}")}"
 else
-    REAL_USER="${USER:-$(id -un)}"
-    USER_HOME="${HOME:-/home/$REAL_USER}"
+    REAL_USER="${USER:-$(whoami)}"
 fi
+USER_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
 
-run_as_user() {
-    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-        sudo -u "$REAL_USER" env HOME="$USER_HOME" "$@"
-    else
-        "$@"
-    fi
-}
-
-# ------------------------------------------------------------------------------
-# 2. RUTAS Y ARCHIVOS
-# ------------------------------------------------------------------------------
+DNF_BIN="dnf5"
+command -v dnf5 &>/dev/null || DNF_BIN="dnf"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-USER_CONFIG_DIR="$USER_HOME/.config/fastfetch"
-USER_CONFIG_FILE="$USER_CONFIG_DIR/config.jsonc"
 
-get_theme_path() {
-    local theme_name="$1"
-    case "$theme_name" in
-        fedora|default)
-            if [ -f "$SCRIPT_DIR/config-fedora.jsonc" ]; then
-                echo "$SCRIPT_DIR/config-fedora.jsonc"
-            else
-                echo "$SCRIPT_DIR/config.jsonc"
-            fi
-            ;;
-        compact|fastcat|minimal)
-            echo "$SCRIPT_DIR/config-compact.jsonc"
-            ;;
+DEST_DIR="$USER_HOME/.config/fastfetch"
+DEST_FILE="$DEST_DIR/config.jsonc"
+
+THEME="fedora"
+FORCE=false
+ACTION="install"
+
+resolve_theme_file() {
+    local t="$1"
+    case "$t" in
+        fedora|hero|default) echo "$SCRIPT_DIR/config-fedora.jsonc" ;;
+        fedora-simple|simple) echo "$SCRIPT_DIR/config-fedora-simple.jsonc" ;;
+        modern) echo "$SCRIPT_DIR/config-modern.jsonc" ;;
+        compact|fastcat) echo "$SCRIPT_DIR/config-compact.jsonc" ;;
         *)
-            if [ -f "$SCRIPT_DIR/config-${theme_name}.jsonc" ]; then
-                echo "$SCRIPT_DIR/config-${theme_name}.jsonc"
-            elif [ -f "$theme_name" ]; then
-                echo "$theme_name"
-            else
-                echo ""
-            fi
+            log_err "Tema desconocido: '$t'. Usa: fedora, fedora-simple, modern o compact."
+            exit 1
             ;;
     esac
 }
 
-# ------------------------------------------------------------------------------
-# 3. VERIFICACIÓN E INSTALACIÓN DE DEPENDENCIAS
-# ------------------------------------------------------------------------------
-ensure_dependencies() {
-    if command -v fastfetch &>/dev/null; then
-        local version_str
-        version_str=$(fastfetch --version 2>/dev/null | head -n 1 || echo "instalado")
-        echo "  ✅ Fastfetch ya está instalado ($version_str)."
-        return 0
-    fi
-
-    echo "📦 Fastfetch no está instalado en el sistema."
-    echo "   Instalando paquete oficial vía DNF5..."
-    if [ "$EUID" -ne 0 ]; then
-        if ! command -v sudo &>/dev/null; then
-            echo "❌ Error: Se requiere 'sudo' para instalar Fastfetch."
-            exit 1
-        fi
-        sudo dnf5 install -y fastfetch
-    else
-        dnf5 install -y fastfetch
-    fi
-}
-
-# ------------------------------------------------------------------------------
-# 4. GESTIÓN DE CONFIGURACIÓN Y TEMAS
-# ------------------------------------------------------------------------------
-apply_config() {
-    local theme_name="${1:-fedora}"
-    local force="${2:-false}"
-
-    local source_config
-    source_config=$(get_theme_path "$theme_name")
-
-    if [ -z "$source_config" ] || [ ! -f "$source_config" ]; then
-        echo "❌ Error: No se encontró la plantilla para el tema '$theme_name'."
-        echo "   Usa '$(basename "$0") --list-themes' para consultar los temas disponibles."
-        return 1
-    fi
-
-    run_as_user mkdir -p "$USER_CONFIG_DIR"
-
-    if [ -f "$USER_CONFIG_FILE" ]; then
-        if cmp -s "$source_config" "$USER_CONFIG_FILE" && [ "$force" != "true" ]; then
-            echo "  ✅ La configuración activa en $USER_CONFIG_FILE ya corresponde al tema '$theme_name'."
-            return 0
-        fi
-
-        # Si difiere y no se forzó, crear copia de respaldo
-        local backup_file="${USER_CONFIG_FILE}.bak.$(date +%Y%m%d_%H%M%S)"
-        echo "  ℹ️ Creando respaldo de configuración previa en: $backup_file"
-        run_as_user cp "$USER_CONFIG_FILE" "$backup_file"
-    fi
-
-    run_as_user cp "$source_config" "$USER_CONFIG_FILE"
-    run_as_user chmod 644 "$USER_CONFIG_FILE"
-    echo "  ✅ Tema '$theme_name' aplicado correctamente en $USER_CONFIG_FILE."
-}
-
-show_diff() {
-    local theme_name="${1:-fedora}"
-    local source_config
-    source_config=$(get_theme_path "$theme_name")
-
-    if [ ! -f "$USER_CONFIG_FILE" ]; then
-        echo "ℹ️ El archivo de configuración de usuario ($USER_CONFIG_FILE) aún no existe."
-        return 0
-    fi
-    if [ -z "$source_config" ] || [ ! -f "$source_config" ]; then
-        echo "❌ Plantilla fuente no encontrada para el tema '$theme_name'."
-        return 1
-    fi
-
-    if cmp -s "$source_config" "$USER_CONFIG_FILE"; then
-        echo "✅ La configuración instalada es 100% idéntica a la plantilla del tema '$theme_name'."
-    else
-        echo "⚠️ Diferencias entre la plantilla '$theme_name' y ~/.config/fastfetch/config.jsonc:"
-        diff -u --color=auto "$source_config" "$USER_CONFIG_FILE" || true
-    fi
-}
-
-list_themes() {
-    echo "================================================================="
-    echo "🎨 TEMAS ESTÉTICOS DISPONIBLES DE FASTFETCH - FEDORA 44"
-    echo "================================================================="
-    echo "1) fedora (Predeterminado / Activo)"
-    echo "    Protagonista: Logo oficial de Fedora en arte ASCII"
-    echo "   ✨ Diseño: Acentos azul y blanco, métricas de CPU/GPU, Host, Btrfs, ZRAM y Kernel"
-    echo "   📁 Archivo: Setup/config-fedora.jsonc"
-    echo ""
-    echo "2) compact (Minimalista)"
-    echo "   📦 Protagonista: Caja minimalista FastCat con bordes redondeados (sin logo ASCII)"
-    echo "   ✨ Diseño: Ideal para paneles divididos o ventanas pequeñas de terminal"
-    echo "   📁 Archivo: Setup/config-compact.jsonc"
-    echo "-----------------------------------------------------------------"
-    echo "💡 Puedes alternar entre ellos fácilmente con:"
-    echo "   just fastfetch --theme fedora"
-    echo "   just fastfetch --theme compact"
-    echo "================================================================="
-}
-
-# ------------------------------------------------------------------------------
-# 5. DIAGNÓSTICO Y ESTADO
-# ------------------------------------------------------------------------------
-show_status() {
-    echo "================================================================="
-    echo "📊 ESTADO DE FASTFETCH (Fedora 44 / KDE Plasma 6)"
-    echo "================================================================="
-    echo "👤 Usuario:                $REAL_USER"
-
-    # Binario y versión
-    if command -v fastfetch &>/dev/null; then
-        local version_str bin_path
-        version_str=$(fastfetch --version 2>/dev/null | head -n 1 || echo "Desconocida")
-        bin_path=$(command -v fastfetch)
-        echo "📦 Estado de instalación:   ✅ Instalado ($version_str en $bin_path)"
-    else
-        echo "📦 Estado de instalación:   ❌ No instalado"
-    fi
-
-    # Configuración de usuario y detección de tema
-    echo "📁 Archivo de configuración: $USER_CONFIG_FILE"
-    if [ -f "$USER_CONFIG_FILE" ]; then
-        if [ -f "$SCRIPT_DIR/config-fedora.jsonc" ] && cmp -s "$SCRIPT_DIR/config-fedora.jsonc" "$USER_CONFIG_FILE"; then
-            echo "🎨 Tema activo:             Fedora Hero Theme (KDE Plasma 6 Wayland)"
-        elif [ -f "$SCRIPT_DIR/config-compact.jsonc" ] && cmp -s "$SCRIPT_DIR/config-compact.jsonc" "$USER_CONFIG_FILE"; then
-            echo "🎨 Tema activo:            📦 Compact FastCat (Minimalista sin logo)"
-        else
-            echo "🎨 Tema activo:            🛠️  Personalizado / Modificado manualmente"
-        fi
-    else
-        echo "🎨 Tema activo:            ❌ No configurado (Usa 'just fastfetch' para aplicarlo)"
-    fi
-
-    # Alias en shell
-    if [ -f "$USER_HOME/.bashrc.d/aliases.sh" ] && grep -q "alias ff=" "$USER_HOME/.bashrc.d/aliases.sh" 2>/dev/null; then
-        echo "⌨️  Alias de terminal:      ✅ 'ff' configurado en ~/.bashrc.d/aliases.sh"
-    elif [ -f "$SCRIPT_DIR/../Bash.Setup/aliases.sh" ] && grep -q "alias ff=" "$SCRIPT_DIR/../Bash.Setup/aliases.sh" 2>/dev/null; then
-        echo "⌨️  Alias de terminal:      ✅ 'ff' disponible en el repositorio (Bash.Setup/aliases.sh)"
-    else
-        echo "⌨️  Alias de terminal:      ℹ️ Puedes añadir 'alias ff=fastfetch' para acceso rápido"
-    fi
-
-    echo "================================================================="
-}
-
 show_help() {
-    cat <<EOF
-Uso: $(basename "$0") [OPCIONES]
+    cat << EOF
+${BOLD}📊 Gestor e Instalador de Fastfetch - Fedora 45 Workstation (GNOME Wayland)${NC}
 
-Instalación, diagnóstico y gestión de la configuración estética de Fastfetch
-para Fedora 44 (Rawhide/Workstation) y KDE Plasma 6.
+Instala Fastfetch mediante DNF5 y despliega temas personalizados para Fedora 45
+con paleta oficial ${BOLD}Fedora Blue${NC}, barras de progreso y telemetría Wayland.
 
-OPCIONES:
-  -s, --status              Muestra el estado de instalación, versión y tema activo.
-  -r, --run                 Ejecuta Fastfetch con la configuración de usuario activa.
-  -t, --theme <NOMBRE>      Aplica un tema específico ('fedora' o 'compact').
-  -l, --list-themes         Lista los temas disponibles y sus características.
-  -d, --diff [TEMA]         Compara la configuración instalada con la plantilla del tema.
-  -f, --force               Fuerza la reinstalación del tema (creando respaldo previo .bak).
-  -h, --help                Muestra esta ayuda.
+${BOLD}Uso:${NC}
+  $0 [OPCIONES]
 
-TEMAS SOPORTADOS:
-  fedora   (Predeterminado) Logo oficial de Fedora en arte ASCII con detalles completos.
-  compact  (Minimalista) Caja redondeada FastCat sin logo ASCII.
-
-EJEMPLOS:
-  $(basename "$0")                     # Aplica el tema Fedora y muestra el banner
-  $(basename "$0") --status            # Diagnóstico de versión y tema activo
-  $(basename "$0") --theme compact     # Cambia al diseño minimalista
-  $(basename "$0") --theme fedora      # Cambia al diseño oficial de Fedora
-  $(basename "$0") --list-themes       # Información detallada de cada diseño
+${BOLD}Opciones:${NC}
+  (sin argumentos)           Instala Fastfetch y aplica el tema 'fedora' (Hero categorizado)
+  -t, --theme <nombre>       Selecciona el tema: fedora | fedora-simple | modern | compact
+  -p, --preview [tema]       Previsualiza un tema en consola sin modificar ~/.config/fastfetch
+  -m, --menu                 Selector interactivo con previsualización en vivo
+  -l, --list-themes          Lista todos los temas disponibles en el repositorio
+  -r, --run                  Ejecuta fastfetch con la configuración actual
+  -d, --diff                 Compara el archivo activo con la plantilla del repositorio
+  -f, --force                Sobrescribe ~/.config/fastfetch/config.jsonc sin preguntar
+  -s, --status               Muestra el estado actual de Fastfetch y el tema activo
+  -h, --help                 Muestra esta ayuda
 EOF
 }
 
-# ------------------------------------------------------------------------------
-# 6. PARSEO DE ARGUMENTOS Y FLUJO PRINCIPAL
-# ------------------------------------------------------------------------------
-ACTION=""
-THEME_NAME="fedora"
-FORCE_APPLY=false
+list_themes() {
+    echo -e "${BOLD}🎨 Temas disponibles para Fastfetch (Fedora 45 Workstation):${NC}"
+    echo -e "  • ${CYAN}fedora${NC}         -> Tema Hero categorizado (HARDWARE / SYSTEM / THEMING & DESKTOP) con barras y Fedora Blue [Por defecto]"
+    echo -e "  • ${CYAN}fedora-simple${NC}  -> Tema minimalista limpio con logo pequeño de Fedora"
+    echo -e "  • ${CYAN}modern${NC}         -> Tema amplio con logo completo de Fedora y flechas Nerd Font"
+    echo -e "  • ${CYAN}compact${NC}        -> Tema compacto horizontal de lectura rápida"
+}
 
-while [ $# -gt 0 ]; do
+show_status() {
+    echo -e "${BOLD}======================================================================${NC}"
+    echo -e "  📊 ${BOLD}ESTADO DE FASTFETCH - FEDORA 45 WORKSTATION (GNOME WAYLAND)${NC}"
+    echo -e "${BOLD}======================================================================${NC}"
+
+    if command -v fastfetch &>/dev/null; then
+        echo -e "  • Binario Fastfetch:         ${GREEN}$(fastfetch --version)${NC}"
+    else
+        echo -e "  • Binario Fastfetch:         ${RED}No instalado${NC}"
+    fi
+
+    if [[ -f "$DEST_FILE" ]]; then
+        local active_theme="Personalizado"
+        for t in fedora fedora-simple modern compact; do
+            local tf
+            tf=$(resolve_theme_file "$t")
+            if [[ -f "$tf" ]] && cmp -s "$DEST_FILE" "$tf"; then
+                active_theme="$t"
+                break
+            fi
+        done
+        echo -e "  • Configuración activa:      ${GREEN}${DEST_FILE}${NC}"
+        echo -e "  • Tema detectado:            ${CYAN} ${active_theme} (Fedora 45 GNOME Wayland)${NC}"
+    else
+        echo -e "  • Configuración activa:      ${YELLOW}No configurada${NC}"
+    fi
+    echo -e "${BOLD}======================================================================${NC}"
+}
+
+run_interactive_menu() {
+    echo -e "${BOLD}======================================================================${NC}"
+    echo -e "  🎨 ${BOLD}SELECTOR INTERACTIVO DE TEMAS FASTFETCH - FEDORA 45 WORKSTATION${NC}"
+    echo -e "${BOLD}======================================================================${NC}"
+    list_themes
+    echo ""
+    echo "  1) fedora (Hero categorizado con barras)"
+    echo "  2) fedora-simple (Minimalista)"
+    echo "  3) modern (Logo grande Fedora)"
+    echo "  4) compact (Compacto)"
+    read -rp "Selecciona el tema a aplicar [1]: " choice
+    case "${choice:-1}" in
+        2) THEME="fedora-simple" ;;
+        3) THEME="modern" ;;
+        4) THEME="compact" ;;
+        *) THEME="fedora" ;;
+    esac
+    FORCE=true
+}
+
+while [[ $# -gt 0 ]]; do
     case "$1" in
-        -s|--status)
-            ACTION="status"
-            shift
-            ;;
-        -r|--run)
-            ACTION="run"
-            shift
-            ;;
-        -l|--list-themes)
-            ACTION="list-themes"
-            shift
-            ;;
-        -t|--theme)
-            shift
-            if [ $# -gt 0 ]; then
-                THEME_NAME="$1"
-                shift
+        -s|--status)      ACTION="status"; shift ;;
+        -l|--list-themes) ACTION="list"; shift ;;
+        -r|--run)         ACTION="run"; shift ;;
+        -d|--diff)        ACTION="diff"; shift ;;
+        -m|--menu)        ACTION="menu"; shift ;;
+        -f|--force)       FORCE=true; shift ;;
+        -t|--theme)       THEME="${2:-fedora}"; FORCE=true; shift 2 ;;
+        -p|--preview)
+            if [[ -n "${2:-}" && "${2:0:1}" != "-" ]]; then
+                THEME="$2"
+                shift 2
             else
-                echo "❌ Error: Debes especificar el nombre de un tema ('fedora' o 'compact')."
-                exit 1
-            fi
-            ;;
-        -d|--diff)
-            ACTION="diff"
-            shift
-            if [ $# -gt 0 ] && [[ ! "$1" =~ ^- ]]; then
-                THEME_NAME="$1"
                 shift
             fi
+            ACTION="preview"
             ;;
-        -f|--force)
-            FORCE_APPLY=true
-            shift
-            ;;
-        -h|--help)
-            show_help
-            exit 0
-            ;;
-        *)
-            echo "❌ Opción desconocida: $1"
-            echo "Usa '$(basename "$0") --help' para ver las opciones disponibles."
-            exit 1
-            ;;
+        -h|--help)        show_help; exit 0 ;;
+        *) log_err "Opción desconocida: $1"; show_help; exit 1 ;;
     esac
 done
 
 case "$ACTION" in
-    status)
-        show_status
-        exit 0
-        ;;
-    run)
-        run_as_user fastfetch
-        exit 0
-        ;;
-    list-themes)
-        list_themes
-        exit 0
+    status) show_status; exit 0 ;;
+    list)   list_themes; exit 0 ;;
+    run)    exec fastfetch ;;
+    preview)
+        SRC_FILE=$(resolve_theme_file "$THEME")
+        log_info "Previsualizando tema '$THEME' ($SRC_FILE)..."
+        exec fastfetch --config "$SRC_FILE"
         ;;
     diff)
-        show_diff "$THEME_NAME"
+        SRC_FILE=$(resolve_theme_file "$THEME")
+        if [[ -f "$DEST_FILE" ]]; then
+            diff -u "$DEST_FILE" "$SRC_FILE" || true
+        else
+            log_warn "No existe $DEST_FILE todavía."
+        fi
         exit 0
+        ;;
+    menu)
+        run_interactive_menu
         ;;
 esac
 
-echo "================================================================="
-echo "ℹ️  Configuración de Fastfetch para Fedora 44 ($REAL_USER)..."
-echo "   Tema seleccionado: '$THEME_NAME'"
-echo "================================================================="
+if ! command -v fastfetch &>/dev/null; then
+    log_info "Instalando fastfetch en Fedora 45 ($DNF_BIN)..."
+    sudo "$DNF_BIN" install -y fastfetch
+fi
 
-ensure_dependencies
-apply_config "$THEME_NAME" "$FORCE_APPLY"
+# Mantener sincronizado config.jsonc por defecto en el repositorio con config-fedora.jsonc
+cp "$SCRIPT_DIR/config-fedora.jsonc" "$SCRIPT_DIR/config.jsonc" 2>/dev/null || true
 
-echo "================================================================="
-echo "✅ Fastfetch configurado con el tema '$THEME_NAME'."
-echo "💡 Puedes ejecutar 'fastfetch' o el alias 'ff' para visualizarlo."
-echo "================================================================="
+SRC_FILE=$(resolve_theme_file "$THEME")
+mkdir -p "$DEST_DIR"
+
+if [[ -f "$DEST_FILE" && "$FORCE" == false ]]; then
+    if cmp -s "$SRC_FILE" "$DEST_FILE"; then
+        log_ok "El tema '$THEME' ya está activo y actualizado en $DEST_FILE."
+    else
+        cp "$DEST_FILE" "${DEST_FILE}.bak"
+        cp "$SRC_FILE" "$DEST_FILE"
+        log_ok "Tema '$THEME' aplicado en $DEST_FILE (backup en ${DEST_FILE}.bak)."
+    fi
+else
+    cp "$SRC_FILE" "$DEST_FILE"
+    log_ok "Tema '$THEME' instalado en $DEST_FILE."
+fi
+
+if [[ $EUID -eq 0 && "$REAL_USER" != "root" ]]; then
+    chown -R "$REAL_USER:$REAL_USER" "$DEST_DIR"
+fi
+
 echo ""
-run_as_user fastfetch 2>/dev/null || true
+fastfetch --config "$DEST_FILE" || true

@@ -2,7 +2,7 @@
 sidebar_position: 7
 ---
 
-# Entorno de Virtualización de Alto Rendimiento (KVM/QEMU) en Fedora 44
+# Entorno de Virtualización de Alto Rendimiento (KVM/QEMU) en Fedora 45
 
 Esta guía detalla la instalación, configuración y optimización del entorno de virtualización de alto rendimiento implementado en [`Virtualizacion/virtualization.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora-Workstation/Virtualizacion/virtualization.sh) y documentado en [`Virtualizacion/notas_virtualizacion_fedora.md`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora-Workstation/Virtualizacion/notas_virtualizacion_fedora.md).
 
