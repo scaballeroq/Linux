@@ -1,17 +1,19 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ==============================================================================
 # python.sh - Verificación de Python Nativo (Fedora) y Gestor 'uv' vía Mise
-# Fedora Workstation (GNOME Shell + Wayland / Systemd User Environment)
+# Fedora Workstation (GNOME Shell 51 Wayland / Systemd User Environment)
+# Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3, 8C/16T) | 32 GB RAM
 # ==============================================================================
-# Principio de Diseño:
-# - Python NO se instala de forma global a través de gestores de versiones (Mise/Pyenv)
-#   para garantizar la integridad absoluta de las herramientas del sistema Fedora
-#   (DNF, DNF5, Firewalld, systemd, CUPS/HPLIP, GNOME Shell).
-# - Se valida que el sistema tenga instalado y saludable el Python nativo de Fedora.
+# Principios de Diseño:
+# - Cumplimiento estricto de PEP 668: Python NO se instala globalmente a través
+#   de gestores de versiones (Mise/Pyenv) para garantizar la integridad absoluta
+#   de las herramientas del sistema Fedora (DNF5, Firewalld, systemd, GNOME Shell).
+# - Se valida que el sistema disponga del Python 3 nativo de Fedora y sus paquetes base.
 # - Para proyectos que requieran versiones específicas de Python (3.11, 3.12, 3.13, etc.),
-#   se utiliza 'uv' de forma aislada por proyecto (per-project) sin tocar el sistema.
-# - Optimización con UV_LINK_MODE=copy para compatibilidad con snapshots y clonado.
-# - Integración con GNOME Shell (environment.d) y Shells (Bash predeterminado / Zsh).
+#   se utiliza 'uv' de forma aislada por proyecto (per-project) sin alterar el sistema.
+# - Optimización con UV_LINK_MODE="copy" para compatibilidad con snapshots y clonado Btrfs/NVMe.
+# - Ajuste de paralelismo y compilación a los 16 hilos de la CPU AMD Ryzen 7 7730U (-j16).
+# - Integración nativa con GNOME Shell (environment.d) y Shells (Bash y Zsh).
 # - Generación automática de autocompletados nativos para 'uv' y 'uvx'.
 # - Comandos CLI: --status / -s, --update / -u, --help / -h.
 # ==============================================================================
@@ -19,7 +21,31 @@
 set -euo pipefail
 
 # ------------------------------------------------------------------------------
-# 1. DETECCIÓN DE USUARIO Y PRIVILEGIOS
+# 1. CONSTANTES, COLORES Y DETECCIÓN DE HARDWARE
+# ------------------------------------------------------------------------------
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+NC='\033[0m'
+
+log_info()  { echo -e "${BLUE}ℹ️  [INFO]${NC} $1"; }
+log_ok()    { echo -e "${GREEN}✅ [OK]${NC}   $1"; }
+log_warn()  { echo -e "${YELLOW}⚠️  [WARN]${NC} $1"; }
+log_error() { echo -e "${RED}❌ [ERR]${NC}  $1"; }
+log_step()  { echo -e "${CYAN}>> [PASO]${NC} $1"; }
+
+# Detectar núcleos e hilos de la CPU (AMD Ryzen 7 7730U -> 16 hilos)
+NPROC=$(nproc 2>/dev/null || echo 16)
+export MAKEFLAGS="-j$NPROC"
+export UV_LINK_MODE="copy"
+export PYTHONUNBUFFERED=1
+export UV_CONCURRENT_DOWNLOADS="$NPROC"
+
+# ------------------------------------------------------------------------------
+# 2. DETECCIÓN DE USUARIO Y PRIVILEGIOS
 # ------------------------------------------------------------------------------
 if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
     REAL_USER="$SUDO_USER"
@@ -35,37 +61,73 @@ else
     SUDO=""
 fi
 
-DNF_CMD=$(command -v dnf5 2>/dev/null || command -v dnf 2>/dev/null || echo "dnf")
+DNF_CMD=$(command -v dnf5 2>/dev/null || command -v dnf 2>/dev/null || echo "dnf5")
 
-export UV_LINK_MODE="copy"
-export PYTHONUNBUFFERED=1
-
-export PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:/usr/bin:$PATH"
+# Exportar rutas de usuario y herramientas en el PATH de la sesión
+export PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:/usr/local/bin:/usr/bin:$PATH"
 
 run_as_user() {
     if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
         sudo -u "$REAL_USER" env HOME="$USER_HOME" \
-            UV_LINK_MODE="copy" PYTHONUNBUFFERED=1 \
-            PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" "$@"
+            PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:/usr/local/bin:/usr/bin:$PATH" \
+            UV_LINK_MODE="copy" PYTHONUNBUFFERED=1 MAKEFLAGS="-j$NPROC" \
+            UV_CONCURRENT_DOWNLOADS="$NPROC" "$@"
     else
-        UV_LINK_MODE="copy" PYTHONUNBUFFERED=1 \
-        PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" "$@"
+        env HOME="$USER_HOME" \
+            PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:/usr/local/bin:/usr/bin:$PATH" \
+            UV_LINK_MODE="copy" PYTHONUNBUFFERED=1 MAKEFLAGS="-j$NPROC" \
+            UV_CONCURRENT_DOWNLOADS="$NPROC" "$@"
+    fi
+}
+
+get_mise_bin() {
+    if command -v mise &>/dev/null; then
+        command -v mise
+    elif [ -x "$USER_HOME/.local/bin/mise" ]; then
+        echo "$USER_HOME/.local/bin/mise"
+    else
+        echo ""
+    fi
+}
+
+get_uv_bin() {
+    if command -v uv &>/dev/null; then
+        command -v uv
+    elif [ -x "$USER_HOME/.local/share/mise/shims/uv" ]; then
+        echo "$USER_HOME/.local/share/mise/shims/uv"
+    elif [ -x "$USER_HOME/.local/bin/uv" ]; then
+        echo "$USER_HOME/.local/bin/uv"
+    else
+        echo ""
+    fi
+}
+
+get_uvx_bin() {
+    if command -v uvx &>/dev/null; then
+        command -v uvx
+    elif [ -x "$USER_HOME/.local/share/mise/shims/uvx" ]; then
+        echo "$USER_HOME/.local/share/mise/shims/uvx"
+    elif [ -x "$USER_HOME/.local/bin/uvx" ]; then
+        echo "$USER_HOME/.local/bin/uvx"
+    else
+        echo ""
     fi
 }
 
 # ------------------------------------------------------------------------------
-# 2. AYUDA Y ESTADO
+# 3. AYUDA Y ESTADO
 # ------------------------------------------------------------------------------
 show_help() {
     cat <<EOF
-🐍 Gestor de Entorno Python & uv - Fedora Workstation
+🐍 Gestor de Entorno Python & Gestor 'uv' - Fedora Workstation
+   Hardware: AMD Ryzen 7 7730U (16 hilos) | 32 GB RAM | NVMe Kioxia | GNOME Wayland
 
-Filosofía:
-  • El sistema operativo utiliza el Python nativo de Fedora (/usr/bin/python3).
-  • Python NO se instala globalmente en Mise para no romper herramientas de sistema
-    (DNF, Firewalld, GNOME Shell).
-  • Los proyectos que necesiten versiones específicas de Python se gestionan
-    de forma aislada mediante 'uv' (ej: 'uv init', 'uv venv --python 3.12').
+Filosofía de Aislamiento (PEP 668):
+  • El sistema operativo utiliza exclusivamente el Python nativo de Fedora (/usr/bin/python3).
+  • Python NO se instala globalmente en Mise para garantizar la integridad del sistema
+    (DNF5, Firewalld, GNOME Shell, PipeWire).
+  • Los proyectos que requieran versiones específicas de Python se gestionan de forma
+    aislada mediante 'uv' (ej: 'uv init', 'uv venv --python 3.13').
 
 Uso:
   $0 [OPCIÓN]
@@ -73,105 +135,149 @@ Uso:
 Opciones:
   (sin argumentos)    Verifica el Python nativo del sistema, asegura 'uv' en Mise,
                       desactiva shims globales conflictivos y genera autocompletados.
-  --status, -s        Muestra el diagnóstico del Python nativo de Fedora, módulos
-                      (venv, pip), gestor 'uv' y aislamiento de Mise.
+  --status, -s        Muestra diagnóstico detallado del Python nativo de Fedora,
+                      módulo venv, gestor 'uv', concurrencia y aislamiento de Mise.
   --update, -u        Actualiza 'uv' a la última versión disponible en Mise.
   --help, -h          Muestra este mensaje de ayuda.
 
-Herramientas per-project:
-  Para crear un nuevo proyecto Python aislado:
+Herramienta de Creación Rápida de Proyectos:
+  Para inicializar un proyecto Python moderno aislado con 'uv':
     ./ProgrammingLanguages/python-uv-init.sh (o 'just python-uv')
 EOF
 }
 
 show_status() {
-    echo "================================================================="
-    echo "🔍 ESTADO DEL ENTORNO PYTHON (NATIVO FEDORA + GESTOR UV)"
-    echo "================================================================="
+    echo -e "${CYAN}=================================================================${NC}"
+    echo -e "${BOLD}🔍 DIAGNÓSTICO DEL ENTORNO PYTHON (NATIVO FEDORA + GESTOR UV)${NC}"
+    echo -e "${CYAN}=================================================================${NC}"
 
     local py_bin py_ver py_pkg venv_status pip_status mise_py uv_status uvx_status
+    local uv_cmd uvx_cmd mise_cmd
 
     py_bin=$(which python3 2>/dev/null || echo "No encontrado")
     py_ver=$(python3 --version 2>/dev/null || echo "No disponible")
     py_pkg=$(rpm -q python3 2>/dev/null || echo "Paquete nativo")
 
     if python3 -m venv --help &>/dev/null; then
-        venv_status="✅ Operativo (módulo venv nativo)"
+        venv_status="${GREEN}✅ Operativo (módulo venv nativo)${NC}"
     else
-        venv_status="❌ No disponible"
+        venv_status="${RED}❌ No disponible${NC}"
     fi
 
     if python3 -m pip --version &>/dev/null; then
         local pip_ver
         pip_ver=$(python3 -m pip --version 2>/dev/null | awk '{print $2}')
-        pip_status="✅ v$pip_ver (paquete Fedora)"
+        pip_status="${GREEN}✅ v$pip_ver (paquete RPM de Fedora)${NC}"
     else
-        pip_status="⚠️ No instalado a nivel de sistema"
+        pip_status="${YELLOW}⚠️  No instalado a nivel de sistema (cumple aislamiento PEP 668)${NC}"
     fi
 
-    if run_as_user mise which python 2>/dev/null >/dev/null; then
-        mise_py="⚠️ Detectado shim de Python en Mise (se recomienda eliminar para proteger el sistema)"
+    mise_cmd=$(get_mise_bin)
+    if [ -n "$mise_cmd" ] && run_as_user "$mise_cmd" which python &>/dev/null; then
+        mise_py="${YELLOW}⚠️  Detectado shim de Python en Mise (se recomienda eliminar para proteger el sistema)${NC}"
     else
-        mise_py="✅ Ninguno (El sistema corre 100% nativo con /usr/bin/python3)"
+        mise_py="${GREEN}✅ Ninguno (El sistema corre 100% nativo con /usr/bin/python3)${NC}"
     fi
 
-    if command -v uv &>/dev/null; then
-        uv_status="✅ $(uv --version 2>/dev/null)"
-    elif [ -x "$USER_HOME/.local/share/mise/shims/uv" ]; then
-        uv_status="✅ v$("$USER_HOME/.local/share/mise/shims/uv" --version 2>/dev/null | awk '{print $2}') (vía Mise)"
+    uv_cmd=$(get_uv_bin)
+    if [ -n "$uv_cmd" ] && [ -x "$uv_cmd" ]; then
+        local uv_v
+        uv_v=$(run_as_user "$uv_cmd" --version 2>/dev/null || echo "instalado")
+        uv_status="${GREEN}✅ $uv_v ($uv_cmd)${NC}"
     else
-        uv_status="❌ No instalado"
+        uv_status="${RED}❌ No instalado${NC}"
     fi
 
-    if command -v uvx &>/dev/null; then
-        uvx_status="✅ $(uvx --version 2>/dev/null)"
-    elif [ -x "$USER_HOME/.local/share/mise/shims/uvx" ]; then
-        uvx_status="✅ v$("$USER_HOME/.local/share/mise/shims/uvx" --version 2>/dev/null | awk '{print $2}') (vía Mise)"
+    uvx_cmd=$(get_uvx_bin)
+    if [ -n "$uvx_cmd" ] && [ -x "$uvx_cmd" ]; then
+        local uvx_v
+        uvx_v=$(run_as_user "$uvx_cmd" --version 2>/dev/null || echo "instalado")
+        uvx_status="${GREEN}✅ $uvx_v ($uvx_cmd)${NC}"
     else
-        uvx_status="❌ No instalado"
+        uvx_status="${RED}❌ No instalado${NC}"
     fi
 
-    echo "1. Python Nativo del Sistema (Fedora Workstation):"
-    echo "  • Binario ejecutable:    $py_bin"
-    echo "  • Versión activa:        $py_ver"
-    echo "  • Paquete RPM:           $py_pkg"
-    echo "  • Módulo python3-venv:   $venv_status"
-    echo "  • Gestor pip de sistema: $pip_status"
-    echo "-----------------------------------------------------------------"
-    echo "2. Aislamiento y Entornos Virtuales:"
-    echo "  • Shims de Mise:         $mise_py"
-    echo "  • Gestor 'uv' (Mise):    $uv_status"
-    echo "  • Ejecutor 'uvx':        $uvx_status"
-    echo "  • Modo enlace (symlink): UV_LINK_MODE=$UV_LINK_MODE"
-    echo "-----------------------------------------------------------------"
-    echo "3. Integración en el Entorno:"
-    echo "  • GNOME environment.d:   $([ -f "$USER_HOME/.config/environment.d/10-python.conf" ] && echo '✅ Activo (~/.config/environment.d/10-python.conf)' || echo '❌ Ausente')"
-    echo "  • Shell Bash (~/.bashrc.d): $([ -f "$USER_HOME/.bashrc.d/python.sh" ] && echo '✅ Activo (~/.bashrc.d/python.sh)' || echo '❌ Ausente')"
-    echo "  • Autocompletado Bash:   $([ -f "$USER_HOME/.local/share/bash-completion/completions/uv" ] && echo '✅ Configurado' || echo '❌ Ausente')"
-    if [ -f "$USER_HOME/.zshrc" ]; then
-        echo "  • Shell Zsh (~/.zshrc.d):   $([ -f "$USER_HOME/.zshrc.d/python.zsh" ] && echo '✅ Activo (~/.zshrc.d/python.zsh)' || echo '❌ Ausente')"
-        echo "  • Autocompletado Zsh:    $([ -f "$USER_HOME/.local/share/zsh/site-functions/_uv" ] && echo '✅ Configurado' || echo '❌ Ausente')"
+    echo -e "${BOLD}1. Python Nativo del Sistema (Fedora Workstation):${NC}"
+    echo -e "  • Binario ejecutable:    $py_bin"
+    echo -e "  • Versión activa:        ${CYAN}$py_ver${NC}"
+    echo -e "  • Paquete RPM:           $py_pkg"
+    echo -e "  • Módulo python3-venv:   $venv_status"
+    echo -e "  • Gestor pip de sistema: $pip_status"
+    echo -e "-----------------------------------------------------------------"
+    echo -e "${BOLD}2. Hardware y Concurrencia (AMD Ryzen 7 7730U):${NC}"
+    echo -e "  • Hilos de compilación:  ${GREEN}$NPROC hilos activos${NC} (MAKEFLAGS=\"-j$NPROC\")"
+    echo -e "  • Concurrencia de uv:    UV_CONCURRENT_DOWNLOADS=$NPROC"
+    echo -e "  • Modo de enlace:        UV_LINK_MODE=$UV_LINK_MODE (seguro para Btrfs/NVMe)"
+    echo -e "-----------------------------------------------------------------"
+    echo -e "${BOLD}3. Aislamiento y Gestores de Paquetes:${NC}"
+    echo -e "  • Shims de Mise:         $mise_py"
+    echo -e "  • Gestor 'uv':           $uv_status"
+    echo -e "  • Ejecutor 'uvx':        $uvx_status"
+    echo -e "-----------------------------------------------------------------"
+    echo -e "${BOLD}4. Integración en el Entorno:${NC}"
+    echo -e "  • GNOME environment.d:   $([ -f "$USER_HOME/.config/environment.d/10-python.conf" ] && echo -e "${GREEN}✅ Activo (~/.config/environment.d/10-python.conf)${NC}" || echo -e "${RED}❌ Ausente${NC}")"
+    echo -e "  • Shell Bash (~/.bashrc.d): $([ -f "$USER_HOME/.bashrc.d/python.sh" ] && echo -e "${GREEN}✅ Activo (~/.bashrc.d/python.sh)${NC}" || echo -e "${RED}❌ Ausente${NC}")"
+    echo -e "  • Autocompletado Bash:   $([ -f "$USER_HOME/.local/share/bash-completion/completions/uv" ] && echo -e "${GREEN}✅ Configurado (uv & uvx)${NC}" || echo -e "${RED}❌ Ausente${NC}")"
+    if [ -f "$USER_HOME/.zshrc" ] || [ -d "$USER_HOME/.zshrc.d" ]; then
+        echo -e "  • Shell Zsh (~/.zshrc.d):   $([ -f "$USER_HOME/.zshrc.d/python.zsh" ] && echo -e "${GREEN}✅ Activo (~/.zshrc.d/python.zsh)${NC}" || echo -e "${RED}❌ Ausente${NC}")"
+        echo -e "  • Autocompletado Zsh:    $([ -f "$USER_HOME/.local/share/zsh/site-functions/_uv" ] && echo -e "${GREEN}✅ Configurado (_uv & _uvx)${NC}" || echo -e "${RED}❌ Ausente${NC}")"
     fi
-    echo "================================================================="
+    echo -e "${CYAN}=================================================================${NC}"
 }
 
 # ------------------------------------------------------------------------------
-# 3. ACTUALIZACIÓN DE UV
+# 4. ACTUALIZACIÓN DE UV
 # ------------------------------------------------------------------------------
 update_uv() {
-    echo "🔄 Actualizando gestor 'uv' vía Mise..."
-    if command -v mise &>/dev/null || [ -x "$USER_HOME/.local/bin/mise" ]; then
-        run_as_user mise use --global uv@latest
-        run_as_user mise reshim 2>/dev/null || true
-        echo "✅ 'uv' actualizado con éxito a la última versión en Mise."
+    log_step "Actualizando gestor 'uv' y 'uvx'..."
+    local mise_cmd
+    mise_cmd=$(get_mise_bin)
+
+    if [ -n "$mise_cmd" ] && [ -x "$mise_cmd" ]; then
+        log_info "Actualizando 'uv@latest' a través de Mise ($mise_cmd)..."
+        run_as_user "$mise_cmd" use --global uv@latest
+        run_as_user "$mise_cmd" reshim 2>/dev/null || true
+        log_ok "'uv' actualizado con éxito a la última versión en Mise."
+    elif command -v uv &>/dev/null; then
+        if uv self update 2>/dev/null; then
+            log_ok "'uv' actualizado vía 'uv self update'."
+        else
+            log_warn "No se pudo actualizar directamente con 'uv self update'. Instalando con Mise..."
+            ensure_mise_and_uv
+        fi
     else
-        echo "❌ Error: 'mise' no está instalado."
+        log_warn "Mise no está configurado. Ejecutando instalación de Mise..."
+        ensure_mise_and_uv
+    fi
+}
+
+ensure_mise_and_uv() {
+    local mise_cmd
+    mise_cmd=$(get_mise_bin)
+
+    if [ -z "$mise_cmd" ]; then
+        local script_dir
+        script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        if [ -f "$script_dir/mise.sh" ]; then
+            log_info "Ejecutando aprovisionamiento de Mise ($script_dir/mise.sh)..."
+            bash "$script_dir/mise.sh"
+            mise_cmd=$(get_mise_bin)
+        fi
+    fi
+
+    if [ -n "$mise_cmd" ] && [ -x "$mise_cmd" ]; then
+        log_info "Configurando 'uv@latest' como runtime global en Mise..."
+        run_as_user "$mise_cmd" use --global uv@latest
+        run_as_user "$mise_cmd" reshim 2>/dev/null || true
+        log_ok "'uv' y 'uvx' aprovisionados en Mise."
+    else
+        log_error "No se pudo encontrar ni instalar 'mise'. Ejecuta './mise.sh' primero."
         exit 1
     fi
 }
 
 # ------------------------------------------------------------------------------
-# PROCESAMIENTO DE ARGUMENTOS CLI
+# 5. PROCESAMIENTO DE ARGUMENTOS CLI
 # ------------------------------------------------------------------------------
 case "${1:-}" in
     --status|-s|status)
@@ -189,67 +295,67 @@ case "${1:-}" in
         ;;
 esac
 
-echo "================================================================="
-echo "🐍 Verificando Python Nativo de Fedora y Gestor 'uv' (Mise)"
-echo "   Hardware: AMD Ryzen 7 7730U | NVMe Kioxia | Fedora Workstation"
-echo "================================================================="
+echo -e "${CYAN}=================================================================${NC}"
+echo -e "${BOLD}🐍 Configurando Python Nativo de Fedora y Gestor 'uv' (Mise)${NC}"
+echo -e "   Hardware: AMD Ryzen 7 7730U (16T) | 32GB RAM | Fedora Workstation"
+echo -e "${CYAN}=================================================================${NC}"
 
 # ------------------------------------------------------------------------------
-# 4. VERIFICAR PYTHON NATIVO DE FEDORA
+# 6. VERIFICAR PYTHON NATIVO DE FEDORA
 # ------------------------------------------------------------------------------
-echo "ℹ️ [1/4] Comprobando integridad del Python nativo de Fedora..."
+log_step "[1/4] Comprobando integridad del Python nativo de Fedora..."
 MISSING_PKGS=()
-for pkg in python3 python3-devel python3-pip; do
+for pkg in python3 python3-devel; do
     if ! rpm -q "$pkg" &>/dev/null; then
         MISSING_PKGS+=("$pkg")
     fi
 done
 
 if [ ${#MISSING_PKGS[@]} -gt 0 ]; then
-    echo "  ⬇️ Instalando paquetes de Python faltantes vía $DNF_CMD: ${MISSING_PKGS[*]}..."
-    $SUDO $DNF_CMD install -y "${MISSING_PKGS[@]}" 2>/dev/null || true
-    echo "  ✅ Paquetes nativos de Fedora instalados."
-else
-    echo "  ✅ Python nativo de Fedora ($(python3 --version 2>/dev/null)) y librerías base intactos."
-fi
-
-if ! python3 -m venv --help &>/dev/null; then
-    echo "⚠️ Advertencia: python3-venv no responde. Asegurando paquete python3-devel..."
-    $SUDO $DNF_CMD install -y python3-devel 2>/dev/null || true
-fi
-
-# ------------------------------------------------------------------------------
-# 5. GARANTIZAR QUE MISE NO ENMASCARA EL PYTHON DEL SISTEMA
-# ------------------------------------------------------------------------------
-echo "ℹ️ [2/4] Asegurando que Mise no bloquee ni enmascare el Python del sistema..."
-if command -v mise &>/dev/null || [ -x "$USER_HOME/.local/bin/mise" ]; then
-    run_as_user mise unuse --global python 2>/dev/null || true
-    run_as_user mise reshim 2>/dev/null || true
-    echo "  ✅ Aislamiento garantizado: ningún shim global de Python interfiere con Fedora."
-fi
-
-# ------------------------------------------------------------------------------
-# 6. INSTALAR / VERIFICAR GESTOR 'uv' VÍA MISE (PARA PROYECTOS AISLADOS)
-# ------------------------------------------------------------------------------
-echo "ℹ️ [3/4] Verificando gestor 'uv' para gestión aislada per-project..."
-if ! command -v mise &> /dev/null && [ ! -x "$USER_HOME/.local/bin/mise" ]; then
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    if [ -f "$SCRIPT_DIR/mise.sh" ]; then
-        echo "  ℹ️ Mise no encontrado. Ejecutando $SCRIPT_DIR/mise.sh..."
-        bash "$SCRIPT_DIR/mise.sh"
+    log_info "Instalando paquetes nativos faltantes vía $DNF_CMD: ${MISSING_PKGS[*]}..."
+    if [ -n "$SUDO" ] && ! command -v sudo &>/dev/null; then
+        log_warn "No se dispone de 'sudo' para instalar paquetes del sistema: ${MISSING_PKGS[*]}"
     else
-        echo "❌ Error: 'mise' no está instalado. Ejecuta ./mise.sh primero."
-        exit 1
+        $SUDO $DNF_CMD install -y "${MISSING_PKGS[@]}" 2>/dev/null || true
+    fi
+    log_ok "Paquetes nativos de Fedora asegurados."
+else
+    local_ver=$(python3 --version 2>/dev/null || echo "Python 3")
+    log_ok "Python nativo de Fedora ($local_ver) y cabeceras de desarrollo intactas."
+fi
+
+# Validar módulo venv
+if ! python3 -m venv --help &>/dev/null; then
+    log_warn "El módulo python3-venv no responde. Asegurando paquetes del sistema..."
+    if [ -n "$SUDO" ] && command -v sudo &>/dev/null; then
+        $SUDO $DNF_CMD install -y python3-devel 2>/dev/null || true
     fi
 fi
 
-run_as_user mise use --global uv@latest
-run_as_user mise reshim 2>/dev/null || true
+# ------------------------------------------------------------------------------
+# 7. GARANTIZAR AISLAMIENTO (PEP 668 - SIN SHIMS GLOBALES DE PYTHON EN MISE)
+# ------------------------------------------------------------------------------
+log_step "[2/4] Asegurando cumplimiento de PEP 668 y aislamiento de Mise..."
+MISE_CMD=$(get_mise_bin)
+if [ -n "$MISE_CMD" ] && [ -x "$MISE_CMD" ]; then
+    if run_as_user "$MISE_CMD" which python &>/dev/null; then
+        log_info "Eliminando shim global de Python en Mise para proteger el sistema..."
+        run_as_user "$MISE_CMD" unuse --global python 2>/dev/null || true
+        run_as_user "$MISE_CMD" reshim 2>/dev/null || true
+    fi
+    log_ok "Aislamiento garantizado: el sistema utiliza /usr/bin/python3 sin interferencias."
+fi
 
 # ------------------------------------------------------------------------------
-# 7. INTEGRACIÓN CON GNOME SHELL, SHELLS Y AUTOCOMPLETADOS
+# 8. INSTALAR / VERIFICAR GESTOR 'uv' VÍA MISE
 # ------------------------------------------------------------------------------
-echo "ℹ️ [4/4] Configurando variables de entorno y autocompletados..."
+log_step "[3/4] Verificando gestor 'uv' para gestión aislada per-project..."
+ensure_mise_and_uv
+
+# ------------------------------------------------------------------------------
+# 9. INTEGRACIÓN CON GNOME SHELL, SHELLS Y AUTOCOMPLETADOS
+# ------------------------------------------------------------------------------
+log_step "[4/4] Configurando variables de entorno y autocompletados..."
 
 ENV_DIR="$USER_HOME/.config/environment.d"
 BASHRC_D="$USER_HOME/.bashrc.d"
@@ -257,22 +363,22 @@ BASH_COMPLETIONS_DIR="$USER_HOME/.local/share/bash-completion/completions"
 
 run_as_user mkdir -p "$ENV_DIR" "$BASHRC_D" "$BASH_COMPLETIONS_DIR"
 
-# 7.1. Integración con sesión gráfica GNOME Shell (systemd user)
+# 9.1. Integración con sesión gráfica GNOME Shell (systemd user)
 cat << 'EOF' | run_as_user tee "$ENV_DIR/10-python.conf" > /dev/null
-# Integración de Python & uv para Wayland / GNOME Shell
+# Integración de Python & uv para Wayland / GNOME Shell (Fedora Workstation)
 PYTHONUNBUFFERED=1
 UV_LINK_MODE=copy
 EOF
 
-# 7.2. Shell Bash (predeterminada)
+# 9.2. Shell Bash (predeterminada)
 cat << 'EOF' | run_as_user tee "$BASHRC_D/python.sh" > /dev/null
 # Python & uv Environment Settings (Fedora Workstation)
 export PYTHONUNBUFFERED=1
 export UV_LINK_MODE=copy
 EOF
 
-# 7.3. Shell Zsh (compatibilidad condicional)
-if [ -f "$USER_HOME/.zshrc" ]; then
+# 9.3. Shell Zsh (compatibilidad condicional)
+if [ -f "$USER_HOME/.zshrc" ] || [ -d "$USER_HOME/.zshrc.d" ]; then
     ZSHRC_D="$USER_HOME/.zshrc.d"
     run_as_user mkdir -p "$ZSHRC_D"
     cat << 'EOF' | run_as_user tee "$ZSHRC_D/python.zsh" > /dev/null
@@ -282,40 +388,51 @@ export UV_LINK_MODE=copy
 EOF
 fi
 
-# 7.4. Autocompletados para Bash (uv y uvx)
-if command -v uv &>/dev/null; then
-    uv generate-shell-completion bash > "$BASH_COMPLETIONS_DIR/uv" 2>/dev/null || true
-    uvx --generate-shell-completion bash > "$BASH_COMPLETIONS_DIR/uvx" 2>/dev/null || true
-fi
+# 9.4. Generación de Autocompletados (uv y uvx) de forma segura como usuario
+UV_BIN=$(get_uv_bin)
+UVX_BIN=$(get_uvx_bin)
 
-# 7.5. Autocompletados para Zsh (si existe ~/.zshrc)
-if [ -f "$USER_HOME/.zshrc" ]; then
-    ZSH_COMPLETIONS_DIR="$USER_HOME/.local/share/zsh/site-functions"
-    ZFUNC_DIR="$USER_HOME/.zfunc"
-    run_as_user mkdir -p "$ZSH_COMPLETIONS_DIR" "$ZFUNC_DIR"
-
-    if command -v uv &>/dev/null; then
-        uv generate-shell-completion zsh > "$ZSH_COMPLETIONS_DIR/_uv" 2>/dev/null || true
-        uv generate-shell-completion zsh > "$ZFUNC_DIR/_uv" 2>/dev/null || true
-        uvx --generate-shell-completion zsh > "$ZSH_COMPLETIONS_DIR/_uvx" 2>/dev/null || true
-        uvx --generate-shell-completion zsh > "$ZFUNC_DIR/_uvx" 2>/dev/null || true
+if [ -n "$UV_BIN" ] && [ -x "$UV_BIN" ]; then
+    # Bash completions
+    run_as_user "$UV_BIN" generate-shell-completion bash 2>/dev/null | run_as_user tee "$BASH_COMPLETIONS_DIR/uv" > /dev/null || true
+    if [ -n "$UVX_BIN" ] && [ -x "$UVX_BIN" ]; then
+        (run_as_user "$UVX_BIN" --generate-shell-completion bash 2>/dev/null || run_as_user "$UVX_BIN" generate-shell-completion bash 2>/dev/null) | run_as_user tee "$BASH_COMPLETIONS_DIR/uvx" > /dev/null || true
     fi
+
+    # Zsh completions
+    if [ -f "$USER_HOME/.zshrc" ] || [ -d "$USER_HOME/.zshrc.d" ]; then
+        ZSH_COMPLETIONS_DIR="$USER_HOME/.local/share/zsh/site-functions"
+        ZFUNC_DIR="$USER_HOME/.zfunc"
+        run_as_user mkdir -p "$ZSH_COMPLETIONS_DIR" "$ZFUNC_DIR"
+
+        run_as_user "$UV_BIN" generate-shell-completion zsh 2>/dev/null | run_as_user tee "$ZSH_COMPLETIONS_DIR/_uv" > /dev/null || true
+        run_as_user cp -f "$ZSH_COMPLETIONS_DIR/_uv" "$ZFUNC_DIR/_uv" 2>/dev/null || true
+
+        if [ -n "$UVX_BIN" ] && [ -x "$UVX_BIN" ]; then
+            (run_as_user "$UVX_BIN" --generate-shell-completion zsh 2>/dev/null || run_as_user "$UVX_BIN" generate-shell-completion zsh 2>/dev/null) | run_as_user tee "$ZSH_COMPLETIONS_DIR/_uvx" > /dev/null || true
+            run_as_user cp -f "$ZSH_COMPLETIONS_DIR/_uvx" "$ZFUNC_DIR/_uvx" 2>/dev/null || true
+        fi
+    fi
+    log_ok "Autocompletados generados correctamente en el espacio de usuario."
+else
+    log_warn "Binario de 'uv' aún no disponible en disco. Autocompletados omitidos."
 fi
 
 # ------------------------------------------------------------------------------
-# 8. RESUMEN FINAL
+# 10. RESUMEN FINAL
 # ------------------------------------------------------------------------------
 PYTHON_VER=$(python3 --version 2>/dev/null || echo "Python nativo del sistema")
-UV_VER=$(run_as_user mise exec uv@latest -- uv --version 2>/dev/null || echo "uv instalado")
-PIP_VER=$(python3 -m pip --version 2>/dev/null | awk '{print $2}' || echo "pip del sistema")
+UV_VER="uv pendiente de carga"
+if [ -n "$UV_BIN" ] && [ -x "$UV_BIN" ]; then
+    UV_VER=$(run_as_user "$UV_BIN" --version 2>/dev/null || echo "uv disponible")
+fi
 
-echo "================================================================="
-echo "✅ Entorno Python & uv listo para Fedora Workstation y GNOME:"
-echo "  • Python Sistema: $PYTHON_VER (/usr/bin/python3 nativo)"
-echo "  • Gestor pip:     v$PIP_VER (paquetes nativos Fedora)"
-echo "  • Gestor uv:      $UV_VER (para proyectos y entornos aislados)"
-echo "  • Modo enlace:    UV_LINK_MODE=copy"
-echo "  • Entorno GNOME:  ~/.config/environment.d/10-python.conf"
-echo "  • Shells:         Bash (predeterminada)$([ -f "$USER_HOME/.zshrc" ] && echo " & Zsh (compatible)") con autocompletados (uv / uvx)"
-echo "  • Proyectos:      Ejecuta './ProgrammingLanguages/python-uv-init.sh' para crear nuevos entornos"
-echo "================================================================="
+echo -e "${CYAN}=================================================================${NC}"
+echo -e "${GREEN}${BOLD}✅ Entorno Python & uv listo para Fedora Workstation y GNOME:${NC}"
+echo -e "  • Python Sistema: ${CYAN}$PYTHON_VER${NC} (/usr/bin/python3 nativo)"
+echo -e "  • Gestor uv:      ${GREEN}$UV_VER${NC} (gestión per-project en espacio de usuario)"
+echo -e "  • Optimización:   UV_LINK_MODE=copy | MAKEFLAGS=\"-j$NPROC\" (AMD Ryzen 7 7730U)"
+echo -e "  • GNOME Shell:    ~/.config/environment.d/10-python.conf"
+echo -e "  • Shells:         Bash (~/.bashrc.d/python.sh)$([ -f "$USER_HOME/.zshrc" ] && echo " & Zsh (~/.zshrc.d/python.zsh)")"
+echo -e "  • Inicializador:  Ejecuta '${BOLD}./ProgrammingLanguages/python-uv-init.sh${NC}' o '${BOLD}just python-uv${NC}'"
+echo -e "${CYAN}=================================================================${NC}"

@@ -5,7 +5,7 @@ After=network-online.target
 
 [Container]
 ContainerName=keycloak
-Image=quay.io/keycloak/keycloak:latest
+Image=quay.io/keycloak/keycloak:26
 Environment=KEYCLOAK_ADMIN=admin
 Environment=KEYCLOAK_ADMIN_PASSWORD=admin
 Environment=KC_DB=postgres
@@ -14,6 +14,7 @@ Environment=KC_DB_USERNAME=postgres
 Environment=KC_DB_PASSWORD=postgres
 Environment=KC_HOSTNAME=localhost
 PublishPort=8083:8080
+Exec=start-dev
 
 [Service]
 Restart=on-failure

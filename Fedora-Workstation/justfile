@@ -350,6 +350,14 @@ git-status:
 mise:
     ./ProgrammingLanguages/mise.sh
 
+# Instala y optimiza el entorno de Rust
+rust:
+    ./ProgrammingLanguages/rust.sh
+
+# Diagnóstico de Rust
+rust-status:
+    ./ProgrammingLanguages/rust.sh --status
+
 # Instala los entornos de programación (Python + uv, Node.js, Rust, Java, .NET, Angular)
 languages:
     ./ProgrammingLanguages/python.sh

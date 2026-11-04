@@ -2,8 +2,8 @@
 # podman-install.sh - Optimización y configuración de Podman Rootless + Socket + Quadlets para Fedora 45 + GNOME
 #
 # Uso:
-#   ./podman-install.sh              -> Configura el entorno Podman rootless, socket, linger, registries y symlink de podman-utils
-#   ./podman-install.sh --status     -> Muestra el estado del socket, linger, DOCKER_HOST, storage y Quadlets
+#   ./podman-install.sh              -> Configura el entorno Podman rootless, socket, linger, registries, firewalld y symlink de podman-utils
+#   ./podman-install.sh --status     -> Muestra el estado del socket, linger, DOCKER_HOST, storage, firewalld y Quadlets
 #   ./podman-install.sh --help       -> Muestra la ayuda interactiva
 
 set -euo pipefail
@@ -15,6 +15,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m'
 
 log_info()  { echo -e "${YELLOW}[INFO]${NC} $1"; }
@@ -38,15 +39,16 @@ Uso:
   $0 [OPCIÓN]
 
 Opciones:
-  (sin argumentos)       Configura Podman rootless, socket compatible con Docker, linger, registries, environment.d y podman-utils CLI.
-  --status, -s           Muestra el estado del motor Podman, socket, linger, DOCKER_HOST y almacenamiento.
+  (sin argumentos)       Configura Podman rootless, socket compatible con Docker, linger, registries, environment.d, firewalld y podman-utils CLI.
+  --status, -s           Muestra el estado del motor Podman, socket, linger, DOCKER_HOST, almacenamiento y cortafuegos.
   --help, -h             Muestra este mensaje de ayuda.
 
 Características configuradas:
-  • Base Fedora 45:      Verifica e instala complementos opcionales (podman-compose, podman-docker, cockpit-podman, passt).
+  • Base Fedora 45:      Verifica e instala complementos opcionales (podman-compose, podman-docker, passt, netavark).
   • Persistencia Linger: Habilita loginctl linger para que contenedores y Quadlets sigan corriendo sin sesión de terminal abierta.
   • Docker Socket API:   Activa podman.socket en systemd user (/run/user/\$UID/podman/podman.sock).
   • Sesión GNOME / GUI:  Inyecta DOCKER_HOST en ~/.config/environment.d/10-podman.conf para VS Code, DevContainers y Antigravity.
+  • Cortafuegos:         Garantiza la interfaz virtual podman+ en la zona trusted de Firewalld.
   • Almacenamiento:      Configura driver overlay nativo de Fedora en ~/.config/containers/storage.conf.
   • Registries:          Configura docker.io, quay.io, ghcr.io y registry.fedoraproject.org.
   • CLI podman-utils:    Crea symlink en ~/.local/bin/podman-utils y autocompletado en Bash (y Zsh condicional).
@@ -56,40 +58,67 @@ EOF
 # 1. Mostrar estado de Podman
 show_status() {
     echo "================================================================="
-    echo "🔍 ESTADO DE PODMAN ROOTLESS - FEDORA 44 (GNOME)"
+    echo "🔍 ESTADO DE PODMAN ROOTLESS - FEDORA 45 (GNOME)"
     echo "================================================================="
     if command -v podman &>/dev/null; then
-        echo "• Podman instalado:    $(podman --version 2>/dev/null)"
+        echo "• Podman instalado:     $(podman --version 2>/dev/null)"
         local socket_status
         socket_status=$(systemctl --user is-active podman.socket 2>/dev/null || true)
-        echo "• Socket de Usuario:   ${socket_status:-inactivo}"
-        echo "• Socket Path:         /run/user/$(id -u)/podman/podman.sock"
+        echo "• Socket de Usuario:    ${socket_status:-inactivo}"
+        echo "• Socket Path:          /run/user/$(id -u)/podman/podman.sock"
         local linger_val
         linger_val=$(loginctl show-user "$USER" 2>/dev/null | grep -i "Linger=" | cut -d= -f2 || echo "no")
-        echo "• Linger de Usuario:   $linger_val"
-        echo "• Driver Storage:      $(podman info --format '{{.Store.GraphDriverName}}' 2>/dev/null || echo 'overlay')"
-        echo "• Podman Compose:      $(command -v podman-compose &>/dev/null && echo 'Instalado' || echo 'No instalado')"
-        echo "• Docker Emulation:    $(command -v docker &>/dev/null && echo 'Instalado (podman-docker)' || echo 'No instalado')"
-        echo "• DOCKER_HOST actual:  ${DOCKER_HOST:-No exportado en la sesión actual}"
-        echo "• CLI podman-utils:    $(command -v podman-utils &>/dev/null && echo 'Disponible en PATH' || echo 'No enlazado')"
+        echo "• Linger de Usuario:    $linger_val"
+        echo "• SubUID / SubGID:      $(grep "^$USER:" /etc/subuid 2>/dev/null | cut -d: -f2,3 || echo 'No configurado')"
+        echo "• Driver Storage:       $(podman info --format '{{.Store.GraphDriverName}}' 2>/dev/null || echo 'overlay')"
+        echo "• Backend Red:          $(podman info --format '{{.Host.NetworkBackend}}' 2>/dev/null || echo 'netavark')"
+        
+        # Firewalld trusted zone check
+        local fw_status="No verificado"
+        if command -v firewall-cmd &>/dev/null; then
+            if firewall-cmd --zone=trusted --list-interfaces 2>/dev/null | grep -qw "podman+"; then
+                fw_status="Autorizado (podman+ en zona trusted)"
+            else
+                fw_status="Pendiente (podman+ no está en zona trusted)"
+            fi
+        fi
+        echo "• Firewalld Podman:     $fw_status"
+
+        echo "• Podman Compose:       $(rpm -q podman-compose &>/dev/null && echo 'Instalado' || echo 'No instalado')"
+        echo "• Docker Emulation:     $(rpm -q podman-docker &>/dev/null && echo 'Instalado (podman-docker)' || echo 'No instalado')"
+        echo "• DOCKER_HOST actual:   ${DOCKER_HOST:-No exportado en la sesión actual}"
+        echo "• CLI podman-utils:     $(command -v podman-utils &>/dev/null && echo 'Disponible en PATH' || echo 'No enlazado')"
         echo ""
         echo "📦 Contenedores activos:"
         podman ps --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || echo "  (Ninguno en ejecución)"
     else
-        echo "• Podman:              No instalado"
+        echo "• Podman:               No instalado"
     fi
     echo "================================================================="
 }
 
-# 2. Verificar e instalar complementos opcionales con DNF5
+# 2. Verificar e instalar complementos opcionales con DNF5 de forma idempotente
 install_packages() {
-    log_info "Verificando complementos de Podman en Fedora (podman-compose, podman-docker)..."
-    if command -v sudo &>/dev/null; then
-        sudo dnf5 install -y \
-            podman-compose \
-            podman-docker 2>/dev/null || true
+    log_info "Verificando complementos de Podman en Fedora (podman-compose, podman-docker, passt, netavark)..."
+    local pkgs_to_install=()
+
+    for pkg in podman-compose podman-docker passt netavark; do
+        if ! rpm -q "$pkg" &>/dev/null; then
+            pkgs_to_install+=("$pkg")
+        fi
+    done
+
+    if [ ${#pkgs_to_install[@]} -gt 0 ]; then
+        log_step "Instalando paquetes faltantes: ${pkgs_to_install[*]}..."
+        if command -v sudo &>/dev/null; then
+            sudo dnf5 install -y "${pkgs_to_install[@]}" 2>/dev/null || true
+            log_ok "Paquetes instalados: ${pkgs_to_install[*]}"
+        else
+            log_error "sudo no disponible para instalar: ${pkgs_to_install[*]}"
+        fi
+    else
+        log_ok "Todos los paquetes complementarios de Podman ya están instalados."
     fi
-    log_ok "Paquetes complementarios de Podman verificados."
 }
 
 # 3. Configurar almacenamiento overlay nativo
@@ -135,17 +164,44 @@ prefix = "ghcr.io"
 location = "ghcr.io"
 EOF
         log_ok "registries.conf configurado."
+    else
+        log_info "registries.conf ya existe, manteniendo configuración."
     fi
 }
 
-# 5. Habilitar linger para persistencia de contenedores y Quadlets
-enable_linger() {
-    log_info "Habilitando persistencia de usuario (linger) para Quadlets..."
-    loginctl enable-linger "$USER" 2>/dev/null || true
-    log_ok "Linger de usuario activo."
+# 5. Configurar Firewalld para interfaces virtuales de Podman
+configure_firewalld() {
+    log_info "Verificando reglas de Firewalld para interfaces de red de Podman..."
+    if command -v firewall-cmd &>/dev/null; then
+        local trusted_ifaces
+        trusted_ifaces=$(firewall-cmd --zone=trusted --list-interfaces 2>/dev/null || true)
+        if [[ "$trusted_ifaces" != *"podman+"* ]]; then
+            log_step "Autorizando interfaz podman+ en la zona trusted de Firewalld..."
+            if command -v sudo &>/dev/null; then
+                sudo firewall-cmd --permanent --zone=trusted --add-interface=podman+ 2>/dev/null || true
+                sudo firewall-cmd --reload 2>/dev/null || true
+                log_ok "Interfaz podman+ agregada a la zona trusted."
+            fi
+        else
+            log_ok "Firewalld: interfaz podman+ ya está autorizada en la zona trusted."
+        fi
+    fi
 }
 
-# 6. Configurar subuids y subgids si no estuvieran presentes
+# 6. Habilitar linger para persistencia de contenedores y Quadlets
+enable_linger() {
+    log_info "Habilitando persistencia de usuario (linger) para Quadlets..."
+    local current_linger
+    current_linger=$(loginctl show-user "$USER" 2>/dev/null | grep -i "Linger=" | cut -d= -f2 || echo "no")
+    if [ "$current_linger" != "yes" ]; then
+        loginctl enable-linger "$USER" 2>/dev/null || true
+        log_ok "Linger de usuario activado."
+    else
+        log_ok "Linger de usuario ya estaba activo."
+    fi
+}
+
+# 7. Configurar subuids y subgids si no estuvieran presentes
 configure_subuids() {
     log_info "Verificando asignación de subuid y subgid..."
     if ! grep -q "^$USER:" /etc/subuid 2>/dev/null; then
@@ -158,26 +214,27 @@ configure_subuids() {
     fi
 }
 
-# 7. Habilitar socket de Podman en Systemd User (Compatibilidad Docker API)
+# 8. Habilitar socket de Podman en Systemd User (Compatibilidad Docker API)
 enable_podman_socket() {
     log_info "Habilitando podman.socket bajo demanda en systemd user..."
+    systemctl --user daemon-reload 2>/dev/null || true
     systemctl --user enable --now podman.socket 2>/dev/null || true
     log_ok "Socket de Podman activo en /run/user/$(id -u)/podman/podman.sock."
 }
 
-# 8. Exportar DOCKER_HOST en sesión GNOME y Shells (Bash predeterminado / Zsh condicional)
+# 9. Exportar DOCKER_HOST en sesión GNOME y Shells (Bash predeterminado / Zsh condicional)
 configure_docker_host() {
     log_info "Configurando DOCKER_HOST para GNOME / Wayland y Shells (Bash / Zsh)..."
     local socket_path="/run/user/$(id -u)/podman/podman.sock"
     local export_line="export DOCKER_HOST=\"unix://$socket_path\""
 
-    # 8.1. Sesión gráfica GNOME / Wayland (environment.d)
+    # 9.1. Sesión gráfica GNOME / Wayland (environment.d)
     mkdir -p "$HOME/.config/environment.d"
     cat <<EOF > "$HOME/.config/environment.d/10-podman.conf"
 DOCKER_HOST=unix://$socket_path
 EOF
 
-    # 8.2. Integración modular Bash (~/.bashrc.d/podman.sh) - PREDETERMINADO
+    # 9.2. Integración modular Bash (~/.bashrc.d/podman.sh) - PREDETERMINADO
     mkdir -p "$HOME/.bashrc.d"
     cat <<EOF > "$HOME/.bashrc.d/podman.sh"
 # Podman Docker API Integration
@@ -189,7 +246,7 @@ if [ -d "\$HOME/.local/bin" ] && [[ ":\$PATH:" != *":\$HOME/.local/bin:"* ]]; th
 fi
 EOF
 
-    # 8.3. Fallback directo en ~/.bashrc solo si no procesa ~/.bashrc.d
+    # 9.3. Fallback directo en ~/.bashrc solo si no procesa ~/.bashrc.d
     if [ -f "$HOME/.bashrc" ] && ! grep -q "bashrc.d" "$HOME/.bashrc" 2>/dev/null; then
         if ! grep -q "DOCKER_HOST=" "$HOME/.bashrc" 2>/dev/null; then
             cat <<EOF >> "$HOME/.bashrc"
@@ -200,7 +257,7 @@ EOF
         fi
     fi
 
-    # 8.4. Integración modular Zsh (~/.zshrc.d/podman.zsh) - CONDICIONAL SI EXISTE ~/.zshrc
+    # 9.4. Integración modular Zsh (~/.zshrc.d/podman.zsh) - CONDICIONAL SI EXISTE ~/.zshrc
     if [ -f "$HOME/.zshrc" ]; then
         mkdir -p "$HOME/.zshrc.d"
         cat <<EOF > "$HOME/.zshrc.d/podman.zsh"
@@ -224,7 +281,7 @@ EOF
     log_ok "DOCKER_HOST integrado en GNOME, Bash (~/.bashrc.d/podman.sh) y Zsh (si ~/.zshrc existe)."
 }
 
-# 9. Enlazar podman-utils al PATH del usuario
+# 10. Enlazar podman-utils al PATH del usuario
 setup_podman_utils_cli() {
     log_info "Configurando CLI 'podman-utils' en ~/.local/bin..."
     mkdir -p "$HOME/.local/bin"
@@ -235,7 +292,7 @@ setup_podman_utils_cli() {
     fi
 }
 
-# 10. Configurar autocompletado de podman-utils en Bash y Zsh (condicional)
+# 11. Configurar autocompletado de podman-utils en Bash y Zsh (condicional)
 setup_completions() {
     log_info "Configurando autocompletado para podman-utils en Bash (y Zsh si existe ~/.zshrc)..."
     local bash_comp_dir="$HOME/.local/share/bash-completion/completions"
@@ -269,7 +326,7 @@ EOF
     log_ok "Autocompletado de podman-utils configurado."
 }
 
-# 11. Desplegar estructura de Quadlets
+# 12. Desplegar estructura de Quadlets
 setup_quadlets() {
     log_info "Configurando estructura de directorios para Quadlets..."
     if [ -f "$SCRIPT_DIR/quadlets-setup.sh" ]; then
@@ -290,12 +347,13 @@ case "${1:-}" in
         ;;
     "")
         echo "================================================================="
-        echo "🐳 OPTIMIZADOR DE PODMAN ROOTLESS - FEDORA 44 (GNOME)"
+        echo "🐳 OPTIMIZADOR DE PODMAN ROOTLESS - FEDORA 45 (GNOME)"
         echo "================================================================="
         require_non_root
         install_packages
         configure_storage
         configure_registries
+        configure_firewalld
         enable_linger
         configure_subuids
         enable_podman_socket

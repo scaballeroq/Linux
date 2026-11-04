@@ -55,7 +55,7 @@ _podman_utils_completions() {
         install-global|uninstall-global)
             if [ "$cword" -eq 2 ] && [ -n "$repo_dir" ] && [ -d "$repo_dir/services-shared" ]; then
                 local global_services
-                global_services=$(find "$repo_dir/services-shared" -maxdepth 1 -name "*.container" -printf "%f\n" 2>/dev/null | sed 's/\.container$//')
+                global_services="$(find "$repo_dir/services-shared" -maxdepth 1 -name "*.container" -printf "%f\n" 2>/dev/null | sed 's/\.container$//') all"
                 COMPREPLY=($(compgen -W "$global_services" -- "$cur"))
             fi
             ;;

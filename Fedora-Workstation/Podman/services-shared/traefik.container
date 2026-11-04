@@ -5,12 +5,14 @@ After=network-online.target
 
 [Container]
 ContainerName=traefik
-Image=docker.io/library/traefik:v3.0
+Image=docker.io/library/traefik:v3.2
 PublishPort=80:80
 PublishPort=443:443
 PublishPort=8080:8080
-Volume=traefik-config:/etc/traefik:ro
-Volume=/run/user/%U/podman/podman.sock:/var/run/docker.sock:ro
+Network=proxy-net.network
+Volume=traefik-config.volume:/etc/traefik:ro
+Volume=__PODMAN_SOCKET__:/var/run/docker.sock:ro
+Exec=--providers.docker --providers.docker.exposedbydefault=false --entrypoints.web.address=:80 --entrypoints.websecure.address=:443 --api.dashboard=true --api.insecure=true
 
 [Service]
 Restart=on-failure

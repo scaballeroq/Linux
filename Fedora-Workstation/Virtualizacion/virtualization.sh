@@ -1,14 +1,22 @@
 #!/bin/bash
 # virtualization.sh - Instalación y Optimización Avanzada de Virtualización (KVM/QEMU) para Fedora 45 Workstation
-# Optimizado para Fedora Workstation con GNOME Wayland (Kernel 6.x/7.x, AMD Ryzen/Intel, GPU Vega/Radeon/Intel, 3D VirGL, Btrfs NoCoW, Firewalld, Modular Daemons, Tuned)
+# Optimizado para Fedora 45 Workstation con GNOME Shell 51 Wayland (Kernel 6.14+, AMD Ryzen / Intel Core, GPU Radeon / Intel, 3D VirGL, Btrfs NoCoW, Firewalld, Modular Daemons, Tuned)
 
 set -euo pipefail
 
-TARGET_USER="${SUDO_USER:-$USER}"
+# Determinación robusta del usuario real no-root y su directorio home
+if [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER}" != "root" ]; then
+    TARGET_USER="$SUDO_USER"
+else
+    TARGET_USER="${USER:-$(id -un)}"
+fi
+
 TARGET_HOME=$(getent passwd "$TARGET_USER" 2>/dev/null | cut -d: -f6)
 [ -z "$TARGET_HOME" ] && TARGET_HOME="$HOME"
 
 WITH_WINDOWS=false
+WITH_COCKPIT=false
+WITH_BRIDGE=false
 STATUS_ONLY=false
 
 # ---------------------------------------------------------------------------
@@ -20,15 +28,17 @@ Uso: $0 [OPCIONES]
 
 Script de aprovisionamiento y optimización de virtualización KVM/QEMU en Fedora 45 (GNOME Workstation),
 diseñado para maximizar el rendimiento y la integración de distribuciones Linux invitadas bajo entornos
-GNOME (Wayland) y el ecosistema Fedora.
+GNOME (Wayland) y el hardware AMD Ryzen / Radeon Graphics (HP ProBook 455 G10).
 
 OPCIONES:
   --status, -s, --check Verifica el estado de KVM, sockets libvirt, módulos del kernel,
                         Polkit, Btrfs NoCoW, Firewalld, Tuned y red sin realizar cambios.
   --with-windows        Instala o descarga los controladores VirtIO para Windows (virtio-win).
+  --with-cockpit        Instala y activa la consola web Cockpit Machines (puerto 9090).
+  --with-bridge         Crea un bridge de red (br0) sobre interfaz cableada Ethernet (no Wi-Fi).
   -h, --help            Muestra esta ayuda y recomendaciones para VMs Linux.
 
-CARACTERÍSTICAS Y OPTIMIZACIONES PARA FEDORA 44 WORKSTATION + GNOME:
+CARACTERÍSTICAS Y OPTIMIZACIONES PARA FEDORA 45 WORKSTATION + GNOME 51:
   - Integración GNOME Wayland: Regla Polkit sin contraseñas, gnome-boxes, virt-manager,
     spice-gtk3 y usbredir para portapapeles y USB compartido bidireccional.
   - Soporte 3D VirGL (virglrenderer + virtio-gpu-gl) con grupo 'render' para AMD Radeon / Intel.
@@ -44,37 +54,65 @@ EOF
 
 check_status() {
     echo "================================================================="
-    echo "🔍 DIAGNÓSTICO DEL ENTORNO DE VIRTUALIZACIÓN (FEDORA 44 + GNOME)"
+    echo "🔍 DIAGNÓSTICO DEL ENTORNO DE VIRTUALIZACIÓN (FEDORA 45 + GNOME)"
     echo "================================================================="
 
     echo -n "• Entorno de Escritorio Host: "
-    local desktop="${XDG_CURRENT_DESKTOP:-Desconocido}"
-    local session_type="${XDG_SESSION_TYPE:-Desconocido}"
-    echo "✅ $desktop ($session_type)"
+    local desktop="${XDG_CURRENT_DESKTOP:-}"
+    local session_type="${XDG_SESSION_TYPE:-}"
+    if [ -z "$desktop" ] && pgrep -u "$TARGET_USER" -x gnome-shell >/dev/null 2>&1; then
+        desktop="GNOME (detectado en ejecución)"
+        session_type="wayland"
+    fi
+    echo "✅ ${desktop:-Desconocido} (${session_type:-wayland})"
 
     echo -n "• Soporte de Virtualización Hardware: "
+    local cpu_model
+    cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs || echo "CPU")
     if grep -E -q '(vmx|svm)' /proc/cpuinfo; then
-        echo "✅ Detectado ($(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs))"
+        local virt_type="Desconocido"
+        grep -q 'svm' /proc/cpuinfo && virt_type="AMD SVM (AMD-V)"
+        grep -q 'vmx' /proc/cpuinfo && virt_type="Intel VMX (VT-x)"
+        echo "✅ Detectado ($virt_type - $cpu_model)"
     else
         echo "❌ No detectado o deshabilitado en BIOS/UEFI."
+    fi
+
+    # Parámetros avanzados del hipervisor KVM
+    local cpu_vendor
+    cpu_vendor=$(grep -m1 'vendor_id' /proc/cpuinfo 2>/dev/null | awk '{print $3}' || true)
+    if [ "$cpu_vendor" = "AuthenticAMD" ]; then
+        echo -n "• Telemetría KVM AMD (Nested / AVIC / NPT): "
+        local nested="0" avic="N" npt="N"
+        [ -f /sys/module/kvm_amd/parameters/nested ] && nested=$(cat /sys/module/kvm_amd/parameters/nested 2>/dev/null || echo "0")
+        [ -f /sys/module/kvm_amd/parameters/avic ] && avic=$(cat /sys/module/kvm_amd/parameters/avic 2>/dev/null || echo "N")
+        [ -f /sys/module/kvm_amd/parameters/npt ] && npt=$(cat /sys/module/kvm_amd/parameters/npt 2>/dev/null || echo "N")
+        echo "Nested=$nested | AVIC=$avic | NPT=$npt"
+    elif [ "$cpu_vendor" = "GenuineIntel" ]; then
+        echo -n "• Telemetría KVM Intel (Nested / EPT / VPID): "
+        local nested="0" ept="N" vpid="N"
+        [ -f /sys/module/kvm_intel/parameters/nested ] && nested=$(cat /sys/module/kvm_intel/parameters/nested 2>/dev/null || echo "0")
+        [ -f /sys/module/kvm_intel/parameters/ept ] && ept=$(cat /sys/module/kvm_intel/parameters/ept 2>/dev/null || echo "N")
+        [ -f /sys/module/kvm_intel/parameters/vpid ] && vpid=$(cat /sys/module/kvm_intel/parameters/vpid 2>/dev/null || echo "N")
+        echo "Nested=$nested | EPT=$ept | VPID=$vpid"
     fi
 
     echo -n "• Dispositivo /dev/kvm: "
     if [ -e /dev/kvm ]; then
         if [ -w /dev/kvm ]; then
-            echo "✅ Accesible con permisos de escritura"
+            echo "✅ Accesible con permisos de lectura/escritura"
         else
-            echo "⚠️ Presente pero sin permisos de escritura (requiere pertenecer al grupo kvm)"
+            echo "⚠️ Presente pero sin permisos de escritura (requiere grupo kvm)"
         fi
     else
         echo "❌ No encontrado."
     fi
 
-    echo -n "• Módulos de aceleración de red/kernel: "
-    local modules=("vhost_net" "vhost_vsock" "tun")
+    echo -n "• Módulos del kernel cargados: "
+    local modules=("kvm" "kvm_amd" "kvm_intel" "vhost_net" "vhost_vsock" "tun")
     local loaded=()
     for mod in "${modules[@]}"; do
-        if lsmod | grep -q "^$mod "; then
+        if grep -q -E "^${mod}\b" /proc/modules 2>/dev/null; then
             loaded+=("$mod")
         fi
     done
@@ -99,13 +137,11 @@ check_status() {
 
     echo -n "• Estado de la red virtual 'default': "
     if ip link show virbr0 >/dev/null 2>&1; then
-        echo "✅ Activa (interfaz virbr0 levantada)"
-    elif command -v virsh >/dev/null 2>&1 && virsh -c qemu:///system net-info default >/dev/null 2>&1; then
-        echo "✅ Activa (iniciada en libvirt)"
-    elif [ -f /etc/libvirt/qemu/networks/autostart/default.xml ] || [ -f /etc/libvirt/qemu/networks/default.xml ]; then
-        echo "ℹ️ Definida pero inactiva (se activará al iniciar los sockets de libvirt)"
+        echo "✅ Activa (interfaz virbr0 en el host)"
+    elif command -v virsh >/dev/null 2>&1 && timeout 2 virsh -c qemu:///system --readonly net-info default >/dev/null 2>&1; then
+        echo "✅ Activa en Libvirt"
     else
-        echo "⚠️ No iniciada o pendiente de configuración inicial"
+        echo "ℹ️ Pendiente de inicio o configuración"
     fi
 
     echo -n "• Zonas 'libvirt' y 'FedoraWorkstation' en Firewalld: "
@@ -113,9 +149,16 @@ check_status() {
         local zones
         zones=$(firewall-cmd --get-zones 2>/dev/null || true)
         if echo "$zones" | grep -qw "libvirt"; then
-            echo "✅ Zona 'libvirt' cargada y disponible"
+            local fwd="Forward: no" masq="Masquerade: no"
+            if firewall-cmd --zone=libvirt --query-forward >/dev/null 2>&1; then
+                fwd="Forward: sí"
+            fi
+            if firewall-cmd --zone=FedoraWorkstation --query-masquerade >/dev/null 2>&1; then
+                masq="Masquerade: sí"
+            fi
+            echo "✅ Zona 'libvirt' disponible ($fwd | $masq en FedoraWorkstation)"
         else
-            echo "⚠️ Zona 'libvirt' no cargada aún (se activará al instalar libvirt y recargar firewalld)"
+            echo "⚠️ Zona 'libvirt' no cargada aún"
         fi
     else
         echo "ℹ️ Firewalld no activo o no disponible"
@@ -126,10 +169,14 @@ check_status() {
         local fs_type
         fs_type=$(stat -f -c %T /var/lib/libvirt/images 2>/dev/null || true)
         if [ "$fs_type" = "btrfs" ]; then
-            if lsattr -d /var/lib/libvirt/images 2>/dev/null | grep -q 'C'; then
+            local nocow_attr
+            nocow_attr=$(lsattr -d /var/lib/libvirt/images 2>/dev/null || true)
+            if echo "$nocow_attr" | grep -q 'C'; then
                 echo "✅ Btrfs NoCoW (+C activo, optimizado para IOPS)"
-            else
+            elif [ -n "$nocow_attr" ]; then
                 echo "⚠️ Btrfs con Copy-on-Write activo (se recomienda chattr +C)"
+            else
+                echo "✅ Btrfs presente (NoCoW verificable como superusuario)"
             fi
         else
             echo "✅ Presente ($fs_type)"
@@ -138,30 +185,41 @@ check_status() {
         echo "ℹ️ Pendiente de creación"
     fi
 
-    echo -n "• Regla Polkit sin contraseñas para GNOME: "
-    if [ -f /etc/polkit-1/rules.d/50-libvirt.rules ]; then
-        echo "✅ Presente (/etc/polkit-1/rules.d/50-libvirt.rules)"
+    echo -n "• Storage Pool 'default' en Libvirt: "
+    if command -v virsh >/dev/null 2>&1 && timeout 2 virsh -c qemu:///system --readonly pool-info default >/dev/null 2>&1; then
+        echo "✅ Activo (/var/lib/libvirt/images)"
     else
-        echo "⚠️ No configurada (GNOME solicitará contraseña de root para virt-manager/boxes)"
+        echo "ℹ️ No definido o inactivo"
+    fi
+
+    echo -n "• Regla Polkit sin contraseñas para GNOME: "
+    if [ -f /usr/share/polkit-1/rules.d/50-libvirt.rules ] || [ -f /etc/polkit-1/rules.d/50-libvirt.rules ] 2>/dev/null; then
+        echo "✅ Presente (gestión directa para miembros del grupo libvirt)"
+    else
+        echo "⚠️ Pendiente de configuración"
     fi
 
     echo -n "• Pertenencia a grupos requeridos ($TARGET_USER): "
     local user_groups
     user_groups=$(id -Gn "$TARGET_USER" 2>/dev/null || true)
-    local has_libvirt=false
-    local has_kvm=false
-    local has_render=false
+    local has_libvirt=false has_kvm=false has_render=false
     [[ "$user_groups" =~ (^|[[:space:]])libvirt($|[[:space:]]) ]] && has_libvirt=true
     [[ "$user_groups" =~ (^|[[:space:]])kvm($|[[:space:]]) ]] && has_kvm=true
     [[ "$user_groups" =~ (^|[[:space:]])render($|[[:space:]]) ]] && has_render=true
 
+    # Comprobar también base de datos /etc/group en caso de asignación previa sin logout
+    local db_groups
+    db_groups=$(getent group libvirt kvm render 2>/dev/null | grep -E "\b$TARGET_USER\b" || true)
+
     if [ "$has_libvirt" = true ] && [ "$has_kvm" = true ] && [ "$has_render" = true ]; then
-        echo "✅ libvirt, kvm, render"
+        echo "✅ libvirt, kvm, render (activos en la sesión)"
+    elif [ -n "$db_groups" ]; then
+        echo "⚠️ Asignados en el sistema pero pendientes de reiniciar o cerrar sesión para surtir efecto"
     else
-        echo "⚠️ Incompleto ($user_groups). Recomendados: libvirt, kvm, render."
+        echo "⚠️ Incompleto ($user_groups). Requeridos: libvirt, kvm, render"
     fi
 
-    echo "• Interfaces gráficas de usuario:"
+    echo "• Interfaces de usuario y gestión:"
     echo -n "  - virt-manager (Avanzado): "
     if rpm -q virt-manager >/dev/null 2>&1 || command -v virt-manager >/dev/null 2>&1; then
         echo "✅ Instalado"
@@ -172,7 +230,15 @@ check_status() {
     if rpm -q gnome-boxes >/dev/null 2>&1 || command -v gnome-boxes >/dev/null 2>&1; then
         echo "✅ Instalado"
     else
-        echo "ℹ️ No instalado (opcional para GNOME)"
+        echo "ℹ️ No instalado"
+    fi
+    echo -n "  - cockpit-machines (Web 9090): "
+    if rpm -q cockpit-machines >/dev/null 2>&1; then
+        local cstate
+        cstate=$(systemctl is-active cockpit.socket 2>/dev/null || true)
+        echo "✅ Instalado (Socket: ${cstate:-inactivo})"
+    else
+        echo "ℹ️ No instalado (opcional con --with-cockpit)"
     fi
 
     echo -n "• Gestor de energía y recursos (Tuned): "
@@ -188,9 +254,11 @@ check_status() {
 
     echo -n "• Deduplicación de memoria KSM: "
     if [ -f /sys/kernel/mm/ksm/run ] && [ "$(cat /sys/kernel/mm/ksm/run 2>/dev/null)" = "1" ]; then
-        echo "✅ Activo (KSM en ejecución)"
+        local sharing=0
+        [ -f /sys/kernel/mm/ksm/pages_sharing ] && sharing=$(cat /sys/kernel/mm/ksm/pages_sharing 2>/dev/null || echo 0)
+        echo "✅ Activo (KSM en ejecución, páginas compartidas: $sharing)"
     else
-        echo "ℹ️ Inactivo o desactivado"
+        echo "ℹ️ Inactivo o no configurado"
     fi
 
     echo -n "• Herramientas de optimización y aceleración: "
@@ -226,6 +294,12 @@ for arg in "$@"; do
         --with-windows)
             WITH_WINDOWS=true
             ;;
+        --with-cockpit)
+            WITH_COCKPIT=true
+            ;;
+        --with-bridge)
+            WITH_BRIDGE=true
+            ;;
         -h|--help|help)
             show_help
             exit 0
@@ -244,12 +318,12 @@ if [ "$STATUS_ONLY" = true ]; then
 fi
 
 echo "🚀 Configurando entorno de virtualización de alto rendimiento (KVM/QEMU) en Fedora 45..."
-echo "🎯 Optimizado para Fedora Workstation con GNOME Wayland y distribuciones Linux invitadas..."
+echo "🎯 Optimizado para Fedora Workstation con GNOME 51 Wayland y hardware AMD Ryzen / Radeon..."
 
 # ---------------------------------------------------------------------------
 # 1. Instalación de paquetes necesarios vía DNF5
 # ---------------------------------------------------------------------------
-echo "ℹ️ Instalando QEMU, libvirt, virt-manager, gnome-boxes, virglrenderer, virtiofsd y herramientas auxiliares con DNF5..."
+echo "ℹ️ Instalando QEMU, libvirt, virt-manager, gnome-boxes, virglrenderer, virtiofsd y utilidades con DNF5..."
 sudo dnf5 install -y \
     qemu-kvm \
     libvirt-daemon-kvm \
@@ -281,6 +355,18 @@ sudo dnf5 install -y \
 # Paquete de inspección adicional de discos VM (si está disponible)
 sudo dnf5 install -y libguestfs-tools 2>/dev/null || true
 
+# Instalación opcional de Cockpit Machines si se solicita
+if [ "$WITH_COCKPIT" = true ]; then
+    echo "ℹ️ Instalando y habilitando Cockpit Machines..."
+    sudo dnf5 install -y cockpit cockpit-machines 2>/dev/null || true
+    sudo systemctl enable --now cockpit.socket 2>/dev/null || true
+    if command -v firewall-cmd >/dev/null 2>&1 && systemctl is-active --quiet firewalld 2>/dev/null; then
+        sudo firewall-cmd --permanent --zone=FedoraWorkstation --add-service=cockpit 2>/dev/null || true
+        sudo firewall-cmd --reload 2>/dev/null || true
+    fi
+    echo "  ✅ Cockpit Machines habilitado (Acceso: https://localhost:9090)."
+fi
+
 # ---------------------------------------------------------------------------
 # 2. Controladores VirtIO para Windows (Opcional vía --with-windows)
 # ---------------------------------------------------------------------------
@@ -311,7 +397,7 @@ fi
 echo "ℹ️ Configurando optimizaciones del procesador y virtualización anidada (Nested KVM)..."
 sudo mkdir -p /etc/modprobe.d /etc/modules-load.d
 
-CPU_VENDOR=$(grep -m1 'vendor_id' /proc/cpuinfo | awk '{print $3}' || true)
+CPU_VENDOR=$(grep -m1 'vendor_id' /proc/cpuinfo 2>/dev/null | awk '{print $3}' || true)
 if [ "$CPU_VENDOR" = "AuthenticAMD" ]; then
     echo "• Optimizando KVM para AMD Ryzen (nested=1, avic=1, npt=1)..."
     # avic: Advanced Virtual Interrupt Controller para menor latencia de interrupciones
@@ -345,14 +431,35 @@ sudo modprobe vhost_vsock 2>/dev/null || true
 sudo modprobe tun 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
-# 4. Ajustes de /etc/libvirt/qemu.conf (Audio PipeWire nativo y permisos de usuario)
+# 4. Ajustes de /etc/libvirt/qemu.conf (Audio PipeWire e Integración de Sesión)
 # ---------------------------------------------------------------------------
-echo "ℹ️ Configurando usuario y grupo en /etc/libvirt/qemu.conf para audio PipeWire e integración de sesión..."
-if [ -f /etc/libvirt/qemu.conf ]; then
-    sudo sed -i "s/^#*user = .*/user = \"$TARGET_USER\"/" /etc/libvirt/qemu.conf 2>/dev/null || true
-    sudo sed -i "s/^#*group = .*/group = \"kvm\"/" /etc/libvirt/qemu.conf 2>/dev/null || true
-    sudo sed -i "s/^#*dynamic_ownership = .*/dynamic_ownership = 1/" /etc/libvirt/qemu.conf 2>/dev/null || true
+echo "ℹ️ Configurando usuario y grupos en /etc/libvirt/qemu.conf..."
+sudo mkdir -p /etc/libvirt
+
+if [ ! -f /etc/libvirt/qemu.conf ]; then
+    cat <<EOF | sudo tee /etc/libvirt/qemu.conf > /dev/null
+# /etc/libvirt/qemu.conf - Optimizado para Fedora 45 Workstation (GNOME Wayland)
+user = "$TARGET_USER"
+group = "kvm"
+dynamic_ownership = 1
+EOF
+    echo "  ✅ /etc/libvirt/qemu.conf creado con usuario $TARGET_USER y grupo kvm."
+else
+    # Si ya existe, aplicar reemplazos idempotentes
+    for setting in "user = \"$TARGET_USER\"" "group = \"kvm\"" "dynamic_ownership = 1"; do
+        key=$(echo "$setting" | cut -d' ' -f1)
+        if grep -q -E "^[#[:space:]]*${key}[[:space:]]*=" /etc/libvirt/qemu.conf; then
+            sudo sed -i -E "s|^[#[:space:]]*${key}[[:space:]]*=.*|${setting}|" /etc/libvirt/qemu.conf
+        else
+            echo "$setting" | sudo tee -a /etc/libvirt/qemu.conf > /dev/null
+        fi
+    done
+    echo "  ✅ /etc/libvirt/qemu.conf actualizado."
 fi
+
+# Asegurar permisos en las carpetas de estado interno de QEMU
+sudo mkdir -p /var/lib/libvirt/qemu /var/cache/libvirt/qemu /var/log/libvirt/qemu
+sudo setfacl -R -m u:"$TARGET_USER":rwX /var/lib/libvirt/qemu /var/cache/libvirt/qemu /var/log/libvirt/qemu 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
 # 5. Backend de Firewall y Red Libvirt (/etc/libvirt/network.conf y Firewalld)
@@ -360,9 +467,8 @@ fi
 echo "ℹ️ Configurando backend de firewall e integración de red en libvirt..."
 
 # Configurar backend nftables nativo en libvirt
-sudo mkdir -p /etc/libvirt
 if [ -f /etc/libvirt/network.conf ]; then
-    sudo sed -i 's/^#*firewall_backend = .*/firewall_backend = "nftables"/' /etc/libvirt/network.conf 2>/dev/null || true
+    sudo sed -i -E 's|^[#[:space:]]*firewall_backend[[:space:]]*=.*|firewall_backend = "nftables"|' /etc/libvirt/network.conf 2>/dev/null || true
 else
     cat <<EOF | sudo tee /etc/libvirt/network.conf > /dev/null
 # Backend de firewall nativo para Fedora Workstation
@@ -379,7 +485,7 @@ if command -v firewall-cmd >/dev/null 2>&1 && systemctl is-active --quiet firewa
     sudo firewall-cmd --permanent --zone=libvirt --add-interface=virbr0 2>/dev/null || true
     sudo firewall-cmd --permanent --zone=libvirt --add-forward 2>/dev/null || true
 
-    # Obtener la zona por defecto de Fedora (habitualmente FedoraWorkstation)
+    # Zona por defecto de Fedora (habitualmente FedoraWorkstation)
     DEFAULT_ZONE=$(sudo firewall-cmd --get-default-zone 2>/dev/null || echo "FedoraWorkstation")
     sudo firewall-cmd --permanent --zone="$DEFAULT_ZONE" --add-masquerade 2>/dev/null || true
     sudo firewall-cmd --permanent --zone=FedoraWorkstation --add-masquerade 2>/dev/null || true
@@ -449,17 +555,17 @@ fi
 sudo virsh net-start default 2>/dev/null || true
 sudo virsh net-autostart default 2>/dev/null || true
 
-echo "ℹ️ Configurando directorio de imágenes (/var/lib/libvirt/images)..."
+echo "ℹ️ Configurando directorio de almacenamiento (/var/lib/libvirt/images)..."
 sudo mkdir -p /var/lib/libvirt/images
 
 # Optimización Btrfs NoCoW (+C): evita fragmentación severa y mejora latencia de E/S
 FS_TYPE=$(stat -f -c %T /var/lib/libvirt/images 2>/dev/null || true)
 if [ "$FS_TYPE" = "btrfs" ]; then
     echo "  ⚡ Btrfs detectado en /var/lib/libvirt/images: desactivando Copy-on-Write (+C)..."
-    sudo chattr +C /var/lib/libvirt/images 2>/dev/null || true
+    sudo chattr -R +C /var/lib/libvirt/images 2>/dev/null || sudo chattr +C /var/lib/libvirt/images 2>/dev/null || true
 fi
 
-echo "ℹ️ Asegurando storage pool por defecto..."
+echo "ℹ️ Asegurando storage pool 'default'..."
 if ! sudo virsh pool-info default >/dev/null 2>&1; then
     sudo virsh pool-define-as --name default --type dir --target /var/lib/libvirt/images 2>/dev/null || true
     sudo virsh pool-build default 2>/dev/null || true
@@ -471,7 +577,7 @@ sudo virsh pool-autostart default 2>/dev/null || true
 # 10. Configuración de Red: Detección segura de Interfaz (Cableada vs Wi-Fi)
 # ---------------------------------------------------------------------------
 echo "ℹ️ Comprobando interfaz de red principal para conectividad de VMs..."
-PHYS_IFACE=$(ip route | grep default | awk '{print $5}' | head -n1 || true)
+PHYS_IFACE=$(ip route 2>/dev/null | grep default | awk '{print $5}' | head -n1 || true)
 
 is_wireless() {
     local iface="$1"
@@ -489,8 +595,8 @@ if [ -n "$PHYS_IFACE" ]; then
         echo "ℹ️ Interfaz activa inalámbrica detectada: '$PHYS_IFACE'."
         echo "🛡️ Por restricciones del estándar 802.11 (Wi-Fi), no se crea un bridge directo para evitar desconexiones."
         echo "✅ La red NAT por defecto ('default' con virbr0 y vhost_net) ofrece máximo rendimiento y acceso a internet transparente."
-    elif [ "$PHYS_IFACE" != "br0" ]; then
-        echo "ℹ️ Interfaz activa cableada detectada: '$PHYS_IFACE'."
+    elif [ "$WITH_BRIDGE" = true ] && [ "$PHYS_IFACE" != "br0" ]; then
+        echo "ℹ️ Interfaz activa cableada detectada: '$PHYS_IFACE' y bandera --with-bridge activada."
         if command -v nmcli >/dev/null 2>&1; then
             if ! nmcli con show br0 >/dev/null 2>&1; then
                 echo "Creando bridge br0 sobre interfaz Ethernet $PHYS_IFACE..."
@@ -533,7 +639,6 @@ if [ -d /sys/kernel/mm/ksm ]; then
 fi
 echo "  ✅ KSM habilitado en el kernel de forma persistente."
 
-# Tuned profile virtual-host (si Tuned está activo y no se usa tuned-ppd en batería)
 if command -v tuned-adm >/dev/null 2>&1; then
     sudo systemctl enable --now tuned.service 2>/dev/null || true
     echo "  ✅ Tuned activo en el sistema."
@@ -604,6 +709,7 @@ echo "💡 OPCIONES GRÁFICAS DISPONIBLES EN GNOME:"
 echo "  • GNOME Boxes: Aplicación nativa y minimalista integrada en GNOME."
 echo "    - Ideal para pruebas rápidas y descargas directas de ISOs."
 echo "  • Virt-Manager: Interfaz avanzada de control total de máquinas virtuales."
+echo "  • Cockpit Machines: Consola web disponible en https://localhost:9090."
 echo ""
 echo "💡 GUÍA RÁPIDA DE CONFIGURACIÓN PARA LINUX GUESTS EN VIRT-MANAGER:"
 echo "  1. Procesador (CPU):"
@@ -619,9 +725,9 @@ echo "  4. Compartir Carpetas (Host <-> Guest):"
 echo "     - Añadir Hardware -> Sistema de archivos -> Modo de acceso: 'virtiofs' (requiere memoria compartida memfd)."
 echo "  5. Integración de Portapapeles y Resolución Dinámica:"
 echo "     - En la VM invitada instala: spice-vdagent y qemu-guest-agent"
-echo "       * Fedora       : sudo dnf install spice-vdagent qemu-guest-agent"
+echo "       * Fedora       : sudo dnf install -y spice-vdagent qemu-guest-agent"
 echo "       * Arch/CachyOS : sudo pacman -S spice-vdagent qemu-guest-agent"
-echo "       * Ubuntu/Debian: sudo apt install spice-vdagent qemu-guest-agent"
+echo "       * Ubuntu/Debian: sudo apt install -y spice-vdagent qemu-guest-agent"
 echo "================================================================="
 echo "💡 Recuerda reiniciar o cerrar sesión para aplicar los cambios de grupo (libvirt, kvm, render)."
 echo "================================================================="
