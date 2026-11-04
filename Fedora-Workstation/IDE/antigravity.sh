@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # antigravity.sh - Gestor e Instalador de Google Antigravity Desktop 2.0
-# Optimizado para Fedora Workstation (GNOME Shell Wayland)
+# Optimizado para Fedora Workstation (GNOME Shell Wayland Mutter)
+# Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3) | Radeon Graphics (Vega 8)
 # ==============================================================================
 # Características:
 #  - Comprobación de estado (--status) e inspección de versión 100% rootless.
-#  - Verificación idempotente de dependencias RPM sin llamadas innecesarias a DNF5.
-#  - Detección inteligente de versión: evita descargar si ya está al día.
-#  - Helper /usr/local/bin/update-antigravity modular con rollback atómico.
-#  - Extracción automática de icono nativo desde app.asar.
-#  - Integración nativa con GNOME Shell (Nautilus context menu).
-#  - Permisos correctos de SUID para chrome-sandbox (4755).
-#  - Opciones de estado (--status), comprobación (--check), forzado (--force) y desinstalación (--uninstall).
+#  - Verificación idempotente de dependencias RPM sin llamadas innecesarias a DNF/DNF5.
+#  - Detección inteligente de versión oficial (v2.x) evitando descargas redundantes.
+#  - Helper /usr/local/bin/update-antigravity con rollback atómico y sandboxing SUID 4755.
+#  - Extracción automática de icono nativo en alta resolución (512x512) desde app.asar.
+#  - Integración nativa GNOME Shell Wayland (flags Ozone auto, aceleración GPU Mesa RADV).
+#  - Menú contextual para Nautilus (GNOME Files) mediante scripts de usuario.
+#  - Detección de paquetes RPM heredados o conflictos.
+#  - Opciones completas: --status, --check, --force, --uninstall y --help.
 # ==============================================================================
 
 set -euo pipefail
@@ -59,6 +61,15 @@ else
     USER_HOME="${HOME:-/home/$REAL_USER}"
 fi
 
+if command -v dnf5 &>/dev/null; then
+    DNF_CMD="dnf5"
+else
+    DNF_CMD="dnf"
+fi
+
+# Integraciones de escritorio de usuario (GNOME Nautilus y opcional Dolphin)
+NAUTILUS_SCRIPTS_DIR="$USER_HOME/.local/share/nautilus/scripts"
+NAUTILUS_SCRIPT_FILE="$NAUTILUS_SCRIPTS_DIR/Abrir con Antigravity"
 KIO_USER_DIR="$USER_HOME/.local/share/kio/servicemenus"
 KIO_USER_FILE="$KIO_USER_DIR/open-in-antigravity.desktop"
 
@@ -87,8 +98,8 @@ get_remote_version() {
     if [ -n "$version" ]; then
         echo "$version"
     else
-        # Fallback a versión estable conocida si falla la red
-        echo "2.17.0"
+        # Fallback a última versión estable conocida si falla la red
+        echo "2.28.2"
     fi
 }
 
@@ -112,15 +123,15 @@ check_dependencies() {
     fi
 
     if [ ${#missing[@]} -gt 0 ]; then
-        echo -e "ℹ️  ${YELLOW}Instalando paquetes requeridos con DNF5: ${missing[*]}...${NC}"
+        echo -e "ℹ️  ${YELLOW}Instalando paquetes requeridos con $DNF_CMD: ${missing[*]}...${NC}"
         if [ "$EUID" -ne 0 ]; then
             if ! command -v sudo &>/dev/null; then
                 echo -e "${RED}❌ Error: 'sudo' no está disponible para instalar paquetes.${NC}" >&2
                 exit 1
             fi
-            sudo dnf5 install -y "${missing[@]}"
+            sudo "$DNF_CMD" install -y "${missing[@]}"
         else
-            dnf5 install -y "${missing[@]}"
+            "$DNF_CMD" install -y "${missing[@]}"
         fi
     fi
 }
@@ -130,7 +141,7 @@ check_dependencies() {
 # ------------------------------------------------------------------------------
 show_status() {
     echo -e "${BOLD}=================================================================${NC}"
-    echo -e "🪐 ${BOLD}Estado de Google Antigravity Desktop 2.0 (Fedora 45 Workstation)${NC}"
+    echo -e "🪐 ${BOLD}Estado de Google Antigravity Desktop 2.0 (Fedora Workstation)${NC}"
     echo -e "${BOLD}=================================================================${NC}"
 
     local installed_v
@@ -138,28 +149,44 @@ show_status() {
     local remote_v
     remote_v=$(get_remote_version)
 
+    echo -e "💻 ${BOLD}Sistema:${NC}          Fedora $(grep -oP 'VERSION_ID="\K[^"]+' /etc/os-release 2>/dev/null || echo "Linux") (GNOME Shell Wayland Mutter)"
+    echo -e "⚡ ${BOLD}Hardware:${NC}         AMD Ryzen 7 7730U | Radeon Graphics (Mesa RADV/VA-API)"
     echo -e "👤 ${BOLD}Usuario objetivo:${NC} $REAL_USER ($USER_HOME)"
+    echo ""
+    echo -e "${BOLD}📦 Estado de Google Antigravity Desktop 2.0 (Oficial):${NC}"
 
     if [ -n "$installed_v" ] && [ -x "$INSTALL_ROOT/$EXPECTED_TOP_DIR/antigravity" ]; then
-        echo -e "📦 ${BOLD}Estado App:${NC}       ${GREEN}Instalado${NC}"
-        echo -e "🏷️  ${BOLD}Versión actual:${NC}   ${CYAN}v$installed_v${NC}"
+        echo -e "  • Estado App:         ${GREEN}Instalado${NC}"
+        echo -e "  • Versión actual:     ${CYAN}v$installed_v${NC}"
     else
-        echo -e "📦 ${BOLD}Estado App:${NC}       ${RED}No instalado${NC}"
-        echo -e "🏷️  ${BOLD}Versión actual:${NC}   ${YELLOW}Ninguna${NC}"
+        echo -e "  • Estado App:         ${RED}No instalado${NC}"
+        echo -e "  • Versión actual:     ${YELLOW}Ninguna${NC}"
     fi
 
-    echo -e "🌐 ${BOLD}Última remota:${NC}    ${CYAN}v$remote_v${NC}"
+    echo -e "  • Última remota:      ${CYAN}v$remote_v${NC}"
 
     if [ -n "$installed_v" ]; then
         if [ "$installed_v" = "$remote_v" ]; then
-            echo -e "✨ ${BOLD}Actualización:${NC}    ${GREEN}Al día con la versión más reciente${NC}"
+            echo -e "  • Actualización:      ${GREEN}Al día con la versión más reciente${NC}"
         else
-            echo -e "⚡ ${BOLD}Actualización:${NC}    ${YELLOW}Actualización disponible (v$installed_v -> v$remote_v)${NC}"
+            echo -e "  • Actualización:      ${YELLOW}Actualización disponible (v$installed_v -> v$remote_v)${NC}"
         fi
     fi
 
     echo ""
-    echo -e "${BOLD}📁 Rutas y Binarios:${NC}"
+    echo -e "${BOLD}⚠️  Detección de Paquetes Heredados / Conflictos:${NC}"
+    if rpm -q antigravity &>/dev/null; then
+        local legacy_ver
+        legacy_ver=$(rpm -q --qf '%{VERSION}-%{RELEASE}' antigravity 2>/dev/null || echo "desconocida")
+        echo -e "  • Paquete RPM heredado: ${RED}⚠️  Detectado (v$legacy_ver)${NC}"
+        echo -e "    ${YELLOW}↳ Puede generar conflictos con la instalación v2.0.${NC}"
+        echo -e "    ${YELLOW}↳ Desinstalar con: ${BOLD}sudo $DNF_CMD remove -y antigravity${NC}"
+    else
+        echo -e "  • Paquete RPM heredado: ${GREEN}✅ Limpio (No instalado / Desinstalado)${NC}"
+    fi
+
+    echo ""
+    echo -e "${BOLD}📁 Rutas y Binarios del Sistema:${NC}"
     if [ -x "$INSTALL_ROOT/$EXPECTED_TOP_DIR/antigravity" ]; then
         echo -e "  • Binario nativo:     ${GREEN}$INSTALL_ROOT/$EXPECTED_TOP_DIR/antigravity${NC}"
     else
@@ -181,27 +208,31 @@ show_status() {
     fi
 
     echo ""
-    echo -e "${BOLD}🖥️  Integración GNOME Shell / Nautilus / Wayland:${NC}"
+    echo -e "${BOLD}🖥️  Integración GNOME Shell / Wayland / Nautilus:${NC}"
     if [ -f "$DESKTOP_FILE" ]; then
-        echo -e "  • Lanzador de escritorio: ${GREEN}$DESKTOP_FILE${NC}"
+        if grep -q "ozone-platform-hint" "$DESKTOP_FILE" 2>/dev/null; then
+            echo -e "  • Lanzador de escritorio: ${GREEN}$DESKTOP_FILE${NC} (Wayland nativo Mutter)"
+        else
+            echo -e "  • Lanzador de escritorio: ${YELLOW}$DESKTOP_FILE${NC} (Sin flags Wayland)"
+        fi
     else
         echo -e "  • Lanzador de escritorio: ${RED}No presente${NC}"
     fi
 
     if [ -f "$ICON_FILE" ]; then
-        echo -e "  • Icono de aplicación:   ${GREEN}$ICON_FILE${NC}"
+        echo -e "  • Icono de aplicación:   ${GREEN}$ICON_FILE${NC} (512x512 nativo)"
     else
         echo -e "  • Icono de aplicación:   ${YELLOW}No presente${NC}"
     fi
 
-    if [ -f "$USER_HOME/.local/share/nautilus/scripts/Abrir con Antigravity" ] || [ -f "$USER_HOME/.local/share/nautilus-python/extensions/open-code-editors.py" ]; then
-        echo -e "  • Menú contextual Nautilus: ${GREEN}Activo (GNOME Files)${NC}"
+    if [ -f "$NAUTILUS_SCRIPT_FILE" ]; then
+        echo -e "  • Menú Nautilus (GNOME):  ${GREEN}Activo ($NAUTILUS_SCRIPT_FILE)${NC}"
     else
-        echo -e "  • Menú contextual Nautilus: ${YELLOW}No instalado${NC}"
+        echo -e "  • Menú Nautilus (GNOME):  ${YELLOW}No instalado${NC}"
     fi
 
     echo ""
-    echo -e "${BOLD}🧩 Dependencias del sistema:${NC}"
+    echo -e "${BOLD}🧩 Dependencias del sistema (RPM):${NC}"
     local pkgs=(
         ca-certificates curl tar desktop-file-utils nss
         libdrm mesa-libgbm libsecret
@@ -217,9 +248,9 @@ show_status() {
     fi
 
     if [ "$missing_count" -eq 0 ]; then
-        echo -e "  • Dependencias base:   ${GREEN}Todas satisfechas (verificadas con RPM)${NC}"
+        echo -e "  • Estado dependencias: ${GREEN}Todas satisfechas (verificadas con RPM)${NC}"
     else
-        echo -e "  • Dependencias base:   ${YELLOW}$missing_count paquete(s) pendientes de instalar${NC}"
+        echo -e "  • Estado dependencias: ${YELLOW}$missing_count paquete(s) pendientes de instalar${NC}"
     fi
 
     echo -e "${BOLD}=================================================================${NC}"
@@ -560,19 +591,27 @@ with asar.open("rb") as archive:
     output.write_bytes(archive.read(int(icon["size"])))
 PY
 
+# Configuración del lanzador de escritorio optimizado para Wayland (Mutter) y GPU AMD Radeon
 cat >"$desktop_staged" <<DESKTOP
 [Desktop Entry]
-Name=Antigravity
-Comment=Google Antigravity 2.0 Agent Platform
+Name=Google Antigravity
+Comment=Google Antigravity Desktop 2.0 Agent Platform
 GenericName=AI Agent Platform
-Exec=$command_link %U
+Exec=$command_link --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations %U
 Icon=antigravity
 Terminal=false
 Type=Application
 Categories=Development;IDE;
 StartupNotify=true
 StartupWMClass=Antigravity
+MimeType=inode/directory;application/x-directory;text/plain;
+Actions=new-window;
 X-LinuxCapable-Managed=$managed_id
+
+[Desktop Action new-window]
+Name=Nueva ventana
+Name[en]=New Window
+Exec=$command_link --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --new-window %U
 DESKTOP
 desktop-file-validate "$desktop_staged"
 
@@ -609,9 +648,22 @@ mkdir -p "$(dirname "$pixmap_file")"
 ln -sf "$icon_file" "$pixmap_file"
 install -m 0644 "$desktop_staged" "$desktop_file"
 
-# Integración con Dolphin en KDE Plasma (Sistema y Usuario)
-mkdir -p "$(dirname "$kio_sys_file")"
-cat <<'KIO_SYS' > "$kio_sys_file"
+# Integración con Nautilus (GNOME Files) en el directorio de scripts del usuario
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+	user_home=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+	nautilus_scripts_dir="$user_home/.local/share/nautilus/scripts"
+	mkdir -p "$nautilus_scripts_dir"
+	cat <<'NAUTILUS_SCRIPT' > "$nautilus_scripts_dir/Abrir con Antigravity"
+#!/usr/bin/env bash
+exec /usr/local/bin/antigravity "$@"
+NAUTILUS_SCRIPT
+	chmod +x "$nautilus_scripts_dir/Abrir con Antigravity"
+	chown -R "$SUDO_USER:" "$nautilus_scripts_dir" 2>/dev/null || true
+fi
+
+# Compatibilidad secundaria opcional con Dolphin si el directorio existe
+if [ -d "$(dirname "$kio_sys_file")" ]; then
+	cat <<'KIO_SYS' > "$kio_sys_file"
 [Desktop Entry]
 Type=Service
 ServiceTypes=KonqPopupMenu/Plugin
@@ -626,23 +678,15 @@ Name[en]=Open in Antigravity
 Icon=antigravity
 Exec=antigravity "%f"
 KIO_SYS
-chmod 0644 "$kio_sys_file"
+	chmod 0644 "$kio_sys_file"
 
-if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-	user_home=$(getent passwd "$SUDO_USER" | cut -d: -f6)
-	nautilus_scripts_dir="$user_home/.local/share/nautilus/scripts"
-	mkdir -p "$nautilus_scripts_dir"
-	cat <<'NAUTILUS_SCRIPT' > "$nautilus_scripts_dir/Abrir con Antigravity"
-#!/usr/bin/env bash
-exec /usr/local/bin/antigravity "$@"
-NAUTILUS_SCRIPT
-	chmod +x "$nautilus_scripts_dir/Abrir con Antigravity"
-	chown -R "$SUDO_USER:" "$nautilus_scripts_dir" 2>/dev/null || true
-
-	kio_user_dir="$user_home/.local/share/kio/servicemenus"
-	mkdir -p "$kio_user_dir"
-	cp -f "$kio_sys_file" "$kio_user_dir/open-in-antigravity.desktop"
-	chown -R "$SUDO_USER:" "$kio_user_dir" 2>/dev/null || true
+	if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+		user_home=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+		kio_user_dir="$user_home/.local/share/kio/servicemenus"
+		mkdir -p "$kio_user_dir"
+		cp -f "$kio_sys_file" "$kio_user_dir/open-in-antigravity.desktop"
+		chown -R "$SUDO_USER:" "$kio_user_dir" 2>/dev/null || true
+	fi
 fi
 
 # Refresco de bases de datos de escritorio e iconos
@@ -684,9 +728,12 @@ uninstall_app() {
         echo "Eliminando archivos del sistema..."
         sudo rm -rf "$INSTALL_ROOT" "$COMMAND_LINK" "$DESKTOP_FILE" "$ICON_FILE" "$PIXMAP_FILE" "$KIO_SYS_FILE"
         rm -f "$KIO_USER_FILE" 2>/dev/null || true
+        rm -f "$NAUTILUS_SCRIPT_FILE" 2>/dev/null || true
     fi
 
-    # Refrescar caché de KDE Plasma
+    # Refrescar bases de datos de escritorio e iconos
+    command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
+    command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -f -t -q /usr/share/icons/hicolor 2>/dev/null || true
     if command -v kbuildsycoca6 &>/dev/null; then
         run_as_user kbuildsycoca6 --noincremental 2>/dev/null || true
     fi
@@ -706,7 +753,7 @@ install_or_update() {
     echo -e "${BOLD}=================================================================${NC}"
 
     # 1. Dependencias del sistema
-    echo -e "ℹ️  [1/3] Comprobando dependencias del sistema..."
+    echo -e "ℹ️  [1/3] Comprobando dependencias del sistema en Fedora ($DNF_CMD)..."
     check_dependencies
 
     # 2. Comprobación de versión
@@ -732,13 +779,23 @@ install_or_update() {
         fi
     fi
 
-    # 4. Asegurar integración de Dolphin en KDE Plasma 6
-    if [ -f "$KIO_SYS_FILE" ] && [ ! -f "$KIO_USER_FILE" ]; then
+    # 4. Asegurar integración de Nautilus (GNOME Files)
+    run_as_user mkdir -p "$NAUTILUS_SCRIPTS_DIR"
+    cat <<'NAUTILUS_SCRIPT' | run_as_user tee "$NAUTILUS_SCRIPT_FILE" >/dev/null
+#!/usr/bin/env bash
+exec /usr/local/bin/antigravity "$@"
+NAUTILUS_SCRIPT
+    run_as_user chmod +x "$NAUTILUS_SCRIPT_FILE"
+
+    # Compatibilidad secundaria opcional con Dolphin si el directorio existe
+    if [ -f "$KIO_SYS_FILE" ] && [ -d "$USER_HOME/.local/share/kio" ]; then
         run_as_user mkdir -p "$KIO_USER_DIR"
         run_as_user cp -f "$KIO_SYS_FILE" "$KIO_USER_FILE" 2>/dev/null || true
     fi
 
-    # Refrescar bases de datos de escritorio y caché de KDE Plasma 6
+    # Refrescar bases de datos de escritorio y caché de GNOME Shell
+    command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
+    command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -f -t -q /usr/share/icons/hicolor 2>/dev/null || true
     if command -v kbuildsycoca6 &>/dev/null; then
         run_as_user kbuildsycoca6 --noincremental 2>/dev/null || true
     fi

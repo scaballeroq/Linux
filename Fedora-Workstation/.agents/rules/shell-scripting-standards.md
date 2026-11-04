@@ -1,5 +1,5 @@
 ---
-description: Estándares de desarrollo, idempotencia y buenas prácticas para scripts Bash en Fedora 45 Workstation (GNOME Wayland).
+description: Estándares de desarrollo, idempotencia y buenas prácticas para scripts Bash en Fedora 45 Workstation (GNOME 51 Wayland).
 ---
 
 # Estándares de Shell Scripting para Fedora 45 Workstation (`Setup/`, `IDE/`, `ProgrammingLanguages/`, `Podman/`)

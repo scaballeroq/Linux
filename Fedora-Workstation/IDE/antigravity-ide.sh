@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # antigravity-ide.sh - Gestor e Instalador de Google Antigravity IDE Engine
-# Optimizado para Fedora Workstation (GNOME Shell Wayland)
+# Optimizado para Fedora Workstation (GNOME Shell Wayland Mutter)
+# Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3) | Radeon Graphics (Vega 8)
 # ==============================================================================
 # Características:
 #  - Comprobación de estado (--status) e inspección de versión 100% rootless.
-#  - Verificación idempotente de dependencias RPM sin llamadas innecesarias a DNF5.
-#  - Detección inteligente de versión: evita descargar 200MB+ si ya está al día.
+#  - Verificación idempotente de dependencias RPM sin llamadas innecesarias a DNF/DNF5.
+#  - Detección inteligente de versión: evita descargar si ya está al día.
 #  - Helper /usr/local/bin/update-antigravity-ide modular con rollback atómico.
-#  - Integración nativa con GNOME Shell (Dolphin context menu, KBuildSycoca6).
+#  - Integración nativa con GNOME Shell Wayland (Ozone auto, decoraciones nativas).
+#  - Menú contextual para Nautilus (GNOME Files) mediante scripts de usuario.
 #  - Permisos correctos de SUID para chrome-sandbox (4755).
 #  - Opciones de estado (--status), comprobación (--check), forzado (--force) y desinstalación (--uninstall).
 # ==============================================================================
@@ -44,6 +46,15 @@ else
     USER_HOME="${HOME:-/home/$REAL_USER}"
 fi
 
+if command -v dnf5 &>/dev/null; then
+    DNF_CMD="dnf5"
+else
+    DNF_CMD="dnf"
+fi
+
+# Integraciones de escritorio de usuario (GNOME Nautilus y opcional Dolphin)
+NAUTILUS_SCRIPTS_DIR="$USER_HOME/.local/share/nautilus/scripts"
+NAUTILUS_SCRIPT_FILE="$NAUTILUS_SCRIPTS_DIR/Abrir con Antigravity IDE"
 KIO_USER_DIR="$USER_HOME/.local/share/kio/servicemenus"
 KIO_USER_FILE="$KIO_USER_DIR/open-in-antigravity-ide.desktop"
 
@@ -72,8 +83,8 @@ get_remote_version() {
     if [ -n "$version" ]; then
         echo "$version"
     else
-        # Fallback a versión estable conocida si falla la red
-        echo "2.5.5"
+        # Fallback a última versión estable conocida si falla la red
+        echo "2.6.0"
     fi
 }
 
@@ -97,15 +108,15 @@ check_dependencies() {
     fi
 
     if [ ${#missing[@]} -gt 0 ]; then
-        echo -e "ℹ️  ${YELLOW}Instalando paquetes requeridos con DNF5: ${missing[*]}...${NC}"
+        echo -e "ℹ️  ${YELLOW}Instalando paquetes requeridos con $DNF_CMD: ${missing[*]}...${NC}"
         if [ "$EUID" -ne 0 ]; then
             if ! command -v sudo &>/dev/null; then
                 echo -e "${RED}❌ Error: 'sudo' no está disponible para instalar paquetes.${NC}" >&2
                 exit 1
             fi
-            sudo dnf5 install -y "${missing[@]}"
+            sudo "$DNF_CMD" install -y "${missing[@]}"
         else
-            dnf5 install -y "${missing[@]}"
+            "$DNF_CMD" install -y "${missing[@]}"
         fi
     fi
 }
@@ -115,7 +126,7 @@ check_dependencies() {
 # ------------------------------------------------------------------------------
 show_status() {
     echo -e "${BOLD}=================================================================${NC}"
-    echo -e "🚀 ${BOLD}Estado de Google Antigravity IDE Engine (Fedora 45 Workstation)${NC}"
+    echo -e "🚀 ${BOLD}Estado de Google Antigravity IDE Engine (Fedora Workstation)${NC}"
     echo -e "${BOLD}=================================================================${NC}"
 
     local installed_v
@@ -123,6 +134,8 @@ show_status() {
     local remote_v
     remote_v=$(get_remote_version)
 
+    echo -e "💻 ${BOLD}Sistema:${NC}          Fedora $(grep -oP 'VERSION_ID="\K[^"]+' /etc/os-release 2>/dev/null || echo "Linux") (GNOME Shell Wayland Mutter)"
+    echo -e "⚡ ${BOLD}Hardware:${NC}         AMD Ryzen 7 7730U | Radeon Graphics (Mesa RADV/VA-API)"
     echo -e "👤 ${BOLD}Usuario objetivo:${NC} $REAL_USER ($USER_HOME)"
 
     if [ -n "$installed_v" ] && [ -x "$INSTALL_ROOT/$INSTALL_DIR/antigravity-ide" ]; then
@@ -168,7 +181,11 @@ show_status() {
     echo ""
     echo -e "${BOLD}🖥️  Integración GNOME Shell / Nautilus / Wayland:${NC}"
     if [ -f "$DESKTOP_FILE" ]; then
-        echo -e "  • Lanzador de escritorio: ${GREEN}$DESKTOP_FILE${NC}"
+        if grep -q "ozone-platform-hint" "$DESKTOP_FILE" 2>/dev/null; then
+            echo -e "  • Lanzador de escritorio: ${GREEN}$DESKTOP_FILE${NC} (Wayland nativo Mutter)"
+        else
+            echo -e "  • Lanzador de escritorio: ${YELLOW}$DESKTOP_FILE${NC} (Sin flags Wayland)"
+        fi
     else
         echo -e "  • Lanzador de escritorio: ${RED}No presente${NC}"
     fi
@@ -179,14 +196,14 @@ show_status() {
         echo -e "  • Icono de aplicación:   ${YELLOW}No presente${NC}"
     fi
 
-    if [ -f "$KIO_USER_FILE" ] || [ -f "$KIO_SYS_FILE" ] || [ -f "$USER_HOME/.local/share/nautilus-python/extensions/open-code-editors.py" ]; then
-        echo -e "  • Menú contextual Nautilus: ${GREEN}Activo (GNOME Files)${NC}"
+    if [ -f "$NAUTILUS_SCRIPT_FILE" ]; then
+        echo -e "  • Menú Nautilus (GNOME):  ${GREEN}Activo ($NAUTILUS_SCRIPT_FILE)${NC}"
     else
-        echo -e "  • Menú contextual Nautilus: ${YELLOW}No instalado${NC}"
+        echo -e "  • Menú Nautilus (GNOME):  ${YELLOW}No instalado${NC}"
     fi
 
     echo ""
-    echo -e "${BOLD}🧩 Dependencias del sistema:${NC}"
+    echo -e "${BOLD}🧩 Dependencias del sistema (RPM):${NC}"
     local pkgs=(
         ca-certificates curl tar desktop-file-utils nss
         libdrm mesa-libgbm libsecret
@@ -212,7 +229,7 @@ show_status() {
     local user_settings="$USER_HOME/.config/Antigravity IDE/User/settings.json"
     if [ -f "$user_settings" ]; then
         local term_font
-        term_font=$(python3 -c '
+        term_font=$(run_as_user python3 -c '
 import json, sys
 try:
     with open(sys.argv[1]) as f:
@@ -426,55 +443,9 @@ if [ "$icon_preexisting" = yes ]; then
 	cp -a -- "$icon_file" "$icon_backup"
 fi
 
-curl -fsSL --proto '=https' --proto-redir '=https' --compressed --retry 3 -o "$download_html" "$download_page"
-
-download_fields=$(
-	python3 - "$download_html" "$download_page" "$platform" <<'PY'
-import re
-import sys
-from html.parser import HTMLParser
-from pathlib import Path
-from urllib.parse import urljoin
-
-class LinkParser(HTMLParser):
-    def __init__(self):
-        super().__init__()
-        self.hrefs = []
-
-    def handle_starttag(self, tag, attrs):
-        if tag == "a":
-            href = dict(attrs).get("href")
-            if href:
-                self.hrefs.append(href)
-
-html = Path(sys.argv[1]).read_text(errors="replace")
-page_url = sys.argv[2]
-platform = sys.argv[3]
-parser = LinkParser()
-parser.feed(html)
-pattern = re.compile(
-    r"https://edgedl\.me\.gvt1\.com/edgedl/release2/j0qc3/antigravity/stable/"
-    r"([0-9]+\.[0-9]+\.[0-9]+)-[0-9]+/"
-    + re.escape(platform)
-    + r"/Antigravity"
-    + r"(?:-[0-9]+\.[0-9]+\.[0-9]+)?"
-    + r"\.tar\.gz"
-)
-matches = []
-for href in parser.hrefs:
-    url = urljoin(page_url, href)
-    match = pattern.fullmatch(url)
-    if match and url not in {item[1] for item in matches}:
-        matches.append((match.group(1), url))
-
-if len(matches) != 1:
-    raise SystemExit(f"No se encontró descarga de Antigravity IDE para {platform}")
-
-print(*matches[0], sep="\t")
-PY
-)
-
-IFS=$'\t' read -r version download_url <<<"$download_fields"
+curl -fsSL -A "Mozilla/5.0" -o "$download_html" "$download_page"
+version=$(grep -oP "stable/\K[0-9.]+(?=-[0-9]+/${platform}/Antigravity)" "$download_html" | head -n1)
+download_url=$(grep -oP "https://edgedl\.me\.gvt1\.com/edgedl/release2/j0qc3/antigravity/stable/[0-9.]+-[0-9]+/${platform}/Antigravity(?:%20| )?IDE\.tar\.gz" "$download_html" | head -n1)
 
 if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] ||
    [[ ! "$download_url" =~ ^https://edgedl\.me\.gvt1\.com/edgedl/release2/j0qc3/antigravity/stable/[0-9]+\.[0-9]+\.[0-9]+-[0-9]+/${platform}/Antigravity.*\.tar\.gz$ ]]; then
@@ -505,15 +476,21 @@ cat >"$desktop_staged" <<DESKTOP
 Name=Antigravity IDE
 Comment=Google Antigravity IDE Engine
 GenericName=Integrated Development Environment
-Exec=$command_link %U
+Exec=$command_link --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations %U
 Icon=antigravity-ide
 Terminal=false
 Type=Application
 Categories=Development;IDE;
-MimeType=x-scheme-handler/antigravity-ide;application/x-antigravity-workspace;
+MimeType=x-scheme-handler/antigravity-ide;application/x-antigravity-workspace;inode/directory;application/x-directory;text/plain;
+Actions=new-window;
 StartupNotify=true
 StartupWMClass=antigravity-ide
 X-LinuxCapable-Managed=$managed_id
+
+[Desktop Action new-window]
+Name=Nueva ventana
+Name[en]=New Window
+Exec=$command_link --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --new-window %U
 DESKTOP
 desktop-file-validate "$desktop_staged"
 
@@ -555,9 +532,22 @@ if [ -f "$icon_file" ]; then
 fi
 install -m 0644 "$desktop_staged" "$desktop_file"
 
-# Integración con Dolphin en KDE Plasma (Sistema y Usuario)
-mkdir -p "$(dirname "$kio_sys_file")"
-cat <<'KIO_SYS' > "$kio_sys_file"
+# Integración con Nautilus (GNOME Files) en el directorio de scripts del usuario
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+	user_home=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+	nautilus_scripts_dir="$user_home/.local/share/nautilus/scripts"
+	mkdir -p "$nautilus_scripts_dir"
+	cat <<'NAUTILUS_SCRIPT' > "$nautilus_scripts_dir/Abrir con Antigravity IDE"
+#!/usr/bin/env bash
+exec /usr/local/bin/antigravity-ide "$@"
+NAUTILUS_SCRIPT
+	chmod +x "$nautilus_scripts_dir/Abrir con Antigravity IDE"
+	chown -R "$SUDO_USER:" "$nautilus_scripts_dir" 2>/dev/null || true
+fi
+
+# Compatibilidad secundaria opcional con Dolphin si el directorio existe
+if [ -d "$(dirname "$kio_sys_file")" ]; then
+	cat <<'KIO_SYS' > "$kio_sys_file"
 [Desktop Entry]
 Type=Service
 ServiceTypes=KonqPopupMenu/Plugin
@@ -572,14 +562,15 @@ Name[en]=Open in Antigravity IDE
 Icon=antigravity-ide
 Exec=antigravity-ide "%f"
 KIO_SYS
-chmod 0644 "$kio_sys_file"
+	chmod 0644 "$kio_sys_file"
 
-if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-	user_home=$(getent passwd "$SUDO_USER" | cut -d: -f6)
-	kio_user_dir="$user_home/.local/share/kio/servicemenus"
-	mkdir -p "$kio_user_dir"
-	cp -f "$kio_sys_file" "$kio_user_dir/open-in-antigravity-ide.desktop"
-	chown -R "$SUDO_USER:" "$kio_user_dir" 2>/dev/null || true
+	if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+		user_home=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+		kio_user_dir="$user_home/.local/share/kio/servicemenus"
+		mkdir -p "$kio_user_dir"
+		cp -f "$kio_sys_file" "$kio_user_dir/open-in-antigravity-ide.desktop"
+		chown -R "$SUDO_USER:" "$kio_user_dir" 2>/dev/null || true
+	fi
 fi
 
 # Sustitución atómica del directorio de instalación
@@ -633,7 +624,7 @@ configure_user_settings() {
 }
 JSON
     else
-        python3 -c '
+        run_as_user python3 -c '
 import json, sys
 
 path = sys.argv[1]
@@ -670,9 +661,12 @@ uninstall_ide() {
         echo "Eliminando archivos del sistema..."
         sudo rm -rf "$INSTALL_ROOT" "$COMMAND_LINK" "$DESKTOP_FILE" "$ICON_FILE" "$PIXMAP_FILE" "$KIO_SYS_FILE"
         rm -f "$KIO_USER_FILE" 2>/dev/null || true
+        rm -f "$NAUTILUS_SCRIPT_FILE" 2>/dev/null || true
     fi
 
-    # Refrescar caché de KDE Plasma
+    # Refrescar bases de datos de escritorio e iconos
+    command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
+    command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -f -t -q /usr/share/icons/hicolor 2>/dev/null || true
     if command -v kbuildsycoca6 &>/dev/null; then
         run_as_user kbuildsycoca6 --noincremental 2>/dev/null || true
     fi
@@ -692,7 +686,7 @@ install_or_update() {
     echo -e "${BOLD}=================================================================${NC}"
 
     # 1. Dependencias del sistema
-    echo -e "ℹ️  [1/4] Comprobando dependencias del sistema..."
+    echo -e "ℹ️  [1/4] Comprobando dependencias del sistema en Fedora ($DNF_CMD)..."
     check_dependencies
 
     # 2. Comprobación de versión
@@ -718,9 +712,17 @@ install_or_update() {
         fi
     fi
 
-    # 4. Asegurar integración de Dolphin en GNOME Shell y settings de usuario
+    # 4. Asegurar integración con Nautilus (GNOME Files) y settings de usuario
     echo -e "ℹ️  [4/4] Verificando integraciones de escritorio GNOME Shell y ajustes..."
-    if [ -f "$KIO_SYS_FILE" ] && [ ! -f "$KIO_USER_FILE" ]; then
+    run_as_user mkdir -p "$NAUTILUS_SCRIPTS_DIR"
+    cat <<'NAUTILUS_SCRIPT' | run_as_user tee "$NAUTILUS_SCRIPT_FILE" >/dev/null
+#!/usr/bin/env bash
+exec /usr/local/bin/antigravity-ide "$@"
+NAUTILUS_SCRIPT
+    run_as_user chmod +x "$NAUTILUS_SCRIPT_FILE"
+
+    # Compatibilidad secundaria opcional con Dolphin si el directorio existe
+    if [ -f "$KIO_SYS_FILE" ] && [ -d "$USER_HOME/.local/share/kio" ]; then
         run_as_user mkdir -p "$KIO_USER_DIR"
         run_as_user cp -f "$KIO_SYS_FILE" "$KIO_USER_FILE" 2>/dev/null || true
     fi
@@ -728,6 +730,8 @@ install_or_update() {
     configure_user_settings
 
     # Refrescar bases de datos de escritorio y caché de GNOME Shell
+    command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
+    command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -f -t -q /usr/share/icons/hicolor 2>/dev/null || true
     if command -v kbuildsycoca6 &>/dev/null; then
         run_as_user kbuildsycoca6 --noincremental 2>/dev/null || true
     fi
@@ -738,7 +742,7 @@ install_or_update() {
     if [ -x "$launcher" ]; then
         echo -e "${GREEN}✅ Antigravity IDE Engine verificado y disponible en:${NC} $launcher"
         echo -e "💡 Ejecutable: ${BOLD}antigravity-ide${NC}"
-        echo -e "💡 Dolphin: Click derecho en carpetas -> 'Abrir con Antigravity IDE'"
+        echo -e "💡 Nautilus: Click derecho en carpetas -> 'Abrir con Antigravity IDE'"
     else
         echo -e "${YELLOW}ℹ️  Instalación lista. Para iniciar la descarga use './IDE/antigravity-ide.sh' con privilegios o '--force'.${NC}"
     fi
@@ -755,7 +759,7 @@ show_help() {
     echo -e "  ${CYAN}-s, --status${NC}        Muestra el estado completo de la instalación e integraciones (rootless)"
     echo -e "  ${CYAN}-c, --check${NC}         Comprueba si hay actualizaciones disponibles sin instalar (exit code)"
     echo -e "  ${CYAN}-f, --force${NC}         Fuerza la descarga y reinstalación de la versión más reciente"
-    echo -e "  ${CYAN}--uninstall${NC}         Desinstala Antigravity IDE y elimina accesos e integración con Dolphin"
+    echo -e "  ${CYAN}--uninstall${NC}         Desinstala Antigravity IDE y elimina accesos e integración con Nautilus"
     echo -e "  ${CYAN}-h, --help${NC}          Muestra este mensaje de ayuda"
     echo ""
     echo -e "${BOLD}Ejemplos:${NC}"

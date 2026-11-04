@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # antigravity-cli.sh - Gestor e Instalador de Google Antigravity CLI (agy)
-# Optimizado para Fedora Workstation (GNOME Shell Wayland)
+# Optimizado para Fedora Workstation (GNOME Shell Wayland Mutter)
+# Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3) | Radeon Graphics (Vega 8)
 # ==============================================================================
 # Características:
 #  - Instalación y gestión 100% rootless en ~/.local/bin/agy.
@@ -9,7 +10,7 @@
 #  - Consulta directa al manifiesto oficial sin scripts intermedios innecesarios.
 #  - Prevención de descargas redundantes si la versión local ya está al día.
 #  - Actualización rápida mediante 'agy update' nativo o reinstalación limpia.
-#  - Integración modular en ~/.bashrc.d/ y ~/.config/environment.d/.
+#  - Integración modular en ~/.bashrc.d/, ~/.zshrc.d/ y ~/.config/environment.d/.
 #  - Opciones completas de CLI: --status, --check, --update, --force, --uninstall y --help.
 # ==============================================================================
 
@@ -40,8 +41,16 @@ MARKER_FILE="$LOCAL_BIN/.linuxcapable-antigravity-cli"
 MARKER_VALUE="google-antigravity-cli-v1"
 BASHRC_D="$USER_HOME/.bashrc.d"
 BASHRC_FILE="$BASHRC_D/antigravity-cli.sh"
+ZSHRC_D="$USER_HOME/.zshrc.d"
+ZSHRC_FILE="$ZSHRC_D/antigravity-cli.zsh"
 ENV_D="$USER_HOME/.config/environment.d"
 ENV_FILE="$ENV_D/10-antigravity-cli.conf"
+
+if command -v dnf5 &>/dev/null; then
+    DNF_CMD="dnf5"
+else
+    DNF_CMD="dnf"
+fi
 
 MANIFEST_BASE_URL="https://antigravity-cli-auto-updater-974169037036.us-central1.run.app"
 OFFICIAL_INSTALLER_URL="https://antigravity.google/cli/install.sh"
@@ -121,15 +130,15 @@ check_dependencies() {
     command -v tar &>/dev/null || missing+=("tar")
 
     if [ ${#missing[@]} -gt 0 ]; then
-        echo -e "ℹ️  ${YELLOW}Instalando herramientas requeridas: ${missing[*]}...${NC}"
+        echo -e "ℹ️  ${YELLOW}Instalando herramientas requeridas con $DNF_CMD: ${missing[*]}...${NC}"
         if [ "$EUID" -ne 0 ]; then
             if ! command -v sudo &>/dev/null; then
                 echo -e "${RED}❌ Error: Se requiere 'sudo' para instalar ${missing[*]}${NC}" >&2
                 exit 1
             fi
-            sudo dnf5 install -y "${missing[@]}"
+            sudo "$DNF_CMD" install -y "${missing[@]}"
         else
-            dnf5 install -y "${missing[@]}"
+            "$DNF_CMD" install -y "${missing[@]}"
         fi
     fi
 }
@@ -141,8 +150,20 @@ configure_environment() {
     run_as_user mkdir -p "$LOCAL_BIN" "$BASHRC_D" "$ENV_D"
 
     # Shell modular Bash (~/.bashrc.d)
-    if [ -d "$BASHRC_D" ]; then
+    if [ -d "$BASHRC_D" ] || [ -f "$USER_HOME/.bashrc" ]; then
+        run_as_user mkdir -p "$BASHRC_D"
         run_as_user tee "$BASHRC_FILE" > /dev/null << 'EOF'
+# Antigravity CLI (agy)
+if [ -d "$HOME/.local/bin" ] && [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+    export PATH="$HOME/.local/bin:$PATH"
+fi
+EOF
+    fi
+
+    # Shell modular Zsh (~/.zshrc.d)
+    if [ -d "$ZSHRC_D" ] || [ -f "$USER_HOME/.zshrc" ]; then
+        run_as_user mkdir -p "$ZSHRC_D"
+        run_as_user tee "$ZSHRC_FILE" > /dev/null << 'EOF'
 # Antigravity CLI (agy)
 if [ -d "$HOME/.local/bin" ] && [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
     export PATH="$HOME/.local/bin:$PATH"
@@ -162,7 +183,7 @@ EOF
 # ------------------------------------------------------------------------------
 show_status() {
     echo -e "${BOLD}=================================================================${NC}"
-    echo -e "🛸 ${BOLD}Estado de Google Antigravity CLI (agy) en Fedora 45 Workstation${NC}"
+    echo -e "🛸 ${BOLD}Estado de Google Antigravity CLI (agy) en Fedora Workstation${NC}"
     echo -e "${BOLD}=================================================================${NC}"
 
     local installed_v
@@ -170,6 +191,8 @@ show_status() {
     local remote_v
     remote_v=$(get_remote_version)
 
+    echo -e "💻 ${BOLD}Sistema:${NC}          Fedora $(grep -oP 'VERSION_ID="\K[^"]+' /etc/os-release 2>/dev/null || echo "Linux") (GNOME Shell Wayland Mutter)"
+    echo -e "⚡ ${BOLD}Hardware:${NC}         AMD Ryzen 7 7730U | Radeon Graphics (Mesa RADV/VA-API)"
     echo -e "👤 ${BOLD}Usuario objetivo:${NC} $REAL_USER ($USER_HOME)"
 
     if [ -n "$installed_v" ] && validate_agy "$AGY_BIN"; then
@@ -214,6 +237,12 @@ show_status() {
         echo -e "  • Bash (~/.bashrc.d):   ${GREEN}Configurado ($BASHRC_FILE)${NC}"
     else
         echo -e "  • Bash (~/.bashrc.d):   ${YELLOW}No presente${NC}"
+    fi
+
+    if [ -f "$ZSHRC_FILE" ]; then
+        echo -e "  • Zsh (~/.zshrc.d):     ${GREEN}Configurado ($ZSHRC_FILE)${NC}"
+    else
+        echo -e "  • Zsh (~/.zshrc.d):     ${YELLOW}No presente${NC}"
     fi
 
     if [ -f "$ENV_FILE" ]; then
@@ -340,6 +369,11 @@ uninstall_cli() {
     if [ -f "$BASHRC_FILE" ]; then
         run_as_user rm -f "$BASHRC_FILE"
         echo -e "  • Eliminada integración Bash: $BASHRC_FILE"
+    fi
+
+    if [ -f "$ZSHRC_FILE" ]; then
+        run_as_user rm -f "$ZSHRC_FILE"
+        echo -e "  • Eliminada integración Zsh: $ZSHRC_FILE"
     fi
 
     if [ -f "$ENV_FILE" ]; then
