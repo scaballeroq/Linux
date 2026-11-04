@@ -89,7 +89,7 @@ _podman_utils() {
                 install-global|uninstall-global)
                     local -a global_services
                     if [ -n "$repo_dir" ] && [ -d "$repo_dir/services-shared" ]; then
-                        global_services=($(find "$repo_dir/services-shared" -maxdepth 1 -name "*.container" -printf "%f\n" 2>/dev/null | sed 's/\.container$//'))
+                        global_services=($(find "$repo_dir/services-shared" -maxdepth 1 -name "*.container" -printf "%f\n" 2>/dev/null | sed 's/\.container$//') all)
                     fi
                     _describe -t global_services 'Servicios globales' global_services
                     ;;

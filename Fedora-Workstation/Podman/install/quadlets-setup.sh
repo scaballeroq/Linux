@@ -2,7 +2,8 @@
 # quadlets-setup.sh - Configuración de directorios y servicios systemd Quadlets para Podman en Fedora 45 + GNOME
 #
 # Uso:
-#   ./quadlets-setup.sh              -> Prepara los directorios de Quadlets e instala los servicios compartidos
+#   ./quadlets-setup.sh              -> Prepara los directorios de Quadlets e inicializa systemd user
+#   ./quadlets-setup.sh --install-shared -> Instala todos los servicios compartidos (.container, .volume, .network)
 #   ./quadlets-setup.sh --status     -> Comprueba las unidades Quadlets generadas en systemd user
 #   ./quadlets-setup.sh --help       -> Muestra la ayuda interactiva
 
@@ -16,6 +17,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m'
 
 log_info()  { echo -e "${YELLOW}[INFO]${NC} $1"; }
@@ -35,32 +37,45 @@ show_help() {
 ⚙️ Gestor de Quadlets para Podman - Fedora 45 (GNOME)
 
 Uso:
-  $0 [OPCION]
+  $0 [OPCIÓN]
 
 Opciones:
   (sin argumentos)       Crea directorios de systemd para Quadlets y verifica el generador.
-  --install-shared       Instala todos los servicios globales compartidos (.container) en systemd user.
+  --install-shared       Instala todos los servicios globales compartidos (.container, .volume, .network) en systemd user.
+  --clean-shared         Elimina los servicios globales compartidos instalados en systemd user.
   --status, -s           Muestra el estado de los Quadlets y servicios de usuario de systemd.
   --help, -h             Muestra este mensaje de ayuda.
 
 Directorios gestionados:
   • ~/.config/containers/systemd/        -> Proyectos activos y contenedores (.container, .network, .volume)
   • ~/.config/containers/systemd/global/ -> Servicios globales compartidos (PostgreSQL, Redis, Traefik, Keycloak)
+  • ~/.config/systemd/user/              -> Targets y unidades nativas de systemd
 EOF
 }
 
 show_status() {
     echo "================================================================="
-    echo "🔍 ESTADO DE SYSTEMD QUADLETS - FEDORA 44"
+    echo "🔍 ESTADO DE SYSTEMD QUADLETS - FEDORA 45"
     echo "================================================================="
     echo "• Directorio Quadlets: $HOME/.config/containers/systemd"
     echo "• Generador Quadlet:   $(if [ -f /usr/lib/systemd/user-generators/podman-user-generator ]; then echo 'Presente (/usr/lib/systemd/user-generators/podman-user-generator)'; else echo 'No detectado'; fi)"
     echo ""
-    echo "📋 Archivos Quadlets configurados:"
-    ls -la "$HOME/.config/containers/systemd" 2>/dev/null || echo "  (Sin archivos configurados)"
+    echo "📋 Archivos Quadlets principales (~/.config/containers/systemd/):"
+    if [ -d "$HOME/.config/containers/systemd" ] && [ -n "$(find "$HOME/.config/containers/systemd" -maxdepth 1 -type f -o -type l 2>/dev/null)" ]; then
+        ls -la "$HOME/.config/containers/systemd" 2>/dev/null
+    else
+        echo "  (Sin archivos en el directorio raíz de Quadlets)"
+    fi
+    echo ""
+    echo "📋 Servicios globales compartidos (~/.config/containers/systemd/global/):"
+    if [ -d "$HOME/.config/containers/systemd/global" ] && [ -n "$(ls -A "$HOME/.config/containers/systemd/global" 2>/dev/null)" ]; then
+        ls -la "$HOME/.config/containers/systemd/global" 2>/dev/null
+    else
+        echo "  (Sin servicios globales instalados)"
+    fi
     echo ""
     echo "📋 Unidades de servicio activas gestionadas por Podman Quadlets:"
-    systemctl --user list-units "*podman*" 2>/dev/null || echo "  (Ninguna unidad activa)"
+    systemctl --user list-units "*podman*" "*global*" --no-pager 2>/dev/null || echo "  (Ninguna unidad activa)"
     echo "================================================================="
 }
 
@@ -95,32 +110,44 @@ install_global_services() {
         return 0
     fi
 
-    log_info "Instalando servicios compartidos (.container)..."
-    for container_file in "$shared_dir"/*.container; do
-        [ -f "$container_file" ] || continue
+    log_info "Instalando todos los servicios compartidos (.container, .volume, .network)..."
+    for quadlet_file in "$shared_dir"/*; do
+        [ -f "$quadlet_file" ] || continue
+        case "$quadlet_file" in
+            *.container|*.volume|*.network|*.pod|*.image|*.kube)
+                local basename
+                basename="$(basename "$quadlet_file")"
+                local target="$systemd_global/$basename"
 
-        local basename
-        basename="$(basename "$container_file")"
-        local target="$systemd_global/$basename"
-
-        # Reemplazar placeholder del socket path si existiera
-        if grep -q "__PODMAN_SOCKET__" "$container_file" 2>/dev/null; then
-            sed "s|__PODMAN_SOCKET__|$socket_path|g" "$container_file" > "$target"
-        else
-            cp "$container_file" "$target"
-        fi
-
-        log_ok "  $basename -> ~/.config/containers/systemd/global/"
+                # Reemplazar placeholder del socket path si existiera
+                if grep -q "__PODMAN_SOCKET__" "$quadlet_file" 2>/dev/null; then
+                    sed "s|__PODMAN_SOCKET__|$socket_path|g" "$quadlet_file" > "$target"
+                else
+                    cp "$quadlet_file" "$target"
+                fi
+                log_ok "  $basename -> ~/.config/containers/systemd/global/"
+                ;;
+        esac
     done
 
     systemctl --user daemon-reload
     log_ok "Servicios compartidos instalados y registrados en systemd user."
 }
 
+clean_global_services() {
+    local systemd_global="$HOME/.config/containers/systemd/global"
+    log_info "Limpiando servicios compartidos de ~/.config/containers/systemd/global/..."
+    if [ -d "$systemd_global" ]; then
+        rm -rf "${systemd_global:?}"/*
+        systemctl --user daemon-reload
+        log_ok "Servicios compartidos eliminados de systemd user."
+    fi
+}
+
 verify_quadlets() {
     log_info "Verificando compatibilidad de Quadlets..."
     local podman_version
-    podman_version=$(podman --version | grep -oP '\d+\.\d+' | head -1)
+    podman_version=$(podman --version | grep -oP '\d+\.\d+' | head -1 || echo "6.1")
     
     log_ok "Quadlets soportado nativamente (Podman $podman_version en Fedora 45)."
     echo ""
@@ -151,6 +178,9 @@ case "${1:-}" in
         setup_podman_dirs
         install_global_services
         verify_quadlets
+        ;;
+    --clean-shared)
+        clean_global_services
         ;;
     "")
         echo "============================================"

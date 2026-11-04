@@ -62,19 +62,23 @@ cmd_create() {
 
     local project_upper
     project_upper=$(echo "$project" | tr '[:lower:]-' '[:upper:]_')
+    local socket_path="/run/user/$(id -u)/podman/podman.sock"
 
     cp -r "$template_dir"/* "$project_dir"/
-    cp "$template_dir"/.env.example "$project_dir/.env" 2>/dev/null || true
+    if [ -f "$template_dir/.env.example" ]; then
+        cp "$template_dir/.env.example" "$project_dir/.env"
+    fi
 
-    # Reemplazar placeholders en todos los archivos del proyecto
-    find "$project_dir" -type f \( -name "*.container" -o -name "*.network" -o -name "*.target" -o -name "*.volume" -o -name ".env*" \) | while read -r file; do
+    # Reemplazar placeholders en todos los archivos del proyecto (código, configs, quadlets)
+    find "$project_dir" -type f | while read -r file; do
         sed -i "s/__PROJECT__/$project/g" "$file"
         sed -i "s/__PROJECT_UPPER__/$project_upper/g" "$file"
         sed -i "s|__PROJECT_DIR__|$project_dir|g" "$file"
+        sed -i "s|__PODMAN_SOCKET__|$socket_path|g" "$file"
     done
 
     # Renombrar archivos con placeholder
-    find "$project_dir" -name "*__PROJECT__*" | while read -r file; do
+    find "$project_dir" -depth -name "*__PROJECT__*" | while read -r file; do
         mv "$file" "$(echo "$file" | sed "s/__PROJECT__/$project/g")"
     done
 
@@ -192,7 +196,7 @@ cmd_status() {
     echo -e "${CYAN}📊 ESTADO DEL PROYECTO: $project${NC}"
     echo -e "${CYAN}=================================================================${NC}"
     echo ""
-    echo "• Unidades Systemd activas:"
+    echo "• Unidades Systemd asociadas:"
     systemctl --user list-units "${project}*" --no-pager 2>/dev/null || echo "  (Ninguna unidad activa)"
     echo ""
     echo "• Contenedores Podman asociados:"
@@ -235,7 +239,7 @@ cmd_destroy() {
     fi
 
     log_step "Eliminando red del proyecto..."
-    podman network rm "$project" 2>/dev/null || true
+    podman network rm "${project}-net" "$project" 2>/dev/null || true
 
     log_step "Eliminando directorio del proyecto en $project_dir..."
     rm -rf "$project_dir"
@@ -299,26 +303,64 @@ cmd_unlink() {
 # =============================================================================
 cmd_install_global() {
     local service="${1:-}"
-    [ -z "$service" ] && { log_error "Uso: podman-utils install-global <servicio>"; exit 1; }
+    [ -z "$service" ] && { log_error "Uso: podman-utils install-global <servicio|all>"; exit 1; }
+
+    mkdir -p "$SYSTEMD_GLOBAL"
+    local socket_path="/run/user/$(id -u)/podman/podman.sock"
+
+    if [ "$service" = "all" ]; then
+        log_step "Instalando todos los servicios compartidos..."
+        for file in "$SERVICES_SHARED"/*; do
+            [ -f "$file" ] || continue
+            local bname
+            bname="$(basename "$file")"
+            if grep -q "__PODMAN_SOCKET__" "$file" 2>/dev/null; then
+                sed "s|__PODMAN_SOCKET__|$socket_path|g" "$file" > "$SYSTEMD_GLOBAL/$bname"
+            else
+                cp "$file" "$SYSTEMD_GLOBAL/$bname"
+            fi
+            log_ok "  $bname -> ~/.config/containers/systemd/global/"
+        done
+        systemctl --user daemon-reload
+        log_ok "Todos los servicios compartidos han sido instalados."
+        return 0
+    fi
 
     local container_file="$SERVICES_SHARED/${service}.container"
 
     if [ ! -f "$container_file" ]; then
         log_error "El servicio '$service' no existe en $SERVICES_SHARED."
         echo "Servicios compartidos disponibles:"
-        ls -1 "$SERVICES_SHARED" 2>/dev/null | sed 's/\.container$//' | sed 's/^/  • /'
+        ls -1 "$SERVICES_SHARED"/*.container 2>/dev/null | xargs -n1 basename | sed 's/\.container$//' | sed 's/^/  • /'
+        echo "  • all (Instala todos los servicios y recursos)"
         exit 1
     fi
 
-    mkdir -p "$SYSTEMD_GLOBAL"
+    log_step "Instalando servicio compartido '$service' y recursos asociados..."
 
-    local socket_path="/run/user/$(id -u)/podman/podman.sock"
+    # Copiar .container
     local target="$SYSTEMD_GLOBAL/${service}.container"
-
     if grep -q "__PODMAN_SOCKET__" "$container_file" 2>/dev/null; then
         sed "s|__PODMAN_SOCKET__|$socket_path|g" "$container_file" > "$target"
     else
         cp "$container_file" "$target"
+    fi
+    log_ok "  ${service}.container instalado."
+
+    # Copiar volumen companion si existe (ej. service-data.volume o service*.volume)
+    for companion in "$SERVICES_SHARED/${service}"*.volume "$SERVICES_SHARED/${service}"*.network; do
+        if [ -f "$companion" ]; then
+            local comp_name
+            comp_name="$(basename "$companion")"
+            cp "$companion" "$SYSTEMD_GLOBAL/$comp_name"
+            log_ok "  $comp_name instalado."
+        fi
+    done
+
+    # Si es traefik, copiar red proxy-net y traefik-config.volume
+    if [ "$service" = "traefik" ]; then
+        [ -f "$SERVICES_SHARED/proxy-net.network" ] && cp "$SERVICES_SHARED/proxy-net.network" "$SYSTEMD_GLOBAL/proxy-net.network"
+        [ -f "$SERVICES_SHARED/traefik-config.volume" ] && cp "$SERVICES_SHARED/traefik-config.volume" "$SYSTEMD_GLOBAL/traefik-config.volume"
     fi
 
     systemctl --user daemon-reload
@@ -328,10 +370,24 @@ cmd_install_global() {
 
 cmd_uninstall_global() {
     local service="${1:-}"
-    [ -z "$service" ] && { log_error "Uso: podman-utils uninstall-global <servicio>"; exit 1; }
+    [ -z "$service" ] && { log_error "Uso: podman-utils uninstall-global <servicio|all>"; exit 1; }
+
+    if [ "$service" = "all" ]; then
+        log_step "Desinstalando todos los servicios compartidos..."
+        for file in "$SYSTEMD_GLOBAL"/*; do
+            [ -f "$file" ] || continue
+            local bname
+            bname="$(basename "$file" .container)"
+            systemctl --user stop "${bname}.service" 2>/dev/null || true
+        done
+        rm -rf "${SYSTEMD_GLOBAL:?}"/*
+        systemctl --user daemon-reload
+        log_ok "Todos los servicios globales han sido desinstalados."
+        return 0
+    fi
 
     systemctl --user stop "${service}.service" 2>/dev/null || true
-    rm -f "$SYSTEMD_GLOBAL/${service}".* 2>/dev/null || true
+    rm -f "$SYSTEMD_GLOBAL/${service}"* 2>/dev/null || true
     systemctl --user daemon-reload
     log_ok "Servicio global '$service' desinstalado."
 }
@@ -397,7 +453,7 @@ cmd_list_templates() {
 # =============================================================================
 cmd_doctor() {
     echo "================================================================="
-    echo "🩺 DIAGNÓSTICO DE PODMAN ROOTLESS - FEDORA 44 (GNOME)"
+    echo "🩺 DIAGNÓSTICO DE PODMAN ROOTLESS - FEDORA 45 (GNOME)"
     echo "================================================================="
 
     # 1. Podman CLI
@@ -418,12 +474,19 @@ cmd_doctor() {
     local linger_val
     linger_val=$(loginctl show-user "$USER" 2>/dev/null | grep -i "Linger=" | cut -d= -f2 || echo "no")
     if [ "$linger_val" = "yes" ]; then
-        log_ok "Persistencia Linger: Habilitada (los contenedores se ejecutan en segundo plano)"
+        log_ok "Persistencia Linger: Habilitada (los contenedores persisten sin terminal)"
     else
         log_info "Persistencia Linger: Deshabilitada (Ejecuta: loginctl enable-linger $USER)"
     fi
 
-    # 4. DOCKER_HOST
+    # 4. SubUID / SubGID
+    if grep -q "^$USER:" /etc/subuid 2>/dev/null; then
+        log_ok "SubUID/SubGID: Mapeo configurado ($(grep "^$USER:" /etc/subuid | cut -d: -f2,3))"
+    else
+        log_error "SubUID/SubGID no configurado para $USER en /etc/subuid."
+    fi
+
+    # 5. DOCKER_HOST
     if [ -n "${DOCKER_HOST:-}" ]; then
         log_ok "DOCKER_HOST: $DOCKER_HOST"
     else
@@ -434,12 +497,28 @@ cmd_doctor() {
         log_info "DOCKER_HOST: No exportado en el shell actual (Carga con: $reload_hint)"
     fi
 
-    # 5. Generador Quadlet
+    # 6. Generador Quadlet
     if [ -f /usr/lib/systemd/user-generators/podman-user-generator ]; then
-        log_ok "Generador Quadlet: Integrado en Systemd"
+        log_ok "Generador Quadlet: Integrado (/usr/lib/systemd/user-generators/podman-user-generator)"
     else
         log_error "Generador Quadlet no encontrado en /usr/lib/systemd/user-generators/podman-user-generator."
     fi
+
+    # 7. Red y Cortafuegos Firewalld
+    if command -v firewall-cmd &>/dev/null; then
+        if firewall-cmd --zone=trusted --list-interfaces 2>/dev/null | grep -qw "podman+"; then
+            log_ok "Firewalld: Interfaz podman+ autorizada en la zona trusted"
+        else
+            log_info "Firewalld: Interfaz podman+ pendiente de agregar a la zona trusted"
+        fi
+    fi
+
+    # 8. Backend y Almacenamiento
+    local net_backend
+    net_backend=$(podman info --format '{{.Host.NetworkBackend}}' 2>/dev/null || echo 'netavark')
+    local store_driver
+    store_driver=$(podman info --format '{{.Store.GraphDriverName}}' 2>/dev/null || echo 'overlay')
+    log_ok "Motor: Red ($net_backend) | Almacenamiento ($store_driver)"
 
     echo "================================================================="
 }
@@ -466,8 +545,8 @@ Proyectos:
   unlink <nombre>              Desenlaza los archivos Quadlet de systemd
 
 Servicios Globales:
-  install-global <servicio>    Instala un servicio compartido (postgres, redis, traefik, keycloak)
-  uninstall-global <servicio>  Desinstala un servicio compartido
+  install-global <servicio>    Instala un servicio compartido (postgres-global, redis-global, traefik, keycloak, all)
+  uninstall-global <servicio>  Desinstala un servicio compartido (o 'all' para todos)
 
 Diagnóstico e Información:
   list                         Lista todos los proyectos creados y su estado
