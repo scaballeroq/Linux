@@ -1,4 +1,4 @@
-# ProgrammingLanguages Sub-Justfile - Ubuntu Workstation
+# ProgrammingLanguages Sub-Justfile - Fedora Workstation
 
 # Instalar todos los lenguajes y runtimes
 languages: mise node python rust dotnet java angular
@@ -20,9 +20,17 @@ python:
 python-uv *args:
     ./python-uv-init.sh {{args}}
 
-# Rust toolchain
+# Rust toolchain y optimizaciones
 rust:
-    ./Revisar/rust.sh
+    ./rust.sh
+
+# Diagnóstico de Rust
+rust-status:
+    ./rust.sh --status
+
+# Actualización de Rust
+rust-update:
+    ./rust.sh --update
 
 # .NET SDK
 dotnet:
