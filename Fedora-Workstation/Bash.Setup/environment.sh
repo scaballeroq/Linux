@@ -43,6 +43,19 @@ export QT_AUTO_SCREEN_SCALE_FACTOR=1
 # Firefox en modo Wayland nativo
 export MOZ_ENABLE_WAYLAND=1
 
+# Aceleración por hardware AMD Radeon (VA-API Mesa)
+export LIBVA_DRIVER_NAME="radeonsi"
+
+# uv (Python) en sistemas Linux
+export UV_LINK_MODE="copy"
+
+# JAVA_HOME canónico en Fedora 45 (OpenJDK 21+)
+if [ -d "/usr/lib/jvm/java-21-openjdk" ]; then
+    export JAVA_HOME="/usr/lib/jvm/java-21-openjdk"
+elif [ -d "/etc/alternatives/jre_openjdk" ]; then
+    export JAVA_HOME="/etc/alternatives/jre_openjdk"
+fi
+
 # Forzar Wayland nativo en aplicaciones Electron (VS Code, Antigravity, Discord, Obsidian)
 export ELECTRON_OZONE_PLATFORM_HINT="auto"
 
