@@ -10,7 +10,7 @@ This guide details the installation of desktop applications, visual utilities, a
 
 ## 1. Decoupled Flatpak Catalog (`./Setup/flatpak.sh`)
 
-The `./Setup/flatpak.sh` script enables the unfiltered official **Flathub** remote and installs modular application profiles with automatic overrides for the GNOME dark theme (`adw-gtk3-dark`), Bibata cursors, and Wayland/DRI GPU acceleration:
+The `./Setup/flatpak.sh` script enables the unfiltered official **Flathub** remote and installs modular application profiles with automatic overrides for GNOME (Bibata cursors, PipeWire audio, Wayland, and GPU DRI acceleration):
 
 ```bash
 ./Setup/flatpak.sh            # Default recommended profile

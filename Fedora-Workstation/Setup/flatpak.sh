@@ -166,6 +166,8 @@ apply_overrides() {
     log_info "Optimizando overrides Flatpak para AMD Radeon Vega 8, Wayland y PipeWire..."
 
     # Overrides globales a nivel de usuario (rootless)
+    # Nota: No inyectar GTK_THEME ni xdg-config/gtk-4.0 ya que rompe la métrica de fuentes
+    # y el espaciado vertical en widgets Libadwaita (AdwActionRow) en GTK4.
     run_as_user flatpak override --user \
         --socket=wayland \
         --socket=fallback-x11 \
@@ -173,15 +175,10 @@ apply_overrides() {
         --filesystem=xdg-run/pipewire-0:ro \
         --device=dri \
         --filesystem=xdg-config/gtk-3.0:ro \
-        --filesystem=xdg-config/gtk-4.0:ro \
         --filesystem=xdg-config/fontconfig:ro \
         --filesystem=~/.icons:ro \
-        --filesystem=/usr/share/icons:ro \
-        --filesystem=~/.themes:ro \
-        --filesystem=/usr/share/themes:ro \
+        --filesystem=xdg-data/icons:ro \
         --filesystem=~/.local/share/fonts:ro \
-        --filesystem=/usr/share/fonts:ro \
-        --env=GTK_THEME=adw-gtk3-dark \
         --env=XCURSOR_THEME=Bibata-Modern-Classic \
         --env=XCURSOR_SIZE=24 \
         --env=XDG_CURRENT_DESKTOP=GNOME \
@@ -219,7 +216,7 @@ apply_overrides() {
     run_as_user flatpak override --user io.github.celluloid_player.Celluloid \
         --device=dri 2>/dev/null || true
 
-    log_ok "Overrides Wayland, GPU DRI, PipeWire y estética adw-gtk3-dark aplicados."
+    log_ok "Overrides Wayland, GPU DRI, PipeWire, fuentes e integración GNOME aplicados."
 }
 
 # ------------------------------------------------------------------------------
