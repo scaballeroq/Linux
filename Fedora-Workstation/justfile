@@ -121,12 +121,16 @@ security-status:
     ./Setup/seguridad.sh --status
 
 # Instala y activa la consola web de administración Cockpit (puerto 9090)
-cockpit:
-    ./Setup/cockpit.sh
+cockpit *args:
+    ./Setup/cockpit.sh {{args}}
 
 # Estado de Cockpit
 cockpit-status:
     ./Setup/cockpit.sh --status
+
+# Abre Cockpit en el navegador predeterminado
+cockpit-open:
+    ./Setup/cockpit.sh --open
 
 # ==============================================================================
 #  4. ESCRITORIO GNOME SHELL (WAYLAND), APARIENCIA Y TERMINALES
