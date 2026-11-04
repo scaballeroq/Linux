@@ -6,12 +6,12 @@ set -euo pipefail
 #  Catppuccin Mocha + Opacidad/Blur Wayland + Extensión Nautilus Python
 # ==============================================================================
 
-BOLD='\033[1m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+BOLD=$'\033[1m'
+GREEN=$'\033[0;32m'
+YELLOW=$'\033[1;33m'
+RED=$'\033[0;31m'
+CYAN=$'\033[0;36m'
+NC=$'\033[0m'
 
 log_info() { echo -e "${CYAN}ℹ️  $1${NC}"; }
 log_ok()   { echo -e "${GREEN}✅ $1${NC}"; }
@@ -28,10 +28,17 @@ REAL_UID=$(id -u "$REAL_USER")
 
 run_as_user() {
     if [[ $EUID -eq 0 && "$REAL_USER" != "root" ]]; then
-        sudo -u "$REAL_USER" \
-            DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${REAL_UID}/bus" \
-            XDG_RUNTIME_DIR="/run/user/${REAL_UID}" \
-            "$@"
+        local dbus_bus="/run/user/${REAL_UID}/bus"
+        if [[ -S "$dbus_bus" ]]; then
+            sudo -u "$REAL_USER" \
+                DBUS_SESSION_BUS_ADDRESS="unix:path=$dbus_bus" \
+                XDG_RUNTIME_DIR="/run/user/${REAL_UID}" \
+                "$@"
+        else
+            sudo -u "$REAL_USER" \
+                XDG_RUNTIME_DIR="/run/user/${REAL_UID}" \
+                "$@"
+        fi
     else
         "$@"
     fi
@@ -48,7 +55,8 @@ NAUTILUS_SCRIPT_DIR="$USER_HOME/.local/share/nautilus/scripts"
 
 OPACITY="0.75"
 DO_INSTALL=true
-SET_DEFAULT_TERM=true
+BIND_KEY=false
+SET_DEFAULT_TERM=false
 ACTION="run"
 
 show_help() {
@@ -56,17 +64,18 @@ show_help() {
 ${BOLD}🐱 Instalador y Optimizador de Kitty - Fedora 45 Workstation (GNOME Wayland)${NC}
 
 Instala Kitty y ${BOLD}nautilus-python${NC} mediante DNF5, aplica el tema ${BOLD}Catppuccin Mocha${NC},
-opacidad (${OPACITY}), desenfoque Wayland, atajo global Ctrl+Alt+T e integración en el menú
-contextual de primer nivel de Nautilus.
+opacidad (${OPACITY}), desenfoque Wayland, integración en el menú contextual de primer nivel
+de Nautilus y opcionalmente atajo global Ctrl+Alt+T o terminal predeterminada en GNOME.
 
 ${BOLD}Uso:${NC}
   $0 [OPCIONES]
 
 ${BOLD}Opciones:${NC}
-  (sin argumentos)       Instala Kitty y aplica toda la configuración
+  (sin argumentos)       Instala Kitty y aplica toda la configuración estética
   --no-install, --config Solo genera la configuración y extensión sin usar DNF5
   --opacity <0.1-1.0>    Define la opacidad del fondo (por defecto: 0.75)
-  --default-terminal     Establece Kitty como terminal por defecto y asigna Ctrl+Alt+T
+  --bind-ctrl-alt-t      Asigna de forma segura el atajo global Ctrl+Alt+T en GNOME a Kitty
+  --default-terminal     Establece Kitty como terminal por defecto en GNOME y asigna Ctrl+Alt+T
   -s, --status           Muestra el estado actual de Kitty, configuración y Nautilus
   -h, --help             Muestra esta ayuda
 EOF
@@ -78,14 +87,16 @@ show_status() {
     echo -e "${BOLD}======================================================================${NC}"
 
     if command -v kitty &>/dev/null; then
-        echo -e "  • Binario Kitty:             ${GREEN}Instalado ($(kitty --version))${NC}"
+        local k_ver
+        k_ver=$(kitty --version 2>/dev/null || echo "Instalado")
+        echo -e "  • Binario Kitty:             ${GREEN}Instalado (${k_ver})${NC}"
     else
         echo -e "  • Binario Kitty:             ${RED}No instalado${NC}"
     fi
 
     if [[ -f "$KITTY_CONF_FILE" ]]; then
         local cur_op
-        cur_op=$(grep -E '^background_opacity' "$KITTY_CONF_FILE" 2>/dev/null | awk '{print $2}' || echo "N/A")
+        cur_op=$(grep -E '^[[:space:]]*background_opacity' "$KITTY_CONF_FILE" 2>/dev/null | awk '{print $2}' || echo "N/A")
         echo -e "  • Configuración:             ${GREEN}${KITTY_CONF_FILE}${NC} (opacidad: ${BOLD}${cur_op}${NC})"
     else
         echo -e "  • Configuración:             ${YELLOW}No configurada${NC}"
@@ -104,16 +115,98 @@ show_status() {
     fi
 
     local default_term
-    default_term=$(run_as_user gsettings get org.gnome.desktop.default-applications.terminal exec 2>/dev/null || echo "N/A")
-    echo -e "  • Terminal por defecto GNOME:${CYAN} ${default_term}${NC}"
+    default_term=$(run_as_user gsettings get org.gnome.desktop.default-applications.terminal exec 2>/dev/null | tr -d "'" || echo "N/A")
+    echo -e "  • Terminal por defecto GNOME:${CYAN} ${default_term:-N/A}${NC}"
+
+    local current_term_bind="No asignado"
+    local raw_bindings
+    raw_bindings=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.media-keys custom-keybindings 2>/dev/null || echo "@as []")
+    if [[ "$raw_bindings" =~ \[.*\] ]]; then
+        local c_idx=0
+        while [[ $c_idx -le 40 ]]; do
+            local c_path="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom${c_idx}/"
+            if [[ "$raw_bindings" == *"$c_path"* ]]; then
+                local b_val cmd_val
+                b_val=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:"$c_path" binding 2>/dev/null | tr -d "'" || true)
+                cmd_val=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:"$c_path" command 2>/dev/null | tr -d "'" || true)
+                if [[ "$b_val" == "<Control><Alt>t" ]]; then
+                    current_term_bind="${cmd_val} (${c_path})"
+                    break
+                fi
+            fi
+            c_idx=$((c_idx + 1))
+        done
+    fi
+    echo -e "  • Atajo global Ctrl+Alt+T:   ${CYAN}${current_term_bind}${NC}"
     echo -e "${BOLD}======================================================================${NC}"
+}
+
+configure_gnome_shortcut() {
+    local cmd="$1"
+    local name="$2"
+
+    if ! command -v gsettings &>/dev/null; then
+        log_warn "gsettings no disponible; omitiendo configuración de atajo GNOME."
+        return 0
+    fi
+
+    local schema="org.gnome.settings-daemon.plugins.media-keys"
+    local custom_schema="org.gnome.settings-daemon.plugins.media-keys.custom-keybinding"
+    local raw_list
+    raw_list=$(run_as_user gsettings get "$schema" custom-keybindings 2>/dev/null || echo "@as []")
+
+    local target_path=""
+    local custom_prefix="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom"
+
+    # Buscar si ya existe una entrada con binding <Control><Alt>t o comando asignado
+    local idx=0
+    while [[ $idx -le 40 ]]; do
+        local check_path="${custom_prefix}${idx}/"
+        if [[ "$raw_list" == *"$check_path"* ]]; then
+            local existing_bind existing_cmd
+            existing_bind=$(run_as_user gsettings get "$custom_schema:$check_path" binding 2>/dev/null | tr -d "'" || true)
+            existing_cmd=$(run_as_user gsettings get "$custom_schema:$check_path" command 2>/dev/null | tr -d "'" || true)
+            if [[ "$existing_bind" == "<Control><Alt>t" || "$existing_cmd" == "$cmd"* ]]; then
+                target_path="$check_path"
+                break
+            fi
+        fi
+        idx=$((idx + 1))
+    done
+
+    # Si no existe, buscar el primer índice custom libre para no sobrescribir atajos existentes
+    if [[ -z "$target_path" ]]; then
+        idx=0
+        while true; do
+            local candidate="${custom_prefix}${idx}/"
+            if [[ "$raw_list" != *"$candidate"* ]]; then
+                target_path="$candidate"
+                break
+            fi
+            idx=$((idx + 1))
+        done
+
+        local updated_list
+        if [[ "$raw_list" == "@as []" || -z "$raw_list" || "$raw_list" == "[]" ]]; then
+            updated_list="['$target_path']"
+        else
+            updated_list="${raw_list%]*}, '$target_path']"
+        fi
+        run_as_user gsettings set "$schema" custom-keybindings "$updated_list" 2>/dev/null || true
+    fi
+
+    run_as_user gsettings set "$custom_schema:$target_path" name "$name" 2>/dev/null || true
+    run_as_user gsettings set "$custom_schema:$target_path" command "$cmd" 2>/dev/null || true
+    run_as_user gsettings set "$custom_schema:$target_path" binding '<Control><Alt>t' 2>/dev/null || true
+    log_ok "Atajo global Ctrl+Alt+T asignado en GNOME ($target_path -> '$cmd')."
 }
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -s|--status)           ACTION="status"; shift ;;
         --no-install|--config) DO_INSTALL=false; shift ;;
-        --default-terminal)    SET_DEFAULT_TERM=true; shift ;;
+        --bind-ctrl-alt-t)     BIND_KEY=true; shift ;;
+        --default-terminal)    SET_DEFAULT_TERM=true; BIND_KEY=true; shift ;;
         --opacity)             OPACITY="${2:-0.75}"; shift 2 ;;
         -h|--help)             show_help; exit 0 ;;
         *) log_err "Opción desconocida: $1"; show_help; exit 1 ;;
@@ -181,6 +274,11 @@ sync_to_monitor yes
 scrollback_lines 15000
 copy_on_select clipboard
 
+# Detección y Apertura de URLs
+url_style curly
+detect_urls yes
+open_url_with default
+
 # Barra de Pestañas (Powerline)
 tab_bar_edge top
 tab_bar_style powerline
@@ -190,9 +288,13 @@ tab_powerline_style slanted
 map ctrl+shift+c copy_to_clipboard
 map ctrl+shift+v paste_from_clipboard
 map ctrl+shift+t new_tab_with_cwd
+map ctrl+shift+w close_tab
 map ctrl+shift+enter new_window_with_cwd
 map ctrl+plus change_font_size all +1.0
+map ctrl+equal change_font_size all +1.0
+map ctrl+kp_add change_font_size all +1.0
 map ctrl+minus change_font_size all -1.0
+map ctrl+kp_subtract change_font_size all -1.0
 map ctrl+0 change_font_size all 0
 
 # Paleta Catppuccin Mocha
@@ -241,18 +343,40 @@ import os
 import subprocess
 import shutil
 from urllib.parse import unquote, urlparse
+import gi
+
+try:
+    gi.require_version('Nautilus', '4.1')
+except ValueError:
+    try:
+        gi.require_version('Nautilus', '4.0')
+    except ValueError:
+        pass
+try:
+    gi.require_version('GObject', '2.0')
+except ValueError:
+    pass
+
 from gi.repository import Nautilus, GObject
 
 
 class OpenKittyExtension(GObject.GObject, Nautilus.MenuProvider):
     def _open_kitty(self, menu, folder_path):
-        subprocess.Popen(["kitty", "--directory", folder_path])
+        subprocess.Popen(["kitty", "--directory", folder_path], start_new_session=True)
 
     def _get_path(self, file_info):
+        try:
+            location = file_info.get_location()
+            if location:
+                path = location.get_path()
+                if path and os.path.isdir(path):
+                    return path
+        except Exception:
+            pass
         uri = file_info.get_uri()
-        if not uri.startswith("file://"):
-            return None
-        return unquote(urlparse(uri).path)
+        if uri and uri.startswith("file://"):
+            return unquote(urlparse(uri).path)
+        return None
 
     def get_file_items(self, *args):
         files = args[-1]
@@ -267,6 +391,7 @@ class OpenKittyExtension(GObject.GObject, Nautilus.MenuProvider):
             name="KittyNautilus::OpenFolder",
             label="Abrir en Kitty",
             tip=f"Abrir {path} en Kitty",
+            icon="kitty",
         )
         item.connect("activate", self._open_kitty, path)
         return [item]
@@ -282,32 +407,26 @@ class OpenKittyExtension(GObject.GObject, Nautilus.MenuProvider):
             name="KittyNautilus::OpenBackground",
             label="Abrir en Kitty",
             tip=f"Abrir {path} en Kitty",
+            icon="kitty",
         )
         item.connect("activate", self._open_kitty, path)
         return [item]
 EOF
 
 if [[ $EUID -eq 0 && "$REAL_USER" != "root" ]]; then
-    chown -R "$REAL_USER:$REAL_USER" "$KITTY_CONF_DIR" "$USER_HOME/.local/share/nautilus-python"
+    chown -R "$REAL_USER:$REAL_USER" "$KITTY_CONF_DIR" "$USER_HOME/.local/share/nautilus-python" 2>/dev/null || true
 fi
 
 if [[ "$SET_DEFAULT_TERM" == true ]]; then
-    log_info "Configurando Kitty como terminal predeterminada en GNOME y atajo Ctrl+Alt+T..."
-    run_as_user gsettings set org.gnome.desktop.default-applications.terminal exec 'kitty'
-    run_as_user gsettings set org.gnome.desktop.default-applications.terminal exec-arg ''
-
-    KEY_PATH="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
-    CURRENT_LIST=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.media-keys custom-keybindings 2>/dev/null || echo "@as []")
-    if [[ "$CURRENT_LIST" == "@as []" || -z "$CURRENT_LIST" ]]; then
-        run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "['$KEY_PATH']"
-    elif [[ "$CURRENT_LIST" != *"$KEY_PATH"* ]]; then
-        NEW_LIST="${CURRENT_LIST%]*}, '$KEY_PATH']"
-        run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "$NEW_LIST"
-    fi
-    run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$KEY_PATH name 'Terminal (Kitty)'
-    run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$KEY_PATH command 'kitty'
-    run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$KEY_PATH binding '<Control><Alt>t'
+    log_info "Configurando Kitty como terminal predeterminada en GNOME..."
+    run_as_user gsettings set org.gnome.desktop.default-applications.terminal exec 'kitty' 2>/dev/null || true
+    run_as_user gsettings set org.gnome.desktop.default-applications.terminal exec-arg '' 2>/dev/null || true
 fi
 
-nautilus -q 2>/dev/null || true
+if [[ "$BIND_KEY" == true ]]; then
+    log_info "Configurando atajo global Ctrl+Alt+T para Kitty en GNOME..."
+    configure_gnome_shortcut "kitty" "Terminal (Kitty)"
+fi
+
+run_as_user nautilus -q 2>/dev/null || true
 log_ok "Kitty configurado correctamente en Fedora 45 Workstation."

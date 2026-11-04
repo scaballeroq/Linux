@@ -6,12 +6,12 @@ set -euo pipefail
 #  Catppuccin Mocha + Wayland + Atajo GNOME + Menú Contextual Nautilus (Python)
 # ==============================================================================
 
-BOLD='\033[1m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+BOLD=$'\033[1m'
+GREEN=$'\033[0;32m'
+YELLOW=$'\033[1;33m'
+RED=$'\033[0;31m'
+CYAN=$'\033[0;36m'
+NC=$'\033[0m'
 
 log_info() { echo -e "${CYAN}ℹ️  $1${NC}"; }
 log_ok()   { echo -e "${GREEN}✅ $1${NC}"; }
@@ -28,10 +28,17 @@ REAL_UID=$(id -u "$REAL_USER")
 
 run_as_user() {
     if [[ $EUID -eq 0 && "$REAL_USER" != "root" ]]; then
-        sudo -u "$REAL_USER" \
-            DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${REAL_UID}/bus" \
-            XDG_RUNTIME_DIR="/run/user/${REAL_UID}" \
-            "$@"
+        local dbus_bus="/run/user/${REAL_UID}/bus"
+        if [[ -S "$dbus_bus" ]]; then
+            sudo -u "$REAL_USER" \
+                DBUS_SESSION_BUS_ADDRESS="unix:path=$dbus_bus" \
+                XDG_RUNTIME_DIR="/run/user/${REAL_UID}" \
+                "$@"
+        else
+            sudo -u "$REAL_USER" \
+                XDG_RUNTIME_DIR="/run/user/${REAL_UID}" \
+                "$@"
+        fi
     else
         "$@"
     fi
@@ -46,6 +53,7 @@ NAUTILUS_EXT_DIR="$USER_HOME/.local/share/nautilus-python/extensions"
 NAUTILUS_EXT_FILE="$NAUTILUS_EXT_DIR/open-ghostty.py"
 NAUTILUS_SCRIPT_DIR="$USER_HOME/.local/share/nautilus/scripts"
 
+OPACITY="0.85"
 DO_INSTALL=true
 BIND_KEY=false
 SET_DEFAULT_TERM=false
@@ -55,20 +63,22 @@ show_help() {
     cat << EOF
 ${BOLD}👻 Instalador y Configurador de Ghostty - Fedora 45 Workstation (GNOME Wayland)${NC}
 
-Instala Ghostty mediante DNF5 (repositorio oficial / COPR pgdev/ghostty), aplica el
-tema ${BOLD}Catppuccin Mocha${NC}, JetBrainsMono Nerd Font, transparencia al 85% e integración
-en el menú contextual principal de Nautilus mediante ${BOLD}nautilus-python${NC}.
+Instala Ghostty mediante DNF5 (repositorio estándar o COPR scottames/ghostty), aplica el
+tema ${BOLD}Catppuccin Mocha${NC}, JetBrainsMono Nerd Font, opacidad (${OPACITY}), desenfoque Wayland,
+integración en el menú contextual de Nautilus mediante ${BOLD}nautilus-python${NC} y gestión
+segura del atajo de teclado global Ctrl+Alt+T en GNOME.
 
 ${BOLD}Uso:${NC}
   $0 [OPCIONES]
 
 ${BOLD}Opciones:${NC}
-  (sin argumentos)      Instala Ghostty y aplica toda la configuración
+  (sin argumentos)       Instala Ghostty y aplica toda la configuración estética
   --no-install, --config Solo genera la configuración y extensión de Nautilus sin usar DNF5
-  --bind-ctrl-alt-t     Asigna el atajo global Ctrl+Alt+T en GNOME a Ghostty
-  --default-terminal    Configura Ghostty como terminal por defecto en GNOME y asigna Ctrl+Alt+T
-  -s, --status          Muestra el estado actual de Ghostty, configuración y Nautilus
-  -h, --help            Muestra esta ayuda
+  --opacity <0.1-1.0>    Define la opacidad del fondo (por defecto: 0.85)
+  --bind-ctrl-alt-t      Asigna de forma segura el atajo global Ctrl+Alt+T en GNOME a Ghostty
+  --default-terminal     Establece Ghostty como terminal por defecto en GNOME y asigna Ctrl+Alt+T
+  -s, --status           Muestra el estado actual de Ghostty, configuración y Nautilus
+  -h, --help             Muestra esta ayuda
 EOF
 }
 
@@ -78,13 +88,17 @@ show_status() {
     echo -e "${BOLD}======================================================================${NC}"
 
     if command -v ghostty &>/dev/null; then
-        echo -e "  • Binario Ghostty:           ${GREEN}Instalado ($(ghostty --version 2>/dev/null | head -n1 || echo 'OK'))${NC}"
+        local g_ver
+        g_ver=$(ghostty --version 2>/dev/null | head -n1 || echo "Instalado")
+        echo -e "  • Binario Ghostty:           ${GREEN}Instalado (${g_ver})${NC}"
     else
         echo -e "  • Binario Ghostty:           ${RED}No instalado${NC}"
     fi
 
     if [[ -f "$GHOSTTY_CONF_FILE" ]]; then
-        echo -e "  • Configuración:             ${GREEN}${GHOSTTY_CONF_FILE}${NC}"
+        local cur_op
+        cur_op=$(grep -E '^[[:space:]]*background-opacity' "$GHOSTTY_CONF_FILE" 2>/dev/null | awk -F'=' '{print $2}' | tr -d ' ' || echo "N/A")
+        echo -e "  • Configuración:             ${GREEN}${GHOSTTY_CONF_FILE}${NC} (opacidad: ${BOLD}${cur_op}${NC})"
     else
         echo -e "  • Configuración:             ${YELLOW}No configurada${NC}"
     fi
@@ -104,18 +118,100 @@ show_status() {
     fi
 
     local default_term
-    default_term=$(run_as_user gsettings get org.gnome.desktop.default-applications.terminal exec 2>/dev/null || echo "N/A")
-    echo -e "  • Terminal por defecto GNOME:${CYAN} ${default_term}${NC}"
+    default_term=$(run_as_user gsettings get org.gnome.desktop.default-applications.terminal exec 2>/dev/null | tr -d "'" || echo "N/A")
+    echo -e "  • Terminal por defecto GNOME:${CYAN} ${default_term:-N/A}${NC}"
+
+    local current_term_bind="No asignado"
+    local raw_bindings
+    raw_bindings=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.media-keys custom-keybindings 2>/dev/null || echo "@as []")
+    if [[ "$raw_bindings" =~ \[.*\] ]]; then
+        local c_idx=0
+        while [[ $c_idx -le 40 ]]; do
+            local c_path="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom${c_idx}/"
+            if [[ "$raw_bindings" == *"$c_path"* ]]; then
+                local b_val cmd_val
+                b_val=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:"$c_path" binding 2>/dev/null | tr -d "'" || true)
+                cmd_val=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:"$c_path" command 2>/dev/null | tr -d "'" || true)
+                if [[ "$b_val" == "<Control><Alt>t" ]]; then
+                    current_term_bind="${cmd_val} (${c_path})"
+                    break
+                fi
+            fi
+            c_idx=$((c_idx + 1))
+        done
+    fi
+    echo -e "  • Atajo global Ctrl+Alt+T:   ${CYAN}${current_term_bind}${NC}"
     echo -e "${BOLD}======================================================================${NC}"
+}
+
+configure_gnome_shortcut() {
+    local cmd="$1"
+    local name="$2"
+
+    if ! command -v gsettings &>/dev/null; then
+        log_warn "gsettings no disponible; omitiendo configuración de atajo GNOME."
+        return 0
+    fi
+
+    local schema="org.gnome.settings-daemon.plugins.media-keys"
+    local custom_schema="org.gnome.settings-daemon.plugins.media-keys.custom-keybinding"
+    local raw_list
+    raw_list=$(run_as_user gsettings get "$schema" custom-keybindings 2>/dev/null || echo "@as []")
+
+    local target_path=""
+    local custom_prefix="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom"
+
+    # Buscar si ya existe una entrada con binding <Control><Alt>t o comando asignado
+    local idx=0
+    while [[ $idx -le 40 ]]; do
+        local check_path="${custom_prefix}${idx}/"
+        if [[ "$raw_list" == *"$check_path"* ]]; then
+            local existing_bind existing_cmd
+            existing_bind=$(run_as_user gsettings get "$custom_schema:$check_path" binding 2>/dev/null | tr -d "'" || true)
+            existing_cmd=$(run_as_user gsettings get "$custom_schema:$check_path" command 2>/dev/null | tr -d "'" || true)
+            if [[ "$existing_bind" == "<Control><Alt>t" || "$existing_cmd" == "$cmd"* ]]; then
+                target_path="$check_path"
+                break
+            fi
+        fi
+        idx=$((idx + 1))
+    done
+
+    # Si no existe, buscar el primer índice custom libre para no sobrescribir atajos existentes
+    if [[ -z "$target_path" ]]; then
+        idx=0
+        while true; do
+            local candidate="${custom_prefix}${idx}/"
+            if [[ "$raw_list" != *"$candidate"* ]]; then
+                target_path="$candidate"
+                break
+            fi
+            idx=$((idx + 1))
+        done
+
+        local updated_list
+        if [[ "$raw_list" == "@as []" || -z "$raw_list" || "$raw_list" == "[]" ]]; then
+            updated_list="['$target_path']"
+        else
+            updated_list="${raw_list%]*}, '$target_path']"
+        fi
+        run_as_user gsettings set "$schema" custom-keybindings "$updated_list" 2>/dev/null || true
+    fi
+
+    run_as_user gsettings set "$custom_schema:$target_path" name "$name" 2>/dev/null || true
+    run_as_user gsettings set "$custom_schema:$target_path" command "$cmd" 2>/dev/null || true
+    run_as_user gsettings set "$custom_schema:$target_path" binding '<Control><Alt>t' 2>/dev/null || true
+    log_ok "Atajo global Ctrl+Alt+T asignado en GNOME ($target_path -> '$cmd')."
 }
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -s|--status)          ACTION="status"; shift ;;
+        -s|--status)           ACTION="status"; shift ;;
         --no-install|--config) DO_INSTALL=false; shift ;;
-        --bind-ctrl-alt-t)    BIND_KEY=true; shift ;;
-        --default-terminal)   SET_DEFAULT_TERM=true; BIND_KEY=true; shift ;;
-        -h|--help)            show_help; exit 0 ;;
+        --bind-ctrl-alt-t)     BIND_KEY=true; shift ;;
+        --default-terminal)    SET_DEFAULT_TERM=true; BIND_KEY=true; shift ;;
+        --opacity)             OPACITY="${2:-0.85}"; shift 2 ;;
+        -h|--help)             show_help; exit 0 ;;
         *) log_err "Opción desconocida: $1"; show_help; exit 1 ;;
     esac
 done
@@ -126,28 +222,38 @@ if [[ "$ACTION" == "status" ]]; then
 fi
 
 if [[ "$DO_INSTALL" == true ]]; then
-    if ! command -v ghostty &>/dev/null; then
+    PKGS_TO_INSTALL=()
+    rpm -q wl-clipboard &>/dev/null || PKGS_TO_INSTALL+=(wl-clipboard)
+    rpm -q nautilus-python &>/dev/null || PKGS_TO_INSTALL+=(nautilus-python)
+
+    if [[ ${#PKGS_TO_INSTALL[@]} -gt 0 ]]; then
+        log_info "Instalando dependencias de integración en Fedora 45 ($DNF_BIN): ${PKGS_TO_INSTALL[*]}..."
+        sudo "$DNF_BIN" install -y "${PKGS_TO_INSTALL[@]}"
+    fi
+
+    if ! command -v ghostty &>/dev/null && ! rpm -q ghostty &>/dev/null; then
         log_info "Instalando Ghostty en Fedora 45 mediante $DNF_BIN..."
         if ! sudo "$DNF_BIN" install -y ghostty 2>/dev/null; then
-            log_info "Habilitando repositorio COPR pgdev/ghostty para Fedora..."
-            sudo "$DNF_BIN" install -y dnf5-plugins 2>/dev/null || true
-            sudo "$DNF_BIN" copr enable -y pgdev/ghostty || sudo "$DNF_BIN" copr enable -y scottames/ghostty
-            sudo "$DNF_BIN" install -y ghostty
+            log_info "Ghostty no encontrado en repositorios estándar; habilitando COPR scottames/ghostty..."
+            if sudo "$DNF_BIN" copr enable -y scottames/ghostty 2>/dev/null; then
+                sudo "$DNF_BIN" install -y ghostty
+            elif sudo "$DNF_BIN" copr enable -y alternateved/ghostty 2>/dev/null; then
+                sudo "$DNF_BIN" install -y ghostty
+            else
+                log_err "No se pudo habilitar el repositorio COPR de Ghostty."
+                exit 1
+            fi
         fi
+        log_ok "Ghostty instalado exitosamente."
     else
         log_ok "Ghostty ya está instalado."
     fi
-
-    if ! rpm -q nautilus-python &>/dev/null; then
-        log_info "Instalando nautilus-python para menú contextual de primer nivel en Nautilus..."
-        sudo "$DNF_BIN" install -y nautilus-python
-    fi
 fi
 
-log_info "Generando configuración de Ghostty (Catppuccin Mocha + Wayland) en $GHOSTTY_CONF_FILE..."
+log_info "Generando configuración de Ghostty (Catppuccin Mocha + Wayland) en $GHOSTTY_CONF_FILE (opacidad: $OPACITY)..."
 mkdir -p "$GHOSTTY_CONF_DIR"
 
-cat << 'EOF' > "$GHOSTTY_CONF_FILE"
+cat << EOF > "$GHOSTTY_CONF_FILE"
 # ==============================================================================
 #  Ghostty Configuration - Fedora 45 Workstation (GNOME Wayland)
 #  Theme: Catppuccin Mocha | Font: JetBrainsMono Nerd Font
@@ -158,7 +264,7 @@ font-family = JetBrainsMono Nerd Font
 font-size = 11
 
 # Apariencia y Transparencia Wayland
-background-opacity = 0.85
+background-opacity = ${OPACITY}
 background-blur-radius = 20
 window-padding-x = 10
 window-padding-y = 8
@@ -175,8 +281,8 @@ cursor-style-blink = false
 mouse-hide-while-typing = true
 copy-on-select = clipboard
 
-# Historial y Shell Integration
-scrollback-limit = 10000000
+# Historial y Shell Integration (Búfer de 100 MB)
+scrollback-limit = 104857600
 shell-integration = detect
 confirm-close-surface = false
 
@@ -184,10 +290,14 @@ confirm-close-surface = false
 keybind = ctrl+shift+c=copy_to_clipboard
 keybind = ctrl+shift+v=paste_from_clipboard
 keybind = ctrl+shift+t=new_tab
+keybind = ctrl+shift+enter=new_window
 keybind = ctrl+shift+w=close_surface
 keybind = ctrl+shift+r=reload_config
 keybind = ctrl+plus=increase_font_size:1
+keybind = ctrl+equal=increase_font_size:1
+keybind = ctrl+kp_add=increase_font_size:1
 keybind = ctrl+minus=decrease_font_size:1
+keybind = ctrl+kp_subtract=decrease_font_size:1
 keybind = ctrl+zero=reset_font_size
 EOF
 
@@ -207,18 +317,40 @@ import os
 import subprocess
 import shutil
 from urllib.parse import unquote, urlparse
+import gi
+
+try:
+    gi.require_version('Nautilus', '4.1')
+except ValueError:
+    try:
+        gi.require_version('Nautilus', '4.0')
+    except ValueError:
+        pass
+try:
+    gi.require_version('GObject', '2.0')
+except ValueError:
+    pass
+
 from gi.repository import Nautilus, GObject
 
 
 class OpenGhosttyExtension(GObject.GObject, Nautilus.MenuProvider):
     def _open_ghostty(self, menu, folder_path):
-        subprocess.Popen(["ghostty", f"--working-directory={folder_path}"])
+        subprocess.Popen(["ghostty", f"--working-directory={folder_path}"], start_new_session=True)
 
     def _get_path(self, file_info):
+        try:
+            location = file_info.get_location()
+            if location:
+                path = location.get_path()
+                if path and os.path.isdir(path):
+                    return path
+        except Exception:
+            pass
         uri = file_info.get_uri()
-        if not uri.startswith("file://"):
-            return None
-        return unquote(urlparse(uri).path)
+        if uri and uri.startswith("file://"):
+            return unquote(urlparse(uri).path)
+        return None
 
     def get_file_items(self, *args):
         files = args[-1]
@@ -233,6 +365,7 @@ class OpenGhosttyExtension(GObject.GObject, Nautilus.MenuProvider):
             name="GhosttyNautilus::OpenFolder",
             label="Abrir en Ghostty",
             tip=f"Abrir {path} en Ghostty",
+            icon="com.mitchellh.ghostty",
         )
         item.connect("activate", self._open_ghostty, path)
         return [item]
@@ -248,6 +381,7 @@ class OpenGhosttyExtension(GObject.GObject, Nautilus.MenuProvider):
             name="GhosttyNautilus::OpenBackground",
             label="Abrir en Ghostty",
             tip=f"Abrir {path} en Ghostty",
+            icon="com.mitchellh.ghostty",
         )
         item.connect("activate", self._open_ghostty, path)
         return [item]
@@ -260,24 +394,14 @@ fi
 
 if [[ "$SET_DEFAULT_TERM" == true ]]; then
     log_info "Configurando Ghostty como terminal predeterminada en GNOME..."
-    run_as_user gsettings set org.gnome.desktop.default-applications.terminal exec 'ghostty'
-    run_as_user gsettings set org.gnome.desktop.default-applications.terminal exec-arg ''
+    run_as_user gsettings set org.gnome.desktop.default-applications.terminal exec 'ghostty' 2>/dev/null || true
+    run_as_user gsettings set org.gnome.desktop.default-applications.terminal exec-arg '' 2>/dev/null || true
 fi
 
 if [[ "$BIND_KEY" == true ]]; then
-    log_info "Asignando atajo global Ctrl+Alt+T a Ghostty en GNOME..."
-    KEY_PATH="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
-    CURRENT_LIST=$(run_as_user gsettings get org.gnome.settings-daemon.plugins.media-keys custom-keybindings 2>/dev/null || echo "@as []")
-    if [[ "$CURRENT_LIST" == "@as []" || -z "$CURRENT_LIST" ]]; then
-        run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "['$KEY_PATH']"
-    elif [[ "$CURRENT_LIST" != *"$KEY_PATH"* ]]; then
-        NEW_LIST="${CURRENT_LIST%]*}, '$KEY_PATH']"
-        run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "$NEW_LIST"
-    fi
-    run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$KEY_PATH name 'Terminal (Ghostty)'
-    run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$KEY_PATH command 'ghostty'
-    run_as_user gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$KEY_PATH binding '<Control><Alt>t'
+    log_info "Configurando atajo global Ctrl+Alt+T para Ghostty en GNOME..."
+    configure_gnome_shortcut "ghostty" "Terminal (Ghostty)"
 fi
 
-nautilus -q 2>/dev/null || true
+run_as_user nautilus -q 2>/dev/null || true
 log_ok "Ghostty configurado correctamente en Fedora 45 Workstation."

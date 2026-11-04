@@ -1,7 +1,8 @@
 #!/bin/bash
 # ==============================================================================
 # opencode.sh - Gestor e Instalador de OpenCode AI CLI
-# Optimizado para Fedora Workstation (GNOME Shell Wayland)
+# Optimizado para Fedora Workstation (GNOME Shell Wayland Mutter)
+# Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3) | Radeon Graphics (Vega 8)
 # ==============================================================================
 # Características:
 #  - Detección dinámica y sin bloqueo por rate-limit de la última versión oficial.
@@ -30,6 +31,12 @@ if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
 else
     REAL_USER="${USER:-$(id -un)}"
     USER_HOME="${HOME:-/home/$REAL_USER}"
+fi
+
+if command -v dnf5 &>/dev/null; then
+    DNF_CMD="dnf5"
+else
+    DNF_CMD="dnf"
 fi
 
 OPENCODE_DIR="$USER_HOME/.opencode"
@@ -83,7 +90,7 @@ show_help() {
 
 show_status() {
     echo -e "${BOLD}=================================================================${NC}"
-    echo -e "🤖 ${BOLD}Estado de OpenCode AI CLI en Fedora 45 Workstation${NC}"
+    echo -e "🤖 ${BOLD}Estado de OpenCode AI CLI en Fedora Workstation${NC}"
     echo -e "${BOLD}=================================================================${NC}"
     
     local installed_version="No detectada"
@@ -97,6 +104,8 @@ show_status() {
         is_installed=true
     fi
     
+    echo -e "💻 ${BOLD}Sistema:${NC}          Fedora $(grep -oP 'VERSION_ID="\K[^"]+' /etc/os-release 2>/dev/null || echo "Linux") (GNOME Shell Wayland Mutter)"
+    echo -e "⚡ ${BOLD}Hardware:${NC}         AMD Ryzen 7 7730U | Radeon Graphics"
     echo -e "👤 ${BOLD}Usuario objetivo:${NC} $REAL_USER ($USER_HOME)"
     
     if [ "$is_installed" = true ]; then
@@ -174,15 +183,15 @@ check_dependencies() {
     command -v tar &>/dev/null || missing+=("tar")
     
     if [ ${#missing[@]} -gt 0 ]; then
-        echo -e "ℹ️  ${YELLOW}Instalando dependencias requeridas del sistema (${missing[*]})...${NC}"
+        echo -e "ℹ️  ${YELLOW}Instalando dependencias requeridas del sistema con $DNF_CMD (${missing[*]})...${NC}"
         if [ "$EUID" -ne 0 ]; then
             if ! command -v sudo &>/dev/null; then
                 echo -e "${RED}❌ Error: 'sudo' no está disponible para instalar ${missing[*]}.${NC}"
                 exit 1
             fi
-            sudo dnf5 install -y "${missing[@]}"
+            sudo "$DNF_CMD" install -y "${missing[@]}"
         else
-            dnf5 install -y "${missing[@]}"
+            "$DNF_CMD" install -y "${missing[@]}"
         fi
     fi
 }

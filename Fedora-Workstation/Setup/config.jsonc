@@ -79,10 +79,6 @@
             "key": "  󰋊 Disco (/)"
         },
         {
-            "type": "battery",
-            "key": "  󰁹 Batería"
-        },
-        {
             "type": "custom",
             "format": "\u001b[1;38;2;60;110;180m├─────────────────── SYSTEM ───────────────────┤\u001b[0m"
         },
@@ -101,11 +97,6 @@
         {
             "type": "uptime",
             "key": "  󰅐 Uptime"
-        },
-        {
-            "type": "localip",
-            "key": "  󰩟 IP Local",
-            "compact": true
         },
         {
             "type": "custom",

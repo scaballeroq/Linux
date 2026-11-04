@@ -5,17 +5,30 @@
 # Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8 / Mesa RADV)
 # ==============================================================================
 # Características:
-# - Activa RPM Fusion Non-Free y el repositorio oficial de Steam.
-# - Instala Steam nativo, GameMode, MangoHud y controladores 32-bit (i686).
-# - Instala la capa de compatibilidad Proton-GE vía Flathub de forma desacoplada.
-# - Diagnóstico integral (--status) y ayuda interactiva (--help).
+#   - Activa RPM Fusion Non-Free y el repositorio oficial de Steam.
+#   - Instala Steam nativo, GameMode, MangoHud y controladores 32-bit (i686).
+#   - Activa aceleración HW 32-bit (mesa-va-drivers-freeworld.i686) para cinemáticas.
+#   - Instala la capa de compatibilidad Proton-GE vía Flathub de forma desacoplada.
+#   - Diagnóstico integral (--status) y ayuda interactiva (--help).
 # ==============================================================================
 
 set -euo pipefail
 
+BOLD=$'\033[1m'
+GREEN=$'\033[0;32m'
+YELLOW=$'\033[1;33m'
+RED=$'\033[0;31m'
+CYAN=$'\033[0;36m'
+NC=$'\033[0m'
+
+log_info() { echo -e "${CYAN}ℹ️  $1${NC}"; }
+log_ok()   { echo -e "${GREEN}✅ $1${NC}"; }
+log_warn() { echo -e "${YELLOW}⚠️  $1${NC}"; }
+log_err()  { echo -e "${RED}❌ $1${NC}"; }
+
 if [ "$EUID" -ne 0 ]; then
     if ! command -v sudo &> /dev/null; then
-        echo "❌ Error: 'sudo' no está disponible. Ejecuta este script como root o instala sudo."
+        echo -e "${RED}❌ Error: 'sudo' no está disponible. Ejecuta este script como root o instala sudo.${NC}" >&2
         exit 1
     fi
     SUDO="sudo"
@@ -24,10 +37,12 @@ else
 fi
 
 if command -v dnf5 &>/dev/null; then
-    DNF_CMD="dnf5"
+    DNF_BIN="dnf5"
 else
-    DNF_CMD="dnf"
+    DNF_BIN="dnf"
 fi
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 is_pkg_installed() {
     rpm -q "$1" >/dev/null 2>&1
@@ -35,7 +50,7 @@ is_pkg_installed() {
 
 show_help() {
     cat <<EOF
-🎮 Instalador de Steam y Stack de Gaming - Fedora Workstation (GNOME)
+${BOLD}🎮 Instalador de Steam y Stack de Gaming - Fedora Workstation (GNOME)${NC}
 
 Uso:
   $0 [OPCIÓN]
@@ -49,17 +64,18 @@ EOF
 }
 
 show_status() {
-    echo "================================================================="
-    echo "🔍 ESTADO DE STEAM Y GAMING - FEDORA WORKSTATION"
-    echo "================================================================="
-    echo "• RPM Fusion Non-Free:      $(if is_pkg_installed rpmfusion-nonfree-release; then echo "✅ Habilitado"; else echo "❌ No instalado"; fi)"
-    echo "• Steam nativo:             $(if command -v steam &>/dev/null; then echo '✅ Sí ('"$(which steam)"')'; else echo '❌ No instalado'; fi)"
-    echo "• GameMode:                 $(if command -v gamemoded &>/dev/null; then echo '✅ Sí ('"$(gamemoded --version 2>/dev/null || echo 'Activo')"')'; else echo '❌ No instalado'; fi)"
-    echo "• MangoHud:                 $(if command -v mangohud &>/dev/null; then echo '✅ Sí'; else echo '❌ No instalado'; fi)"
-    echo "• Mesa Vulkan 32-bit (i686): $(if is_pkg_installed mesa-vulkan-drivers.i686; then echo '✅ Instalado (i686)'; else echo '⚠️ No instalado (necesario para títulos 32-bit)'; fi)"
-    echo "• Mesa DRI 32-bit (i686):    $(if is_pkg_installed mesa-dri-drivers.i686; then echo '✅ Instalado (i686)'; else echo '⚠️ No instalado (necesario para títulos 32-bit)'; fi)"
-    echo "• Proton-GE Flatpak:        $(if flatpak list 2>/dev/null | grep -q "Proton-GE"; then echo '✅ Instalado'; else echo 'ℹ️ No instalado'; fi)"
-    echo "================================================================="
+    echo -e "${BOLD}======================================================================${NC}"
+    echo -e "  🎮 ${BOLD}ESTADO DE STEAM Y GAMING - FEDORA WORKSTATION${NC}"
+    echo -e "${BOLD}======================================================================${NC}"
+    echo -e "• RPM Fusion Non-Free:      $(if is_pkg_installed rpmfusion-nonfree-release; then echo -e "${GREEN}✅ Habilitado${NC}"; else echo -e "${RED}❌ No instalado${NC}"; fi)"
+    echo -e "• Steam nativo:             $(if command -v steam &>/dev/null; then echo -e "${GREEN}✅ Sí ($(command -v steam))${NC}"; else echo -e "${RED}❌ No instalado${NC}"; fi)"
+    echo -e "• GameMode:                 $(if command -v gamemoded &>/dev/null; then echo -e "${GREEN}✅ Sí ($(gamemoded --version 2>/dev/null || echo 'Activo'))${NC}"; else echo -e "${YELLOW}⚠️ No instalado${NC}"; fi)"
+    echo -e "• MangoHud:                 $(if command -v mangohud &>/dev/null; then echo -e "${GREEN}✅ Sí${NC}"; else echo -e "${YELLOW}⚠️ No instalado${NC}"; fi)"
+    echo -e "• Mesa Vulkan 32-bit (i686):$(if is_pkg_installed mesa-vulkan-drivers.i686; then echo -e "${GREEN}✅ Instalado (i686)${NC}"; else echo -e "${YELLOW}⚠️ No instalado (necesario para títulos 32-bit)${NC}"; fi)"
+    echo -e "• Mesa DRI 32-bit (i686):   $(if is_pkg_installed mesa-dri-drivers.i686; then echo -e "${GREEN}✅ Instalado (i686)${NC}"; else echo -e "${YELLOW}⚠️ No instalado (necesario para títulos 32-bit)${NC}"; fi)"
+    echo -e "• Mesa VA-API 32-bit HW:    $(if is_pkg_installed mesa-va-drivers-freeworld.i686; then echo -e "${GREEN}✅ Freeworld i686 (Aceleración activa)${NC}"; else echo -e "${YELLOW}ℹ️ No instalado${NC}"; fi)"
+    echo -e "• Proton-GE Flatpak:        $(if flatpak list 2>/dev/null | grep -q "Proton-GE"; then echo -e "${GREEN}✅ Instalado${NC}"; else echo -e "${YELLOW}ℹ️ No instalado${NC}"; fi)"
+    echo -e "${BOLD}======================================================================${NC}"
 }
 
 case "${1:-}" in
@@ -73,43 +89,50 @@ case "${1:-}" in
         ;;
 esac
 
-echo "================================================================="
-echo "🎮 CONFIGURANDO ENTORNO DE GAMING Y STEAM - FEDORA WORKSTATION"
-echo "================================================================="
+echo -e "${BOLD}======================================================================${NC}"
+echo -e "  🎮 ${BOLD}CONFIGURANDO ENTORNO DE GAMING Y STEAM - FEDORA WORKSTATION${NC}"
+echo -e "${BOLD}======================================================================${NC}"
 
-# 1. Asegurar RPM Fusion Free y Non-Free (Obligatorio en Fedora 45)
-echo "⚡ [1/3] Verificando repositorios obligatorios RPM Fusion (Free y Non-Free)..."
-if ! is_pkg_installed rpmfusion-free-release || ! is_pkg_installed rpmfusion-nonfree-release; then
+# 1. Asegurar RPM Fusion Free y Non-Free
+log_info "Verificando repositorios RPM Fusion vía Setup/rpmfusion.sh..."
+if [[ -x "$SCRIPT_DIR/rpmfusion.sh" ]]; then
+    "$SCRIPT_DIR/rpmfusion.sh"
+else
     FEDORA_VER=$(rpm -E %fedora 2>/dev/null || echo "45")
-    $SUDO $DNF_CMD install -y \
+    $SUDO "$DNF_BIN" install -y \
         "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${FEDORA_VER}.noarch.rpm" \
         "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${FEDORA_VER}.noarch.rpm" 2>/dev/null || true
 fi
 
 # Habilitar repositorio steam de RPM Fusion si está disponible
-$SUDO $DNF_CMD config-manager setopt rpmfusion-nonfree-steam.enabled=1 2>/dev/null || true
+$SUDO "$DNF_BIN" config-manager setopt rpmfusion-nonfree-steam.enabled=1 2>/dev/null || true
 
 # 2. Instalar Steam, GameMode, MangoHud y librerías 32-bit
-echo "⬇️ [2/3] Instalando Steam nativo, GameMode, MangoHud y controladores 32-bit vía $DNF_CMD..."
-$SUDO $DNF_CMD install -y \
+log_info "Instalando Steam nativo, GameMode, MangoHud y controladores 32-bit vía $DNF_BIN..."
+$SUDO "$DNF_BIN" install -y --skip-unavailable \
     steam \
     gamemode \
     mangohud \
     mesa-vulkan-drivers.i686 \
     mesa-dri-drivers.i686 \
-    pipewire-alsa.i686 2>/dev/null || $SUDO $DNF_CMD install -y steam gamemode mangohud 2>/dev/null || true
+    pipewire-alsa.i686 2>/dev/null || \
+    $SUDO "$DNF_BIN" install -y steam gamemode mangohud
+
+# Intercambio de códecs 32-bit para cinemáticas de juegos
+if is_pkg_installed "mesa-va-drivers.i686"; then
+    $SUDO "$DNF_BIN" swap -y mesa-va-drivers.i686 mesa-va-drivers-freeworld.i686 2>/dev/null || true
+fi
+if is_pkg_installed "mesa-vdpau-drivers.i686"; then
+    $SUDO "$DNF_BIN" swap -y mesa-vdpau-drivers.i686 mesa-vdpau-drivers-freeworld.i686 2>/dev/null || true
+fi
 
 # 3. Configurar compatibilidad Proton-GE vía Flatpak
-echo "⚡ [3/3] Configurando herramientas de compatibilidad Proton-GE..."
+log_info "Configurando herramientas de compatibilidad Proton-GE..."
 if command -v flatpak &>/dev/null; then
     flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
     flatpak install --user -y flathub com.valvesoftware.Steam.CompatibilityTool.Proton-GE 2>/dev/null || true
 fi
 
-echo "================================================================="
-echo "✅ Steam y herramientas Gaming configuradas con éxito."
-echo "   - Cliente Steam: $(which steam 2>/dev/null || echo 'steam')"
-echo "   - GameMode:      $(which gamemoderun 2>/dev/null || echo 'gamemoderun')"
-echo "   - MangoHud:      $(which mangohud 2>/dev/null || echo 'mangohud')"
-echo "   - Drivers 32-bit: mesa-vulkan-drivers.i686 y mesa-dri-drivers.i686"
-echo "================================================================="
+log_ok "Steam y herramientas Gaming configuradas con éxito."
+echo ""
+show_status

@@ -50,20 +50,11 @@ status:
 
 # Instala y verifica obligatoriamente RPM Fusion (Free, Non-Free, Tainted & OpenH264)
 rpmfusion:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    FED_VER=$(rpm -E %fedora)
-    sudo dnf5 install -y \
-        "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${FED_VER}.noarch.rpm" \
-        "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${FED_VER}.noarch.rpm"
-    sudo dnf5 config-manager setopt fedora-cisco-openh264.enabled=1 2>/dev/null || true
-    sudo dnf5 install -y --skip-unavailable \
-        rpmfusion-free-appstream-data \
-        rpmfusion-nonfree-appstream-data \
-        rpmfusion-free-release-tainted \
-        rpmfusion-nonfree-release-tainted
-    sudo dnf5 install -y --allowerasing ffmpeg ffmpeg-libs mesa-va-drivers-freeworld mesa-vdpau-drivers-freeworld
-    echo "✅ RPM Fusion (Free, Non-Free, Tainted), FFmpeg y VA-API Freeworld activos."
+    ./Setup/rpmfusion.sh
+
+# Diagnóstico del estado de los repositorios RPM Fusion
+rpmfusion-status:
+    ./Setup/rpmfusion.sh --status
 
 # Post-instalación base con auto-detección de CPU (AMD Ryzen vs Intel Core)
 post-install:
@@ -130,12 +121,16 @@ security-status:
     ./Setup/seguridad.sh --status
 
 # Instala y activa la consola web de administración Cockpit (puerto 9090)
-cockpit:
-    ./Setup/cockpit.sh
+cockpit *args:
+    ./Setup/cockpit.sh {{args}}
 
 # Estado de Cockpit
 cockpit-status:
     ./Setup/cockpit.sh --status
+
+# Abre Cockpit en el navegador predeterminado
+cockpit-open:
+    ./Setup/cockpit.sh --open
 
 # ==============================================================================
 #  4. ESCRITORIO GNOME SHELL (WAYLAND), APARIENCIA Y TERMINALES
@@ -225,7 +220,7 @@ shell:
 shell-status:
     ./Setup/shell.sh --status
 
-# Instala y configura Zsh con plugins nativos y módulos en ~/.zshrc.d
+# Instala, configura Zsh y lo establece como shell predeterminada
 zsh:
     ./Setup/zsh-setup.sh
 
@@ -264,6 +259,14 @@ fastfetch-status:
 # Instala RPM Fusion, FFmpeg completo, VA-API Freeworld, GStreamer y reproductores Wayland
 multimedia:
     ./Setup/multimedia.sh
+
+# Instala únicamente códecs multimedia, drivers VA-API freeworld y plugins GStreamer
+multimedia-codecs:
+    ./Setup/multimedia.sh --codecs
+
+# Instala únicamente reproductores multimedia GNOME Wayland (Showtime, Celluloid, MPV, VLC)
+multimedia-players:
+    ./Setup/multimedia.sh --players
 
 # Estado de RPM Fusion, códecs multimedia, VA-API y MPV
 multimedia-status:

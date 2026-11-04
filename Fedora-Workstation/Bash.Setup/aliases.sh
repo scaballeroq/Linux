@@ -15,9 +15,6 @@ alias ~='cd ~'
 alias repo='cd ~/Workspace/Repositorios'
 alias repos='cd ~/Workspace/Repositorios'
 alias fedora='cd ~/Workspace/Repositorios/Linux/Fedora-Workstation'
-alias ubuntu='cd ~/Workspace/Repositorios/Linux/Ubuntu'
-alias debian='cd ~/Workspace/Repositorios/Linux/Debian'
-alias cachyos='cd ~/Workspace/Repositorios/Linux/CachyOS'
 
 # 2. INTEGRACIÓN CON GNOME Y ESCRITORIO
 alias open='xdg-open'

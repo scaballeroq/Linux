@@ -6,12 +6,12 @@ set -euo pipefail
 #  Basado en la arquitectura modular de Bash.Setup + Plugins nativos + Starship
 # ==============================================================================
 
-BOLD='\033[1m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+BOLD=$'\033[1m'
+GREEN=$'\033[0;32m'
+YELLOW=$'\033[1;33m'
+RED=$'\033[0;31m'
+CYAN=$'\033[0;36m'
+NC=$'\033[0m'
 
 log_info() { echo -e "${CYAN}ℹ️  $1${NC}"; }
 log_ok()   { echo -e "${GREEN}✅ $1${NC}"; }
@@ -30,7 +30,7 @@ command -v dnf5 &>/dev/null || DNF_BIN="dnf"
 
 ZSHRC_FILE="$USER_HOME/.zshrc"
 ZSHRC_D="$USER_HOME/.zshrc.d"
-SET_DEFAULT_SHELL=false
+SET_DEFAULT_SHELL=true
 ACTION="install"
 
 show_help() {
@@ -38,17 +38,18 @@ show_help() {
 ${BOLD}🐚 Configurador Integral de Zsh - Fedora 45 Workstation (GNOME Wayland)${NC}
 
 Instala Zsh, plugins nativos (autosuggestions, syntax-highlighting), integraciones
-modernas (FZF, Zoxide, Mise, Starship) y genera la arquitectura modular en ${BOLD}~/.zshrc.d/${NC}
-adaptada a Fedora 45 y DNF5.
+modernas (FZF, Zoxide, Mise, Starship), establece Zsh como shell predeterminada y
+genera la arquitectura modular en ${BOLD}~/.zshrc.d/${NC} adaptada a Fedora 45 y DNF5.
 
 ${BOLD}Uso:${NC}
   $0 [OPCIONES]
 
 ${BOLD}Opciones:${NC}
-  (sin argumentos)     Instala paquetes y despliega ~/.zshrc y ~/.zshrc.d/*.zsh
-  -d, --default-shell  Establece /bin/zsh como shell por defecto del usuario ($REAL_USER)
-  -s, --status         Muestra el estado actual de Zsh, plugins y módulos en ~/.zshrc.d
-  -h, --help           Muestra esta ayuda
+  (sin argumentos)        Instala paquetes, despliega ~/.zshrc y establece Zsh como shell por defecto
+  -d, --default-shell     Establece explícitamente Zsh como shell por defecto (activado por defecto)
+  -n, --no-default-shell  Instala y configura Zsh pero sin cambiar la shell por defecto del usuario
+  -s, --status            Muestra el estado actual de Zsh, plugins y módulos en ~/.zshrc.d
+  -h, --help              Muestra esta ayuda
 EOF
 }
 
@@ -64,11 +65,11 @@ show_status() {
     fi
 
     local current_shell
-    current_shell=$(getent passwd "$REAL_USER" | cut -d: -f7)
+    current_shell=$(getent passwd "$REAL_USER" | cut -d: -f7 2>/dev/null || echo "${SHELL:-/bin/bash}")
     if [[ "$current_shell" == *"zsh"* ]]; then
         echo -e "  • Shell por defecto:         ${GREEN}${current_shell} (Zsh activo)${NC}"
     else
-        echo -e "  • Shell por defecto:         ${CYAN}${current_shell}${NC} (usa --default-shell para cambiar a Zsh)"
+        echo -e "  • Shell por defecto:         ${CYAN}${current_shell}${NC} (ejecuta './zsh-setup.sh' para cambiar a Zsh)"
     fi
 
     for pkg in zsh-autosuggestions zsh-syntax-highlighting fzf zoxide eza bat fd-find ripgrep util-linux-user; do
@@ -87,7 +88,7 @@ show_status() {
 
     if [[ -d "$ZSHRC_D" ]]; then
         local count
-        count=$(find "$ZSHRC_D" -maxdepth 1 -name "*.zsh" | wc -l)
+        count=$(find "$ZSHRC_D" -maxdepth 1 \( -name "*.zsh" -o -name "*.sh" \) | wc -l)
         echo -e "  • Módulos en ~/.zshrc.d/:    ${GREEN}${count} módulos activos${NC}"
     else
         echo -e "  • Módulos en ~/.zshrc.d/:    ${YELLOW}Directorio no creado${NC}"
@@ -97,9 +98,10 @@ show_status() {
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -s|--status)        ACTION="status"; shift ;;
-        -d|--default-shell) SET_DEFAULT_SHELL=true; shift ;;
-        -h|--help)          show_help; exit 0 ;;
+        -s|--status)            ACTION="status"; shift ;;
+        -d|--default-shell)     SET_DEFAULT_SHELL=true; shift ;;
+        -n|--no-default-shell)  SET_DEFAULT_SHELL=false; shift ;;
+        -h|--help)              show_help; exit 0 ;;
         *) log_err "Opción desconocida: $1"; show_help; exit 1 ;;
     esac
 done
@@ -192,9 +194,9 @@ bindkey '^[[1;5D' backward-word
 bindkey '^[[A' history-beginning-search-backward
 bindkey '^[[B' history-beginning-search-forward
 
-# Cargar módulos personalizados desde ~/.zshrc.d/*.zsh
+# Cargar módulos personalizados desde ~/.zshrc.d/*.{sh,zsh}
 if [[ -d "$HOME/.zshrc.d" ]]; then
-    for config_file in "$HOME/.zshrc.d"/*.zsh(N); do
+    for config_file in "$HOME/.zshrc.d"/*.{sh,zsh}(N); do
         [[ -r "$config_file" ]] && source "$config_file"
     done
 fi
@@ -238,107 +240,56 @@ else
 fi
 EOF
 
-log_info "Generando módulos en $ZSHRC_D/ adaptados a Fedora 45 y DNF5..."
-
-cat << 'EOF' > "$ZSHRC_D/aliases.zsh"
-# ==============================================================================
-#  aliases.zsh - Aliases para Fedora 45 Workstation (DNF5, Git, Firewalld, CLI)
-# ==============================================================================
-
-# Navegación y listado moderno con eza
-if command -v eza &>/dev/null; then
-    alias ls='eza --icons --group-directories-first'
-    alias ll='eza -lh --icons --group-directories-first --git'
-    alias la='eza -lah --icons --group-directories-first --git'
-    alias lt='eza --tree --level=2 --icons'
-else
-    alias ls='ls --color=auto'
-    alias ll='ls -lh --color=auto'
-    alias la='ls -lah --color=auto'
-fi
-
-# Bat y fd en Fedora
-command -v bat &>/dev/null && alias cat='bat --paging=never'
-alias grep='grep --color=auto'
-alias df='df -h'
-alias free='free -h'
-alias reload='source ~/.zshrc && echo "✅ Configuración Zsh recargada (Fedora 45)"'
-
-# Portapapeles nativo Wayland
-if command -v wl-copy &>/dev/null; then
-    alias pbcopy='wl-copy'
-    alias pbpaste='wl-paste'
-fi
-
-# Gestión de paquetes DNF5 + Flatpak + Mise en Fedora 45
-alias update='sudo dnf5 check-upgrade --refresh'
-alias upgrade='sudo dnf5 upgrade --refresh -y && flatpak update -y'
-alias install='sudo dnf5 install -y'
-alias remove='sudo dnf5 remove -y'
-alias search='dnf5 search'
-alias pkginfo='dnf5 info'
-alias clean='sudo dnf5 autoremove -y && sudo dnf5 clean all && flatpak uninstall --unused -y'
-alias update-all='sudo dnf5 upgrade --refresh -y && flatpak update -y && (~/.local/bin/mise upgrade 2>/dev/null || true)'
-
-# Firewalld obligatorio
-alias fw-status='sudo firewall-cmd --state && sudo firewall-cmd --list-all'
-alias fw-reload='sudo firewall-cmd --reload'
-alias fw-ports='sudo firewall-cmd --list-ports && sudo firewall-cmd --list-services'
-
-# Git
-alias gs='git status -sb'
-alias ga='git add'
-alias gc='git commit -m'
-alias gp='git push'
-alias gl='git pull --rebase'
-alias glog='git log --oneline --graph --decorate -n 20'
-command -v lazygit &>/dev/null && alias lg='lazygit'
-EOF
-
-cat << 'EOF' > "$ZSHRC_D/environment.zsh"
-# ==============================================================================
-#  environment.zsh - Variables para GNOME Wayland, VA-API, Podman y Libvirt
-# ==============================================================================
-
-export MOZ_ENABLE_WAYLAND=1
-export ELECTRON_OZONE_PLATFORM_HINT="auto"
-export QT_QPA_PLATFORM="wayland;xcb"
-export QT_QPA_PLATFORMTHEME="gnome"
-export LIBVA_DRIVER_NAME="radeonsi"
-export UV_LINK_MODE="copy"
-export LIBVIRT_DEFAULT_URI="qemu:///system"
-
-# Socket de Podman Rootless
-if [[ -n "${XDG_RUNTIME_DIR:-}" && -S "${XDG_RUNTIME_DIR}/podman/podman.sock" ]]; then
-    export DOCKER_HOST="unix://${XDG_RUNTIME_DIR}/podman/podman.sock"
-fi
-
-# JAVA_HOME canónico en Fedora 45 (OpenJDK 21+)
-if [[ -d "/usr/lib/jvm/java-21-openjdk" ]]; then
-    export JAVA_HOME="/usr/lib/jvm/java-21-openjdk"
-elif [[ -d "/etc/alternatives/jre_openjdk" ]]; then
-    export JAVA_HOME="/etc/alternatives/jre_openjdk"
-fi
-EOF
-
-# Copiar módulos compatibles desde Bash.Setup si existen
+# Sincronizar scripts modulares desde Bash.Setup/ (compatibilidad dual Bash & Zsh)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-for mod in functions gnome_settings podman-functions rclone_aliases yt-dlp_aliases; do
-    if [[ -f "$REPO_ROOT/Bash.Setup/${mod}.sh" ]]; then
-        cp "$REPO_ROOT/Bash.Setup/${mod}.sh" "$ZSHRC_D/${mod}.zsh"
-    fi
-done
+BASH_SETUP_DIR="$REPO_ROOT/Bash.Setup"
+
+log_info "Sincronizando módulos compartidos desde Bash.Setup/ a $ZSHRC_D/..."
+if [[ -d "$BASH_SETUP_DIR" ]]; then
+    # Limpiar copias estáticas previas o symlinks rotos
+    find -L "$ZSHRC_D" -maxdepth 1 -type l -exec rm -f {} + 2>/dev/null || true
+    rm -f "$ZSHRC_D/aliases.zsh" "$ZSHRC_D/environment.zsh" 2>/dev/null || true
+    for mod in functions gnome_settings podman-functions rclone_aliases yt-dlp_aliases; do
+        rm -f "$ZSHRC_D/${mod}.zsh" 2>/dev/null || true
+    done
+
+    # Enlazar todos los scripts modulares de Bash.Setup
+    for sh_file in "$BASH_SETUP_DIR"/*.sh; do
+        if [[ -f "$sh_file" ]]; then
+            base_name="$(basename "$sh_file")"
+            ln -sf "$sh_file" "$ZSHRC_D/$base_name"
+            if [[ -d "$USER_HOME/.bashrc.d" ]]; then
+                ln -sf "$sh_file" "$USER_HOME/.bashrc.d/$base_name"
+            fi
+        fi
+    done
+    log_ok "Módulos de Bash.Setup enlazados en ~/.zshrc.d/ y ~/.bashrc.d/ ($(find "$ZSHRC_D" -maxdepth 1 -name "*.sh" | wc -l) módulos)."
+fi
 
 if [[ $EUID -eq 0 && "$REAL_USER" != "root" ]]; then
     chown -R "$REAL_USER:$REAL_USER" "$ZSHRC_FILE" "$ZSHRC_D" "$USER_HOME/.cache/zsh"
 fi
 
 if [[ "$SET_DEFAULT_SHELL" == true ]]; then
-    ZSH_PATH=$(command -v zsh)
-    log_info "Configurando $ZSH_PATH como shell predeterminada para $REAL_USER..."
-    sudo usermod -s "$ZSH_PATH" "$REAL_USER"
-    log_ok "Shell predeterminada actualizada a $ZSH_PATH."
+    ZSH_PATH=$(command -v zsh 2>/dev/null || echo "/usr/bin/zsh")
+    CURRENT_SHELL=$(getent passwd "$REAL_USER" | cut -d: -f7 2>/dev/null || echo "${SHELL:-/bin/bash}")
+    if [[ "$CURRENT_SHELL" != "$ZSH_PATH" && "$CURRENT_SHELL" != "/bin/zsh" ]]; then
+        log_info "Configurando $ZSH_PATH como shell predeterminada para $REAL_USER..."
+        if ! grep -Fxq "$ZSH_PATH" /etc/shells 2>/dev/null; then
+            echo "$ZSH_PATH" | sudo tee -a /etc/shells >/dev/null
+        fi
+        if command -v chsh &>/dev/null; then
+            sudo chsh -s "$ZSH_PATH" "$REAL_USER" || sudo usermod -s "$ZSH_PATH" "$REAL_USER"
+        else
+            sudo usermod -s "$ZSH_PATH" "$REAL_USER"
+        fi
+        log_ok "Shell predeterminada actualizada a $ZSH_PATH para $REAL_USER."
+        log_info "💡 Nota: En las terminales ya abiertas seguirá activa la shell anterior."
+        log_info "   Abre una nueva pestaña/ventana o ejecuta 'exec zsh' para entrar directamente."
+    else
+        log_ok "Zsh ya es la shell predeterminada ($CURRENT_SHELL) para $REAL_USER."
+    fi
 fi
 
 log_ok "Entorno Zsh configurado correctamente para Fedora 45 Workstation."

@@ -1,8 +1,12 @@
-# 🚀 Starship Config: Fedora Workstation (Optimized for Fedora + GNOME + Nerd Fonts)
+# 🚀 Starship Config: Fedora Workstation (Optimized for Fedora 45 + GNOME + Nerd Fonts)
 
-# Formato general del prompt (Una sola línea, limpia y con alto contraste)
+# Tiempo límite de ejecución de módulos (evita retardos en repositorios grandes)
+command_timeout = 800
+
+# Formato general del prompt (Limpio, con alto contraste y soporte de contenedores)
 format = """
 $os\
+$container\
 $directory\
 $git_branch\
 $git_status\
@@ -12,6 +16,7 @@ $rust\
 $python\
 $dotnet\
 $docker_context\
+$cmd_duration\
 $line_break\
 $character"""
 
@@ -23,7 +28,7 @@ add_newline = true
 success_symbol = "[❯](bold cyan)"
 error_symbol = "[✖](bold red)"
 
-# Icono del SO (Muestra el logotipo oficial de Fedora con Nerd Fonts)
+# Icono del SO (Muestra el logotipo oficial de Fedora con Nerd Fonts en Fedora Blue)
 [os]
 format = "[$symbol]($style) "
 style = "bold #51a2da"
@@ -34,6 +39,12 @@ Fedora = " "
 Ubuntu = " "
 Debian = " "
 Arch = " "
+
+# Contenedores Fedora (Toolbx, Distrobox, Podman)
+[container]
+format = "[$symbol $name]($style) "
+symbol = "⬢"
+style = "bold yellow"
 
 # Configuración del Directorio
 [directory]
@@ -64,6 +75,12 @@ staged = "󰐖 "
 renamed = "󰏬 "
 deleted = "󰆴 "
 
+# Duración de comandos lentos (>= 2 segundos)
+[cmd_duration]
+min_time = 2000
+format = "took [$duration]($style) "
+style = "yellow"
+
 # --- Módulos de Lenguajes (Solo se muestran si estás en un proyecto) ---
 
 [nodejs]
@@ -86,7 +103,7 @@ symbol = "󰪮 "
 style = "bold blue"
 format = "via [$symbol($version)]($style) "
 
-# Docker
+# Podman / Docker Context
 [docker_context]
 symbol = " "
 style = "bold blue"

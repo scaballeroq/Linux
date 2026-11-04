@@ -10,7 +10,7 @@ Esta guía detalla la instalación de aplicaciones de escritorio, herramientas v
 
 ## 1. Catálogo Desacoplado Flatpak (`./Setup/flatpak.sh`)
 
-El script `./Setup/flatpak.sh` habilita el repositorio oficial **Flathub** sin filtros y despliega perfiles modulares de aplicaciones con overrides para el tema oscuro de GNOME (`adw-gtk3-dark`), cursores Bibata y aceleración gráfica Wayland/DRI:
+El script `./Setup/flatpak.sh` habilita el repositorio oficial **Flathub** sin filtros y despliega perfiles modulares de aplicaciones con overrides para GNOME (cursores Bibata, integración PipeWire, Wayland y aceleración gráfica GPU/DRI):
 
 ```bash
 ./Setup/flatpak.sh            # Perfil estándar recomendado

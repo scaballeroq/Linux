@@ -2,14 +2,16 @@
 # ==============================================================================
 # git.sh - Instalación, Optimización y Configuración de Git, Delta, Lazygit y gh
 # Fedora Workstation (GNOME Shell Wayland / Kitty Terminal)
+# Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3) | Radeon Graphics (Vega 8)
 # ==============================================================================
 # Características:
 # - Despliegue idempotente: comprueba paquetes primero (rpm -q / command -v) y
 #   evita invocar 'sudo' o DNF/DNF5 si Git, Git-Delta, Lazygit y GitHub CLI ya están instalados.
 # - Configuración global recomendada: rebase por defecto, autoSetupRemote, zdiff3.
-# - Integración de Git-Delta con visualización 'side-by-side' y resaltado de sintaxis.
+# - Integración de Git-Delta con resaltado de sintaxis y paginador limpio.
 # - Integración de Lazygit con delta pager y tema adaptado a GNOME Adwaita Dark.
 # - Configuración de GitHub CLI (gh) con editor predeterminado y diagnóstico de auth.
+# - Preservación de la identidad Git existente (~/.gitconfig) sin sobreescribirla con valores ficticios.
 # - Comandos CLI: --status / -s, --help / -h.
 # ==============================================================================
 
@@ -33,6 +35,10 @@ else
 fi
 
 export PATH="$USER_HOME/.local/bin:/usr/local/bin:/usr/bin:$PATH"
+
+# Identidad Git (se toman de variables de entorno si se definen; de lo contrario se preserva ~/.gitconfig)
+GIT_USER_NAME="${GIT_USER_NAME:-}"
+GIT_USER_EMAIL="${GIT_USER_EMAIL:-}"
 
 if command -v dnf5 &>/dev/null; then
     DNF_CMD="dnf5"
@@ -76,6 +82,10 @@ show_status() {
     echo "================================================================="
     echo "🔍 ESTADO DEL ENTORNO DE CONTROL DE VERSIONES (GIT + HERRAMIENTAS)"
     echo "================================================================="
+    echo "💻 Sistema:          Fedora Workstation (GNOME Shell Wayland Mutter)"
+    echo "⚡ Hardware:         AMD Ryzen 7 7730U | Radeon Graphics"
+    echo "👤 Usuario objetivo: $REAL_USER ($USER_HOME)"
+    echo "-----------------------------------------------------------------"
 
     local git_ver delta_ver lazygit_ver gh_ver
     local user_name user_email default_branch core_editor core_pager gh_auth
@@ -220,14 +230,12 @@ fi
 # ------------------------------------------------------------------------------
 echo "ℹ️ [2/4] Aplicando configuración global y mejores prácticas modernas de Git..."
 
-CURRENT_NAME=$(run_as_user git config --global user.name 2>/dev/null || true)
-CURRENT_EMAIL=$(run_as_user git config --global user.email 2>/dev/null || true)
-
-GIT_USER_NAME="${CURRENT_NAME:-${GIT_USER_NAME:-Tu Nombre}}"
-GIT_USER_EMAIL="${CURRENT_EMAIL:-${GIT_USER_EMAIL:-tu_email@ejemplo.com}}"
-
-run_as_user git config --global user.name "$GIT_USER_NAME"
-run_as_user git config --global user.email "$GIT_USER_EMAIL"
+if [ -n "${GIT_USER_NAME:-}" ]; then
+    run_as_user git config --global user.name "$GIT_USER_NAME"
+fi
+if [ -n "${GIT_USER_EMAIL:-}" ]; then
+    run_as_user git config --global user.email "$GIT_USER_EMAIL"
+fi
 
 # Flujo de trabajo y ramas
 run_as_user git config --global init.defaultBranch main
@@ -264,9 +272,15 @@ if command -v delta &>/dev/null; then
     run_as_user git config --global interactive.diffFilter "delta --color-only"
     run_as_user git config --global delta.navigate true
     run_as_user git config --global delta.light false
-    run_as_user git config --global delta.side-by-side true
+    run_as_user git config --global delta.side-by-side false
     run_as_user git config --global delta.line-numbers true
     run_as_user git config --global delta.hyperlinks true
+fi
+
+if [ -z "$(run_as_user git config --global user.name 2>/dev/null || true)" ]; then
+    echo "💡 Recuerda configurar tu identidad en Git si no lo has hecho:"
+    echo "   git config --global user.name \"Tu Nombre\""
+    echo "   git config --global user.email \"tu_email@ejemplo.com\""
 fi
 
 # ------------------------------------------------------------------------------
