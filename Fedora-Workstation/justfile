@@ -220,7 +220,7 @@ shell:
 shell-status:
     ./Setup/shell.sh --status
 
-# Instala y configura Zsh con plugins nativos y módulos en ~/.zshrc.d
+# Instala, configura Zsh y lo establece como shell predeterminada
 zsh:
     ./Setup/zsh-setup.sh
 

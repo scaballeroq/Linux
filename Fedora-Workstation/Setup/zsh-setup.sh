@@ -6,12 +6,12 @@ set -euo pipefail
 #  Basado en la arquitectura modular de Bash.Setup + Plugins nativos + Starship
 # ==============================================================================
 
-BOLD='\033[1m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+BOLD=$'\033[1m'
+GREEN=$'\033[0;32m'
+YELLOW=$'\033[1;33m'
+RED=$'\033[0;31m'
+CYAN=$'\033[0;36m'
+NC=$'\033[0m'
 
 log_info() { echo -e "${CYAN}ℹ️  $1${NC}"; }
 log_ok()   { echo -e "${GREEN}✅ $1${NC}"; }
@@ -30,7 +30,7 @@ command -v dnf5 &>/dev/null || DNF_BIN="dnf"
 
 ZSHRC_FILE="$USER_HOME/.zshrc"
 ZSHRC_D="$USER_HOME/.zshrc.d"
-SET_DEFAULT_SHELL=false
+SET_DEFAULT_SHELL=true
 ACTION="install"
 
 show_help() {
@@ -38,17 +38,18 @@ show_help() {
 ${BOLD}🐚 Configurador Integral de Zsh - Fedora 45 Workstation (GNOME Wayland)${NC}
 
 Instala Zsh, plugins nativos (autosuggestions, syntax-highlighting), integraciones
-modernas (FZF, Zoxide, Mise, Starship) y genera la arquitectura modular en ${BOLD}~/.zshrc.d/${NC}
-adaptada a Fedora 45 y DNF5.
+modernas (FZF, Zoxide, Mise, Starship), establece Zsh como shell predeterminada y
+genera la arquitectura modular en ${BOLD}~/.zshrc.d/${NC} adaptada a Fedora 45 y DNF5.
 
 ${BOLD}Uso:${NC}
   $0 [OPCIONES]
 
 ${BOLD}Opciones:${NC}
-  (sin argumentos)     Instala paquetes y despliega ~/.zshrc y ~/.zshrc.d/*.zsh
-  -d, --default-shell  Establece /bin/zsh como shell por defecto del usuario ($REAL_USER)
-  -s, --status         Muestra el estado actual de Zsh, plugins y módulos en ~/.zshrc.d
-  -h, --help           Muestra esta ayuda
+  (sin argumentos)        Instala paquetes, despliega ~/.zshrc y establece Zsh como shell por defecto
+  -d, --default-shell     Establece explícitamente Zsh como shell por defecto (activado por defecto)
+  -n, --no-default-shell  Instala y configura Zsh pero sin cambiar la shell por defecto del usuario
+  -s, --status            Muestra el estado actual de Zsh, plugins y módulos en ~/.zshrc.d
+  -h, --help              Muestra esta ayuda
 EOF
 }
 
@@ -64,11 +65,11 @@ show_status() {
     fi
 
     local current_shell
-    current_shell=$(getent passwd "$REAL_USER" | cut -d: -f7)
+    current_shell=$(getent passwd "$REAL_USER" | cut -d: -f7 2>/dev/null || echo "${SHELL:-/bin/bash}")
     if [[ "$current_shell" == *"zsh"* ]]; then
         echo -e "  • Shell por defecto:         ${GREEN}${current_shell} (Zsh activo)${NC}"
     else
-        echo -e "  • Shell por defecto:         ${CYAN}${current_shell}${NC} (usa --default-shell para cambiar a Zsh)"
+        echo -e "  • Shell por defecto:         ${CYAN}${current_shell}${NC} (ejecuta './zsh-setup.sh' para cambiar a Zsh)"
     fi
 
     for pkg in zsh-autosuggestions zsh-syntax-highlighting fzf zoxide eza bat fd-find ripgrep util-linux-user; do
@@ -97,9 +98,10 @@ show_status() {
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -s|--status)        ACTION="status"; shift ;;
-        -d|--default-shell) SET_DEFAULT_SHELL=true; shift ;;
-        -h|--help)          show_help; exit 0 ;;
+        -s|--status)            ACTION="status"; shift ;;
+        -d|--default-shell)     SET_DEFAULT_SHELL=true; shift ;;
+        -n|--no-default-shell)  SET_DEFAULT_SHELL=false; shift ;;
+        -h|--help)              show_help; exit 0 ;;
         *) log_err "Opción desconocida: $1"; show_help; exit 1 ;;
     esac
 done
@@ -335,10 +337,24 @@ if [[ $EUID -eq 0 && "$REAL_USER" != "root" ]]; then
 fi
 
 if [[ "$SET_DEFAULT_SHELL" == true ]]; then
-    ZSH_PATH=$(command -v zsh)
-    log_info "Configurando $ZSH_PATH como shell predeterminada para $REAL_USER..."
-    sudo usermod -s "$ZSH_PATH" "$REAL_USER"
-    log_ok "Shell predeterminada actualizada a $ZSH_PATH."
+    ZSH_PATH=$(command -v zsh 2>/dev/null || echo "/usr/bin/zsh")
+    CURRENT_SHELL=$(getent passwd "$REAL_USER" | cut -d: -f7 2>/dev/null || echo "${SHELL:-/bin/bash}")
+    if [[ "$CURRENT_SHELL" != "$ZSH_PATH" && "$CURRENT_SHELL" != "/bin/zsh" ]]; then
+        log_info "Configurando $ZSH_PATH como shell predeterminada para $REAL_USER..."
+        if ! grep -Fxq "$ZSH_PATH" /etc/shells 2>/dev/null; then
+            echo "$ZSH_PATH" | sudo tee -a /etc/shells >/dev/null
+        fi
+        if command -v chsh &>/dev/null; then
+            sudo chsh -s "$ZSH_PATH" "$REAL_USER" || sudo usermod -s "$ZSH_PATH" "$REAL_USER"
+        else
+            sudo usermod -s "$ZSH_PATH" "$REAL_USER"
+        fi
+        log_ok "Shell predeterminada actualizada a $ZSH_PATH para $REAL_USER."
+        log_info "💡 Nota: En las terminales ya abiertas seguirá activa la shell anterior."
+        log_info "   Abre una nueva pestaña/ventana o ejecuta 'exec zsh' para entrar directamente."
+    else
+        log_ok "Zsh ya es la shell predeterminada ($CURRENT_SHELL) para $REAL_USER."
+    fi
 fi
 
 log_ok "Entorno Zsh configurado correctamente para Fedora 45 Workstation."
