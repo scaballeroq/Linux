@@ -106,13 +106,22 @@ show_status() {
 
     echo ""
     echo -e "${BOLD}⚡ Firmware AMD, Gráficos RADV y Códecs Freeworld:${NC}"
-    for pkg in amd-ucode-firmware amd-gpu-firmware mesa-vulkan-drivers mesa-va-drivers-freeworld mesa-vdpau-drivers-freeworld ffmpeg zram-generator flatpak just; do
+    for pkg in amd-ucode-firmware amd-gpu-firmware mesa-va-drivers-freeworld mesa-vulkan-drivers-freeworld ffmpeg zram-generator flatpak just; do
         if is_pkg_installed "$pkg"; then
             echo -e "  • $(printf '%-30s' "$pkg"): ${GREEN}✅ Instalado${NC}"
         else
             echo -e "  • $(printf '%-30s' "$pkg"): ${YELLOW}⚠️ No instalado${NC}"
         fi
     done
+
+    # Estado de códecs complementarios GStreamer
+    local gstreamer_status
+    if is_pkg_installed "gstreamer1-plugins-bad-freeworld" && is_pkg_installed "gstreamer1-plugins-ugly"; then
+        gstreamer_status="${GREEN}✅ Instalados (grupo @multimedia)${NC}"
+    else
+        gstreamer_status="${YELLOW}⚠️ Incompletos o pendientes${NC}"
+    fi
+    echo -e "  • $(printf '%-30s' "códecs @multimedia (gstreamer)"): $gstreamer_status"
 
     echo ""
     echo -e "${BOLD}🧠 Estado de Memoria y ZRAM Swap:${NC}"
@@ -166,30 +175,42 @@ fi
 log_info "Actualizando paquetes del sistema Fedora ${FEDORA_VER} Workstation..."
 $SUDO "$DNF_BIN" upgrade --refresh -y
 
-# 4. Firmware, Microcódigo AMD Ryzen y Gráficos Radeon (Vulkan RADV + VA-API Freeworld)
-log_info "Instalando microcódigo AMD Ryzen, firmware Radeon y librerías de video Freeworld..."
+# 4. Configuración Multimedia y Códecs Oficiales según RPM Fusion (Howto/Multimedia)
+log_info "Configurando suite multimedia y códecs oficiales de RPM Fusion..."
+
+# 4.1. Switch to full ffmpeg (https://rpmfusion.org/Howto/Multimedia)
+log_info "Sustituyendo ffmpeg-free por FFmpeg completo de RPM Fusion (--allowerasing)..."
+$SUDO "$DNF_BIN" swap -y ffmpeg-free ffmpeg --allowerasing 2>/dev/null || \
+    $SUDO "$DNF_BIN" install -y --allowerasing ffmpeg ffmpeg-libs
+
+# 4.2. Install additional codec (grupo @multimedia para aplicaciones y GStreamer)
+log_info "Instalando códecs multimedia adicionales (@multimedia para aplicaciones y GStreamer)..."
+$SUDO "$DNF_BIN" install -y @multimedia --setopt="install_weak_deps=False" --exclude=PackageKit-gstreamer-plugin 2>/dev/null || true
+
+# 4.3. Hardware codecs with AMD (mesa)
+log_info "Instalando códecs acelerados por hardware para AMD Radeon (Mesa Freeworld)..."
+$SUDO "$DNF_BIN" install -y mesa-va-drivers-freeworld
+$SUDO "$DNF_BIN" swap -y mesa-vulkan-drivers mesa-vulkan-drivers-freeworld --allowerasing 2>/dev/null || \
+    $SUDO "$DNF_BIN" install -y --allowerasing mesa-vulkan-drivers-freeworld
+
+# 4.4. Compatibilidad 32-bit (i686) para Steam y gaming
+log_info "Asegurando librerías Freeworld de 32-bit (i686) para compatibilidad con Steam..."
+$SUDO "$DNF_BIN" install -y --skip-unavailable mesa-va-drivers-freeworld.i686 2>/dev/null || true
+$SUDO "$DNF_BIN" swap -y mesa-vulkan-drivers.i686 mesa-vulkan-drivers-freeworld.i686 --allowerasing 2>/dev/null || true
+
+# 4.5. Firmware AMD Ryzen, microcódigo y utilidades de aceleración
+log_info "Instalando microcódigo AMD Ryzen, firmware Radeon y utilidades de aceleración..."
 $SUDO "$DNF_BIN" install -y --skip-unavailable \
     linux-firmware \
     amd-gpu-firmware \
     amd-ucode-firmware \
     microcode_ctl \
     mesa-dri-drivers \
-    mesa-vulkan-drivers \
     vulkan-loader \
     vulkan-tools \
     libva \
     libva-utils \
-    vdpauinfo \
     lm_sensors
-
-log_info "Aplicando swap de drivers Mesa Freeworld y FFmpeg completo desde RPM Fusion..."
-$SUDO "$DNF_BIN" swap -y ffmpeg-free ffmpeg --allowerasing 2>/dev/null || \
-    $SUDO "$DNF_BIN" install -y --allowerasing ffmpeg ffmpeg-libs libavcodec-freeworld
-
-$SUDO "$DNF_BIN" swap -y mesa-va-drivers mesa-va-drivers-freeworld 2>/dev/null || \
-    $SUDO "$DNF_BIN" install -y --allowerasing mesa-va-drivers-freeworld
-$SUDO "$DNF_BIN" swap -y mesa-vdpau-drivers mesa-vdpau-drivers-freeworld 2>/dev/null || \
-    $SUDO "$DNF_BIN" install -y --allowerasing mesa-vdpau-drivers-freeworld
 
 # 5. Herramientas esenciales de sistema, desarrollo y utilidades de consola
 log_info "Instalando herramientas base de desarrollo, compilación y utilidades de sistema..."

@@ -154,11 +154,10 @@ enable_cisco_openh264() {
 }
 
 install_appstream() {
-    log_info "Instalando y refrescando metadatos AppStream de RPM Fusion para GNOME Software..."
+    log_info "Instalando metadatos AppStream de RPM Fusion para GNOME Software..."
     $SUDO "$DNF_BIN" install -y --skip-unavailable \
         rpmfusion-free-appstream-data \
         rpmfusion-nonfree-appstream-data 2>/dev/null || true
-    $SUDO "$DNF_BIN" group upgrade -y core 2>/dev/null || true
     log_ok "Metadatos AppStream configurados."
 }
 
