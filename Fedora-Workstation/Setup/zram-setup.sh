@@ -90,11 +90,13 @@ show_status() {
         echo -e "  • Paquete zram-generator:        ${RED}❌ No instalado${NC}"
     fi
 
-    # 2. Servicio systemd
-    if systemctl is-active --quiet systemd-zram-setup@zram0.service 2>/dev/null; then
+    # 2. Estado de Swap en ZRAM
+    if swapon --show 2>/dev/null | grep -q "/dev/zram0"; then
+        echo -e "  • Swap ZRAM (/dev/zram0):        ${GREEN}✅ Activo y montado como Swap (prio=100)${NC}"
+    elif systemctl is-active --quiet systemd-zram-setup@zram0.service 2>/dev/null; then
         echo -e "  • Servicio ZRAM (zram0):         ${GREEN}✅ Activo (systemd-zram-setup@zram0.service)${NC}"
     else
-        echo -e "  • Servicio ZRAM (zram0):         ${YELLOW}⚠️ Inactivo${NC}"
+        echo -e "  • Servicio ZRAM (zram0):         ${YELLOW}⚠️ Inactivo (Swap no inicializada)${NC}"
     fi
 
     # 3. Archivo de configuración
@@ -230,17 +232,30 @@ $SUDO sysctl -p "$ZRAM_SYSCTL" >/dev/null 2>&1 || true
 
 # 4. Recargar systemd y reiniciar zram de forma limpia sin "Device or resource busy"
 log_info "Aplicando cambios en el servicio systemd-zram-setup@zram0.service..."
-$SUDO systemctl daemon-reload
 
 if swapon --show 2>/dev/null | grep -q "/dev/zram0"; then
     log_info "Desactivando swap temporalmente sobre /dev/zram0 para reconfiguración..."
     $SUDO swapoff /dev/zram0 2>/dev/null || true
 fi
 
-if systemctl is-active --quiet systemd-zram-setup@zram0.service; then
-    $SUDO systemctl restart systemd-zram-setup@zram0.service || true
-else
-    $SUDO systemctl start systemd-zram-setup@zram0.service || true
+# Resetear el dispositivo de bloques zram0 para evitar EBUSY (os error 16)
+if [ -b "/dev/zram0" ]; then
+    $SUDO zramctl --reset /dev/zram0 2>/dev/null || true
+fi
+
+$SUDO systemctl reset-failed systemd-zram-setup@zram0.service 2>/dev/null || true
+$SUDO systemctl daemon-reload
+
+if ! $SUDO systemctl restart systemd-zram-setup@zram0.service 2>/dev/null; then
+    $SUDO systemctl start systemd-zram-setup@zram0.service 2>/dev/null || true
+fi
+
+# Asegurar activación de swap si el servicio oneshot no montó la unidad
+if ! swapon --show 2>/dev/null | grep -q "/dev/zram0"; then
+    if [ -b "/dev/zram0" ]; then
+        $SUDO mkswap -U clear /dev/zram0 2>/dev/null || true
+        $SUDO swapon -p 100 /dev/zram0 2>/dev/null || true
+    fi
 fi
 
 log_ok "ZRAM Swap configurado y activo con compresión zstd al 50% de RAM (16 GB)."

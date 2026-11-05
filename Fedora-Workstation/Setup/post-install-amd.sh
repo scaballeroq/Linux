@@ -125,8 +125,8 @@ show_status() {
 
     echo ""
     echo -e "${BOLD}🧠 Estado de Memoria y ZRAM Swap:${NC}"
-    if systemctl is-active --quiet systemd-zram-setup@zram0.service 2>/dev/null; then
-        echo -e "  • ZRAM Swap (zram0):         ${GREEN}✅ Activo${NC}"
+    if swapon --show 2>/dev/null | grep -q "/dev/zram0" || systemctl is-active --quiet systemd-zram-setup@zram0.service 2>/dev/null; then
+        echo -e "  • ZRAM Swap (zram0):         ${GREEN}✅ Activo y Montado como Swap${NC}"
     else
         echo -e "  • ZRAM Swap (zram0):         ${YELLOW}⚠️ Inactivo${NC}"
     fi
