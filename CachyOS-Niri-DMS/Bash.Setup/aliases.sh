@@ -9,9 +9,9 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias ~='cd ~'
-alias repo='cd /home/caballero/Workspace/Repositorios'
-alias repos='cd /home/caballero/Workspace/Repositorios'
-alias cachy='cd /home/caballero/Workspace/Repositorios/Linux/CachyOS-Niri-DMS'
+alias repo='cd /home/caballero/Proyectos'
+alias repos='cd /home/caballero/Proyectos'
+alias cachy='cd /home/caballero/Proyectos/Linux/CachyOS-Niri-DMS'
 
 # 2. INTEGRACIÓN CON ESCRITORIO WAYLAND (NIRI / DANK MATERIAL SHELL)
 alias open='xdg-open'

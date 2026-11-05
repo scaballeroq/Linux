@@ -27,7 +27,7 @@ fi
 Puedes habilitarlos creando enlaces simbólicos en `~/.bashrc.d/`:
 ```bash
 mkdir -p ~/.bashrc.d
-ln -s /home/caballero/Workspace/Repositorios/SoplosLinuxBoro/Bash.Setup/*.sh ~/.bashrc.d/
+ln -s /home/caballero/Proyectos/SoplosLinuxBoro/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
 ---

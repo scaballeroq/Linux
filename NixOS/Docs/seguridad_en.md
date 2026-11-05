@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Security Hardening & Firewall in openSUSE Tumbleweed (KDE Plasma 6)
 
-This guide details the security, networking, and system hardening process automated in [`Setup/seguridad.sh`](file:///home/caballero/Workspace/Repositorios/Linux/OpenSuseTumbleweed/Setup/seguridad.sh), specifically optimized for a development workstation with **openSUSE Tumbleweed** and **KDE Plasma 6 (Wayland)**.
+This guide details the security, networking, and system hardening process automated in [`Setup/seguridad.sh`](file:///home/caballero/Proyectos/Linux/OpenSuseTumbleweed/Setup/seguridad.sh), specifically optimized for a development workstation with **openSUSE Tumbleweed** and **KDE Plasma 6 (Wayland)**.
 
 ---
 

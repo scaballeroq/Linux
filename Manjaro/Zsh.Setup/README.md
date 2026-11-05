@@ -40,5 +40,5 @@ También puedes enlazar simbólicamente toda la carpeta para sincronizarla en ti
 
 ```bash
 mkdir -p ~/.zshrc.d
-ln -sf ~/Workspace/Repositorios/Linux/Manjaro/Zsh.Setup/*.zsh ~/.zshrc.d/
+ln -sf ~/Proyectos/Linux/Manjaro/Zsh.Setup/*.zsh ~/.zshrc.d/
 ```

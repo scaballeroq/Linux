@@ -55,7 +55,7 @@ Una vez instalado Mise, se despliegan de forma global los siguientes lenguajes o
 * **Dependencias**: Asegura `python3`, `python3-pip`, `python3-devel` y cabeceras del sistema vía Zypper para máxima estabilidad del sistema.
 * **Instalación**: Instala el gestor ultrarrápido **uv** vía Mise (`mise use --global uv@latest`) y mantiene el Python nativo del sistema protegido.
 * **Generador de Proyectos**: Se incluye la utilidad `python-uv-init.sh` (`py-project`) para crear proyectos aislados con plantillas (FastAPI, CLI, Data Science).
-* **Guía Completa**: Consulta [python_uv_es.md](file:///home/caballero/Workspace/Repositorios/Linux/OpenSuseTumbleweed/Docs/python_uv_es.md) para ver instrucciones detalladas de flujo de trabajo.
+* **Guía Completa**: Consulta [python_uv_es.md](file:///home/caballero/Proyectos/Linux/OpenSuseTumbleweed/Docs/python_uv_es.md) para ver instrucciones detalladas de flujo de trabajo.
 * **KDE Plasma & Shells**: Genera `~/.config/environment.d/10-python.conf`, `~/.bashrc.d/python.sh` (y `~/.zshrc.d/python.zsh` si existe `~/.zshrc`) y autocompletados nativos para Bash y Zsh (`uv`, `uvx`, `pip`).
 
 ### .NET SDK (`dotnet.sh`)

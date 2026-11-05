@@ -4,7 +4,7 @@ sidebar_position: 7
 
 # High-Performance Virtualization Environment (KVM/QEMU) on Debian Testing
 
-This guide details the installation, configuration, and optimization of the high-performance virtualization environment implemented in [`Virtualizacion/virtualization.sh`](file:///home/caballero/Workspace/Repositorios/Linux/KDEDebianTesting/Virtualizacion/virtualization.sh).
+This guide details the installation, configuration, and optimization of the high-performance virtualization environment implemented in [`Virtualizacion/virtualization.sh`](file:///home/caballero/Proyectos/Linux/KDEDebianTesting/Virtualizacion/virtualization.sh).
 
 The setup leverages the **KVM** hypervisor and **QEMU** emulator, native **PipeWire** audio passthrough, **KDE Plasma 6 (Wayland)** desktop integration, **VirGL** 3D hardware acceleration, **VirtioFS** ultra-fast shared folders, socket zero-copy **`vhost_net`** and **`vhost_vsock`**, **Btrfs NoCoW** virtual disk storage, Libvirt modular daemons, and nested virtualization.
 

@@ -6,7 +6,7 @@ sidebar_position: 2
 
 Esta guía detalla el proceso de configuración base, repositorio oficial OpenH264, instantáneas Snapper/Btrfs, optimización del kernel y sysctl, personalización de **KDE Plasma 6 (Wayland)**, terminal Kitty, utilidades modernas de consola y panel de administración web aplicados a un sistema **openSUSE Tumbleweed**.
 
-Las configuraciones están automatizadas a través de los scripts ubicados en la carpeta `Setup` y el recetario [`justfile`](file:///home/caballero/Workspace/Repositorios/Linux/OpenSuseTumbleweed/justfile).
+Las configuraciones están automatizadas a través de los scripts ubicados en la carpeta `Setup` y el recetario [`justfile`](file:///home/caballero/Proyectos/Linux/OpenSuseTumbleweed/justfile).
 
 ---
 

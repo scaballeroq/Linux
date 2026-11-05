@@ -14,7 +14,7 @@ Fedora soporta de manera nativa la carga modular de scripts en `~/.bashrc.d`. Pa
 
 ```bash
 mkdir -p ~/.bashrc.d
-ln -sf ~/Workspace/Repositorios/Linux/Fedora/Bash.Setup/*.sh ~/.bashrc.d/
+ln -sf ~/Proyectos/Linux/Fedora/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
 Cada script se ejecutará de forma ordenada al abrir una terminal o sesión interactiva.

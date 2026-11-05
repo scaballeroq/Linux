@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Endurecimiento de Seguridad y Cortafuegos en Fedora 44 (KDE Plasma 6)
 
-Esta guía detalla el proceso de seguridad, privacidad y endurecimiento del sistema (hardening) automatizado en [`Setup/seguridad.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora/Setup/seguridad.sh), optimizado para una estación de trabajo y portátil de desarrollo con **Fedora 44** y **KDE Plasma 6**.
+Esta guía detalla el proceso de seguridad, privacidad y endurecimiento del sistema (hardening) automatizado en [`Setup/seguridad.sh`](file:///home/caballero/Proyectos/Linux/Fedora/Setup/seguridad.sh), optimizado para una estación de trabajo y portátil de desarrollo con **Fedora 44** y **KDE Plasma 6**.
 
 ---
 

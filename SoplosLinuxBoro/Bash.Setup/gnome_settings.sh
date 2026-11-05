@@ -22,9 +22,9 @@ alias gnome-restart='systemctl --user restart gnome-session.target 2>/dev/null |
 alias mutter-reload='echo "ℹ️ En GNOME Wayland el compositor Mutter corre integrado en gnome-shell y no puede reiniciarse sin cerrar sesión."'
 
 # Atajos al orquestador maestro de personalización de Soplos
-alias soplos-gnome-setup='~/Workspace/Repositorios/Linux/SoplosLinuxBoro/Setup/gnome-settings.sh'
-alias soplos-gnome-status='~/Workspace/Repositorios/Linux/SoplosLinuxBoro/Setup/gnome-settings.sh --status'
-alias soplos-gnome-keybindings='~/Workspace/Repositorios/Linux/SoplosLinuxBoro/Setup/gnome-settings.sh --keybindings'
+alias soplos-gnome-setup='~/Proyectos/Linux/SoplosLinuxBoro/Setup/gnome-settings.sh'
+alias soplos-gnome-status='~/Proyectos/Linux/SoplosLinuxBoro/Setup/gnome-settings.sh --status'
+alias soplos-gnome-keybindings='~/Proyectos/Linux/SoplosLinuxBoro/Setup/gnome-settings.sh --keybindings'
 
 # -----------------------------------------------------------------------------
 # 2. ACCESOS DIRECTOS AL CENTRO DE CONTROL DE GNOME (gnome-control-center)

@@ -14,7 +14,7 @@ mkdir -p "$RCLONE_LOG_DIR"
 RCLONE_OPTS="--fast-list --transfers 8 --checkers 16 --tpslimit 10 --verbose -P"
 
 # Rutas base configurables
-RCLONE_REPOS_BASE="${RCLONE_REPOS_BASE:-$HOME/Workspace/Repositorios}"
+RCLONE_REPOS_BASE="${RCLONE_REPOS_BASE:-$HOME/Proyectos}"
 RCLONE_EXT_BASE="${RCLONE_EXT_BASE:-/run/media/$USER/NVME_EXT}"
 
 # -----------------------------------------------------------------------------
@@ -26,10 +26,10 @@ alias gdrive-videos="rclone sync \"\$HOME/Vídeos\" \"GoogleDrive:Vídeos\" $RCL
 alias gdrive-musica="rclone sync \"\$HOME/Música\" \"GoogleDrive:Música\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_musica.log\""
 alias gdrive-software="rclone sync \"$RCLONE_EXT_BASE/Software\" \"GoogleDrive:Workspace/Software\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_software.log\""
 alias gdrive-kdenlive="rclone sync \"\$HOME/Workspace/Kdenlive/\" \"GoogleDrive:Workspace/Kdenlive\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_kdenlive.log\""
-alias gdrive-repos="rclone sync \"$RCLONE_REPOS_BASE\" \"GoogleDrive:Workspace/Repositorios\" $RCLONE_OPTS --include \"*.zip\" --log-file \"$RCLONE_LOG_DIR/rclone_repos.log\""
-alias gdrive-repos-manjaro="rclone sync \"$RCLONE_REPOS_BASE/Manjaro\" \"GoogleDrive:Workspace/Repositorios/Manjaro\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_manjaro.log\""
-alias gdrive-repos-debian="rclone sync \"$RCLONE_REPOS_BASE/Debian\" \"GoogleDrive:Workspace/Repositorios/Debian\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_debian.log\""
-alias gdrive-repos-loladelacamara="rclone sync \"$RCLONE_REPOS_BASE/loladelacamara.es\" \"GoogleDrive:Workspace/Repositorios/loladelacamara.es\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_loladelacamara.log\""
+alias gdrive-repos="rclone sync \"$RCLONE_REPOS_BASE\" \"GoogleDrive:Proyectos\" $RCLONE_OPTS --include \"*.zip\" --log-file \"$RCLONE_LOG_DIR/rclone_repos.log\""
+alias gdrive-repos-manjaro="rclone sync \"$RCLONE_REPOS_BASE/Manjaro\" \"GoogleDrive:Proyectos/Manjaro\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_manjaro.log\""
+alias gdrive-repos-debian="rclone sync \"$RCLONE_REPOS_BASE/Debian\" \"GoogleDrive:Proyectos/Debian\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_debian.log\""
+alias gdrive-repos-loladelacamara="rclone sync \"$RCLONE_REPOS_BASE/loladelacamara.es\" \"GoogleDrive:Proyectos/loladelacamara.es\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_loladelacamara.log\""
 
 # -----------------------------------------------------------------------------
 # 3.1. GOOGLE DRIVE (UPLOAD - SYNC DRY RUN) - SIMULACIONES DE SUBIDA (SYNC)
@@ -40,9 +40,9 @@ alias gdrive-videos-dry="rclone sync \"\$HOME/Vídeos\" \"GoogleDrive:Vídeos\" 
 alias gdrive-musica-dry="rclone sync \"\$HOME/Música\" \"GoogleDrive:Música\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_musica_dry.log\""
 alias gdrive-software-dry="rclone sync \"$RCLONE_EXT_BASE/Software\" \"GoogleDrive:Workspace/Software\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_software_dry.log\""
 alias gdrive-kdenlive-dry="rclone sync \"\$HOME/Workspace/Kdenlive/\" \"GoogleDrive:Workspace/Kdenlive\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_kdenlive_dry.log\""
-alias gdrive-repos-dry="rclone sync \"$RCLONE_REPOS_BASE\" \"GoogleDrive:Workspace/Repositorios\" $RCLONE_OPTS --include \"*.zip\" --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_repos_dry.log\""
-alias gdrive-repos-manjaro-dry="rclone sync \"$RCLONE_REPOS_BASE/Manjaro\" \"GoogleDrive:Workspace/Repositorios/Manjaro\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_repos_manjaro_dry.log\""
-alias gdrive-repos-loladelacamara-dry="rclone sync \"$RCLONE_REPOS_BASE/loladelacamara.es\" \"GoogleDrive:Workspace/Repositorios/loladelacamara.es\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_repos_loladelacamara_dry.log\""
+alias gdrive-repos-dry="rclone sync \"$RCLONE_REPOS_BASE\" \"GoogleDrive:Proyectos\" $RCLONE_OPTS --include \"*.zip\" --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_repos_dry.log\""
+alias gdrive-repos-manjaro-dry="rclone sync \"$RCLONE_REPOS_BASE/Manjaro\" \"GoogleDrive:Proyectos/Manjaro\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_repos_manjaro_dry.log\""
+alias gdrive-repos-loladelacamara-dry="rclone sync \"$RCLONE_REPOS_BASE/loladelacamara.es\" \"GoogleDrive:Proyectos/loladelacamara.es\" $RCLONE_OPTS --dry-run --log-file \"$RCLONE_LOG_DIR/rclone_repos_loladelacamara_dry.log\""
 
 # -----------------------------------------------------------------------------
 # 3.2. GOOGLE DRIVE (UPLOAD - COPY) - SUBIR A LA NUBE (SIN ELIMINAR EN DESTINO)
@@ -53,9 +53,9 @@ alias gdrive-videos-copy="rclone copy \"\$HOME/Vídeos\" \"GoogleDrive:Vídeos\"
 alias gdrive-musica-copy="rclone copy \"\$HOME/Música\" \"GoogleDrive:Música\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_musica_copy.log\""
 alias gdrive-software-copy="rclone copy \"$RCLONE_EXT_BASE/Software\" \"GoogleDrive:Workspace/Software\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_software_copy.log\""
 alias gdrive-kdenlive-copy="rclone copy \"\$HOME/Workspace/Kdenlive/\" \"GoogleDrive:Workspace/Kdenlive\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_kdenlive_copy.log\""
-alias gdrive-repos-copy="rclone copy \"$RCLONE_REPOS_BASE\" \"GoogleDrive:Workspace/Repositorios\" $RCLONE_OPTS --include \"*.zip\" --log-file \"$RCLONE_LOG_DIR/rclone_repos_copy.log\""
-alias gdrive-repos-manjaro-copy="rclone copy \"$RCLONE_REPOS_BASE/Manjaro\" \"GoogleDrive:Workspace/Repositorios/Manjaro\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_manjaro_copy.log\""
-alias gdrive-repos-loladelacamara-copy="rclone copy \"$RCLONE_REPOS_BASE/loladelacamara.es\" \"GoogleDrive:Workspace/Repositorios/loladelacamara.es\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_loladelacamara_copy.log\""
+alias gdrive-repos-copy="rclone copy \"$RCLONE_REPOS_BASE\" \"GoogleDrive:Proyectos\" $RCLONE_OPTS --include \"*.zip\" --log-file \"$RCLONE_LOG_DIR/rclone_repos_copy.log\""
+alias gdrive-repos-manjaro-copy="rclone copy \"$RCLONE_REPOS_BASE/Manjaro\" \"GoogleDrive:Proyectos/Manjaro\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_manjaro_copy.log\""
+alias gdrive-repos-loladelacamara-copy="rclone copy \"$RCLONE_REPOS_BASE/loladelacamara.es\" \"GoogleDrive:Proyectos/loladelacamara.es\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_loladelacamara_copy.log\""
 
 # -----------------------------------------------------------------------------
 # 4. GOOGLE DRIVE (DOWNLOAD - SYNC / COPY) - BAJAR DE LA NUBE

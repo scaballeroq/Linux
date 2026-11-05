@@ -11,16 +11,16 @@ Procedimientos y operaciones declarativas para NixOS en HP ProBook 455 G10.
 ## 1. Reconstrucción y Flakes
 ```bash
 # Reconstruir y activar el sistema con el perfil laptop-amd
-sudo nixos-rebuild switch --flake /home/caballero/Workspace/Repositorios/Linux/NixOS#laptop-amd
+sudo nixos-rebuild switch --flake /home/caballero/Proyectos/Linux/NixOS#laptop-amd
 
 # Probar la configuración sin persistir en el bootloader
-sudo nixos-rebuild test --flake /home/caballero/Workspace/Repositorios/Linux/NixOS#laptop-amd
+sudo nixos-rebuild test --flake /home/caballero/Proyectos/Linux/NixOS#laptop-amd
 
 # Actualizar inputs del flake
-nix flake update --flake /home/caballero/Workspace/Repositorios/Linux/NixOS
+nix flake update --flake /home/caballero/Proyectos/Linux/NixOS
 
 # Comprobar estado de los flakes
-nix flake check /home/caballero/Workspace/Repositorios/Linux/NixOS
+nix flake check /home/caballero/Proyectos/Linux/NixOS
 ```
 
 ## 2. Limpieza de Generaciones y Recolección de Basura

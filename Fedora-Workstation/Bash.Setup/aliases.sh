@@ -12,9 +12,9 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias ~='cd ~'
-alias repo='cd ~/Workspace/Repositorios'
-alias repos='cd ~/Workspace/Repositorios'
-alias fedora='cd ~/Workspace/Repositorios/Linux/Fedora-Workstation'
+alias repo='cd ~/Proyectos'
+alias repos='cd ~/Proyectos'
+alias fedora='cd ~/Proyectos/Linux/Fedora-Workstation'
 
 # 2. INTEGRACIÓN CON GNOME Y ESCRITORIO
 alias open='xdg-open'

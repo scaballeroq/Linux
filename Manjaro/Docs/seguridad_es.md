@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Configuración de Seguridad en Manjaro Linux
 
-Esta guía detalla el proceso de endurecimiento de seguridad (hardening) optimizado para un portátil de desarrollador en Manjaro Linux, tal y como se automatiza en [`Setup/seguridad.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Manjaro/Setup/seguridad.sh).
+Esta guía detalla el proceso de endurecimiento de seguridad (hardening) optimizado para un portátil de desarrollador en Manjaro Linux, tal y como se automatiza en [`Setup/seguridad.sh`](file:///home/caballero/Proyectos/Linux/Manjaro/Setup/seguridad.sh).
 
 El proceso cubre la configuración del firewall compatible con KVM/Podman, protección de accesos, Fail2ban y privacidad DNS.
 

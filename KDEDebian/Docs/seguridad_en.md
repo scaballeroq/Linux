@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Security Configuration on Debian 13
 
-This guide details the security hardening process tailored for a developer laptop running KVM and Podman, as automated in [`Setup/seguridad.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Debian/Setup/seguridad.sh).
+This guide details the security hardening process tailored for a developer laptop running KVM and Podman, as automated in [`Setup/seguridad.sh`](file:///home/caballero/Proyectos/Linux/Debian/Setup/seguridad.sh).
 
 ---
 

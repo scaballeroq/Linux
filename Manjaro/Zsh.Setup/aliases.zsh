@@ -8,8 +8,8 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias ~='cd ~'
-alias repos='cd ~/Workspace/Repositorios'
-alias manjaro='cd ~/Workspace/Repositorios/Linux/Manjaro'
+alias repos='cd ~/Proyectos'
+alias manjaro='cd ~/Proyectos/Linux/Manjaro'
 
 # 2. MEJORAS DE 'LS' (USANDO EZA)
 if command -v eza &> /dev/null; then
@@ -70,7 +70,7 @@ alias ff='fastfetch'
 alias sysinfo='ff'
 
 #7.PODMAN
-alias podman-utils="$HOME/Workspace/Repositorios/Linux/Manjaro/Podman/lib/podman-utils.sh"
+alias podman-utils="$HOME/Proyectos/Linux/Manjaro/Podman/lib/podman-utils.sh"
 
 # Comprobar versión de kernel activo vs última versión en kernel.org
 check-kernel-update() {

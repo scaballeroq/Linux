@@ -9,9 +9,9 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias ~='cd ~'
-alias repo='cd ~/Workspace/Repositorios'
-alias repos='cd ~/Workspace/Repositorios'
-alias cachyos='cd ~/Workspace/Repositorios/Linux/CachyOS'
+alias repo='cd ~/Proyectos'
+alias repos='cd ~/Proyectos'
+alias cachyos='cd ~/Proyectos/Linux/CachyOS'
 
 # 2. INTEGRACIÓN CON GNOME Y ESCRITORIO
 alias open='xdg-open'

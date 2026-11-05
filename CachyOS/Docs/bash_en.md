@@ -43,12 +43,12 @@ You can link all modules automatically by running `./Setup/shell.sh` or manually
 ```bash
 # For Bash (Default)
 mkdir -p ~/.bashrc.d
-ln -sf ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.bashrc.d/
+ln -sf ~/Proyectos/Linux/CachyOS/Bash.Setup/*.sh ~/.bashrc.d/
 
 # For Zsh (if ~/.zshrc exists)
 if [ -f "$HOME/.zshrc" ]; then
     mkdir -p ~/.zshrc.d
-    ln -sf ~/Workspace/Repositorios/Linux/CachyOS/Bash.Setup/*.sh ~/.zshrc.d/
+    ln -sf ~/Proyectos/Linux/CachyOS/Bash.Setup/*.sh ~/.zshrc.d/
 fi
 ```
 

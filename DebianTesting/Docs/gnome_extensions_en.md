@@ -2,7 +2,7 @@
 
 # GNOME Shell Extensions Guide
 
-This guide details the set of **11 GNOME Shell extensions** and auxiliary tools automatically installed and configured via the [`Setup/gnome-extensions.sh`](file:///home/caballero/Workspace/Repositorios/Linux/DebianTesting/Setup/gnome-extensions.sh) script and the `just extensions` command.
+This guide details the set of **11 GNOME Shell extensions** and auxiliary tools automatically installed and configured via the [`Setup/gnome-extensions.sh`](file:///home/caballero/Proyectos/Linux/DebianTesting/Setup/gnome-extensions.sh) script and the `just extensions` command.
 
 The objective is to optimize the GNOME desktop environment on Debian Testing by combining **window management**, **productivity**, **system tray support**, **weather information next to clock**, and a **modern aesthetic** (glassmorphism/blur, daily dynamic wallpapers, and an integrated audio mixer), with **Dash to Dock** acting as the primary dock.
 

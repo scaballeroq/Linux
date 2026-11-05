@@ -6,7 +6,7 @@ Este manual detalla la configuración, optimización y mejores prácticas para *
 
 ## 1. Opciones del Script y Comandos de Ejecución
 
-El script [`Virtualizacion/virtualization.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora-Workstation/Virtualizacion/virtualization.sh) soporta ejecución modular e idempotente:
+El script [`Virtualizacion/virtualization.sh`](file:///home/caballero/Proyectos/Linux/Fedora-Workstation/Virtualizacion/virtualization.sh) soporta ejecución modular e idempotente:
 
 ```bash
 # Diagnóstico completo sin realizar modificaciones (rápido y no bloqueante)

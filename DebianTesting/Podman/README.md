@@ -56,13 +56,13 @@ Si utilizas la configuración de terminal del repositorio ([`Bash.Setup/environm
 Si deseas añadirlo manualmente en `~/.bashrc` o `~/.zshrc`:
 
 ```bash
-export PATH="$HOME/Warehouse/Workspace/Repositorios/Linux/DebianTesting/Podman/lib:$PATH"
+export PATH="$HOME/Proyectos/Linux/DebianTesting/Podman/lib:$PATH"
 ```
 
 O crea un alias:
 
 ```bash
-alias podman-utils="$HOME/Warehouse/Workspace/Repositorios/Linux/DebianTesting/Podman/lib/podman-utils.sh"
+alias podman-utils="$HOME/Proyectos/Linux/DebianTesting/Podman/lib/podman-utils.sh"
 ```
 
 ---

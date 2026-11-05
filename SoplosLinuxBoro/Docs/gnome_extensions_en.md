@@ -2,7 +2,7 @@
 
 # Complete Guide to GNOME Shell Extensions
 
-This guide details the set of **12 GNOME Shell extensions** and auxiliary tools automatically installed and configured via the [`Setup/gnome-extensions.sh`](file:///home/caballero/Workspace/Repositorios/Linux/SoplosLinuxBoro/Setup/gnome-extensions.sh) script and the `just extensions` command.
+This guide details the set of **12 GNOME Shell extensions** and auxiliary tools automatically installed and configured via the [`Setup/gnome-extensions.sh`](file:///home/caballero/Proyectos/Linux/SoplosLinuxBoro/Setup/gnome-extensions.sh) script and the `just extensions` command.
 
 The goal of this selection is to optimize the GNOME desktop environment in Soplos Linux Boro, combining **advanced window management**, **productivity enhancements**, **system tray support**, and **modern visual aesthetics** (glassmorphism/blur, dynamic wallpapers, and audio panel), with **Dash to Dock** as the primary native dock.
 

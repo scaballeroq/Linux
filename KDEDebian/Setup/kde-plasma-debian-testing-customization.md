@@ -233,7 +233,7 @@ Separación de perfiles (ej. `Dev/Linux` vs `Multimedia/Ocio`):
 
 ## 10. Script Automatizador Maestro (`kde-plasma-customization.sh`)
 
-El script modular [`kde-plasma-customization.sh`](file:///home/caballero/Workspace/Repositorios/Linux/KDEDebian/Setup/kde-plasma-customization.sh) automatiza por completo la instalación de dependencias, compilación de Klassy y Better Blur, temas Kvantum, iconos Tela Dark, scripts de KWin y plasmoides.
+El script modular [`kde-plasma-customization.sh`](file:///home/caballero/Proyectos/Linux/KDEDebian/Setup/kde-plasma-customization.sh) automatiza por completo la instalación de dependencias, compilación de Klassy y Better Blur, temas Kvantum, iconos Tela Dark, scripts de KWin y plasmoides.
 
 ### 10.1 Ejecución
 ```bash

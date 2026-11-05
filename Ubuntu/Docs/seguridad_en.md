@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Security Hardening and Firewall in Ubuntu Linux (GNOME Shell)
 
-This guide details the security, network, and system hardening automated in [`Setup/seguridad.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Ubuntu/Setup/seguridad.sh), specifically optimized for a local development workstation on **Ubuntu Linux** with **GNOME Shell (Wayland)**.
+This guide details the security, network, and system hardening automated in [`Setup/seguridad.sh`](file:///home/caballero/Proyectos/Linux/Ubuntu/Setup/seguridad.sh), specifically optimized for a local development workstation on **Ubuntu Linux** with **GNOME Shell (Wayland)**.
 
 ---
 

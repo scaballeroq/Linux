@@ -4,7 +4,7 @@ sidebar_position: 4
 
 # Configuración de Git en Debian Testing (KDE Plasma 6)
 
-Esta guía detalla el entorno de control de versiones y el conjunto de herramientas optimizadas mediante [`IDE/git.sh`](file:///home/caballero/Workspace/Repositorios/Linux/KDEDebianTesting/IDE/git.sh).
+Esta guía detalla el entorno de control de versiones y el conjunto de herramientas optimizadas mediante [`IDE/git.sh`](file:///home/caballero/Proyectos/Linux/KDEDebianTesting/IDE/git.sh).
 
 El entorno incluye el cliente **Git**, el formateador visual de diferencias **Git-Delta**, la interfaz de terminal **Lazygit** y la herramienta oficial **GitHub CLI (gh)**.
 

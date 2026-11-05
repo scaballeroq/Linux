@@ -62,7 +62,7 @@ Once Mise is installed, the following optimized development environments are dep
 * **Dependencies**: Ensures `python3`, `python3-pip`, and `python3-gobject` along with system development headers via DNF5 for full GNOME integration.
 * **Installation**: Installs the high-performance **uv** package manager via Mise (`mise use --global uv@latest`) and preserves system Python intact to avoid breaking core utilities like *GNOME Tweaks* (`gnome-tweaks`).
 * **Project Generator**: Includes the scaffolding tool `python-uv-init.sh` to generate isolated projects with templates (FastAPI, CLI, Data Science).
-* **Complete Guide**: Refer to [python_uv_es.md](file:///home/caballero/Workspace/Repositorios/Linux/Fedora-Workstation/Docs/python_uv_es.md) for workflow details.
+* **Complete Guide**: Refer to [python_uv_es.md](file:///home/caballero/Proyectos/Linux/Fedora-Workstation/Docs/python_uv_es.md) for workflow details.
 * **GNOME & Shells**: Generates `~/.config/environment.d/10-python.conf`, `~/.bashrc.d/python.sh` (and `~/.zshrc.d/python.zsh` if `~/.zshrc` exists) and native completions for Bash and Zsh (`uv`, `uvx`, `pip`).
 
 ### .NET SDK (`dotnet.sh`)

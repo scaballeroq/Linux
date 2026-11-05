@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Security Configuration on Manjaro Linux
 
-This guide details the security hardening process tailored for a developer lpacmanop running KVM and Podman, as automated in [`Setup/seguridad.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Manjaro/Setup/seguridad.sh).
+This guide details the security hardening process tailored for a developer lpacmanop running KVM and Podman, as automated in [`Setup/seguridad.sh`](file:///home/caballero/Proyectos/Linux/Manjaro/Setup/seguridad.sh).
 
 ---
 

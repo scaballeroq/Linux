@@ -14,9 +14,9 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias ~='cd ~'
-alias repo='cd ~/Workspace/Repositorios'
+alias repo='cd ~/Proyectos'
 alias workspace='cd ~/Workspace'
-alias ub='cd ~/Workspace/Repositorios/Linux/Ubuntu'
+alias ub='cd ~/Proyectos/Linux/Ubuntu'
 
 # -----------------------------------------------------------------------------
 # 2. LISTADO DE ARCHIVOS (MODERNO CON FALLBACK)

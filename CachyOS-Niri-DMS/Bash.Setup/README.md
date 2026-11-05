@@ -30,7 +30,7 @@ La instalación se realiza automáticamente al ejecutar `./Setup/shell.sh` o `ju
 
 ```bash
 mkdir -p ~/.bashrc.d
-ln -sf /home/caballero/Workspace/Repositorios/Linux/CachyOS-Niri-DMS/Bash.Setup/*.sh ~/.bashrc.d/
+ln -sf /home/caballero/Proyectos/Linux/CachyOS-Niri-DMS/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
 Y añade a tu `~/.bashrc`:
@@ -53,7 +53,7 @@ Crea el directorio `~/.zshrc.d/` y enlaza los scripts:
 
 ```bash
 mkdir -p ~/.zshrc.d
-ln -sf /home/caballero/Workspace/Repositorios/Linux/CachyOS-Niri-DMS/Bash.Setup/*.sh ~/.zshrc.d/
+ln -sf /home/caballero/Proyectos/Linux/CachyOS-Niri-DMS/Bash.Setup/*.sh ~/.zshrc.d/
 ```
 
 Asegúrate de que tu `~/.zshrc` contenga el bloque de carga modular:

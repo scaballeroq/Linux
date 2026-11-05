@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Endurecimiento de Seguridad y Cortafuegos en Soplos Linux Boro (GNOME Shell)
 
-Esta guía detalla el proceso de seguridad, red y endurecimiento del sistema (hardening) automatizado en [`Setup/seguridad.sh`](file:///home/caballero/Workspace/Repositorios/Linux/SoplosLinuxBoro/Setup/seguridad.sh), optimizado específicamente para una estación de trabajo y desarrollo local con **Soplos Linux Boro** y **GNOME Shell (Wayland)**.
+Esta guía detalla el proceso de seguridad, red y endurecimiento del sistema (hardening) automatizado en [`Setup/seguridad.sh`](file:///home/caballero/Proyectos/Linux/SoplosLinuxBoro/Setup/seguridad.sh), optimizado específicamente para una estación de trabajo y desarrollo local con **Soplos Linux Boro** y **GNOME Shell (Wayland)**.
 
 ---
 

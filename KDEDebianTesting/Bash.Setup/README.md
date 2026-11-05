@@ -32,5 +32,5 @@ Para vincular estos archivos a `~/.bashrc.d/`:
 
 ```bash
 mkdir -p ~/.bashrc.d
-ln -sf ~/Workspace/Repositorios/Linux/KDEDebianTesting/Bash.Setup/*.sh ~/.bashrc.d/
+ln -sf ~/Proyectos/Linux/KDEDebianTesting/Bash.Setup/*.sh ~/.bashrc.d/
 ```

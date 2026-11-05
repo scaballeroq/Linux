@@ -38,7 +38,7 @@ Añade el siguiente bloque al final de tu archivo `~/.bashrc`:
 # =============================================================================
 # Cargar módulos personalizados de Bash.Setup
 # =============================================================================
-BASH_SETUP_DIR="$HOME/Workspace/Repositorios/Linux/Omarchy/Bash.Setup"
+BASH_SETUP_DIR="$HOME/Proyectos/Linux/Omarchy/Bash.Setup"
 if [ -d "$BASH_SETUP_DIR" ]; then
     for f in "$BASH_SETUP_DIR"/*.sh; do
         [ "$f" != "$BASH_SETUP_DIR/setup.sh" ] && [ -r "$f" ] && source "$f"

@@ -42,8 +42,8 @@ fi
 Puedes habilitar todos los módulos ejecutando `./Setup/shell.sh` o manualmente:
 ```bash
 mkdir -p ~/.zshrc.d ~/.bashrc.d
-ln -sf /home/caballero/Warehouse/Repositorios/Linux/CachyOS_Niri_Noctalia/ZSH.Setup/*.sh ~/.zshrc.d/
-ln -sf /home/caballero/Warehouse/Repositorios/Linux/CachyOS_Niri_Noctalia/ZSH.Setup/*.sh ~/.bashrc.d/
+ln -sf /home/caballero/Proyectos/Linux/CachyOS_Niri_Noctalia/ZSH.Setup/*.sh ~/.zshrc.d/
+ln -sf /home/caballero/Proyectos/Linux/CachyOS_Niri_Noctalia/ZSH.Setup/*.sh ~/.bashrc.d/
 ```
 
 ---
@@ -90,8 +90,8 @@ Optimiza la interacción de la shell mediante ajustes internos adaptados a Zsh.
 Sustituye comandos estándar por alternativas enriquecidas y seguras:
 
 - **Navegación Rápida**:
-  - `cachyos` / `project`: Navega directamente a `/home/caballero/Warehouse/Repositorios/Linux/CachyOS_Niri_Noctalia`
-  - `repo` / `repos`: Navega a `/home/caballero/Warehouse/Repositorios`
+  - `cachyos` / `project`: Navega directamente a `/home/caballero/Proyectos/Linux/CachyOS_Niri_Noctalia`
+  - `repo` / `repos`: Navega a `/home/caballero/Proyectos`
   - `..`, `...`, `....`: Subir 1, 2 o 3 niveles
 - **Pipes Globales de Zsh** (atajos de sufijo):
   - `G` → `| grep -i` (ej. `cat file G error`)

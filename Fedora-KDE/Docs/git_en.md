@@ -4,7 +4,7 @@ sidebar_position: 4
 
 # Git & Version Control Setup on Fedora 44 (KDE Plasma 6)
 
-This guide details the version control environment and tools optimized via [`IDE/git.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora-KDE/IDE/git.sh).
+This guide details the version control environment and tools optimized via [`IDE/git.sh`](file:///home/caballero/Proyectos/Linux/Fedora-KDE/IDE/git.sh).
 
 The toolchain includes **Git**, **Git-Delta** visual diff pager, **Lazygit** interactive TUI, and the official **GitHub CLI (gh)**.
 

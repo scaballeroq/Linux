@@ -7,7 +7,7 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias ~='cd ~'
-alias repo='cd ~/Workspace/Repositorios'
+alias repo='cd ~/Proyectos'
 alias workspace='cd ~/Workspace'
 
 # 2. LISTADO DE ARCHIVOS

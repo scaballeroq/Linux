@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Endurecimiento de Seguridad y Cortafuegos en openSUSE Tumbleweed (KDE Plasma 6)
 
-Esta guía detalla el proceso de seguridad, red y endurecimiento del sistema (hardening) automatizado en [`Setup/seguridad.sh`](file:///home/caballero/Workspace/Repositorios/Linux/OpenSuseTumbleweed/Setup/seguridad.sh), optimizado específicamente para una estación de trabajo y desarrollo local con **openSUSE Tumbleweed** y **KDE Plasma 6 (Wayland)**.
+Esta guía detalla el proceso de seguridad, red y endurecimiento del sistema (hardening) automatizado en [`Setup/seguridad.sh`](file:///home/caballero/Proyectos/Linux/OpenSuseTumbleweed/Setup/seguridad.sh), optimizado específicamente para una estación de trabajo y desarrollo local con **openSUSE Tumbleweed** y **KDE Plasma 6 (Wayland)**.
 
 ---
 

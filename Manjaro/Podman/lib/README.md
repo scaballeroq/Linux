@@ -15,13 +15,13 @@ Añade la ruta a tu archivo de configuración de shell (`~/.zshrc` si usas ZSH o
 
 ```bash
 # En ~/.zshrc o ~/.bashrc
-export PATH="$HOME/Workspace/Repositorios/Linux/Manjaro/Podman/lib:$PATH"
+export PATH="$HOME/Proyectos/Linux/Manjaro/Podman/lib:$PATH"
 ```
 
 O bien, crea un alias directo:
 
 ```bash
-alias podman-utils="$HOME/Workspace/Repositorios/Linux/Manjaro/Podman/lib/podman-utils.sh"
+alias podman-utils="$HOME/Proyectos/Linux/Manjaro/Podman/lib/podman-utils.sh"
 ```
 
 ### 2. Recargar la terminal

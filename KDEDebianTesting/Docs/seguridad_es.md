@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Endurecimiento de Seguridad y Cortafuegos en Debian Testing (KDE Plasma 6)
 
-Esta guía detalla el proceso de seguridad, red y endurecimiento del sistema (hardening) automatizado en [`Setup/seguridad.sh`](file:///home/caballero/Workspace/Repositorios/Linux/KDEDebianTesting/Setup/seguridad.sh), optimizado específicamente para una estación de trabajo y desarrollo local con **Debian Testing (Trixie/Sid)** y **KDE Plasma 6 (Wayland)**.
+Esta guía detalla el proceso de seguridad, red y endurecimiento del sistema (hardening) automatizado en [`Setup/seguridad.sh`](file:///home/caballero/Proyectos/Linux/KDEDebianTesting/Setup/seguridad.sh), optimizado específicamente para una estación de trabajo y desarrollo local con **Debian Testing (Trixie/Sid)** y **KDE Plasma 6 (Wayland)**.
 
 ---
 

@@ -71,7 +71,7 @@ Para activar la carga modular en openSUSE Tumbleweed, añade el siguiente bloque
 
 ```bash
 # Carga modular de Bash.Setup de openSUSE Tumbleweed
-BASH_SETUP_DIR="$HOME/Workspace/Repositorios/Linux/OpenSuseTumbleweed/Bash.Setup"
+BASH_SETUP_DIR="$HOME/Proyectos/Linux/OpenSuseTumbleweed/Bash.Setup"
 if [ -d "$BASH_SETUP_DIR" ]; then
     for script in "$BASH_SETUP_DIR"/*.sh; do
         [ -r "$script" ] && source "$script"
@@ -84,5 +84,5 @@ O alternativamente, vincula los scripts al directorio estándar `~/.bashrc.d/`:
 
 ```bash
 mkdir -p ~/.bashrc.d
-ln -sf ~/Workspace/Repositorios/Linux/OpenSuseTumbleweed/Bash.Setup/*.sh ~/.bashrc.d/
+ln -sf ~/Proyectos/Linux/OpenSuseTumbleweed/Bash.Setup/*.sh ~/.bashrc.d/
 ```

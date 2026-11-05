@@ -26,7 +26,7 @@ Para activar estos módulos de forma automática, crea el directorio `~/.bashrc.
 
 ```bash
 mkdir -p ~/.bashrc.d
-ln -sf ~/Workspace/Repositorios/Linux/Kubuntu/Bash.Setup/*.sh ~/.bashrc.d/
+ln -sf ~/Proyectos/Linux/Kubuntu/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
 Luego, agrega el cargador modular a tu `~/.bashrc` si aún no lo tienes:

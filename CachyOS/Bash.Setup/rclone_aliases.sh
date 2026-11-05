@@ -23,10 +23,10 @@ alias gdrive-videos="rclone sync \"\$HOME/Vídeos\" \"GoogleDrive:Vídeos\" $RCL
 alias gdrive-musica="rclone sync \"\$HOME/Música\" \"GoogleDrive:Música\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_musica.log\""
 alias gdrive-software="rclone sync \"/run/media/caballero/NVME_EXT/Software\" \"GoogleDrive:Workspace/Software\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_software.log\""
 alias gdrive-kdenlive="rclone sync \"\$HOME/Workspace/Kdenlive/\" \"GoogleDrive:Workspace/Kdenlive\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_kdenlive.log\""
-alias gdrive-repos="rclone sync \"\$HOME/Workspace/Repositorios\" \"GoogleDrive:Workspace/Repositorios\" $RCLONE_OPTS --include \"*.zip\" --log-file \"$RCLONE_LOG_DIR/rclone_repos.log\""
-alias gdrive-repos-debian="rclone sync \"\$HOME/Workspace/Repositorios/Debian\" \"GoogleDrive:Workspace/Repositorios/Debian\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_debian.log\""
-alias gdrive-repos-fedora="rclone sync \"\$HOME/Workspace/Repositorios/Fedora\" \"GoogleDrive:Workspace/Repositorios/Fedora\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_fedora.log\""
-alias gdrive-repos-loladelacamara="rclone sync \"\$HOME/Workspace/Repositorios/loladelacamara.es\" \"GoogleDrive:Workspace/Repositorios/loladelacamara.es\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_fedora.log\""
+alias gdrive-repos="rclone sync \"\$HOME/Proyectos\" \"GoogleDrive:Proyectos\" $RCLONE_OPTS --include \"*.zip\" --log-file \"$RCLONE_LOG_DIR/rclone_repos.log\""
+alias gdrive-repos-debian="rclone sync \"\$HOME/Proyectos/Debian\" \"GoogleDrive:Proyectos/Debian\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_debian.log\""
+alias gdrive-repos-fedora="rclone sync \"\$HOME/Proyectos/Fedora\" \"GoogleDrive:Proyectos/Fedora\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_fedora.log\""
+alias gdrive-repos-loladelacamara="rclone sync \"\$HOME/Proyectos/loladelacamara.es\" \"GoogleDrive:Proyectos/loladelacamara.es\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_fedora.log\""
 
 # -----------------------------------------------------------------------------
 # 3.1. GOOGLE DRIVE (UPLOAD - DRY RUN) - SIMULACIONES DE SUBIDA

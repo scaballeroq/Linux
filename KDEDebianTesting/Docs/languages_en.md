@@ -56,7 +56,7 @@ Mise is a high-performance polyglot tool version manager written in Rust that re
 * **Dependencies**: Ensures `python3`, `python3-pip`, `python3-venv`, `python3-dev` to comply with PEP 668.
 * **Installation**: Installs **uv** via Mise (`mise use --global uv@latest`) and configures `UV_LINK_MODE=copy`.
 * **Project Initializer**: Includes `python-uv-init.sh` (`py-project`) for templated environments (FastAPI, CLI, Data Science).
-* **Detailed Guide**: See [python_uv_es.md](file:///home/caballero/Workspace/Repositorios/Linux/KDEDebianTesting/Docs/python_uv_es.md).
+* **Detailed Guide**: See [python_uv_es.md](file:///home/caballero/Proyectos/Linux/KDEDebianTesting/Docs/python_uv_es.md).
 
 ### .NET SDK (`dotnet.sh`)
 * **Dependencies**: `libicu-dev`, `libssl-dev`, `libkrb5-dev`, `zlib1g-dev`, `libunwind-dev`.

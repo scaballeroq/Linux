@@ -27,7 +27,7 @@ fi
 Enable them by creating symlinks in `~/.bashrc.d/`:
 ```bash
 mkdir -p ~/.bashrc.d
-ln -s ~/Workspace/Repositorios/Kubuntu/Bash.Setup/*.sh ~/.bashrc.d/
+ln -s ~/Proyectos/Kubuntu/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
 ---

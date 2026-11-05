@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Security Hardening and Firewall on Debian Testing (KDE Plasma 6)
 
-This guide details the security, network, and system hardening process automated in [`Setup/seguridad.sh`](file:///home/caballero/Workspace/Repositorios/Linux/KDEDebianTesting/Setup/seguridad.sh), optimized for a local developer workstation running **Debian Testing (Trixie/Sid)** and **KDE Plasma 6 (Wayland)**.
+This guide details the security, network, and system hardening process automated in [`Setup/seguridad.sh`](file:///home/caballero/Proyectos/Linux/KDEDebianTesting/Setup/seguridad.sh), optimized for a local developer workstation running **Debian Testing (Trixie/Sid)** and **KDE Plasma 6 (Wayland)**.
 
 ---
 

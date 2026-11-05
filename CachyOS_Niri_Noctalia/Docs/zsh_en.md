@@ -42,8 +42,8 @@ fi
 You can link all modules automatically by running `./Setup/shell.sh` or manually:
 ```bash
 mkdir -p ~/.zshrc.d ~/.bashrc.d
-ln -sf /home/caballero/Warehouse/Repositorios/Linux/CachyOS_Niri_Noctalia/ZSH.Setup/*.sh ~/.zshrc.d/
-ln -sf /home/caballero/Warehouse/Repositorios/Linux/CachyOS_Niri_Noctalia/ZSH.Setup/*.sh ~/.bashrc.d/
+ln -sf /home/caballero/Proyectos/Linux/CachyOS_Niri_Noctalia/ZSH.Setup/*.sh ~/.zshrc.d/
+ln -sf /home/caballero/Proyectos/Linux/CachyOS_Niri_Noctalia/ZSH.Setup/*.sh ~/.bashrc.d/
 ```
 
 ---
@@ -90,8 +90,8 @@ Optimizes shell interaction through internal adjustments tailored for Zsh.
 Replaces standard commands with enriched and safe alternatives:
 
 - **Quick Navigation**:
-  - `cachyos` / `project`: Go to `/home/caballero/Warehouse/Repositorios/Linux/CachyOS_Niri_Noctalia`
-  - `repo` / `repos`: Go to `/home/caballero/Warehouse/Repositorios`
+  - `cachyos` / `project`: Go to `/home/caballero/Proyectos/Linux/CachyOS_Niri_Noctalia`
+  - `repo` / `repos`: Go to `/home/caballero/Proyectos`
   - `..`, `...`, `....`: Go up 1, 2, or 3 directories
 - **Zsh Global Pipes** (smart suffix aliases):
   - `G` → `| grep -i` (e.g. `cat file G error`)

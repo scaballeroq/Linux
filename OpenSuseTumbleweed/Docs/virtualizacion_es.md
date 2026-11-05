@@ -4,7 +4,7 @@ sidebar_position: 7
 
 # Entorno de Virtualización de Alto Rendimiento (KVM/QEMU) en openSUSE Tumbleweed
 
-Esta guía detalla la instalación, configuración y optimización del entorno de virtualización de alto rendimiento implementado en [`Virtualizacion/virtualization.sh`](file:///home/caballero/Workspace/Repositorios/Linux/OpenSuseTumbleweed/Virtualizacion/virtualization.sh) y documentado en [`Virtualizacion/notas_virtualizacion_opensuse.md`](file:///home/caballero/Workspace/Repositorios/Linux/OpenSuseTumbleweed/Virtualizacion/notas_virtualizacion_opensuse.md).
+Esta guía detalla la instalación, configuración y optimización del entorno de virtualización de alto rendimiento implementado en [`Virtualizacion/virtualization.sh`](file:///home/caballero/Proyectos/Linux/OpenSuseTumbleweed/Virtualizacion/virtualization.sh) y documentado en [`Virtualizacion/notas_virtualizacion_opensuse.md`](file:///home/caballero/Proyectos/Linux/OpenSuseTumbleweed/Virtualizacion/notas_virtualizacion_opensuse.md).
 
 El esquema utiliza el hipervisor **KVM** y el emulador **QEMU**, con pasarela de audio nativa **PipeWire**, integración en **KDE Plasma 6 (Wayland)**, aceleración 3D **VirGL**, compartición de carpetas ultrarrápida **VirtioFS**, aceleración de red y memoria por sockets **`vhost_net`** y **`vhost_vsock`**, almacenamiento **Btrfs NoCoW**, demonios modulares de Libvirt y virtualización anidada.
 

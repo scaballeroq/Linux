@@ -55,7 +55,7 @@ Once Mise is installed, the following development stacks are configured:
 * **Dependencies**: Ensures `python3`, `python3-pip`, `python3-devel` via Zypper while protecting system Python integrity.
 * **Installation**: Installs the high-speed **uv** package manager via Mise (`mise use --global uv@latest`).
 * **Project Generator**: Includes the `python-uv-init.sh` (`py-project`) CLI to bootstrap isolated projects with templates (FastAPI, CLI, Data Science).
-* **Detailed Guide**: See [python_uv_es.md](file:///home/caballero/Workspace/Repositorios/Linux/OpenSuseTumbleweed/Docs/python_uv_es.md) for workflows.
+* **Detailed Guide**: See [python_uv_es.md](file:///home/caballero/Proyectos/Linux/OpenSuseTumbleweed/Docs/python_uv_es.md) for workflows.
 * **KDE Plasma & Shells**: Generates `~/.config/environment.d/10-python.conf`, `~/.bashrc.d/python.sh` (and `~/.zshrc.d/python.zsh`), with completions for `uv`, `uvx`, and `pip`.
 
 ### .NET SDK (`dotnet.sh`)

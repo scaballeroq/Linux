@@ -4,7 +4,7 @@ sidebar_position: 7
 
 # High-Performance Virtualization (KVM/QEMU) on openSUSE Tumbleweed
 
-This guide covers the installation, setup, and optimization of the high-performance virtualization environment implemented in [`Virtualizacion/virtualization.sh`](file:///home/caballero/Workspace/Repositorios/Linux/OpenSuseTumbleweed/Virtualizacion/virtualization.sh) and documented in [`Virtualizacion/notas_virtualizacion_opensuse.md`](file:///home/caballero/Workspace/Repositorios/Linux/OpenSuseTumbleweed/Virtualizacion/notas_virtualizacion_opensuse.md).
+This guide covers the installation, setup, and optimization of the high-performance virtualization environment implemented in [`Virtualizacion/virtualization.sh`](file:///home/caballero/Proyectos/Linux/OpenSuseTumbleweed/Virtualizacion/virtualization.sh) and documented in [`Virtualizacion/notas_virtualizacion_opensuse.md`](file:///home/caballero/Proyectos/Linux/OpenSuseTumbleweed/Virtualizacion/notas_virtualizacion_opensuse.md).
 
 The architecture uses **KVM** and **QEMU**, with native **PipeWire** audio passthrough, **KDE Plasma 6 (Wayland)** desktop integration, **VirGL** 3D acceleration, **VirtioFS** ultra-fast folder sharing, kernel-level socket acceleration via **`vhost_net`** and **`vhost_vsock`**, **Btrfs NoCoW** image storage, modular Libvirt daemons, and nested virtualization.
 

@@ -7,9 +7,9 @@
 # 1. NAVEGACIÓN
 # -----------------------------------------------------------------------------
 alias ~='cd ~'
-alias repos='cd ~/Workspace/Repositorios'
-alias omarchy='cd ~/Workspace/Repositorios/Linux/Omarchy'
-alias arch='cd ~/Workspace/Repositorios/Linux/Arch'
+alias repos='cd ~/Proyectos'
+alias omarchy='cd ~/Proyectos/Linux/Omarchy'
+alias arch='cd ~/Proyectos/Linux/Arch'
 
 # -----------------------------------------------------------------------------
 # 2. LISTADO DE ARCHIVOS (ls / eza)

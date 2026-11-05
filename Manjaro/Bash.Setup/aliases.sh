@@ -8,11 +8,11 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias ~='cd ~'
-alias repos='cd ~/Workspace/Repositorios'
-alias manjaro='cd ~/Workspace/Repositorios/Linux/Manjaro'
-alias arch='cd ~/Workspace/Repositorios/Linux/ArchLinux'
-alias cachyos='cd ~/Workspace/Repositorios/Linux/CachyOS'
-alias debiantesting='cd ~/Workspace/Repositorios/Linux/DebianTesting'
+alias repos='cd ~/Proyectos'
+alias manjaro='cd ~/Proyectos/Linux/Manjaro'
+alias arch='cd ~/Proyectos/Linux/ArchLinux'
+alias cachyos='cd ~/Proyectos/Linux/CachyOS'
+alias debiantesting='cd ~/Proyectos/Linux/DebianTesting'
 
 # 2. MEJORAS DE 'LS' (USANDO EZA)
 if command -v eza &> /dev/null; then

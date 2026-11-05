@@ -30,7 +30,7 @@ Crea el directorio `~/.zshrc.d/` y enlaza los scripts:
 
 ```bash
 mkdir -p ~/.zshrc.d
-ln -sf /home/caballero/Warehouse/Repositorios/Linux/CachyOS_Niri_Noctalia/ZSH.Setup/*.sh ~/.zshrc.d/
+ln -sf /home/caballero/Proyectos/Linux/CachyOS_Niri_Noctalia/ZSH.Setup/*.sh ~/.zshrc.d/
 ```
 
 Asegúrate de que tu `~/.zshrc` contenga el bloque de carga modular:
@@ -53,7 +53,7 @@ Si utilizas Bash o una sesión de respaldo en Bash:
 
 ```bash
 mkdir -p ~/.bashrc.d
-ln -sf /home/caballero/Warehouse/Repositorios/Linux/CachyOS_Niri_Noctalia/ZSH.Setup/*.sh ~/.bashrc.d/
+ln -sf /home/caballero/Proyectos/Linux/CachyOS_Niri_Noctalia/ZSH.Setup/*.sh ~/.bashrc.d/
 ```
 
 Y añade a tu `~/.bashrc`:

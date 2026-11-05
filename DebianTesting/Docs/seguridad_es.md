@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Configuración de Seguridad en Debian 13
 
-Esta guía detalla el proceso de endurecimiento de seguridad (hardening) optimizado para un portátil de desarrollador en Debian 13, tal y como se automatiza en [`Setup/seguridad.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Debian/Setup/seguridad.sh).
+Esta guía detalla el proceso de endurecimiento de seguridad (hardening) optimizado para un portátil de desarrollador en Debian 13, tal y como se automatiza en [`Setup/seguridad.sh`](file:///home/caballero/Proyectos/Linux/Debian/Setup/seguridad.sh).
 
 El proceso cubre la configuración del firewall compatible con KVM/Podman y el blindaje de conexiones en redes Wi-Fi públicas.
 

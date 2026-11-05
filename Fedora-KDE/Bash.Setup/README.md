@@ -28,7 +28,7 @@ Para vincular estos scripts automáticamente a tu entorno de terminal:
 
 ```bash
 mkdir -p ~/.bashrc.d
-ln -sf ~/Workspace/Repositorios/Linux/Fedora-KDE/Bash.Setup/*.sh ~/.bashrc.d/
+ln -sf ~/Proyectos/Linux/Fedora-KDE/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
 Si incluyes la carga modular en tu `~/.bashrc`:

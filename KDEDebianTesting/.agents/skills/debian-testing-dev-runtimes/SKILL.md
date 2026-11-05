@@ -89,9 +89,9 @@ bash ProgrammingLanguages/python-uv-init.sh --help
 
 ---
 
-## 5. Automatización de Tareas con `Just` ([justfile](file:///home/caballero/Workspace/Repositorios/Linux/KDEDebianTesting/justfile))
+## 5. Automatización de Tareas con `Just` ([justfile](file:///home/caballero/Proyectos/Linux/KDEDebianTesting/justfile))
 
-El archivo [justfile](file:///home/caballero/Workspace/Repositorios/Linux/KDEDebianTesting/justfile) en la raíz del repositorio orquesta el aprovisionamiento y mantenimiento de todo el equipo:
+El archivo [justfile](file:///home/caballero/Proyectos/Linux/KDEDebianTesting/justfile) en la raíz del repositorio orquesta el aprovisionamiento y mantenimiento de todo el equipo:
 
 ```bash
 # Listar todas las recetas y tareas disponibles en el repositorio

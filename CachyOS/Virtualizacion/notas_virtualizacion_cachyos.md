@@ -7,7 +7,7 @@ Este manual detalla la arquitectura, configuración y optimización de **KVM / Q
 
 ## 1. Automatización con `virtualization.sh`
 
-El repositorio incluye el script modular [`virtualization.sh`](file:///home/caballero/Workspace/Repositorios/Linux/CachyOS/Virtualizacion/virtualization.sh):
+El repositorio incluye el script modular [`virtualization.sh`](file:///home/caballero/Proyectos/Linux/CachyOS/Virtualizacion/virtualization.sh):
 
 ```bash
 # Diagnóstico rápido y exhaustivo del entorno (GNOME, KVM, Btrfs, Polkit, Firewalld, grupos)

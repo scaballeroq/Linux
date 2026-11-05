@@ -14,7 +14,7 @@ Fedora natively supports modular script loading from `~/.bashrc.d`. To link all 
 
 ```bash
 mkdir -p ~/.bashrc.d
-ln -sf ~/Workspace/Repositorios/Linux/Fedora/Bash.Setup/*.sh ~/.bashrc.d/
+ln -sf ~/Proyectos/Linux/Fedora/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
 Scripts will be automatically sourced in order whenever an interactive terminal is opened.

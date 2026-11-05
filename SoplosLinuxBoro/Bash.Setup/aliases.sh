@@ -14,10 +14,10 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias ~='cd ~'
-alias repo='cd ~/Workspace/Repositorios'
+alias repo='cd ~/Proyectos'
 alias workspace='cd ~/Workspace'
-alias soplos='cd ~/Workspace/Repositorios/Linux/SoplosLinuxBoro'
-alias soplos-setup='cd ~/Workspace/Repositorios/Linux/SoplosLinuxBoro/Setup'
+alias soplos='cd ~/Proyectos/Linux/SoplosLinuxBoro'
+alias soplos-setup='cd ~/Proyectos/Linux/SoplosLinuxBoro/Setup'
 alias quadlets='cd ~/.config/containers/systemd'
 
 # -----------------------------------------------------------------------------

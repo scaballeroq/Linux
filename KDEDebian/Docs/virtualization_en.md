@@ -4,7 +4,7 @@ sidebar_position: 7
 
 # High-Performance Virtualization (KVM/QEMU) on Debian 13
 
-This guide details the virtualization setup automated in [`Virtualizacion/virtualization.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Debian/Virtualizacion/virtualization.sh).
+This guide details the virtualization setup automated in [`Virtualizacion/virtualization.sh`](file:///home/caballero/Proyectos/Linux/Debian/Virtualizacion/virtualization.sh).
 
 ---
 

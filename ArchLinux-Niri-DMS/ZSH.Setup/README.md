@@ -32,7 +32,7 @@ Crea el directorio `~/.zshrc.d/` y enlaza los scripts:
 
 ```bash
 mkdir -p ~/.zshrc.d
-ln -sf /home/caballero/Warehouse/Repositorios/Linux/ArchLinux-Niri-DMS/ZSH.Setup/*.sh ~/.zshrc.d/
+ln -sf /home/caballero/Proyectos/Linux/ArchLinux-Niri-DMS/ZSH.Setup/*.sh ~/.zshrc.d/
 ```
 
 Asegúrate de que tu `~/.zshrc` contenga el bloque de carga modular:
@@ -53,7 +53,7 @@ fi
 
 ```bash
 mkdir -p ~/.bashrc.d
-ln -sf /home/caballero/Warehouse/Repositorios/Linux/ArchLinux-Niri-DMS/ZSH.Setup/*.sh ~/.bashrc.d/
+ln -sf /home/caballero/Proyectos/Linux/ArchLinux-Niri-DMS/ZSH.Setup/*.sh ~/.bashrc.d/
 ```
 
 Y añade a tu `~/.bashrc`:

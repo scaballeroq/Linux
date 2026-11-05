@@ -58,7 +58,7 @@ Una vez instalado Mise, se despliegan de forma global los siguientes lenguajes o
 * **Dependencias**: Asegura `python3`, `python3-pip`, `python3-venv`, `python3-dev` y cabeceras del sistema vía APT para cumplir con las normas de empaquetado seguro (PEP 668).
 * **Instalación**: Instala el gestor ultrarrápido **uv** vía Mise (`mise use --global uv@latest`) y configura `UV_LINK_MODE=copy` para compatibilidad en sistemas de archivos Btrfs/Ext4.
 * **Generador de Proyectos**: Se incluye la utilidad `python-uv-init.sh` (`py-project`) para crear proyectos aislados con plantillas (FastAPI, CLI, Data Science).
-* **Guía Completa**: Consulta [python_uv_es.md](file:///home/caballero/Workspace/Repositorios/Linux/KDEDebianTesting/Docs/python_uv_es.md) para ver instrucciones detalladas de flujo de trabajo.
+* **Guía Completa**: Consulta [python_uv_es.md](file:///home/caballero/Proyectos/Linux/KDEDebianTesting/Docs/python_uv_es.md) para ver instrucciones detalladas de flujo de trabajo.
 * **KDE Plasma & Shells**: Genera `~/.config/environment.d/10-python.conf`, `~/.bashrc.d/python.sh` (y `~/.zshrc.d/python.zsh` si existe `~/.zshrc`) y autocompletados nativos para Bash y Zsh (`uv`, `uvx`, `pip`).
 
 ### .NET SDK (`dotnet.sh`)

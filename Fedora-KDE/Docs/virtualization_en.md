@@ -4,7 +4,7 @@ sidebar_position: 7
 
 # High-Performance Virtualization (KVM/QEMU) on Fedora 44
 
-This guide details the installation, configuration, and optimization of the virtualization stack automated in [`Virtualizacion/virtualization.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora/Virtualizacion/virtualization.sh) and documented in [`Virtualizacion/Notas_Virtualizacion_Fedora.md`](file:///home/caballero/Workspace/Repositorios/Linux/Fedora/Virtualizacion/Notas_Virtualizacion_Fedora.md).
+This guide details the installation, configuration, and optimization of the virtualization stack automated in [`Virtualizacion/virtualization.sh`](file:///home/caballero/Proyectos/Linux/Fedora/Virtualizacion/virtualization.sh) and documented in [`Virtualizacion/Notas_Virtualizacion_Fedora.md`](file:///home/caballero/Proyectos/Linux/Fedora/Virtualizacion/Notas_Virtualizacion_Fedora.md).
 
 The architecture utilizes the **KVM** hypervisor, **QEMU** emulator, native **PipeWire** audio passthrough, **nftables** firewall backend, **`vhost_vsock`** memory sockets, modular Libvirt daemons, and nested virtualization.
 

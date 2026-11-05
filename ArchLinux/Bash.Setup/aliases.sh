@@ -12,7 +12,7 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias ~='cd ~'
-alias repo='cd ~/Workspace/Repositorios'
+alias repo='cd ~/Proyectos'
 
 # -----------------------------------------------------------------------------
 # 2. LISTADO DE ARCHIVOS (ls / eza / lsd)

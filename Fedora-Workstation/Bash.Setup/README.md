@@ -30,7 +30,7 @@ Crea el directorio `~/.bashrc.d/` y enlaza los scripts:
 
 ```bash
 mkdir -p ~/.bashrc.d
-ln -sf ~/Workspace/Repositorios/Linux/Fedora-Workstation/Bash.Setup/*.sh ~/.bashrc.d/
+ln -sf ~/Proyectos/Linux/Fedora-Workstation/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
 Y añade a tu `~/.bashrc`:
@@ -53,7 +53,7 @@ Si utilizas Zsh y existe `~/.zshrc` en tu sistema:
 
 ```bash
 mkdir -p ~/.zshrc.d
-ln -sf ~/Workspace/Repositorios/Linux/Fedora-Workstation/Bash.Setup/*.sh ~/.zshrc.d/
+ln -sf ~/Proyectos/Linux/Fedora-Workstation/Bash.Setup/*.sh ~/.zshrc.d/
 ```
 
 Asegúrate de que tu `~/.zshrc` contenga el bloque de carga modular:

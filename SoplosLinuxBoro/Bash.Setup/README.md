@@ -28,7 +28,7 @@ Para activar todas estas funcionalidades de forma modular, ejecuta `./Setup/shel
 
 ```bash
 mkdir -p ~/.bashrc.d
-ln -sf ~/Workspace/Repositorios/Linux/SoplosLinuxBoro/Bash.Setup/*.sh ~/.bashrc.d/
+ln -sf ~/Proyectos/Linux/SoplosLinuxBoro/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
 Y añade el cargador modular a tu `~/.bashrc`:

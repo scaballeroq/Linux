@@ -123,10 +123,10 @@ Aplica a: `NixOS`.
 
 ```bash
 # 1. Reconstruir y activar el sistema desde el flake local
-sudo nixos-rebuild switch --flake /home/caballero/Workspace/Repositorios/Linux/NixOS#laptop-amd
+sudo nixos-rebuild switch --flake /home/caballero/Proyectos/Linux/NixOS#laptop-amd
 
 # 2. Actualizar las entradas del flake (nixpkgs, home-manager)
-nix flake update --flake /home/caballero/Workspace/Repositorios/Linux/NixOS
+nix flake update --flake /home/caballero/Proyectos/Linux/NixOS
 
 # 3. Recolector de basura (liberar espacio de generaciones antiguas)
 nix-collect-garbage -d

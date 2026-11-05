@@ -6,7 +6,7 @@ sidebar_position: 2
 
 This guide details the base configuration, official OpenH264 repository, Snapper/Btrfs snapshots, kernel and sysctl tuning, **KDE Plasma 6 (Wayland)** customization, Kitty terminal, modern CLI utilities, and web administration console on **openSUSE Tumbleweed**.
 
-All setups are automated through scripts in the `Setup/` directory and the [`justfile`](file:///home/caballero/Workspace/Repositorios/Linux/OpenSuseTumbleweed/justfile).
+All setups are automated through scripts in the `Setup/` directory and the [`justfile`](file:///home/caballero/Proyectos/Linux/OpenSuseTumbleweed/justfile).
 
 ---
 

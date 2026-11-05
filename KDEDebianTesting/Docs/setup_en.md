@@ -6,7 +6,7 @@ sidebar_position: 2
 
 This guide details the base configuration, microcode, hardware graphics acceleration, kernel sysctl tuning, **KDE Plasma 6 (Wayland)** customization, Kitty terminal, modern CLI utilities, and web administration panel on **Debian Testing (Trixie/Sid)**.
 
-All setups are automated through the scripts in the `Setup` directory and the root [`justfile`](file:///home/caballero/Workspace/Repositorios/Linux/KDEDebianTesting/justfile).
+All setups are automated through the scripts in the `Setup` directory and the root [`justfile`](file:///home/caballero/Proyectos/Linux/KDEDebianTesting/justfile).
 
 ---
 

@@ -4,7 +4,7 @@ sidebar_position: 7
 
 # Entorno de Virtualización (KVM/QEMU) en Debian 13
 
-Esta guía detalla la instalación, configuración y optimización del entorno de virtualización de alto rendimiento presente en [`Virtualizacion/virtualization.sh`](file:///home/caballero/Workspace/Repositorios/Linux/Debian/Virtualizacion/virtualization.sh).
+Esta guía detalla la instalación, configuración y optimización del entorno de virtualización de alto rendimiento presente en [`Virtualizacion/virtualization.sh`](file:///home/caballero/Proyectos/Linux/Debian/Virtualizacion/virtualization.sh).
 
 El esquema utiliza el hipervisor **KVM** y el emulador **QEMU**, con pasarela de audio nativa **PipeWire**, filtrado de paquetes **nftables**, aceleración por sockets **`vhost_vsock`** y virtualización anidada.
 
