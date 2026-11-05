@@ -158,7 +158,7 @@ install_appstream() {
     $SUDO "$DNF_BIN" install -y --skip-unavailable \
         rpmfusion-free-appstream-data \
         rpmfusion-nonfree-appstream-data 2>/dev/null || true
-    $SUDO "$DNF_BIN" group upgrade core 2>/dev/null || true
+    $SUDO "$DNF_BIN" group upgrade -y core 2>/dev/null || true
     log_ok "Metadatos AppStream configurados."
 }
 
