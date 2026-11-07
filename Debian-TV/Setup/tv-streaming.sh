@@ -226,7 +226,7 @@ uninstall_webapps() {
     gtk-update-icon-cache -f -t "$USER_HOME/.local/share/icons/hicolor" 2>/dev/null || true
 
     echo -e "${BLUE}ℹ️ Restableciendo barra de favoritos de GNOME Shell sin las WebApps...${NC}"
-    local default_dock="['tv.kodi.Kodi.desktop', 'com.stremio.Stremio.desktop', 'org.videolan.VLC.desktop', 'google-chrome.desktop', 'kitty.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Settings.desktop']"
+    local default_dock="['kodi.desktop', 'com.stremio.Stremio.desktop', 'org.videolan.VLC.desktop', 'google-chrome.desktop', 'kitty.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Settings.desktop']"
     run_as_user gsettings set org.gnome.shell favorite-apps "$default_dock" 2>/dev/null || true
 
     echo -e "${GREEN}✅ WebApps e iconos eliminados. Dock de GNOME restablecido.${NC}"
@@ -237,7 +237,7 @@ setup_dock_favorites() {
     echo -e "${BLUE}ℹ️ Organizando barra de aplicaciones favoritas (Dock GNOME) para TV...${NC}"
     
     # Lista de aplicaciones favoritas en orden exacto para televisor
-    local favorites_list="['tv.kodi.Kodi.desktop', 'com.stremio.Stremio.desktop', 'rtve-play.desktop', 'netflix.desktop', 'orange-tv.desktop', 'prime-video.desktop', 'pluto-tv.desktop', 'youtube.desktop', 'org.videolan.VLC.desktop', 'google-chrome.desktop', 'kitty.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Settings.desktop']"
+    local favorites_list="['kodi.desktop', 'com.stremio.Stremio.desktop', 'rtve-play.desktop', 'netflix.desktop', 'orange-tv.desktop', 'prime-video.desktop', 'pluto-tv.desktop', 'youtube.desktop', 'org.videolan.VLC.desktop', 'google-chrome.desktop', 'kitty.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Settings.desktop']"
 
     run_as_user gsettings set org.gnome.shell favorite-apps "$favorites_list" 2>/dev/null || true
     echo -e "${GREEN}✅ Dock de GNOME Shell configurado con las aplicaciones multimedia principales.${NC}"
@@ -251,8 +251,15 @@ show_status() {
     echo -e "• Pantalla:           Sony TV"
     echo -e "• Navegador base:     $(detect_browser_cmd)"
     echo -e "-----------------------------------------------------------------"
-    echo -e "• Aplicaciones Multimedia Flatpak:"
-    for app in "tv.kodi.Kodi" "com.stremio.Stremio" "org.videolan.VLC"; do
+    echo -e "• Aplicaciones Multimedia Principales:"
+    if command -v kodi &>/dev/null; then
+        echo -e "  - kodi (APT nativo): ${GREEN}✅ Instalado ($(kodi --version 2>/dev/null | head -n1))${NC}"
+    elif flatpak list --app 2>/dev/null | grep -qi "tv.kodi.Kodi"; then
+        echo -e "  - tv.kodi.Kodi: ${YELLOW}⚠️ Instalado en Flatpak${NC}"
+    else
+        echo -e "  - kodi: ${RED}❌ No instalado${NC}"
+    fi
+    for app in "com.stremio.Stremio" "org.videolan.VLC"; do
         if flatpak list --app 2>/dev/null | grep -qi "$app"; then
             echo -e "  - $app: ${GREEN}✅ Instalado en Flatpak${NC}"
         else

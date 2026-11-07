@@ -50,9 +50,9 @@ tv-webapps *args:
 tv-dock:
     ./Setup/tv-streaming.sh --dock
 
-# Lanzar Kodi Media Center (Flatpak)
+# Lanzar Kodi Media Center (Nativo APT con VA-API i965 y PipeWire)
 kodi:
-    flatpak run tv.kodi.Kodi
+    env LIBVA_DRIVER_NAME=i965 kodi --audio-backend=pipewire
 
 # Lanzar Stremio (Flatpak)
 stremio:

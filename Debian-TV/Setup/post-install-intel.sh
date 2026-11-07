@@ -151,13 +151,11 @@ fi
 echo "ℹ️ [8/10] Habilitando TRIM automático periódico para el SSD..."
 sudo systemctl enable --now fstrim.timer 2>/dev/null || true
 
-# 10. Integración de Flathub e instalación de aplicaciones clave (Kodi, Stremio, VLC)
-echo "ℹ️ [9/10] Registrando Flathub e instalando aplicaciones multimedia (Kodi, Stremio, VLC)..."
-flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+# 10. Instalación de Kodi nativo (APT para soporte completo VA-API i965 Haswell y PipeWire) y Flatpaks (Stremio, VLC)
+echo "ℹ️ [9/10] Instalando Kodi nativo (APT) y registrando Flathub para Stremio y VLC..."
+sudo apt install -y kodi kodi-inputstream-adaptive kodi-inputstream-ffmpegdirect 2>/dev/null || true
 
-# Instalar aplicaciones multimedia en Flatpak
-echo "⬇️ Instalando Kodi (Flatpak)..."
-flatpak install -y flathub tv.kodi.Kodi 2>/dev/null || true
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
 
 echo "⬇️ Instalando Stremio (Flatpak)..."
 flatpak install -y flathub com.stremio.Stremio 2>/dev/null || true
@@ -165,14 +163,10 @@ flatpak install -y flathub com.stremio.Stremio 2>/dev/null || true
 echo "⬇️ Instalando VLC (Flatpak)..."
 flatpak install -y flathub org.videolan.VLC 2>/dev/null || true
 
-# Asignar permisos para aceleración gráfica por hardware en Flatpaks
+# Asignar permisos para aceleración gráfica por hardware en Flatpaks (--device=dri sin pisar /dev/snd)
 echo "⚙️ Configurando aceleración y accesos de audio/video para Flatpaks multimedia..."
-flatpak override --user --device=all tv.kodi.Kodi 2>/dev/null || true
-flatpak override --user --socket=wayland --socket=pulseaudio tv.kodi.Kodi 2>/dev/null || true
-flatpak override --user --device=all com.stremio.Stremio 2>/dev/null || true
-flatpak override --user --socket=wayland --socket=pulseaudio com.stremio.Stremio 2>/dev/null || true
-flatpak override --user --device=all org.videolan.VLC 2>/dev/null || true
-flatpak override --user --socket=wayland --socket=pulseaudio org.videolan.VLC 2>/dev/null || true
+flatpak override --user --device=dri --socket=wayland --socket=pulseaudio com.stremio.Stremio 2>/dev/null || true
+flatpak override --user --device=dri --socket=wayland --socket=pulseaudio org.videolan.VLC 2>/dev/null || true
 
 # Limpieza de paquetes residuales para proteger el espacio del SSD de 256 GB
 echo "ℹ️ [10/10] Limpiando dependencias huérfanas y cachés..."
