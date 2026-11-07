@@ -394,6 +394,84 @@ setup_flatpak() {
 }
 
 # ------------------------------------------------------------------------------
+# 6. OPTIMIZACIÓN DE AUDIO TV (PIPEWIRE / WIREPLUMBER / STREMIO)
+# ------------------------------------------------------------------------------
+optimize_tv_audio() {
+    echo "🔊 [4/4] Optimizando fidelidad de audio HDMI para Sony TV (PipeWire/WirePlumber)..."
+
+    local pw_conf_dir="$USER_HOME/.config/pipewire/pipewire.conf.d"
+    local pw_pulse_dir="$USER_HOME/.config/pipewire/pipewire-pulse.conf.d"
+    local wp_conf_dir="$USER_HOME/.config/wireplumber/wireplumber.conf.d"
+    local stremio_mpv_dir="$USER_HOME/.var/app/com.stremio.Stremio/config/mpv"
+
+    run_as_user mkdir -p "$pw_conf_dir" "$pw_pulse_dir" "$wp_conf_dir"
+
+    # Prevenir buffer underruns y ruidos/chasquidos con un quantum seguro
+    cat <<'EOF' | run_as_user tee "$pw_conf_dir/10-htpc-clock.conf" > /dev/null
+context.properties = {
+    default.clock.rate = 48000
+    default.clock.allowed-rates = [ 44100 48000 ]
+    default.clock.quantum = 1024
+    default.clock.min-quantum = 512
+    default.clock.max-quantum = 2048
+}
+EOF
+
+    # Buffer mínimo para clientes PulseAudio (Flatpaks, Stremio, navegadores)
+    cat <<'EOF' | run_as_user tee "$pw_pulse_dir/10-pulse-buffer.conf" > /dev/null
+pulse.properties = {
+    pulse.min.req = 512/48000
+    pulse.min.quantum = 512/48000
+}
+EOF
+
+    # WirePlumber: normalización automática de downmix 5.1/7.1 a estéreo (evita saturación y distorsión digital)
+    cat <<'EOF' | run_as_user tee "$wp_conf_dir/50-tv-hdmi.conf" > /dev/null
+monitor.alsa.rules = [
+  {
+    matches = [
+      {
+        node.name = "~alsa_output.pci.*"
+      }
+    ]
+    actions = {
+      update-props = {
+        channelmix.normalize = true
+        channelmix.mix-lfe = true
+        channelmix.upmix = false
+        api.alsa.period-size = 1024
+        api.alsa.headroom = 1024
+      }
+    }
+  }
+]
+EOF
+
+    # Configuración de audio MPV para Stremio Flatpak si existe el directorio
+    if [ -d "$USER_HOME/.var/app/com.stremio.Stremio" ]; then
+        run_as_user mkdir -p "$stremio_mpv_dir"
+        cat <<'EOF' | run_as_user tee "$stremio_mpv_dir/mpv.conf" > /dev/null
+# Configuración de audio y video optimizada para Stremio en Sony TV (HDMI Estéreo Haswell)
+ao=pulse
+audio-channels=stereo
+audio-samplerate=48000
+audio-format=s16
+audio-buffer=0.2
+audio-normalize-downmix=yes
+volume-max=100
+hwdec=vaapi
+EOF
+    fi
+
+    # Reiniciar servicios de usuario si systemd user está activo
+    if run_as_user systemctl --user is-active pipewire &>/dev/null; then
+        run_as_user systemctl --user restart pipewire pipewire-pulse wireplumber 2>/dev/null || true
+    fi
+
+    echo "  ✅ Parámetros de PipeWire (quantum 1024), WirePlumber (normalización downmix) y Stremio aplicados."
+}
+
+# ------------------------------------------------------------------------------
 # 6. ENTRADA PRINCIPAL
 # ------------------------------------------------------------------------------
 case "${1:-}" in
@@ -413,6 +491,10 @@ case "${1:-}" in
         setup_flatpak
         exit 0
         ;;
+    --audio)
+        optimize_tv_audio
+        exit 0
+        ;;
     --help|-h|help)
         show_help
         exit 0
@@ -424,6 +506,7 @@ case "${1:-}" in
         install_codecs
         install_players
         setup_flatpak
+        optimize_tv_audio
         echo ""
         show_status
         echo "================================================================="
