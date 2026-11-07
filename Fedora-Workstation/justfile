@@ -100,9 +100,9 @@ fingerprint:
 fingerprint-status:
     ./Setup/fingerprint-setup.sh --status
 
-# Configura impresora HP (CUPS, HPLIP, plugin propietario y Firewalld)
-printer:
-    ./Setup/hp-printer-setup.sh
+# Configura impresora HP (CUPS, HPLIP, colas IPP Everywhere y Firewalld)
+printer *args:
+    ./Setup/hp-printer-setup.sh {{args}}
 
 # Estado del subsistema de impresión HP
 printer-status:
