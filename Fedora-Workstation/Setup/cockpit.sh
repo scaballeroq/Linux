@@ -177,6 +177,8 @@ configure_cockpit_conf() {
 Origins = $origins_list
 MaxStartups = 5:50:10
 AllowUnencrypted = false
+# Habilita el cambio y administración de múltiples servidores/hosts desde una misma sesión
+AllowMultiHost = true
 
 [Session]
 # Desconexión automática tras 15 min de inactividad: ahorra batería y CPU en el portátil
