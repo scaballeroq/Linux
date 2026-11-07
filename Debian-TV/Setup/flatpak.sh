@@ -196,13 +196,11 @@ apply_overrides() {
         --socket=wayland \
         --socket=pulseaudio \
         --filesystem=xdg-run/pipewire-0 \
-        --filesystem=host:ro \
         --talk-name=org.freedesktop.Flatpak \
         --env=VK_DRIVER_FILES=/dev/null \
         --env=VK_ICD_FILENAMES=/dev/null \
         --env=GSK_RENDERER=gl \
         --env=LIBVA_DRIVER_NAME=i965 \
-        --env=MPV_HOME="${USER_HOME}/.var/app/com.stremio.Stremio/config/mpv" \
         com.stremio.Stremio 2>/dev/null || true
     run_as_user flatpak override --user --device=dri --socket=wayland --socket=pulseaudio --filesystem=xdg-run/pipewire-0 org.videolan.VLC 2>/dev/null || true
 
