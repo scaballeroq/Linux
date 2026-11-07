@@ -165,8 +165,32 @@ flatpak install -y flathub org.videolan.VLC 2>/dev/null || true
 
 # Asignar permisos para aceleración gráfica por hardware en Flatpaks (--device=dri sin pisar /dev/snd)
 echo "⚙️ Configurando aceleración y accesos de audio/video para Flatpaks multimedia..."
-flatpak override --user --device=dri --socket=wayland --socket=pulseaudio com.stremio.Stremio 2>/dev/null || true
-flatpak override --user --device=dri --socket=wayland --socket=pulseaudio org.videolan.VLC 2>/dev/null || true
+flatpak override --user \
+  --device=dri \
+  --socket=wayland \
+  --socket=pulseaudio \
+  --filesystem=xdg-run/pipewire-0 \
+  --talk-name=org.freedesktop.Flatpak \
+  --env=VK_DRIVER_FILES=/dev/null \
+  --env=VK_ICD_FILENAMES=/dev/null \
+  --env=GSK_RENDERER=gl \
+  --env=LIBVA_DRIVER_NAME=i965 \
+  com.stremio.Stremio 2>/dev/null || true
+flatpak override --user --device=dri --socket=wayland --socket=pulseaudio --filesystem=xdg-run/pipewire-0 org.videolan.VLC 2>/dev/null || true
+
+# Configuración de audio MPV para Stremio (evitar clipping multi-canal y chasquidos en TV estéreo HDMI)
+mkdir -p "${HOME}/.var/app/com.stremio.Stremio/config/mpv"
+cat <<'EOF' > "${HOME}/.var/app/com.stremio.Stremio/config/mpv/mpv.conf"
+# Configuración de audio y video optimizada para Stremio en Sony TV (HDMI Estéreo Haswell)
+ao=pulse
+audio-channels=stereo
+audio-samplerate=48000
+audio-format=s16
+audio-buffer=0.2
+audio-normalize-downmix=yes
+volume-max=100
+hwdec=vaapi
+EOF
 
 # Limpieza de paquetes residuales para proteger el espacio del SSD de 256 GB
 echo "ℹ️ [10/10] Limpiando dependencias huérfanas y cachés..."

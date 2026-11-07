@@ -58,6 +58,14 @@ kodi:
 stremio:
     flatpak run com.stremio.Stremio
 
+# Optimizar fidelidad de audio HDMI para Sony TV (PipeWire, WirePlumber normalización y Stremio MPV)
+audio:
+    ./Setup/multimedia.sh --audio
+
+# Diagnóstico de audio PipeWire y WirePlumber
+audio-status:
+    wpctl status
+
 # Lanzar VLC (Flatpak)
 vlc:
     flatpak run org.videolan.VLC

@@ -189,11 +189,37 @@ apply_overrides() {
     run_as_user flatpak override --user --filesystem=xdg-config/gtk-3.0:ro 2>/dev/null || true
     run_as_user flatpak override --user --device=dri 2>/dev/null || true
 
-    # Optimizaciones específicas para Centro Multimedia TV (Kodi, Stremio, VLC)
-    echo -e "${BLUE}ℹ️ Aplicando permisos de hardware y audio para Kodi, Stremio y VLC...${NC}"
-    run_as_user flatpak override --user --device=all --socket=wayland --socket=pulseaudio tv.kodi.Kodi 2>/dev/null || true
-    run_as_user flatpak override --user --device=all --socket=wayland --socket=pulseaudio com.stremio.Stremio 2>/dev/null || true
-    run_as_user flatpak override --user --device=all --socket=wayland --socket=pulseaudio org.videolan.VLC 2>/dev/null || true
+    # Optimizaciones específicas para Centro Multimedia TV (Stremio, VLC)
+    echo -e "${BLUE}ℹ️ Aplicando permisos de hardware y audio para Stremio y VLC...${NC}"
+    run_as_user flatpak override --user \
+        --device=dri \
+        --socket=wayland \
+        --socket=pulseaudio \
+        --filesystem=xdg-run/pipewire-0 \
+        --talk-name=org.freedesktop.Flatpak \
+        --env=VK_DRIVER_FILES=/dev/null \
+        --env=VK_ICD_FILENAMES=/dev/null \
+        --env=GSK_RENDERER=gl \
+        --env=LIBVA_DRIVER_NAME=i965 \
+        com.stremio.Stremio 2>/dev/null || true
+    run_as_user flatpak override --user --device=dri --socket=wayland --socket=pulseaudio --filesystem=xdg-run/pipewire-0 org.videolan.VLC 2>/dev/null || true
+
+    # Perfil mpv.conf para el reproductor interno de Stremio (evita clipping y ruidos en TV estéreo HDMI)
+    local stremio_mpv_dir="${USER_HOME}/.var/app/com.stremio.Stremio/config/mpv"
+    if [ -d "${USER_HOME}/.var/app/com.stremio.Stremio" ]; then
+        run_as_user mkdir -p "$stremio_mpv_dir"
+        cat <<'EOF' | run_as_user tee "$stremio_mpv_dir/mpv.conf" > /dev/null
+# Configuración de audio y video optimizada para Stremio en Sony TV (HDMI Estéreo Haswell)
+ao=pulse
+audio-channels=stereo
+audio-samplerate=48000
+audio-format=s16
+audio-buffer=0.2
+audio-normalize-downmix=yes
+volume-max=100
+hwdec=vaapi
+EOF
+    fi
     echo -e "${GREEN}✅ Overrides de tema oscuro, aceleración GPU y permisos multimedia aplicados.${NC}"
 }
 
