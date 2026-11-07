@@ -51,6 +51,7 @@ CORE_PACKAGES=(
     "cockpit-packagekit"
     "cockpit-files"
     "cockpit-sosreport"
+    "sscg"
 )
 
 show_help() {
@@ -267,18 +268,17 @@ else
     echo "ℹ️ [1/4] Todos los módulos de Cockpit ya se encuentran instalados."
 fi
 
-# 2. Configuración optimizada de Cockpit para portátiles
+# 2. Configuración optimizada de Cockpit para portátiles y estaciones de trabajo
 echo "ℹ️ [2/4] Configurando optimizaciones de rendimiento y sesión (/etc/cockpit/cockpit.conf)..."
 $SUDO mkdir -p /etc/cockpit
 cat <<EOF | $SUDO tee /etc/cockpit/cockpit.conf > /dev/null
 # Configuración optimizada de Cockpit para HP Z230 SFF Workstation (Debian Workstation)
 [WebService]
-Origins = https://localhost:9090 https://127.0.0.1:9090
 MaxStartups = 5
 AllowUnencrypted = false
 
 [Session]
-# Cierre automático de sesión tras 15 minutos de inactividad para preservar batería y memoria
+# Cierre automático de sesión tras 15 minutos de inactividad para preservar recursos
 IdleTimeout = 15
 EOF
 

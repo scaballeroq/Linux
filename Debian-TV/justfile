@@ -322,6 +322,14 @@ cockpit-status:
 cockpit-open:
     ./Setup/cockpit.sh --open
 
+# Servidor OpenSSH (TCP Puerto 22) para administración remota
+ssh *args:
+    ./Setup/ssh-server.sh {{args}}
+
+# Diagnóstico y estado del Servidor OpenSSH y Firewalld
+ssh-status:
+    ./Setup/ssh-server.sh --status
+
 # =============================================================================
 # CONTROL DE VERSIONES
 # =============================================================================
