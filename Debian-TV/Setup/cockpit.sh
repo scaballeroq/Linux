@@ -284,6 +284,25 @@ EOF
 
 # 3. Habilitar Cockpit Socket (Activación bajo demanda)
 echo "ℹ️ [3/4] Habilitando activación bajo demanda (cockpit.socket)..."
+if ss -tlnp 2>/dev/null | grep -q ":9090 "; then
+    if ss -tlnp 2>/dev/null | grep -qi "kodi"; then
+        echo "  ⚠️ Conflicto detectado: Kodi está utilizando el puerto 9090 (servidor JSON-RPC)."
+        echo "  ℹ️ Reconfigurando Kodi para usar el puerto alternativo 9095..."
+        mkdir -p "$USER_HOME/.kodi/userdata"
+        cat << 'KODICFG' > "$USER_HOME/.kodi/userdata/advancedsettings.xml"
+<advancedsettings version="1.0">
+  <jsonrpc>
+    <tcpport>9095</tcpport>
+  </jsonrpc>
+</advancedsettings>
+KODICFG
+        chown "$REAL_USER:$REAL_USER" "$USER_HOME/.kodi/userdata/advancedsettings.xml" 2>/dev/null || true
+        killall -q kodi.bin 2>/dev/null || true
+        sleep 1
+    fi
+fi
+
+$SUDO systemctl daemon-reload
 $SUDO systemctl enable --now cockpit.socket
 
 # 4. Configurar Firewalld (puerto 9090 / servicio cockpit)
