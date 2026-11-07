@@ -35,6 +35,7 @@ else
 fi
 
 REAL_UID=$(id -u "$REAL_USER" 2>/dev/null || echo "1000")
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APPS_DIR="$USER_HOME/.local/share/applications"
 ICONS_DIR="$USER_HOME/.local/share/icons/hicolor/scalable/apps"
 
@@ -80,10 +81,11 @@ Uso:
   $0 [OPCIÓN]
 
 Opciones:
-  (sin argumentos)    Instala los lanzadores WebApp y configura el Dock de GNOME Shell.
-  --install, -i       Crea o actualiza los lanzadores WebApp en ~/.local/share/applications/
+  (sin argumentos)    Instala los iconos, lanzadores WebApp y configura el Dock de GNOME.
+  --install, -i       Crea o actualiza los lanzadores WebApp e instala sus iconos SVG.
   --dock, -d          Organiza los iconos favoritos del Dock de GNOME Shell con las apps multimedia.
-  --status, -s        Comprueba el estado de los lanzadores WebApp, navegador y Flatpaks.
+  --uninstall, -u     Elimina los lanzadores WebApp e iconos, y restablece el Dock a apps nativas.
+  --status, -s        Comprueba el estado de los lanzadores WebApp, iconos, navegador y Flatpaks.
   --help, -h          Muestra este mensaje de ayuda.
 
 Plataformas configuradas:
@@ -97,8 +99,15 @@ EOF
 }
 
 create_webapps() {
-    echo -e "${BLUE}ℹ️ Creando lanzadores WebApp multimedia para televisor...${NC}"
+    echo -e "${BLUE}ℹ️ Instalando iconos vectoriales (SVG) y lanzadores WebApp para televisor...${NC}"
     mkdir -p "$APPS_DIR" "$ICONS_DIR"
+
+    # Instalar iconos vectoriales desde Setup/icons
+    if [ -d "$SCRIPT_DIR/icons" ]; then
+        cp -f "$SCRIPT_DIR/icons"/*.svg "$ICONS_DIR/" 2>/dev/null || true
+        gtk-update-icon-cache -f -t "$USER_HOME/.local/share/icons/hicolor" 2>/dev/null || true
+        echo -e "${GREEN}✅ Iconos vectoriales de alta definición instalados en $ICONS_DIR.${NC}"
+    fi
 
     local browser_launcher
     browser_launcher=$(detect_browser_cmd)
@@ -128,7 +137,7 @@ Name=Prime Video
 GenericName=Plataforma de Streaming
 Comment=Ver películas y series en Amazon Prime Video
 Exec=$browser_launcher=https://www.primevideo.com
-Icon=video-television
+Icon=prime-video
 Terminal=false
 Categories=AudioVideo;Video;Player;TV;
 StartupNotify=true
@@ -144,7 +153,7 @@ Name=RTVE Play
 GenericName=Televisión a la carta
 Comment=Contenido y canales en directo de RTVE
 Exec=$browser_launcher=https://www.rtve.es/play/
-Icon=tv
+Icon=rtve-play
 Terminal=false
 Categories=AudioVideo;Video;Player;TV;
 StartupNotify=true
@@ -160,7 +169,7 @@ Name=Pluto TV
 GenericName=Televisión por Internet
 Comment=Canales gratuitos en directo y bajo demanda en Pluto TV
 Exec=$browser_launcher=https://pluto.tv
-Icon=video-television
+Icon=pluto-tv
 Terminal=false
 Categories=AudioVideo;Video;Player;TV;
 StartupNotify=true
@@ -192,7 +201,7 @@ Name=Orange TV
 GenericName=Televisión Online
 Comment=Acceso a contenidos y canales de Orange TV
 Exec=$browser_launcher=https://orangetv.orange.es
-Icon=video-television
+Icon=orange-tv
 Terminal=false
 Categories=AudioVideo;Video;Player;TV;
 StartupNotify=true
@@ -202,6 +211,26 @@ EOF
     chmod +x "$APPS_DIR"/*.desktop 2>/dev/null || true
     update-desktop-database "$APPS_DIR" 2>/dev/null || true
     echo -e "${GREEN}✅ Lanzadores WebApp creados en $APPS_DIR.${NC}"
+}
+
+uninstall_webapps() {
+    echo -e "${YELLOW}🗑️ Eliminando lanzadores WebApp e iconos personalizados...${NC}"
+    
+    local apps=("netflix" "prime-video" "rtve-play" "pluto-tv" "youtube" "orange-tv")
+    for app in "${apps[@]}"; do
+        rm -f "$APPS_DIR/$app.desktop"
+        rm -f "$ICONS_DIR/$app.svg"
+    done
+
+    update-desktop-database "$APPS_DIR" 2>/dev/null || true
+    gtk-update-icon-cache -f -t "$USER_HOME/.local/share/icons/hicolor" 2>/dev/null || true
+
+    echo -e "${BLUE}ℹ️ Restableciendo barra de favoritos de GNOME Shell sin las WebApps...${NC}"
+    local default_dock="['tv.kodi.Kodi.desktop', 'com.stremio.Stremio.desktop', 'org.videolan.VLC.desktop', 'google-chrome.desktop', 'kitty.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Settings.desktop']"
+    run_as_user gsettings set org.gnome.shell favorite-apps "$default_dock" 2>/dev/null || true
+
+    echo -e "${GREEN}✅ WebApps e iconos eliminados. Dock de GNOME restablecido.${NC}"
+    echo -e "${CYAN}💡 Ahora puedes instalar tus WebApps manualmente desde Google Chrome con 'Instalar' o 'Crear acceso directo...'.${NC}"
 }
 
 setup_dock_favorites() {
@@ -240,6 +269,15 @@ show_status() {
         fi
     done
     echo -e "-----------------------------------------------------------------"
+    echo -e "• Iconos vectoriales en ~/.local/share/icons/hicolor/scalable/apps/:"
+    for icon in "netflix.svg" "prime-video.svg" "rtve-play.svg" "pluto-tv.svg" "youtube.svg" "orange-tv.svg"; do
+        if [ -f "$ICONS_DIR/$icon" ]; then
+            echo -e "  - $icon: ${GREEN}✅ Presente${NC}"
+        else
+            echo -e "  - $icon: ${YELLOW}⚪ No instalado${NC}"
+        fi
+    done
+    echo -e "-----------------------------------------------------------------"
     echo -e "• Favoritos activos en Dock de GNOME:"
     local current_favs
     current_favs=$(run_as_user gsettings get org.gnome.shell favorite-apps 2>/dev/null || echo "n/a")
@@ -261,6 +299,9 @@ case "${1:-}" in
         ;;
     -d|--dock|dock)
         setup_dock_favorites
+        ;;
+    -u|--uninstall|uninstall|remove)
+        uninstall_webapps
         ;;
     "")
         create_webapps
