@@ -158,12 +158,12 @@ configure_cockpit_conf() {
     host_ip=$(get_lan_ip)
     host_name=$(hostname 2>/dev/null || echo "fedora")
 
-    origins_list="https://localhost:9090 https://127.0.0.1:9090"
+    origins_list="https://localhost:9090 http://localhost:9090 https://127.0.0.1:9090 http://127.0.0.1:9090"
     if [ -n "$host_ip" ] && [ "$host_ip" != "127.0.0.1" ]; then
-        origins_list="$origins_list https://$host_ip:9090"
+        origins_list="$origins_list https://$host_ip:9090 http://$host_ip:9090"
     fi
     if [ -n "$host_name" ]; then
-        origins_list="$origins_list https://$host_name:9090 https://$host_name.local:9090"
+        origins_list="$origins_list https://$host_name:9090 http://$host_name:9090 https://$host_name.local:9090 http://$host_name.local:9090"
     fi
 
     cat <<EOF | $SUDO tee /etc/cockpit/cockpit.conf > /dev/null
@@ -315,7 +315,7 @@ disable_cockpit() {
 
 show_logs() {
     echo -e "${BOLD}📋 Últimos 35 registros de eventos de Cockpit (journalctl):${NC}"
-    journalctl -u cockpit.service -u cockpit.socket -n 35 --no-pager || true
+    journalctl -u cockpit.service -u cockpit.socket -u 'cockpit-wsinstance*' -u 'cockpit-session*' -n 35 --no-pager || true
 }
 
 open_browser() {
