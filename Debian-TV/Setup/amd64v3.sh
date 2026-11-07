@@ -23,7 +23,7 @@ Opciones:
   --help, -h          Muestra este mensaje de ayuda.
 
 Arquitectura:
-  - CPU: AMD Ryzen 7 7730U (Zen 3 / Barcelo-R) compatible con x86-64-v3.
+  - CPU: Intel Core i7-4790 (Zen 3 / Barcelo-R) compatible con x86-64-v3.
   - Debian utiliza glibc-hwcaps (/usr/lib/x86_64-linux-gnu/glibc-hwcaps/x86-64-v3/)
     de manera transparente para bibliotecas optimizadas con AVX2/FMA.
 EOF

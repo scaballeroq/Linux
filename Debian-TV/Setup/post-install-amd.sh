@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==============================================================================
 # post-install-amd.sh - Post-instalación para Debian con AMD Ryzen y AMD Graphics
-# Optimizado para HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Graphics (Vega 8))
+# Optimizado para HP Z230 SFF Workstation (Intel Core i7-4790 / Radeon Graphics (Vega 8))
 # Sistema: Debian GNU/Linux 13 (Trixie) | Entorno: GNOME Shell (Wayland)
 # ==============================================================================
 

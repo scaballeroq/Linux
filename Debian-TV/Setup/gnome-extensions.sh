@@ -2,7 +2,7 @@
 # ==============================================================================
 # gnome-extensions.sh - Gestión e Inspección de Extensiones de GNOME Shell
 # Debian Workstation (Debian 13 Trixie / GNOME Shell Wayland)
-# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8)
+# Hardware: HP Z230 SFF Workstation (Intel Core i7-4790 / Intel HD 4600)
 # ==============================================================================
 # Características:
 #  - Inspección exhaustiva de extensiones de sistema (/usr/share) y usuario (~/.local/share).

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # laptop-setup.sh - Optimización de Portátil para Debian Workstation (GNOME Shell Wayland)
-# Optimizado para HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8 Barcelo-R)
+# Optimizado para HP Z230 SFF Workstation (Intel Core i7-4790 / Intel HD 4600 Barcelo-R)
 # Compatible con Debian 13 Trixie (GNOME Shell 48+ Wayland), Testing y superiores
 # ==============================================================================
 # Características:
@@ -88,7 +88,7 @@ get_os_description() {
 show_help() {
     cat <<EOF
 💻 Optimizador de Portátiles - Debian Workstation (GNOME Shell Wayland)
-Optimizado para HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8)
+Optimizado para HP Z230 SFF Workstation (Intel Core i7-4790 / Intel HD 4600)
 
 Uso:
   $0 [OPCIÓN]
@@ -123,7 +123,7 @@ show_status() {
     echo "================================================================="
     echo "• Sistema Operativo:     $os_name (Kernel $(uname -r))"
     echo "• GNOME Shell:           $gnome_ver (${XDG_SESSION_TYPE:-wayland} / Mutter)"
-    echo "• Hardware:              HP ProBook 455 G10 (AMD Ryzen 7 7730U / Vega 8)"
+    echo "• Hardware:              HP Z230 SFF Workstation (Intel Core i7-4790 / Vega 8)"
     echo "-----------------------------------------------------------------"
 
     # 1. Batería y Salud
@@ -294,7 +294,7 @@ setup_logind() {
     $SUDO mkdir -p /etc/systemd/logind.conf.d
     cat <<'EOF' | $SUDO tee /etc/systemd/logind.conf.d/lid-docked.conf > /dev/null
 [Login]
-# Comportamiento de tapa en portátil HP ProBook 455 G10
+# Comportamiento de tapa en portátil HP Z230 SFF Workstation
 HandleLidSwitch=suspend
 HandleLidSwitchExternalPower=suspend
 HandleLidSwitchDocked=ignore
@@ -322,7 +322,7 @@ setup_touchpad() {
     run_as_user gsettings set org.gnome.desktop.peripherals.touchpad tap-and-drag true 2>/dev/null || true
     run_as_user gsettings set org.gnome.desktop.peripherals.touchpad disable-while-typing true 2>/dev/null || true
 
-    # Teclado: recordar y mantener activo el teclado numérico del HP ProBook 455 G10
+    # Teclado: recordar y mantener activo el teclado numérico del HP Z230 SFF Workstation
     run_as_user gsettings set org.gnome.desktop.peripherals.keyboard remember-numlock-state true 2>/dev/null || true
     run_as_user gsettings set org.gnome.desktop.peripherals.keyboard numlock-state true 2>/dev/null || true
 
@@ -426,7 +426,7 @@ case "${1:-}" in
         echo "================================================================="
         echo "💻 CONFIGURANDO OPTIMIZACIONES DE PORTÁTIL"
         echo "   $OS_CUR_NAME | GNOME Shell $GNOME_CUR_VER (Wayland)"
-        echo "   Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Vega 8)"
+        echo "   Hardware: HP Z230 SFF Workstation (Intel Core i7-4790 / Vega 8)"
         echo "================================================================="
         setup_power
         setup_logind

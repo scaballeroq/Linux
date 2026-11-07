@@ -1,48 +1,66 @@
 # =============================================================================
-# Debian GNU/Linux Environment Configuration Justfile
-# (Debian 13 Trixie Workstation + GNOME Shell Wayland)
+# Debian GNU/Linux TV & Multimedia Center Justfile
+# Hardware: HP Z230 SFF Workstation (Intel Core i7-4790 / Intel HD 4600 / Sony TV)
+# Sistema: Debian GNU/Linux (GNOME Shell Wayland)
 # =============================================================================
 
-# Instala todo el entorno por defecto (Auto-detección de CPU / Portátil AMD)
-setup-all: post-install multimedia flatpak chrome steam laptop tuning gnome-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
-    @echo "🚀 Entorno completo de Debian GNU/Linux (GNOME Shell Wayland) configurado. Por favor, reinicia el sistema."
+# Objetivo por defecto: configurar centro multimedia TV completo
+default: setup-tv
 
-# Perfil completo para Portátil de desarrollo (AMD Ryzen + Virtualización + Contenedores)
-setup-laptop-amd: post-install-amd multimedia flatpak chrome steam laptop tuning gnome-setup shell security fonts fastfetch kitty yt-dlp virtualization cockpit ides git-setup languages podman-setup
-    @echo "🚀 Entorno Portátil AMD Ryzen (GNOME Shell) configurado con éxito. Por favor, reinicia el sistema."
+# Perfil completo exclusivo para HP Z230 SFF conectado a la televisión
+setup-tv: post-install-intel multimedia flatpak chrome firefox tv-webapps tuning gnome-setup security fonts fastfetch kitty yt-dlp
+    @echo "🚀 Entorno Multimedia TV para HP Z230 SFF (Sony TV) configurado con éxito. Por favor, reinicia el sistema."
 
-# Perfil para Sobremesa Centro Multimedia (Intel Core / Media Center - Sin virtualización ni batería)
-setup-media-desktop: post-install-intel multimedia chrome tuning gnome-setup shell security fonts fastfetch kitty yt-dlp kodi
-    @echo "🚀 Entorno Sobremesa Intel (GNOME Shell) configurado con éxito. Por favor, reinicia el sistema."
+# Alias de compatibilidad
+setup-all: setup-tv
 
-# Diagnóstico integral del sistema, hardware, energía, red y entorno de desarrollo
+# Perfil Sobremesa Centro Multimedia Intel
+setup-media-desktop: setup-tv
+
+# Diagnóstico integral del sistema TV, hardware Haswell, VA-API, audio Sony TV y Flatpaks
 status:
     @echo "================================================================="
-    @echo "🔍 DIAGNÓSTICO INTEGRAL DEBIAN WORKSTATION (HP PROBOOK 455 G10)"
+    @echo "🔍 DIAGNÓSTICO INTEGRAL DEBIAN TV (HP Z230 SFF - SONY TV)"
     @echo "================================================================="
     @./Setup/debian-tuning.sh --status
     @echo ""
-    @./Setup/laptop-setup.sh --status
+    @./Setup/multimedia.sh --status
+    @echo ""
+    @./Setup/tv-streaming.sh --status
     @echo ""
     @./Setup/seguridad.sh --status
-    @echo ""
-    @./Setup/gnome-extensions.sh --status
 
 # =============================================================================
 # CONFIGURACIÓN BASE DEL SISTEMA
 # =============================================================================
 
-# Configuración base post-instalación (Auto-detección inteligente: AMD Ryzen vs Intel Core)
+# Configuración base post-instalación para HP Z230 SFF
 post-install:
     ./Setup/post-install.sh
 
-# Configuración post-instalación para AMD Ryzen (Kernel, firmware AMD, Mesa RADV, VA-API, PipeWire, Flatpak, GNOME Shell, ZRAM)
-post-install-amd:
-    ./Setup/post-install-amd.sh
-
-# Configuración post-instalación para Intel Haswell/Core (Microcódigo Intel, i965/iHD VA-API, Kodi, PipeWire, GNOME Shell)
+# Configuración post-instalación para Intel Haswell Core i7-4790 (Microcódigo Intel, i965 VA-API, Kodi, Stremio, VLC, PipeWire)
 post-install-intel:
     ./Setup/post-install-intel.sh
+
+# Lanzadores WebApp para TV y configuración del Dock multimedia (Netflix, Prime Video, RTVE, Pluto TV, YouTube)
+tv-webapps *args:
+    ./Setup/tv-streaming.sh {{args}}
+
+# Organizar favoritos del Dock de GNOME para TV de salón
+tv-dock:
+    ./Setup/tv-streaming.sh --dock
+
+# Lanzar Kodi Media Center (Flatpak)
+kodi:
+    flatpak run tv.kodi.Kodi
+
+# Lanzar Stremio (Flatpak)
+stremio:
+    flatpak run com.stremio.Stremio
+
+# Lanzar VLC (Flatpak)
+vlc:
+    flatpak run org.videolan.VLC
 
 # Optimización para portátiles de desarrollo (power-profiles-daemon, Bluetooth FastConnectable, cierre de tapa con multimonitor, Touchpad Wayland y Mutter VRR)
 laptop:
@@ -272,8 +290,8 @@ firefox-status:
 steam:
     ./Setup/steam.sh
 
-# Centro Multimedia (Kodi + complementos de streaming)
-kodi:
+# Centro Multimedia (Kodi vía APT opcional)
+kodi-apt:
     sudo apt-get install -y kodi kodi-inputstream-adaptive kodi-inputstream-rtmp
 
 # Actualización completa del sistema Debian vía APT

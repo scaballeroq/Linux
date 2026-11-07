@@ -1,14 +1,14 @@
 #!/bin/bash
 # ==============================================================================
-# zram-setup.sh - Configuración de ZRAM con compresión ZSTD para Debian Workstation
-# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / 32 GB RAM)
-# Sistema: Debian GNU/Linux 13 (Trixie) | Entorno: GNOME Shell (Wayland)
+# zram-setup.sh - Configuración de ZRAM con compresión ZSTD para Debian TV
+# Hardware: HP Z230 SFF Workstation (Intel Core i7-4790 / 8.0 GiB RAM)
+# Sistema: Debian GNU/Linux (GNOME Shell Wayland)
 # ==============================================================================
 # Características:
 #   - Swap comprimida en memoria RAM utilizando 'zram-tools' y algoritmo ZSTD.
-#   - Asignación del 50% de la RAM física (16 GB ZRAM para 32 GB de RAM).
+#   - Asignación del 50% de la RAM física (4 GB ZRAM para 8 GB de RAM).
 #   - Optimización de latencia en kernel: vm.page-cluster = 0 (cero I/O de disco).
-#   - Priorización de swap comprimida en RAM frente a swap física en disco SSD.
+#   - Evita el desgaste del SSD de 256 GB manteniendo la fluidez en streaming 1080p.
 #   - Soporte CLI completo: --status / -s, --disable / -d, --help / -h.
 # ==============================================================================
 
@@ -27,7 +27,7 @@ fi
 
 show_help() {
     cat <<EOF
-⚡ Configurador de Swap en RAM (ZRAM / ZSTD) - Debian Workstation
+⚡ Configurador de Swap en RAM (ZRAM / ZSTD) - Debian TV (HP Z230 SFF)
 
 Uso:
   $0 [OPCIÓN]
@@ -40,14 +40,14 @@ Opciones:
 
 Parámetros aplicados:
   • Algoritmo:           zstd (equilibrio óptimo entre velocidad de descompresión y tasa de compresión)
-  • Porcentaje de RAM:   50% (en 32 GB de RAM asigna 16 GB de swap ultrarrápida)
+  • Porcentaje de RAM:   50% (en 8 GB de RAM asigna 4 GB de swap ultrarrápida en memoria)
   • vm.page-cluster:     0 (desactiva lectura anticipada secuencial innecesaria en RAM)
 EOF
 }
 
 show_status() {
     echo "================================================================="
-    echo "🔍 ESTADO DE MEMORIA ZRAM Y SWAP - DEBIAN WORKSTATION"
+    echo "🔍 ESTADO DE MEMORIA ZRAM Y SWAP - DEBIAN TV (HP Z230 SFF)"
     echo "================================================================="
     
     echo "• Servicio systemd (zramswap):"
@@ -101,7 +101,7 @@ apply_zram() {
     cat <<'EOF' | $SUDO tee /etc/default/zramswap > /dev/null
 # ==============================================================================
 # /etc/default/zramswap - Configuración ZRAM Debian Workstation
-# Hardware: AMD Ryzen 7 7730U / 32 GB RAM DDR4
+# Hardware: Intel Core i7-4790 / 32 GB RAM DDR4
 # ==============================================================================
 # Algoritmo de compresión moderno
 ALGORITHM=zstd

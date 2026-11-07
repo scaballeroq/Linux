@@ -2,7 +2,7 @@
 # ==============================================================================
 # cockpit.sh - Consola de Administración Web Cockpit y Cliente de Escritorio
 # Sistema: Debian GNU/Linux 13 (Trixie) | Escritorio: GNOME Shell Wayland
-# Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3, 8C/16T) | 32 GB RAM
+# Hardware: HP Z230 SFF Workstation | Intel Core i7-4790 (Zen 3, 8C/16T) | 32 GB RAM
 # Almacenamiento: SSD NVMe Kioxia 512 GB | Red & Seguridad: Firewalld (Puerto 9090)
 # Integración: Podman Rootless + KVM/QEMU Libvirt + NetworkManager + Btrfs/Ext4
 # ==============================================================================
@@ -56,7 +56,7 @@ CORE_PACKAGES=(
 show_help() {
     cat <<EOF
 🎛️ Gestor de Cockpit Web Console - Debian Workstation
-Optimizado para HP ProBook 455 G10 (AMD Ryzen 7 7730U + Debian Workstation)
+Optimizado para HP Z230 SFF Workstation (Intel Core i7-4790 + Debian Workstation)
 
 Uso:
   $0 [OPCIÓN]
@@ -271,7 +271,7 @@ fi
 echo "ℹ️ [2/4] Configurando optimizaciones de rendimiento y sesión (/etc/cockpit/cockpit.conf)..."
 $SUDO mkdir -p /etc/cockpit
 cat <<EOF | $SUDO tee /etc/cockpit/cockpit.conf > /dev/null
-# Configuración optimizada de Cockpit para HP ProBook 455 G10 (Debian Workstation)
+# Configuración optimizada de Cockpit para HP Z230 SFF Workstation (Debian Workstation)
 [WebService]
 Origins = https://localhost:9090 https://127.0.0.1:9090
 MaxStartups = 5

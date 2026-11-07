@@ -2,7 +2,7 @@
 # ==============================================================================
 # ptyxis.sh - Instalación, Optimización y Configuración Estética de Ptyxis Terminal
 # Sistema: Debian GNU/Linux 13 (Trixie) | Entorno: GNOME Shell 48+ (Wayland)
-# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8 Mesa RADV)
+# Hardware: HP Z230 SFF Workstation (Intel Core i7-4790 / Intel HD 4600 Mesa RADV)
 # Tema: Catppuccin Mocha con Transparencia, Libadwaita y Tipografía Nerd Font
 # ==============================================================================
 # Características:
@@ -88,7 +88,7 @@ get_os_description() {
 show_help() {
     cat <<EOF
 🖥️ Gestor y Optimizador de Ptyxis Terminal - Debian 13 Workstation (GNOME Wayland)
-Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8 Mesa RADV)
+Hardware: HP Z230 SFF Workstation (Intel Core i7-4790 / Intel HD 4600 Mesa RADV)
 
 Uso:
   $0 [OPCIÓN]

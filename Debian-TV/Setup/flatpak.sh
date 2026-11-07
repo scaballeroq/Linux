@@ -1,17 +1,15 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # flatpak.sh - Instalación, Gestión y Diagnóstico de Software Flatpak
-# Sistema: Debian GNU/Linux 13 (Trixie) | Escritorio: GNOME Shell 48+ (Wayland)
-# Hardware: AMD Ryzen 7 7730U / Radeon Graphics (Vega 8 Barcelo-R) (VA-API)
+# Sistema: Debian GNU/Linux (GNOME Shell Wayland)
+# Hardware: HP Z230 SFF Workstation (Intel Core i7-4790 / Intel HD Graphics 4600)
+# Pantalla: Sony TV (Centro Multimedia HTPC: Kodi, Stremio, VLC)
 # ==============================================================================
 # Filosofía y Arquitectura:
-# - Enfoque desacoplado y seguro: aplicaciones multimedia, contenedores y herramientas
-#   de escritorio aisladas vía Flatpak (Flathub), manteniendo el sistema base 100% puro
-#   contra los repositorios de Debian.
-# - Cero dependencias de KDE: 100% nativo GNOME y Wayland.
-# - Idempotencia absoluta: comprueba si la aplicación ya está instalada antes de descargar.
-# - Detección inteligente de objetivos (--system o --user) evitando conflictos con sudo.
-# - Sincronización de tema oscuro (prefer-dark) y aceleración por GPU (Mesa DRI/VA-API).
+# - Enfoque desacoplado y seguro: aplicaciones multimedia (Kodi, Stremio, VLC)
+#   aisladas vía Flatpak (Flathub), manteniendo el sistema base 100% puro.
+# - Aceleración por hardware completa VA-API (Intel HD 4600 / driver i965).
+# - Optimizado para consumo de disco en SSD de 256 GB y 8 GB RAM.
 # ==============================================================================
 
 set -euo pipefail
@@ -83,45 +81,26 @@ get_os_description() {
 # Formato: ID|NOMBRE|CATEGORÍA|PERFIL_DEFAULT (1=Sí, 0=No)|DESCRIPCIÓN
 # ------------------------------------------------------------------------------
 APPS_CATALOG=(
-    # Gestión del Sistema y Contenedores (Core)
-    "com.github.tchx84.Flatseal|Flatseal|core|1|Gestor gráfico de permisos y sandbox para Flatpaks"
-    "io.podman_desktop.PodmanDesktop|Podman Desktop|core|1|Panel gráfico de gestión para Podman, contenedores y Quadlets"
-    "io.github.flattool.Warehouse|Warehouse|core|1|Gestor versátil de Flatpaks, limpieza de restos y control de runtimes"
-    
-    # Multimedia Desacoplado
+    # Centro Multimedia TV (Core por defecto)
+    "tv.kodi.Kodi|Kodi Media Center|multimedia|1|Centro multimedia avanzado para streaming y reproducción local"
+    "com.stremio.Stremio|Stremio|multimedia|1|Plataforma moderna de agregación de contenido multimedia y streaming"
     "org.videolan.VLC|VLC Media Player|multimedia|1|Reproductor multimedia universal con códecs completos integrados"
-    "io.github.celluloid_player.Celluloid|Celluloid|multimedia|1|Reproductor GTK/MPV optimizado para Wayland y aceleración VA-API"
-    "com.obsproject.Studio|OBS Studio|multimedia|1|Grabación y streaming con soporte Wayland PipeWire y códecs aislados"
-    "org.kde.kdenlive|Kdenlive|multimedia|1|Editor y montador de vídeo no lineal profesional (FFmpeg / MLT)"
-    "org.shotcut.Shotcut|Shotcut|multimedia|0|Editor de vídeo profesional no lineal con códecs completos"
-    "tv.kodi.Kodi|Kodi Media Center|multimedia|0|Centro multimedia avanzado para streaming y reproducción local"
-    "com.stremio.Stremio|Stremio|multimedia|0|Plataforma moderna de agregación de contenido multimedia y streaming"
-    "org.audacityteam.Audacity|Audacity|multimedia|0|Editor y grabador de audio profesional multi-pista"
-    "com.spotify.Client|Spotify|multimedia|1|Cliente oficial de reproducción de música en streaming"
+    "com.github.tchx84.Flatseal|Flatseal|core|1|Gestor gráfico de permisos y sandbox para Flatpaks"
     
-    # Comunicación y Colaboración (Aislamiento Wayland)
-    "dev.vencord.Vesktop|Vesktop (Discord)|comms|1|Discord optimizado para Wayland con soporte PipeWire screen sharing"
+    # Herramientas de Mantenimiento y Utilidades
+    "io.github.flattool.Warehouse|Warehouse|core|0|Gestor versátil de Flatpaks, limpieza de restos y control de runtimes"
+    "io.podman_desktop.PodmanDesktop|Podman Desktop|core|0|Panel gráfico de gestión para Podman, contenedores y Quadlets"
+    "io.github.celluloid_player.Celluloid|Celluloid|multimedia|0|Reproductor GTK/MPV optimizado para Wayland y aceleración VA-API"
+    "com.obsproject.Studio|OBS Studio|multimedia|0|Grabación y streaming con soporte Wayland PipeWire"
+    "com.spotify.Client|Spotify|multimedia|0|Cliente oficial de reproducción de música en streaming"
+    
+    # Comunicación y Colaboración
+    "dev.vencord.Vesktop|Vesktop (Discord)|comms|0|Discord optimizado para Wayland con soporte PipeWire"
     "org.telegram.desktop|Telegram Desktop|comms|0|Mensajería rápida y segura en sandbox Flatpak"
 
-    # Desarrollo y Bases de Datos
-    "com.usebruno.Bruno|Bruno (API Client)|dev|0|Cliente API REST y GraphQL ligero, offline y versionable en Git"
-    "io.dbeaver.DBeaverCommunity|DBeaver Community|dev|0|Gestor universal de bases de datos (SQL, NoSQL, Podman containers)"
-
-    # Productividad, Notas y Copias de Seguridad
-    "org.libreoffice.LibreOffice|LibreOffice|productivity|0|Suite ofimática completa desacoplada del sistema"
-    "md.obsidian.Obsidian|Obsidian|productivity|0|Bóveda de conocimiento y notas interconectadas en Markdown local"
+    # Productividad y Herramientas
     "org.localsend.localsend_app|LocalSend|productivity|0|Transferencia segura y rápida de archivos en red local (LAN/Wi-Fi)"
-    "org.gnome.World.PikaBackup|Pika Backup|productivity|0|Copias de seguridad incrementales y cifradas basadas en BorgBackup"
-
-    # Navegadores Web y Privacidad
-    "org.mozilla.firefox|Mozilla Firefox|web|0|Navegador web con sandbox estricto y códecs multimedia completos"
-
-    # Diseño y Creatividad
-    "org.gimp.GIMP|GIMP|graphics|0|Editor avanzado de imágenes con códecs y runtimes desacoplados"
-    "org.inkscape.Inkscape|Inkscape|graphics|0|Editor profesional de gráficos vectoriales (SVG)"
-    
-    # Compatibilidad y Gaming
-    "com.valvesoftware.Steam.CompatibilityTool.Proton-GE|Proton-GE|gaming|0|Capa de compatibilidad avanzada para Steam Play"
+    "org.gnome.World.PikaBackup|Pika Backup|productivity|0|Copias de seguridad incrementales y cifradas"
 )
 
 # ------------------------------------------------------------------------------
@@ -209,7 +188,13 @@ apply_overrides() {
     run_as_user flatpak override --user --filesystem=xdg-config/gtk-4.0:ro 2>/dev/null || true
     run_as_user flatpak override --user --filesystem=xdg-config/gtk-3.0:ro 2>/dev/null || true
     run_as_user flatpak override --user --device=dri 2>/dev/null || true
-    echo -e "${GREEN}✅ Overrides de tema oscuro y aceleración GPU aplicados para el usuario.${NC}"
+
+    # Optimizaciones específicas para Centro Multimedia TV (Kodi, Stremio, VLC)
+    echo -e "${BLUE}ℹ️ Aplicando permisos de hardware y audio para Kodi, Stremio y VLC...${NC}"
+    run_as_user flatpak override --user --device=all --socket=wayland --socket=pulseaudio tv.kodi.Kodi 2>/dev/null || true
+    run_as_user flatpak override --user --device=all --socket=wayland --socket=pulseaudio com.stremio.Stremio 2>/dev/null || true
+    run_as_user flatpak override --user --device=all --socket=wayland --socket=pulseaudio org.videolan.VLC 2>/dev/null || true
+    echo -e "${GREEN}✅ Overrides de tema oscuro, aceleración GPU y permisos multimedia aplicados.${NC}"
 }
 
 # ------------------------------------------------------------------------------
