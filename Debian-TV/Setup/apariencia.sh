@@ -2,7 +2,7 @@
 # ==============================================================================
 # apariencia.sh - Instalación y Personalización de Temas, Iconos y Cursores
 # Sistema: Debian GNU/Linux 13 (Trixie) | Escritorio: GNOME Shell 48+ (Wayland)
-# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8)
+# Hardware: HP Z230 SFF Workstation (Intel Core i7-4790 / Intel HD 4600)
 # ==============================================================================
 # Filosofía:
 #  - Control modular: Decide qué paquetes instalar y qué estética aplicar.

@@ -1,17 +1,15 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# debian-tuning.sh - Optimizador de Rendimiento para Debian Workstation (GNOME)
-# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / SSD NVMe Kioxia / 32 GB RAM)
-# Sistema: Debian GNU/Linux 13 (Trixie) | Entorno: GNOME Shell (Wayland)
+# debian-tuning.sh - Optimizador de Rendimiento para Debian TV & Media Center
+# Hardware: HP Z230 SFF Workstation (Intel Core i7-4790 / 8 GB RAM / 256 GB SSD)
+# Pantalla: Sony TV | Sistema: Debian GNU/Linux (GNOME Shell Wayland)
 # ==============================================================================
 # Características:
-#   - Kernel Linux moderno y gestión de memoria optimizada (vm.page-cluster = 0)
-#   - ZRAM con compresión ZSTD al 50% de RAM y swappiness adaptativo
-#   - Monitoreo masivo de archivos (Inotify 1M watches) para IDEs y compiladores
-#   - Límites de descriptores de archivos (1M nofile) y tareas Systemd (TasksMax=infinity)
-#   - Optimización de red con TCP BBR + FQ (módulo kernel persistente en modules-load.d)
-#   - Ajuste de GNOME Tracker 3 Miner (exclusiones de desarrollo y ahorro en batería)
-#   - Servicios de mantenimiento: fstrim.timer para SSD NVMe e irqbalance multi-core
+#   - Kernel Linux y gestión de memoria adaptada a 8 GB RAM con ZRAM (zstd)
+#   - Priorización de ZRAM: vm.swappiness = 180 y vm.page-cluster = 0
+#   - Eliminación de microtirones durante reproducción multimedia (watermark_boost_factor = 0)
+#   - Optimización de red para streaming en directo con TCP BBR + FQ
+#   - Mantenimiento automático del SSD de 256 GB mediante fstrim.timer
 #   - Opciones CLI: --status / -s, --sysctl, --limits, --tracker, --zram, --services,
 #                   --no-install, --help / -h
 # ==============================================================================
@@ -75,8 +73,8 @@ get_os_description() {
 # ------------------------------------------------------------------------------
 show_help() {
     cat <<EOF
-⚡ Optimizador de Rendimiento - Debian 13 Workstation (GNOME Shell)
-Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / SSD NVMe / 32 GB RAM / ZRAM)
+⚡ Optimizador de Rendimiento - Debian TV (HP Z230 SFF / Sony TV)
+Hardware: HP Z230 SFF (Intel Core i7-4790 / SSD 256 GB / 8 GB RAM / ZRAM)
 
 Uso:
   $0 [OPCIÓN]
@@ -86,22 +84,20 @@ Opciones principales:
   --status, -s           Muestra el estado actual de sysctl, límites, ZRAM, Tracker y servicios.
   --sysctl               Aplica únicamente la configuración de Kernel Sysctl y TCP BBR.
   --limits               Aplica límites de descriptores y memoria (limits.d y systemd).
-  --tracker              Configura exclusiones en GNOME Tracker 3 para proyectos de desarrollo.
+  --tracker              Configura exclusiones en GNOME Tracker 3.
   --zram                 Verifica y aplica la configuración óptima de ZRAM (zstd al 50% de RAM).
   --services             Habilita servicios de mantenimiento (fstrim.timer e irqbalance).
   --no-install           Aplica ajustes de configuración sin descargar paquetes adicionales.
   --help, -h             Muestra este mensaje de ayuda.
 
 Optimizaciones incluidas:
-  1. Sysctl Kernel:      Inotify ampliado (1M watches), max_map_count (16M),
-                         vm.page-cluster=0 (optimizado para ZRAM/NVMe), swappiness=60,
-                         vm.watermark_boost_factor=0 (elimina microtirones), TCP BBR + FQ.
+  1. Sysctl Kernel:      Inotify ampliado, vm.page-cluster=0 (optimizado para ZRAM), swappiness=180,
+                         vm.watermark_boost_factor=0 (elimina microtirones de vídeo), TCP BBR + FQ.
   2. Límites de Proceso: Descriptores de archivo (1M nofile), memlock unlimited,
                          systemd system/user DefaultTasksMax=infinity.
   3. Systemd Timeouts:   DefaultTimeoutStopSec=10s para apagados y reinicios rápidos sin bloqueos.
-  4. GNOME Tracker 3:    Exclusiones de node_modules, .git, .venv y ahorro de batería al desconectar AC.
-  5. Memoria ZRAM:       Compresión ZSTD al 50% de RAM (16 GB ZRAM) con prioridad máxima (100).
-  6. Servicios NVMe:     fstrim.timer (mantenimiento SSD NVMe) e irqbalance (reparto multi-core Zen 3).
+  4. Memoria ZRAM:       Compresión ZSTD al 50% de RAM (4 GB ZRAM para 8 GB RAM física).
+  5. Servicios SSD:      fstrim.timer (mantenimiento SSD 256 GB) e irqbalance (reparto multi-core).
 EOF
 }
 
@@ -110,16 +106,17 @@ show_status() {
     os_name=$(get_os_description)
 
     echo "================================================================="
-    echo "🔍 ESTADO DE RENDIMIENTO Y OPTIMIZACIONES - DEBIAN WORKSTATION"
+    echo "🔍 ESTADO DE RENDIMIENTO Y OPTIMIZACIONES - DEBIAN TV"
     echo "================================================================="
     echo "• Sistema Operativo:             $os_name"
     echo "• Kernel activo:                 $(uname -r)"
-    echo "• Hardware:                      HP ProBook 455 G10 (AMD Ryzen 7 7730U / 32 GB RAM)"
+    echo "• Hardware:                      HP Z230 SFF (Intel Core i7-4790 / 8 GB RAM)"
+    echo "• Pantalla:                      Sony TV (Wayland)"
     echo "-----------------------------------------------------------------"
     echo "• Sysctl Kernel & Memoria:"
     echo "  - fs.inotify.max_user_watches: $(sysctl -n fs.inotify.max_user_watches 2>/dev/null || echo 'n/a') (Objetivo: >= 1048576)"
     echo "  - vm.max_map_count:            $(sysctl -n vm.max_map_count 2>/dev/null || echo 'n/a') (Objetivo: >= 16777216)"
-    echo "  - vm.swappiness:               $(sysctl -n vm.swappiness 2>/dev/null || echo 'n/a') (Objetivo: 60-100 con ZRAM)"
+    echo "  - vm.swappiness:               $(sysctl -n vm.swappiness 2>/dev/null || echo 'n/a') (Objetivo: 150-180 con ZRAM)"
     echo "  - vm.page-cluster:             $(sysctl -n vm.page-cluster 2>/dev/null || echo 'n/a') (Objetivo: 0 para ZRAM/NVMe)"
     echo "  - vm.watermark_boost_factor:   $(sysctl -n vm.watermark_boost_factor 2>/dev/null || echo 'n/a') (Objetivo: 0)"
     echo "  - net.ipv4.tcp_congestion:     $(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo 'n/a') (Objetivo: bbr)"
@@ -176,27 +173,28 @@ apply_sysctl() {
 
     cat <<'EOF' | $SUDO tee /etc/sysctl.d/99-debian-tuning.conf > /dev/null
 # =============================================================================
-# OPTIMIZACIÓN DE RENDIMIENTO - DEBIAN 13 WORKSTATION
-# Hardware: AMD Ryzen 7 7730U / SSD NVMe Kioxia / 32 GB RAM / ZRAM
+# OPTIMIZACIÓN DE RENDIMIENTO - DEBIAN TV (HP Z230 SFF / SONY TV)
+# Hardware: Intel Core i7-4790 / SSD 256 GB / 8 GB RAM / ZRAM
 # ==============================================================================
 
-# Inotify ampliado: previene fallos al vigilar proyectos grandes (Vite, React, Rust, IDEs)
+# Inotify ampliado: previene fallos con múltiples servicios
 fs.inotify.max_user_watches = 1048576
 fs.inotify.max_user_instances = 1024
 fs.file-max = 2097152
 
-# vm.max_map_count elevado: requerido para bases de datos, Podman, Steam y compiladores
+# vm.max_map_count elevado: requerido para navegadores, Flatpaks y streaming
 vm.max_map_count = 16777216
 
-# Ajustes de memoria virtual para ZRAM y almacenamiento NVMe:
-# swappiness=60 permite un uso activo de ZRAM antes de saturar memoria física
-vm.swappiness = 60
+# Ajustes de memoria virtual para ZRAM en equipo de 8 GB RAM:
+# swappiness=180 prioriza la compresión de páginas inactivas en ZRAM,
+# manteniendo la RAM física despejada para búferes de streaming (Kodi, Stremio, VLC)
+vm.swappiness = 180
 
 # page-cluster=0 desactiva la lectura anticipada secuencial de páginas en swap,
 # reduciendo la latencia de descompresión en ZRAM a cero I/O de disco
 vm.page-cluster = 0
 
-# Elimina microtirones de latencia en asignación de páginas bajo carga
+# Elimina microtirones de latencia en reproducción de vídeo y streaming continuo
 vm.watermark_boost_factor = 0
 vm.watermark_scale_factor = 125
 

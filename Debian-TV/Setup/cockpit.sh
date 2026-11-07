@@ -2,7 +2,7 @@
 # ==============================================================================
 # cockpit.sh - Consola de Administración Web Cockpit y Cliente de Escritorio
 # Sistema: Debian GNU/Linux 13 (Trixie) | Escritorio: GNOME Shell Wayland
-# Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3, 8C/16T) | 32 GB RAM
+# Hardware: HP Z230 SFF Workstation | Intel Core i7-4790 (Zen 3, 8C/16T) | 32 GB RAM
 # Almacenamiento: SSD NVMe Kioxia 512 GB | Red & Seguridad: Firewalld (Puerto 9090)
 # Integración: Podman Rootless + KVM/QEMU Libvirt + NetworkManager + Btrfs/Ext4
 # ==============================================================================
@@ -51,12 +51,13 @@ CORE_PACKAGES=(
     "cockpit-packagekit"
     "cockpit-files"
     "cockpit-sosreport"
+    "sscg"
 )
 
 show_help() {
     cat <<EOF
 🎛️ Gestor de Cockpit Web Console - Debian Workstation
-Optimizado para HP ProBook 455 G10 (AMD Ryzen 7 7730U + Debian Workstation)
+Optimizado para HP Z230 SFF Workstation (Intel Core i7-4790 + Debian Workstation)
 
 Uso:
   $0 [OPCIÓN]
@@ -267,23 +268,41 @@ else
     echo "ℹ️ [1/4] Todos los módulos de Cockpit ya se encuentran instalados."
 fi
 
-# 2. Configuración optimizada de Cockpit para portátiles
+# 2. Configuración optimizada de Cockpit para portátiles y estaciones de trabajo
 echo "ℹ️ [2/4] Configurando optimizaciones de rendimiento y sesión (/etc/cockpit/cockpit.conf)..."
 $SUDO mkdir -p /etc/cockpit
 cat <<EOF | $SUDO tee /etc/cockpit/cockpit.conf > /dev/null
-# Configuración optimizada de Cockpit para HP ProBook 455 G10 (Debian Workstation)
+# Configuración optimizada de Cockpit para HP Z230 SFF Workstation (Debian Workstation)
 [WebService]
-Origins = https://localhost:9090 https://127.0.0.1:9090
 MaxStartups = 5
 AllowUnencrypted = false
 
 [Session]
-# Cierre automático de sesión tras 15 minutos de inactividad para preservar batería y memoria
+# Cierre automático de sesión tras 15 minutos de inactividad para preservar recursos
 IdleTimeout = 15
 EOF
 
 # 3. Habilitar Cockpit Socket (Activación bajo demanda)
 echo "ℹ️ [3/4] Habilitando activación bajo demanda (cockpit.socket)..."
+if ss -tlnp 2>/dev/null | grep -q ":9090 "; then
+    if ss -tlnp 2>/dev/null | grep -qi "kodi"; then
+        echo "  ⚠️ Conflicto detectado: Kodi está utilizando el puerto 9090 (servidor JSON-RPC)."
+        echo "  ℹ️ Reconfigurando Kodi para usar el puerto alternativo 9095..."
+        mkdir -p "$USER_HOME/.kodi/userdata"
+        cat << 'KODICFG' > "$USER_HOME/.kodi/userdata/advancedsettings.xml"
+<advancedsettings version="1.0">
+  <jsonrpc>
+    <tcpport>9095</tcpport>
+  </jsonrpc>
+</advancedsettings>
+KODICFG
+        chown "$REAL_USER:$REAL_USER" "$USER_HOME/.kodi/userdata/advancedsettings.xml" 2>/dev/null || true
+        killall -q kodi.bin 2>/dev/null || true
+        sleep 1
+    fi
+fi
+
+$SUDO systemctl daemon-reload
 $SUDO systemctl enable --now cockpit.socket
 
 # 4. Configurar Firewalld (puerto 9090 / servicio cockpit)

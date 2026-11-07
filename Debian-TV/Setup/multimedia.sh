@@ -1,17 +1,16 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# multimedia.sh - Suite Multimedia, Códecs y Aceleración HW para Debian Workstation
-# Optimizado para Debian GNU/Linux 13 Trixie (GNOME Shell 48+ Wayland)
-# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Graphics Vega 8)
+# multimedia.sh - Suite Multimedia, Códecs y Aceleración HW para Debian TV
+# Optimizado para Debian GNU/Linux (GNOME Shell Wayland)
+# Hardware: HP Z230 SFF Workstation (Intel Core i7-4790 / Intel HD Graphics 4600)
+# Pantalla: Sony TV (Salida HDMI / DisplayPort / PipeWire)
 # ==============================================================================
 # Características:
-#   - Pila completa de códecs oficial Debian 13: FFmpeg 7.x, libavcodec-extra, audio (FLAC/Opus/Vorbis/MP3)
-#   - Pila GStreamer 1.26 Wayland: base, good, bad (módulo VA nativo libgstva), ugly, libav, gl, gtk4 y pipewire
-#   - Miniaturas e Imágenes GNOME 48 (Nautilus / Loupe): glycin-loaders, ffmpegthumbnailer, HEIF y WebP
-#   - Aceleración HW VA-API / Vulkan RADV en Wayland: radeonsi (H.264, HEVC 10-bit, VP9 10-bit), libva-wayland2
-#   - Audio de baja latencia: PipeWire 1.4, WirePlumber 0.5 y códecs Bluetooth SPA (LDAC/aptX/AAC)
-#   - Reproductores GNOME 48 / Wayland nativos: Showtime, Loupe, Snapshot, Amberol, Celluloid, MPV y VLC
-#   - Soporte desacoplado Flatpak / Flathub a nivel de sistema y usuario
+#   - Pila completa de códecs oficial Debian: FFmpeg, libavcodec-extra, audio (FLAC/Opus/Vorbis/MP3)
+#   - GStreamer Wayland con aceleración VA-API (driver i965 para Intel Haswell)
+#   - Aceleración HW VA-API en Wayland para decodificación fluida H.264 Full HD 1080p
+#   - Audio digital de alta fidelidad: PipeWire y WirePlumber hacia la Sony TV
+#   - Reproductores multimedia integrados y Flatpaks: Kodi, Stremio, VLC, MPV
 #   - Opciones CLI: --status / -s, --codecs, --players, --flatpak, --help / -h
 # ==============================================================================
 
@@ -128,39 +127,35 @@ show_status() {
     gnome_ver=$(get_gnome_version)
 
     echo "================================================================="
-    echo "🔍 ESTADO MULTIMEDIA Y ACELERACIÓN WAYLAND - DEBIAN WORKSTATION"
+    echo "🔍 ESTADO MULTIMEDIA Y ACELERACIÓN WAYLAND - DEBIAN TV (HP Z230 SFF)"
     echo "================================================================="
     echo "• Sistema Operativo:     $os_name (Kernel $(uname -r))"
     echo "• Entorno Gráfico:       GNOME Shell $gnome_ver (${XDG_SESSION_TYPE:-wayland} / Mutter)"
-    echo "• Hardware:              HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8)"
+    echo "• Hardware:              HP Z230 SFF (Intel Core i7-4790 / Intel HD 4600)"
+    echo "• Pantalla:              Sony TV (Salida HDMI / DisplayPort)"
     echo "-----------------------------------------------------------------"
 
-    echo "• Aceleración Gráfica por Hardware (VA-API / Vulkan RADV):"
+    echo "• Aceleración Gráfica por Hardware (Intel VA-API i965):"
     if command -v vainfo &>/dev/null; then
-        local va_out va_driver va_h264 va_hevc va_hevc10 va_vp9 va_enc
-        va_out=$(vainfo 2>&1 || true)
-        va_driver=$(echo "$va_out" | grep "Driver version:" | sed "s/.*Driver version: //" || echo "n/a")
+        local va_out va_driver va_h264 va_hevc va_vc1 va_enc
+        va_out=$(LIBVA_DRIVER_NAME=i965 vainfo 2>&1 || true)
+        va_driver=$(echo "$va_out" | grep "Driver version:" | sed "s/.*Driver version: //" || echo "i965")
         va_h264=$(echo "$va_out" | grep -q "VAProfileH264Main" && echo "✅" || echo "❌")
-        va_hevc=$(echo "$va_out" | grep -q "VAProfileHEVCMain " && echo "✅" || echo "❌")
-        va_hevc10=$(echo "$va_out" | grep -q "VAProfileHEVCMain10" && echo "✅" || echo "❌")
-        va_vp9=$(echo "$va_out" | grep -q "VAProfileVP9Profile0" && echo "✅" || echo "❌")
-        va_enc=$(echo "$va_out" | grep -q "VAEntrypointEncSlice" && echo "✅ Activo (H.264/HEVC)" || echo "❌ No disponible")
+        va_vc1=$(echo "$va_out" | grep -q "VAProfileVC1" && echo "✅" || echo "❌")
+        va_hevc=$(echo "$va_out" | grep -q "VAProfileHEVCMain" && echo "ℹ️ Híbrido/Software" || echo "❌ (No soportado en Haswell)")
         echo "  - Driver VA-API:       $va_driver"
-        echo "  - Decodificación HW:   H.264: $va_h264 | HEVC 8-bit: $va_hevc | HEVC 10-bit: $va_hevc10 | VP9: $va_vp9"
-        echo "  - Codificación HW:     $va_enc"
+        echo "  - Decodificación HW:   H.264: $va_h264 | VC-1: $va_vc1 | HEVC: $va_hevc"
         echo "  - libva-wayland2:      $(if dpkg -s libva-wayland2 &>/dev/null; then echo "✅ Instalado (DMABUF Wayland)"; else echo "❌ No instalado"; fi)"
     else
         echo "  - vainfo:              ❌ No instalado"
     fi
 
-    if command -v vulkaninfo &>/dev/null; then
-        local vk_dev
-        vk_dev=$(vulkaninfo --summary 2>/dev/null | grep -i "deviceName" | head -n1 | sed 's/.*= //' || echo "RADV activo")
-        echo "  - Vulkan RADV:         ✅ Instalado ($vk_dev)"
+    if command -v intel_gpu_top &>/dev/null; then
+        echo "  - intel-gpu-tools:     ✅ Instalado (telemetría GPU Intel disponible)"
     else
-        echo "  - Vulkan RADV:         ❌ vulkan-tools no instalado"
+        echo "  - intel-gpu-tools:     ❌ No instalado"
     fi
-    echo "  - Entorno VA-API:      $(if [ -f "$USER_HOME/.config/environment.d/90-debian-multimedia.conf" ]; then echo "✅ Configurado (LIBVA_DRIVER_NAME=radeonsi)"; else echo "ℹ️ Automático por Mesa"; fi)"
+    echo "  - Entorno VA-API:      $(if [ -f "$USER_HOME/.config/environment.d/90-debian-multimedia.conf" ]; then echo "✅ Configurado (LIBVA_DRIVER_NAME=i965)"; else echo "ℹ️ Automático por sistema"; fi)"
 
     echo "-----------------------------------------------------------------"
     echo "• Pila de Códecs, FFmpeg y Herramientas de Audio:"
@@ -279,16 +274,15 @@ install_codecs() {
         libspa-0.2-bluetooth \
         libspa-0.2-jack
 
-    # Configurar variables de sesión Wayland para aceleración VA-API y Vulkan en AMD Radeon (Barcelo-R / Vega 8)
+    # Configurar variables de sesión Wayland para aceleración VA-API en Intel HD Graphics 4600 (Haswell i965)
     local env_dir="$USER_HOME/.config/environment.d"
     run_as_user mkdir -p "$env_dir"
     cat <<'EOF' | run_as_user tee "$env_dir/90-debian-multimedia.conf" > /dev/null
-# Aceleración por hardware VA-API / Vulkan RADV en Debian 13 (GNOME Wayland)
-LIBVA_DRIVER_NAME=radeonsi
-VDPAU_DRIVER=radeonsi
-AMD_VULKAN_ICD=RADV
+# Aceleración por hardware VA-API en Debian (Intel Haswell HD 4600 / GNOME Wayland)
+LIBVA_DRIVER_NAME=i965
+VDPAU_DRIVER=va_gl
 MOZ_ENABLE_WAYLAND=1
-GST_PLUGIN_FEATURE_RANK=vah264dec:MAX,vah265dec:MAX,vavp9dec:MAX,vaav1dec:MAX
+GST_PLUGIN_FEATURE_RANK=vah264dec:MAX
 EOF
 
     # Limpiar caché de miniaturas fallidas para que Nautilus regenere con ffmpegthumbnailer / HEIF / WebP
@@ -296,14 +290,14 @@ EOF
         run_as_user rm -rf "$USER_HOME/.cache/thumbnails/fail"
     fi
 
-    echo "  ✅ Códecs, GStreamer 1.26, miniaturas de Nautilus y aceleración VA-API configurados."
+    echo "  ✅ Códecs, GStreamer, miniaturas de Nautilus y aceleración VA-API i965 configurados."
 }
 
 # ------------------------------------------------------------------------------
-# 4. INSTALACIÓN Y OPTIMIZACIÓN DE REPRODUCTORES GNOME 48 WAYLAND
+# 4. INSTALACIÓN Y OPTIMIZACIÓN DE REPRODUCTORES GNOME WAYLAND
 # ------------------------------------------------------------------------------
 install_players() {
-    echo "🎬 [2/3] Instalando y optimizando reproductores nativos de GNOME 48 Wayland..."
+    echo "🎬 [2/3] Instalando y optimizando reproductores multimedia para GNOME Wayland..."
     $SUDO apt-get update -qq
     $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y \
         showtime \
@@ -315,34 +309,29 @@ install_players() {
         mpv \
         vlc
 
-    # Configuración de alto rendimiento de MPV 0.40 para AMD Radeon Vega 8 sobre GNOME Wayland y PipeWire
+    # Configuración de alto rendimiento de MPV para Intel Haswell HD 4600 sobre Wayland y PipeWire
     local mpv_config_dir="$USER_HOME/.config/mpv"
     run_as_user mkdir -p "$mpv_config_dir"
 
-    echo "⚙️ Aplicando perfil óptimo de MPV para GNOME Wayland (gpu-next + Vulkan + VA-API + PipeWire)..."
+    echo "⚙️ Aplicando perfil óptimo de MPV para Intel HD 4600 (VA-API i965 + PipeWire)..."
     cat <<'EOF' | run_as_user tee "$mpv_config_dir/mpv.conf" > /dev/null
 # ==============================================================================
-# mpv.conf - Optimizado para Debian 13 Trixie (GNOME Shell 48 Wayland)
-# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8 Barcelo-R)
+# mpv.conf - Optimizado para Debian TV (HP Z230 SFF / Intel HD 4600)
+# Pantalla: Sony TV 1080p | Audio: PipeWire HDMI
 # ==============================================================================
 
-# Motor de vídeo de nueva generación sobre Wayland + Vulkan RADV
-vo=gpu-next
-gpu-api=vulkan
-gpu-context=waylandvk
+# Motor de renderizado Wayland y aceleración VA-API
+vo=gpu
+gpu-context=wayland
 hwdec=vaapi
-hwdec-codecs=all
+hwdec-codecs=h264,vc1,mpeg2video
 
-# Gestión de color y DMABUF nativo para Mutter (GNOME Wayland)
-target-colorspace-hint=yes
-
-# Servidor de audio PipeWire nativo de baja latencia
+# Servidor de audio PipeWire nativo
 ao=pipewire
 volume=100
 volume-max=150
 
-# Calidad y fluidez de reproducción en topología Triple Monitor 1080p @ 60Hz
-profile=high-quality
+# Sincronización y fluidez de vídeo en Sony TV 1080p @ 60Hz
 video-sync=display-resample
 interpolation=no
 deband=no

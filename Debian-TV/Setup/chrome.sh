@@ -2,7 +2,8 @@
 # ==============================================================================
 # chrome.sh - Instalación, Optimización y Diagnóstico de Google Chrome
 # Sistema: Debian GNU/Linux | Escritorio: GNOME Shell (Wayland)
-# Hardware: AMD Ryzen 7 7730U / Radeon Graphics (Vega 8) (VA-API)
+# Hardware: HP Z230 SFF Workstation (Intel Core i7-4790 / Intel HD Graphics 4600)
+# Pantalla: Sony TV (Plataformas de streaming: Netflix, Prime Video, RTVE, YouTube)
 # ==============================================================================
 # Características:
 # - Gestión idempotente del repositorio APT oficial firmado por Google.
@@ -173,7 +174,7 @@ update_chrome() {
 }
 
 optimize_wayland() {
-    echo -e "${BLUE}🚀 Optimizando lanzador para GNOME Shell Wayland y aceleración GPU (AMD Vega)...${NC}"
+    echo -e "${BLUE}🚀 Optimizando lanzador para GNOME Shell Wayland y aceleración GPU (Intel HD 4600 / Haswell)...${NC}"
     if [ ! -f "$SYSTEM_DESKTOP" ]; then
         echo -e "${RED}❌ Error: No se encontró $SYSTEM_DESKTOP. Instala Chrome primero.${NC}"
         return 1
@@ -182,7 +183,7 @@ optimize_wayland() {
     mkdir -p "$USER_DESKTOP_DIR"
     cp "$SYSTEM_DESKTOP" "$USER_DESKTOP_FILE"
 
-    local wayland_flags="--ozone-platform-hint=auto --enable-features=VaapiVideoDecodeLinuxGL,VaapiVideoEncoder --ignore-gpu-blocklist --enable-gpu-rasterization --enable-zero-copy"
+    local wayland_flags="--ozone-platform-hint=auto --enable-features=VaapiVideoDecodeLinuxGL,VaapiIgnoreDriverChecks --ignore-gpu-blocklist --enable-gpu-rasterization --enable-zero-copy"
     
     sed -i "s|^Exec=/usr/bin/google-chrome-stable %U|Exec=/usr/bin/google-chrome-stable $wayland_flags %U|" "$USER_DESKTOP_FILE"
     sed -i "s|^Exec=/usr/bin/google-chrome-stable$|Exec=/usr/bin/google-chrome-stable $wayland_flags|" "$USER_DESKTOP_FILE"

@@ -2,7 +2,7 @@
 # ==============================================================================
 # gsconnect.sh - Integración de GSConnect (KDE Connect para GNOME) y Firewalld
 # Sistema: Debian Workstation | Escritorio: GNOME Shell (Wayland)
-# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Graphics (Vega 8))
+# Hardware: HP Z230 SFF Workstation (Intel Core i7-4790 / Radeon Graphics (Vega 8))
 # ==============================================================================
 # Características:
 # - Implementación 100% nativa de GNOME (GJS) del protocolo KDE Connect (cero dependencias KDE/Qt).

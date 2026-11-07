@@ -2,7 +2,7 @@
 # ==============================================================================
 # ghostty.sh - Instalación, Optimización y Configuración Estética de Ghostty Terminal
 # Sistema: Debian GNU/Linux 13 (Trixie) | Entorno: GNOME Shell 48+ (Wayland)
-# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8 Mesa OpenGL)
+# Hardware: HP Z230 SFF Workstation (Intel Core i7-4790 / Intel HD 4600 Mesa OpenGL)
 # Tema: Catppuccin Mocha con Transparencia, Blur nativo y Tipografía Nerd Font
 # ==============================================================================
 # Características:
@@ -89,7 +89,7 @@ get_os_description() {
 show_help() {
     cat <<EOF
 👻 Gestor y Optimizador de Ghostty Terminal - Debian 13 Workstation (GNOME Wayland)
-Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8 Mesa OpenGL)
+Hardware: HP Z230 SFF Workstation (Intel Core i7-4790 / Intel HD 4600 Mesa OpenGL)
 
 Uso:
   $0 [OPCIÓN]
@@ -245,7 +245,7 @@ setup_config() {
     cat <<EOF | run_as_user tee "$config_file" > /dev/null
 # =============================================================================
 # GHOSTTY CONFIGURATION - DEBIAN 13 WORKSTATION (GNOME SHELL WAYLAND)
-# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8 Mesa OpenGL)
+# Hardware: HP Z230 SFF Workstation (Intel Core i7-4790 / Intel HD 4600 Mesa OpenGL)
 # Tema: Catppuccin Mocha con Transparencia, Blur nativo y Tipografía Nerd Font
 # =============================================================================
 

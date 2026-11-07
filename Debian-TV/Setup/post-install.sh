@@ -1,7 +1,8 @@
 #!/bin/bash
 # ==============================================================================
-# post-install.sh - Despachador y selector inteligente de post-instalación para Debian
-# Detecta automáticamente la arquitectura de CPU (AMD Ryzen vs Intel Core) o permite selección manual
+# post-install.sh - Despachador de Post-Instalación para Debian TV & Media Center
+# Hardware: HP Z230 SFF Workstation (Intel Core i7-4790 / Intel HD Graphics 4600)
+# Pantalla: Sony TV (Wayland GNOME Shell)
 # ==============================================================================
 
 set -euo pipefail
@@ -10,31 +11,23 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 show_help() {
     cat <<EOF
-🚀 Despachador de Post-Instalación para Debian Workstation (GNOME Shell Wayland)
+🚀 Despachador de Post-Instalación - Debian TV & Multimedia Center
+Hardware: HP Z230 SFF Workstation (Intel Core i7-4790 / Intel HD 4600 / Sony TV)
 
 Uso:
   $0 [OPCIÓN]
 
 Opciones:
-  (sin argumentos)   Auto-detecta el procesador (AMD o Intel) y ejecuta el instalador correspondiente.
-  --amd, -a          Ejecuta la configuración optimizada para AMD Ryzen y Radeon Graphics.
-  --intel, -i        Ejecuta la configuración optimizada para Intel Core + Multimedia (Kodi/Streaming).
+  (sin argumentos)   Ejecuta directamente la post-instalación optimizada para este equipo (Intel Core Haswell).
+  --intel, -i        Ejecuta la configuración optimizada para Intel Core + Multimedia (Kodi/Stremio/VLC/Streaming).
   --help, -h         Muestra este mensaje de ayuda.
-
-Scripts independientes disponibles:
-  • Setup/post-install-amd.sh   -> Optimizado para AMD Ryzen (microcódigo, firmware AMD, Mesa RADV, VA-API, ZRAM, GNOME Flatpak)
-  • Setup/post-install-intel.sh -> Optimizado para Intel Core / HD Graphics (microcódigo Intel, VA-API i965/Media-driver, Kodi)
 EOF
 }
 
 if [ $# -gt 0 ]; then
     case "$1" in
-        --amd|-a|amd)
-            echo "⚡ Opción manual seleccionada: AMD Ryzen"
-            exec "$SCRIPT_DIR/post-install-amd.sh"
-            ;;
         --intel|-i|intel)
-            echo "⚡ Opción manual seleccionada: Intel Core / Media Center"
+            echo "⚡ Ejecutando post-instalación optimizada para Intel Core / Centro Multimedia TV..."
             exec "$SCRIPT_DIR/post-install-intel.sh"
             ;;
         --help|-h|help)
@@ -49,34 +42,9 @@ if [ $# -gt 0 ]; then
     esac
 fi
 
-echo "🔍 Analizando procesador y arquitectura del sistema..."
-CPU_VENDOR=$(grep -m1 'vendor_id' /proc/cpuinfo | awk '{print $3}' || true)
-CPU_MODEL=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs || echo "Desconocido")
-
-echo "💻 CPU Detectado: $CPU_MODEL (Vendor: $CPU_VENDOR)"
-
-if [ "$CPU_VENDOR" == "AuthenticAMD" ]; then
-    echo "✅ Procesador AMD detectado. Ejecutando post-install-amd.sh..."
-    exec "$SCRIPT_DIR/post-install-amd.sh"
-elif [ "$CPU_VENDOR" == "GenuineIntel" ]; then
-    echo "✅ Procesador Intel detectado. Ejecutando post-install-intel.sh..."
-    exec "$SCRIPT_DIR/post-install-intel.sh"
-else
-    echo "⚠️ No se pudo determinar automáticamente el fabricante del procesador."
-    echo "¿Qué configuración deseas aplicar?"
-    echo "1) AMD Ryzen / Radeon Graphics"
-    echo "2) Intel Core / Intel HD Graphics (Haswell / Media Center)"
-    read -rp "Selecciona una opción (1 o 2): " CHOICE
-    case "$CHOICE" in
-        1)
-            exec "$SCRIPT_DIR/post-install-amd.sh"
-            ;;
-        2)
-            exec "$SCRIPT_DIR/post-install-intel.sh"
-            ;;
-        *)
-            echo "❌ Selección inválida. Abortando."
-            exit 1
-            ;;
-    esac
-fi
+echo "🔍 Detectando procesador en HP Z230 SFF Workstation..."
+CPU_MODEL=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs || echo "Intel Core i7-4790")
+echo "💻 CPU: $CPU_MODEL"
+echo "📺 Objetivo: Centro Multimedia TV (Kodi, Stremio, VLC, Streaming Web)"
+echo "🚀 Lanzando post-install-intel.sh..."
+exec "$SCRIPT_DIR/post-install-intel.sh"

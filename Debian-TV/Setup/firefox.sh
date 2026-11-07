@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # firefox.sh - Instalación, Optimización y Diagnóstico de Mozilla Firefox Nativo
-# Sistema: Debian GNU/Linux 13 (Trixie) | Escritorio: GNOME Shell (Wayland)
-# Hardware: AMD Ryzen 7 7730U / Radeon Graphics (Vega 8 Barcelo-R) (VA-API)
+# Sistema: Debian GNU/Linux | Escritorio: GNOME Shell (Wayland)
+# Hardware: HP Z230 SFF Workstation (Intel Core i7-4790 / Intel HD Graphics 4600)
+# Pantalla: Sony TV (Streaming: Netflix, Prime Video, RTVE Play, Pluto TV, YouTube)
 # ==============================================================================
 # Características:
 #   - Instalación del paquete nativo (.deb) desde el repositorio oficial de Mozilla APT.
@@ -111,7 +112,7 @@ ${BOLD}Ajustes incluidos en Debian 13 (Trixie / GNOME Shell Wayland):${NC}
   • Pinning APT:      Prioridad 1000 para garantizar versiones Rapid Release nativas sobre ESR.
   • Idioma:           Localización oficial en español (España) instalada e integrada.
   • Wayland nativo:   Integración de portales XDG para selector de archivos nativo de GNOME.
-  • Aceleración HW:   VA-API habilitado para GPU AMD Radeon Vega 8 (decodificación 4K fluida)."
+  • Aceleración HW:   VA-API habilitado para GPU AMD Intel HD 4600 (decodificación 4K fluida)."
 }
 
 is_firefox_installed() {
@@ -275,7 +276,7 @@ remove_legacy() {
 # ------------------------------------------------------------------------------
 setup_wayland_vaapi() {
     require_root
-    echo -e "${BLUE}ℹ️ Optimizando Firefox para GNOME Wayland y aceleración VA-API (AMD Radeon Vega 8)...${NC}"
+    echo -e "${BLUE}ℹ️ Optimizando Firefox para GNOME Wayland y aceleración VA-API (Intel HD 4600 / Haswell)...${NC}"
 
     # 1. Crear directorio de políticas de sistema de Firefox
     $SUDO mkdir -p "$POLICIES_DIR"

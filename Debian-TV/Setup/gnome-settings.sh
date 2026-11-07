@@ -1,17 +1,15 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # gnome-settings.sh - Configuración y Personalización Avanzada de GNOME Shell
-# Debian Workstation (Debian 13 Trixie / GNOME Shell 48+ Wayland / Mutter)
-# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8)
-# Topología: Triple pantalla 1080p (DP-3 principal, DP-4 lateral, eDP-1 portátil)
+# Sistema: Debian TV (GNOME Shell Wayland / Mutter)
+# Hardware: HP Z230 SFF Workstation (Intel Core i7-4790 / Intel HD Graphics 4600)
+# Pantalla: Sony TV (Salida HDMI / DisplayPort 1080p @ 60Hz)
 # ==============================================================================
 # Filosofía:
-#   - Personalizable y modular: Tú decides qué instalar desde repositorios y qué configurar.
-#   - Modo sin paquetes (--no-install / --config-only): Aplica 100% ajustes GSettings y scripts
-#     en espacio de usuario sin invocar APT ni requerir privilegios de superusuario (sudo).
-#   - Modo interactivo (--interactive / -i): Asistente guiado paso a paso en terminal.
-#   - Soporte multimarca de terminales: Elige tu terminal preferida (Kitty, Ptyxis o GNOME Terminal)
-#     para el atajo global Ctrl+Alt+T y el menú contextual de Nautilus.
+#   - Optimizado para centro multimedia en televisión (Kodi, Stremio, VLC, Streaming).
+#   - Desactivación de apagado de pantalla en reproducción e inactividad.
+#   - Escala y tipografía adaptadas a distancia de visualización en salón.
+#   - Dock con accesos directos multimedia y plataformas de streaming.
 # ==============================================================================
 
 set -euo pipefail
@@ -166,12 +164,13 @@ show_status() {
     gnome_ver=$(get_gnome_version)
 
     echo "================================================================="
-    echo "🔍 ESTADO DE PERSONALIZACIÓN GNOME SHELL - DEBIAN WORKSTATION"
+    echo "🔍 ESTADO DE PERSONALIZACIÓN GNOME SHELL - DEBIAN TV (HP Z230 SFF)"
     echo "================================================================="
     echo "• Sistema Operativo:      $os_name (Kernel $(uname -r))"
     echo "• Entorno de Escritorio:  ${XDG_CURRENT_DESKTOP:-GNOME} $gnome_ver (${XDG_SESSION_TYPE:-wayland})"
     echo "• Compositor / Ventanas:  Mutter (Wayland nativo)"
-    echo "• Hardware:               HP ProBook 455 G10 (AMD Ryzen 7 7730U / Vega 8)"
+    echo "• Hardware:               HP Z230 SFF (Intel Core i7-4790 / Intel HD 4600)"
+    echo "• Pantalla:               Sony TV (1080p @ 60Hz)"
     echo "-----------------------------------------------------------------"
     echo "📦 PAQUETES APT EN EL SISTEMA (Repositorios oficiales Debian 13):"
     for item in "${SUPPORT_PACKAGES[@]}"; do
@@ -410,10 +409,12 @@ apply_topbar_power() {
         run_as_user gsettings set org.gnome.settings-daemon.plugins.color night-light-enabled false 2>/dev/null || true
     fi
 
-    # Evitar suspensión por inactividad al estar conectado a corriente alterna
+    # Evitar suspensión e inactividad en televisor durante reproducción multimedia
     run_as_user gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing' 2>/dev/null || true
+    run_as_user gsettings set org.gnome.desktop.session idle-delay 0 2>/dev/null || true
+    run_as_user gsettings set org.gnome.desktop.interface text-scaling-factor 1.15 2>/dev/null || true
 
-    echo "  ✅ Barra superior, reloj y políticas de pantalla configuradas."
+    echo "  ✅ Barra superior, reloj, políticas de inactividad de pantalla y escala para TV configuradas."
 }
 
 # ------------------------------------------------------------------------------
