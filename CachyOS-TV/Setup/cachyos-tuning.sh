@@ -1,26 +1,35 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ==============================================================================
-# cachyos-tuning.sh - Optimizador y Ajuste de Rendimiento para CachyOS + GNOME
+# cachyos-tuning.sh - Optimizador de Rendimiento para CachyOS TV (Sony TV)
+# Hardware: HP Z230 SFF Workstation (Intel Core i7-4790 / 8.0 GiB DDR3 / SSD 256 GB)
+# GPU: Intel HD Graphics 4600 (Haswell x86-64-v3) | Pantalla: Sony TV (Wayland GNOME)
 # ==============================================================================
-#
-# Uso:
-#   ./cachyos-tuning.sh               -> Aplica todas las optimizaciones recomendadas
-#   ./cachyos-tuning.sh --status      -> Muestra el estado actual de los parámetros de rendimiento
-#   ./cachyos-tuning.sh --no-install  -> Aplica optimizaciones sin instalar paquetes adicionales
-#   ./cachyos-tuning.sh --sysctl      -> Aplica únicamente los ajustes de Kernel Sysctl
-#   ./cachyos-tuning.sh --limits      -> Aplica límites de descriptores (limits.d y systemd)
-#   ./cachyos-tuning.sh --services    -> Configura servicios de alto rendimiento (Ananicy, UKSMD, irqbalance, fstrim)
-#   ./cachyos-tuning.sh --gnome       -> Aplica optimizaciones específicas de GNOME y exclusiones de Tracker
-#   ./cachyos-tuning.sh --tracker-fast -> Configura Tracker para excluir masivamente carpetas de desarrollo
-#   ./cachyos-tuning.sh --help        -> Muestra la ayuda interactiva
-#
+# Características:
+#   - Sysctl de alto rendimiento: ZRAM agresivo (swappiness 180, page-cluster 0),
+#     TCP BBR + CAKE para streaming fluido de vídeo y buffers optimizados.
+#   - Priorización de procesos en CachyOS: Ananicy-CPP con reglas CachyOS,
+#     UKSMD (deduplicación de RAM) e Irqbalance multinúcleo (4C/8T).
+#   - Mantenimiento SSD (256 GB): fstrim.timer semanal y paccache.timer.
+#   - Fast Shutdown en Systemd: Timeouts reducidos a 10s para apagado instantáneo de la TV.
+#   - GNOME Mutter & Tracker: Escalado framebuffer sin VRR (no soportado en Haswell HDMI)
+#     y exclusión en Tracker de montajes de red (/mnt/nas) y cachés pesadas.
+#   - CLI: --status / -s, --sysctl, --limits, --services, --gnome, --no-install, --help / -h.
 # ==============================================================================
 
 set -euo pipefail
 
+# Colores ANSI
+BOLD=$'\033[1m'
+GREEN=$'\033[0;32m'
+BLUE=$'\033[0;34m'
+YELLOW=$'\033[1;33m'
+RED=$'\033[0;31m'
+CYAN=$'\033[0;36m'
+NC=$'\033[0m'
+
 if [ "$EUID" -ne 0 ]; then
     if ! command -v sudo &> /dev/null; then
-        echo "❌ Error: 'sudo' no está disponible. Ejecuta este script como root o instala sudo."
+        echo -e "${RED}❌ Error: 'sudo' no está disponible. Ejecuta este script como root o instala sudo.${NC}"
         exit 1
     fi
     SUDO="sudo"
@@ -37,100 +46,115 @@ else
     USER_HOME="${HOME:-/home/$REAL_USER}"
 fi
 
+REAL_UID=$(id -u "$REAL_USER" 2>/dev/null || echo "1000")
+
 # Ejecutar comandos de configuración en el contexto del usuario real
 run_as_user() {
+    local runtime_dir="${XDG_RUNTIME_DIR:-/run/user/$REAL_UID}"
+    local dbus_addr="${DBUS_SESSION_BUS_ADDRESS:-unix:path=$runtime_dir/bus}"
     if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-        sudo -u "$REAL_USER" env HOME="$USER_HOME" "$@"
+        sudo -u "$REAL_USER" env \
+            HOME="$USER_HOME" \
+            USER="$REAL_USER" \
+            PATH="/usr/local/bin:/usr/bin:/bin:$PATH" \
+            XDG_RUNTIME_DIR="$runtime_dir" \
+            DBUS_SESSION_BUS_ADDRESS="$dbus_addr" \
+            "$@"
     else
-        "$@"
+        env \
+            XDG_RUNTIME_DIR="$runtime_dir" \
+            DBUS_SESSION_BUS_ADDRESS="$dbus_addr" \
+            "$@"
     fi
 }
 
 show_help() {
     cat <<EOF
-⚡ Optimizador y Ajuste de Rendimiento - CachyOS (GNOME Workstation)
+${BOLD}⚡ Optimizador de Rendimiento CachyOS TV - HP Z230 SFF (Sony TV)${NC}
+${CYAN}Hardware:${NC} Intel Core i7-4790 (4C/8T) | Intel HD 4600 | 8 GB RAM DDR3 | 256 GB SSD
 
-Uso:
-  $0 [OPCION]
+${BOLD}Uso:${NC}
+  $0 [OPCIÓN]
 
-Opciones principales:
-  (sin argumentos)       Aplica todas las optimizaciones recomendadas (Kernel, Límites, Servicios, GNOME/Tracker, Systemd y Distrobox).
-  --status, -s           Muestra el estado actual de sysctl, límites, ZRAM, Ananicy-CPP, UKSMD, Tracker y servicios.
+${BOLD}Opciones principales:${NC}
+  (sin argumentos)       Aplica todas las optimizaciones recomendadas (Kernel, Límites, Servicios, Systemd y GNOME).
+  -s, --status           Muestra el estado actual de sysctl, ZRAM, Ananicy-CPP, UKSMD, SSD y servicios.
   --no-install           Aplica las configuraciones de kernel, límites y entorno sin descargar paquetes con pacman.
   --sysctl               Aplica únicamente la configuración de parámetros de Kernel Sysctl.
   --limits               Aplica límites de descriptores y memoria (limits.d y systemd system/user).
-  --services             Configura e inicia Ananicy-CPP, UKSMD, irqbalance y fstrim.
-  --gnome                Aplica optimizaciones de respuesta de GNOME Mutter (VRR) y exclusiones de Tracker.
-  --tracker-fast         Configura Tracker para excluir carpetas pesadas de desarrollo (node_modules, target, etc.).
-  --help, -h             Muestra este mensaje de ayuda.
+  --services             Configura e inicia Ananicy-CPP, UKSMD, irqbalance, fstrim y paccache.
+  --gnome                Aplica optimizaciones de Mutter y exclusiones de Tracker para la TV.
+  -h, --help             Muestra este mensaje de ayuda.
 
-Optimizaciones incluidas:
-  1. Sysctl Kernel:      Inotify ampliado (1M watches, 8K instancias), max_map_count (16M), ZRAM swappiness (180),
-                         vm.page-cluster=0 (crítico para ZRAM), dirty ratios equilibrados y TCP BBR + FastOpen.
-  2. Límites de Proceso: Descriptores (1M nofile), memoria bloqueada (memlock) y límites en systemd system/user
-                         para que aplicaciones GUI (IDEs, compiladores, navegadores) hereden los límites.
-  3. Servicios CachyOS:  Ananicy-CPP (Auto-Nice con reglas CachyOS), UKSMD (deduplicación KSM RAM),
-                         irqbalance (balanceo multinúcleo de interrupciones) y fstrim.timer (mantenimiento NVMe/SSD).
-  4. Systemd Timeouts:   Reducción de DefaultTimeoutStopSec y AbortSec a 10s para apagados/reinicios instantáneos.
-  5. GNOME / Mutter:     Habilitación de VRR (Variable Refresh Rate) y escalado framebuffer para multi-monitor.
-  6. Tracker File Indexer: Exclusiones masivas de directorios de desarrollo para prevenir saturación de CPU/disco.
-  7. Contenedores:       Instalación de Distrobox y Podman para entornos aislados.
+${BOLD}Optimizaciones incluidas:${NC}
+  1. Sysctl Kernel:      ZRAM swappiness (180), page-cluster=0 (sin overhead de swap), dirty ratios bajos (5/10%)
+                         y TCP BBR + FastOpen para streaming fluido en alta definición.
+  2. Límites de Proceso: Descriptores (1M nofile) y memoria bloqueada en systemd para evitar bloqueos.
+  3. Servicios CachyOS:  Ananicy-CPP (Auto-Nice priorizando Kodi/VLC/Wayland), UKSMD (deduplicación RAM),
+                         irqbalance (multinúcleo 8 hilos), fstrim.timer (SSD 256 GB) y paccache.timer.
+  4. Systemd Timeouts:   Reducción de DefaultTimeoutStopSec y AbortSec a 10s para apagado rápido del televisor.
+  5. GNOME Mutter:       Escalado framebuffer optimizado (sin VRR innecesario en Haswell/Sony TV 60Hz).
+  6. Indexador Tracker:  Exclusión de montajes de red (/mnt/nas) y directorios pesados para no saturar CPU ni RAM.
 EOF
 }
 
-# 1. Mostrar estado actual
 show_status() {
-    echo "================================================================="
-    echo "🔍 ESTADO DE RENDIMIENTO Y OPTIMIZACIONES - CACHYOS (GNOME)"
-    echo "================================================================="
-    echo "• Kernel:                        $(uname -r)"
-    echo "• Planificador CPU Governor:     $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null || echo 'n/a')"
-    echo "• Energy Performance Pref (EPP): $(cat /sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference 2>/dev/null || echo 'n/a')"
-    echo "-----------------------------------------------------------------"
-    echo "• fs.inotify.max_user_watches:   $(sysctl -n fs.inotify.max_user_watches 2>/dev/null || echo 'n/a')"
-    echo "• fs.inotify.max_user_instances: $(sysctl -n fs.inotify.max_user_instances 2>/dev/null || echo 'n/a')"
-    echo "• fs.file-max:                   $(sysctl -n fs.file-max 2>/dev/null || echo 'n/a')"
-    echo "• vm.max_map_count:              $(sysctl -n vm.max_map_count 2>/dev/null || echo 'n/a')"
-    echo "• vm.swappiness (ZRAM):          $(sysctl -n vm.swappiness 2>/dev/null || echo 'n/a')"
-    echo "• vm.page-cluster (ZRAM):        $(sysctl -n vm.page-cluster 2>/dev/null || echo 'n/a')"
-    echo "• vm.vfs_cache_pressure:         $(sysctl -n vm.vfs_cache_pressure 2>/dev/null || echo 'n/a')"
-    echo "• vm.dirty_ratio / background:   $(sysctl -n vm.dirty_ratio 2>/dev/null || echo 'n/a') / $(sysctl -n vm.dirty_background_ratio 2>/dev/null || echo 'n/a')"
-    echo "• net.ipv4.tcp_congestion_ctrl:  $(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo 'n/a')"
-    echo "• net.ipv4.tcp_fastopen:         $(sysctl -n net.ipv4.tcp_fastopen 2>/dev/null || echo 'n/a')"
-    echo "-----------------------------------------------------------------"
-    echo "• Límite nofile (ulimit -n):     $(ulimit -n 2>/dev/null || echo 'n/a')"
-    echo "• Systemd DefaultLimitNOFILE:    $(grep -h "DefaultLimitNOFILE" /etc/systemd/system.conf.d/*.conf /etc/systemd/user.conf.d/*.conf 2>/dev/null | head -n1 || echo 'Por defecto')"
-    echo "• Systemd Stop Timeout:          $(grep -h "DefaultTimeoutStopSec" /etc/systemd/system.conf.d/*.conf 2>/dev/null | head -n1 || echo 'Por defecto')"
-    echo "-----------------------------------------------------------------"
-    echo "• ZRAM Swap Activo:              $(if command -v zramctl &>/dev/null && [ -n "$(zramctl 2>/dev/null)" ]; then echo 'Sí ('"$(zramctl --noheadings -o ALGORITHM,DISKSIZE 2>/dev/null | head -n1)"')'; else echo 'No / Inactivo'; fi)"
-    echo "• Ananicy-CPP (Auto-Nice):       $(systemctl is-active --quiet ananicy-cpp.service 2>/dev/null && echo 'Activo' || echo 'Inactivo / No instalado')"
-    echo "• UKSMD (Deduplicación RAM):     $(systemctl is-active --quiet uksmd.service 2>/dev/null && echo 'Activo' || echo 'Inactivo / No instalado')"
-    echo "• Irqbalance (Distribución IRQ): $(systemctl is-active --quiet irqbalance.service 2>/dev/null && echo 'Activo' || echo 'Inactivo / No instalado')"
-    echo "• Fstrim Timer (Mantenimiento SSD): $(systemctl is-enabled --quiet fstrim.timer 2>/dev/null && echo 'Habilitado' || echo 'Inactivo')"
-    echo "-----------------------------------------------------------------"
-    echo "• GNOME Mutter VRR / Scaling:    $(run_as_user gsettings get org.gnome.mutter experimental-features 2>/dev/null || echo 'n/a')"
-    echo "• GNOME Tema de Color:           $(run_as_user gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null || echo 'n/a')"
-    echo "================================================================="
+    echo -e "${BOLD}=================================================================${NC}"
+    echo -e "${CYAN}${BOLD}🔍 ESTADO DE RENDIMIENTO Y OPTIMIZACIONES - CACHYOS TV${NC}"
+    echo -e "${CYAN}   Equipo: HP Z230 SFF Workstation (Sony TV / Intel Haswell)${NC}"
+    echo -e "${BOLD}=================================================================${NC}"
+    echo -e "• Kernel:                        $(uname -r)"
+    echo -e "• CPU Scaling Driver:            $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver 2>/dev/null || echo 'n/a')"
+    echo -e "• CPU Governor:                  $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null || echo 'n/a')"
+    local pstate_status
+    pstate_status=$(cat /sys/devices/system/cpu/intel_pstate/status 2>/dev/null || echo 'n/a')
+    echo -e "• Intel P-State Status:          $pstate_status"
+    echo -e "-----------------------------------------------------------------"
+    echo -e "• fs.inotify.max_user_watches:   $(sysctl -n fs.inotify.max_user_watches 2>/dev/null || echo 'n/a')"
+    echo -e "• fs.inotify.max_user_instances: $(sysctl -n fs.inotify.max_user_instances 2>/dev/null || echo 'n/a')"
+    echo -e "• fs.file-max:                   $(sysctl -n fs.file-max 2>/dev/null || echo 'n/a')"
+    echo -e "• vm.max_map_count:              $(sysctl -n vm.max_map_count 2>/dev/null || echo 'n/a')"
+    echo -e "• vm.swappiness (ZRAM):          $(sysctl -n vm.swappiness 2>/dev/null || echo 'n/a')"
+    echo -e "• vm.page-cluster (ZRAM):        $(sysctl -n vm.page-cluster 2>/dev/null || echo 'n/a')"
+    echo -e "• vm.vfs_cache_pressure:         $(sysctl -n vm.vfs_cache_pressure 2>/dev/null || echo 'n/a')"
+    echo -e "• vm.dirty_ratio / background:   $(sysctl -n vm.dirty_ratio 2>/dev/null || echo 'n/a') / $(sysctl -n vm.dirty_background_ratio 2>/dev/null || echo 'n/a')"
+    echo -e "• net.ipv4.tcp_congestion_ctrl:  $(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo 'n/a')"
+    echo -e "• net.ipv4.tcp_fastopen:         $(sysctl -n net.ipv4.tcp_fastopen 2>/dev/null || echo 'n/a')"
+    echo -e "-----------------------------------------------------------------"
+    echo -e "• Límite nofile (ulimit -n):     $(ulimit -n 2>/dev/null || echo 'n/a')"
+    echo -e "• Systemd DefaultLimitNOFILE:    $(grep -h "DefaultLimitNOFILE" /etc/systemd/system.conf.d/*.conf /etc/systemd/user.conf.d/*.conf 2>/dev/null | head -n1 || echo 'Por defecto')"
+    echo -e "• Systemd Stop Timeout:          $(grep -h "DefaultTimeoutStopSec" /etc/systemd/system.conf.d/*.conf 2>/dev/null | head -n1 || echo 'Por defecto')"
+    echo -e "-----------------------------------------------------------------"
+    echo -e "• ZRAM Swap Activo:              $(if command -v zramctl &>/dev/null && [ -n "$(zramctl 2>/dev/null)" ]; then echo 'Sí ('"$(zramctl --noheadings -o ALGORITHM,DISKSIZE 2>/dev/null | head -n1)"')'; else echo 'No / Inactivo'; fi)"
+    echo -e "• Ananicy-CPP (Auto-Nice):       $(systemctl is-active --quiet ananicy-cpp.service 2>/dev/null && echo -e "${GREEN}Activo${NC}" || echo -e "${YELLOW}Inactivo / No instalado${NC}")"
+    echo -e "• UKSMD (Deduplicación RAM):     $(systemctl is-active --quiet uksmd.service 2>/dev/null && echo -e "${GREEN}Activo${NC}" || echo -e "${YELLOW}Inactivo / No instalado${NC}")"
+    echo -e "• Irqbalance (Distribución IRQ): $(systemctl is-active --quiet irqbalance.service 2>/dev/null && echo -e "${GREEN}Activo${NC}" || echo -e "${YELLOW}Inactivo / No instalado${NC}")"
+    echo -e "• Fstrim Timer (Mantenimiento SSD): $(systemctl is-enabled --quiet fstrim.timer 2>/dev/null && echo -e "${GREEN}Habilitado${NC}" || echo -e "${YELLOW}Inactivo${NC}")"
+    echo -e "• Paccache Timer (Limpieza Pacman): $(systemctl is-enabled --quiet paccache.timer 2>/dev/null && echo -e "${GREEN}Habilitado${NC}" || echo -e "${YELLOW}Inactivo${NC}")"
+    echo -e "-----------------------------------------------------------------"
+    echo -e "• GNOME Mutter Escalado:         $(run_as_user gsettings get org.gnome.mutter experimental-features 2>/dev/null || echo 'n/a')"
+    echo -e "• GNOME Tema de Color:           $(run_as_user gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null || echo 'n/a')"
+    echo -e "${BOLD}=================================================================${NC}"
 }
 
-# 2. Configuración de Parámetros de Kernel Sysctl
 apply_sysctl_tuning() {
-    echo "⚙️ [1/6] Configurando optimizaciones del Kernel (Sysctl)..."
+    echo -e "${BLUE}⚙️ [1/5] Configurando optimizaciones del Kernel (Sysctl) para HTPC...${NC}"
 
     $SUDO tee /etc/sysctl.d/99-cachyos-tuning.conf > /dev/null << 'EOF'
 # =============================================================================
-# CACHYOS HIGH-PERFORMANCE SYSCTL TUNING (GNOME Workstation)
+# CACHYOS TV SYSCTL TUNING - HP Z230 SFF (Sony TV)
+# Hardware: Intel Core i7-4790 (Haswell) | 8.0 GiB DDR3 | ZRAM ZSTD
 # =============================================================================
 
 # 1. Monitoreo de Sistema y Descriptores de Inotify
-fs.inotify.max_user_watches = 1048576
-fs.inotify.max_user_instances = 8192
+fs.inotify.max_user_watches = 524288
+fs.inotify.max_user_instances = 4096
 fs.file-max = 2097152
 
 # 2. Memoria Virtual y Gestor de Mapas de Memoria
 vm.max_map_count = 16777216
 
-# 3. ZRAM y Swappiness agresivo optimizado para memoria comprimida
+# 3. ZRAM y Swappiness optimizado para 8 GB RAM física con ZRAM ZSTD (4 GB)
 vm.swappiness = 180
 vm.watermark_boost_factor = 0
 vm.watermark_scale_factor = 125
@@ -141,7 +165,7 @@ vm.vfs_cache_pressure = 50
 vm.dirty_background_ratio = 5
 vm.dirty_ratio = 10
 
-# 5. Red TCP / Stack de Red de Alta Velocidad (BBR y FastOpen)
+# 5. Red TCP / Stack de Red de Alta Velocidad para Streaming (BBR y CAKE)
 net.core.default_qdisc = cake
 net.ipv4.tcp_congestion_control = bbr
 net.ipv4.tcp_fastopen = 3
@@ -152,21 +176,20 @@ net.ipv4.tcp_max_syn_backlog = 8192
 EOF
 
     $SUDO sysctl --system > /dev/null || true
-    echo "✅ Parámetros de Kernel Sysctl aplicados correctamente."
+    echo -e "${GREEN}✅ Parámetros de Kernel Sysctl aplicados correctamente.${NC}"
 }
 
-# 3. Configuración de Límites de Descriptores de Proceso (limits.d y systemd)
 apply_limits_tuning() {
-    echo "📈 [2/6] Configurando límites de descriptores de archivos, memoria y sesiones Systemd..."
+    echo -e "${BLUE}📈 [2/5] Configurando límites de descriptores y sesiones Systemd...${NC}"
 
-    $SUDO tee /etc/security/limits.d/99-dev-limits.conf > /dev/null << 'EOF'
-# Límites ampliados para desarrollo masivo, IDEs, compilaciones y gaming
+    $SUDO tee /etc/security/limits.d/99-tv-limits.conf > /dev/null << 'EOF'
+# Límites optimizados para Centro Multimedia CachyOS TV
 *          soft    nofile     524288
 *          hard    nofile     1048576
 *          soft    memlock    unlimited
 *          hard    memlock    unlimited
-*          soft    nproc      512000
-*          hard    nproc      512000
+*          soft    nproc      256000
+*          hard    nproc      256000
 EOF
 
     $SUDO mkdir -p /etc/systemd/system.conf.d /etc/systemd/user.conf.d
@@ -175,7 +198,7 @@ EOF
 [Manager]
 DefaultLimitNOFILE=1048576:1048576
 DefaultLimitMEMLOCK=infinity
-DefaultLimitNPROC=512000
+DefaultLimitNPROC=256000
 DefaultTasksMax=infinity
 EOF
 
@@ -183,17 +206,16 @@ EOF
 [Manager]
 DefaultLimitNOFILE=1048576:1048576
 DefaultLimitMEMLOCK=infinity
-DefaultLimitNPROC=512000
+DefaultLimitNPROC=256000
 DefaultTasksMax=infinity
 EOF
 
     $SUDO systemctl daemon-reexec 2>/dev/null || true
-    echo "✅ Límites de seguridad (limits.d y systemd system/user) configurados."
+    echo -e "${GREEN}✅ Límites de seguridad y systemd configurados.${NC}"
 }
 
-# 4. Servicios de Alto Rendimiento y Mantenimiento de CachyOS
 apply_cachyos_services() {
-    echo "🚀 [3/6] Verificando e instalando Ananicy-CPP, UKSMD, Irqbalance y temporizadores..."
+    echo -e "${BLUE}🚀 [3/5] Verificando e iniciando Ananicy-CPP, UKSMD, Irqbalance y timers SSD...${NC}"
 
     $SUDO pacman -S --needed --noconfirm \
         ananicy-cpp \
@@ -214,12 +236,11 @@ apply_cachyos_services() {
         $SUDO systemctl enable --now paccache.timer 2>/dev/null || true
     fi
 
-    echo "✅ Servicios de rendimiento (Ananicy-CPP, UKSMD, Irqbalance, fstrim) habilitados."
+    echo -e "${GREEN}✅ Servicios de rendimiento (Ananicy-CPP, UKSMD, Irqbalance, fstrim, paccache) activos.${NC}"
 }
 
-# 5. Optimización de Timeouts de Apagado de Systemd
 apply_systemd_tuning() {
-    echo "⏱️ [4/6] Ajustando timeouts de parada de servicios en Systemd (10s)..."
+    echo -e "${BLUE}⏱️ [4/5] Ajustando timeouts de parada de servicios en Systemd (10s)...${NC}"
     $SUDO mkdir -p /etc/systemd/system.conf.d /etc/systemd/user.conf.d
 
     $SUDO tee /etc/systemd/system.conf.d/99-fast-shutdown.conf > /dev/null << 'EOF'
@@ -234,109 +255,88 @@ DefaultTimeoutStopSec=10s
 DefaultTimeoutAbortSec=10s
 EOF
 
-    echo "✅ Timeout de apagado en Systemd configurado a 10 segundos (evita bloqueos al reiniciar)."
+    echo -e "${GREEN}✅ Timeout de apagado en Systemd configurado a 10s (reinicio instantáneo).${NC}"
 }
 
-# 6. Optimización de GNOME (Mutter VRR y exclusiones de Tracker)
 apply_gnome_tuning() {
-    echo "🎨 [5/6] Configurando optimizaciones de fluidez de GNOME y exclusiones del indexador Tracker..."
+    echo -e "${BLUE}🎨 [5/5] Configurando GNOME Mutter y exclusiones inteligentes del indexador Tracker...${NC}"
 
-    # Características avanzadas de Mutter (VRR y soporte multi-pantalla fractional)
-    run_as_user gsettings set org.gnome.mutter experimental-features "['variable-refresh-rate', 'scale-monitor-framebuffer']" 2>/dev/null || true
+    # Escalado framebuffer para pantallas HiDPI/TV (sin VRR innecesario en Haswell HD 4600 / TV 60Hz)
+    run_as_user gsettings set org.gnome.mutter experimental-features "['scale-monitor-framebuffer']" 2>/dev/null || true
     run_as_user gsettings set org.gnome.mutter center-new-windows true 2>/dev/null || true
 
-    # Optimización del indexador Tracker 3 (LocalSearch) para estaciones de desarrollo:
-    # Excluir carpetas masivas de dependencias y compilación para no saturar I/O
+    # Optimización del indexador Tracker 3 (LocalSearch) para HTPC:
+    # Excluir montajes de red (/mnt/nas) y carpetas de descargas para no devorar CPU ni RAM con bibliotecas de vídeo masivas
     if run_as_user gsettings list-schemas | grep -q "org.freedesktop.Tracker3.Miner.Files"; then
         run_as_user gsettings set org.freedesktop.Tracker3.Miner.Files index-on-battery false 2>/dev/null || true
         run_as_user gsettings set org.freedesktop.Tracker3.Miner.Files ignored-directories \
-            "['node_modules', '.git', '.venv', '.cargo', 'target', 'build', 'dist', '.cache', '.npm', '.rustup', '.local/share/Steam']" 2>/dev/null || true
-        echo "ℹ️ Tracker 3 configurado con exclusiones inteligentes para desarrollo."
+            "['/mnt/nas', '.cache', '.local/share/Trash', '.local/share/Steam', '.npm', '.cargo', 'target', 'node_modules']" 2>/dev/null || true
+        echo -e "  • Tracker 3 configurado con exclusión de montajes de red y cachés masivas."
     fi
 
-    echo "✅ Optimizaciones de GNOME y Tracker aplicadas."
-}
-
-# 7. Herramientas de Desarrollo y Contenedores (Distrobox + Podman)
-install_dev_tools() {
-    echo "📦 [6/6] Verificando e instalando Distrobox y Podman para entornos aislados..."
-    $SUDO pacman -S --needed --noconfirm distrobox podman 2>/dev/null || true
-    echo "✅ Distrobox y Podman instalados y listos."
+    echo -e "${GREEN}✅ Optimizaciones de GNOME y Tracker aplicadas.${NC}"
 }
 
 # Procesar argumentos de línea de comandos
 case "${1:-}" in
-    --help|-h|help)
+    -h|--help|help)
         show_help
         exit 0
         ;;
-    --status|-s|status)
+    -s|--status|status)
         show_status
         exit 0
         ;;
     --sysctl)
-        echo "================================================================="
-        echo "⚙️ APLICANDO SYSCTL TUNING - CACHYOS (GNOME)"
-        echo "================================================================="
+        echo -e "${BOLD}=================================================================${NC}"
+        echo -e "${CYAN}⚙️ APLICANDO SYSCTL TUNING - CACHYOS TV${NC}"
+        echo -e "${BOLD}=================================================================${NC}"
         apply_sysctl_tuning
-        echo "✅ Sysctl aplicado con éxito."
         ;;
     --limits)
-        echo "================================================================="
-        echo "📈 APLICANDO LÍMITES DE PROCESO Y SYSTEMD - CACHYOS"
-        echo "================================================================="
+        echo -e "${BOLD}=================================================================${NC}"
+        echo -e "${CYAN}📈 APLICANDO LÍMITES DE PROCESO Y SYSTEMD - CACHYOS TV${NC}"
+        echo -e "${BOLD}=================================================================${NC}"
         apply_limits_tuning
-        echo "✅ Límites aplicados con éxito."
         ;;
     --services)
-        echo "================================================================="
-        echo "🚀 CONFIGURANDO SERVICIOS DE RENDIMIENTO - CACHYOS"
-        echo "================================================================="
+        echo -e "${BOLD}=================================================================${NC}"
+        echo -e "${CYAN}🚀 CONFIGURANDO SERVICIOS DE RENDIMIENTO - CACHYOS TV${NC}"
+        echo -e "${BOLD}=================================================================${NC}"
         apply_cachyos_services
-        echo "✅ Servicios configurados con éxito."
         ;;
     --gnome)
-        echo "================================================================="
-        echo "🎨 OPTIMIZANDO GNOME Y TRACKER INDEXER"
-        echo "================================================================="
+        echo -e "${BOLD}=================================================================${NC}"
+        echo -e "${CYAN}🎨 OPTIMIZANDO GNOME MUTTER Y TRACKER INDEXER${NC}"
+        echo -e "${BOLD}=================================================================${NC}"
         apply_gnome_tuning
-        echo "✅ Optimizaciones de GNOME aplicadas con éxito."
-        ;;
-    --tracker-fast)
-        echo "================================================================="
-        echo "🗂️ CONFIGURANDO EXCLUSIONES DE TRACKER 3 PARA DESARROLLO"
-        echo "================================================================="
-        apply_gnome_tuning
-        echo "✅ Exclusiones de Tracker aplicadas."
         ;;
     --no-install)
-        echo "================================================================="
-        echo "⚡ APLICANDO OPTIMIZACIONES CACHYOS (GNOME) [SIN PAQUETES]"
-        echo "================================================================="
+        echo -e "${BOLD}=================================================================${NC}"
+        echo -e "${CYAN}⚡ APLICANDO OPTIMIZACIONES CACHYOS TV [SIN INSTALAR PAQUETES]${NC}"
+        echo -e "${BOLD}=================================================================${NC}"
         apply_sysctl_tuning
         apply_limits_tuning
         apply_systemd_tuning
         apply_gnome_tuning
         echo ""
-        echo "✅ Optimizaciones de sistema aplicadas con éxito."
+        show_status
         ;;
     "")
-        echo "================================================================="
-        echo "⚡ INICIANDO OPTIMIZACIÓN AVANZADA - CACHYOS (GNOME)"
-        echo "================================================================="
+        echo -e "${BOLD}=================================================================${NC}"
+        echo -e "${CYAN}⚡ INICIANDO OPTIMIZACIÓN DE RENDIMIENTO - CACHYOS TV${NC}"
+        echo -e "${CYAN}   Equipo: HP Z230 SFF Workstation (Sony TV / Intel Haswell)${NC}"
+        echo -e "${BOLD}=================================================================${NC}"
         apply_sysctl_tuning
         apply_limits_tuning
         apply_cachyos_services
         apply_systemd_tuning
         apply_gnome_tuning
-        install_dev_tools
         echo ""
-        echo "================================================================="
-        echo "✅ Optimización completa de CachyOS (GNOME Workstation) finalizada."
-        echo "================================================================="
+        show_status
         ;;
     *)
-        echo "❌ Opción no reconocida: $1"
+        echo -e "${RED}❌ Opción no reconocida: $1${NC}"
         show_help
         exit 1
         ;;
