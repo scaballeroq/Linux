@@ -166,6 +166,26 @@ security *args:
 security-status:
     ./Setup/seguridad.sh --status
 
+# =============================================================================
+# RED PRIVADA Y BYPASS DE BLOQUEOS (CLOUDFLARE WARP / LA LIGA)
+# =============================================================================
+
+# Instalar y gestionar Cloudflare WARP (bypass bloqueos de La Liga en Stremio)
+warp *args:
+    ./Setup/cloudflare-warp.sh {{args}}
+
+# Conectar Cloudflare WARP
+warp-on:
+    ./Setup/cloudflare-warp.sh --connect
+
+# Desconectar Cloudflare WARP
+warp-off:
+    ./Setup/cloudflare-warp.sh --disconnect
+
+# Estado de la conexión Cloudflare WARP
+warp-status:
+    ./Setup/cloudflare-warp.sh --status
+
 # Multimedia adicional (yt-dlp stack)
 yt-dlp:
     ./Setup/yt-dlp-setup.sh
