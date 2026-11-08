@@ -1,0 +1,398 @@
+# ==============================================================================
+#  Justfile - Orquestador de Configuración para Fedora 45 Workstation (GNOME Wayland)
+#  Gestor de Paquetes: DNF5 + RPM Fusion (Free & Non-Free Obligatorio) + Flatpak
+# ==============================================================================
+
+set shell := ["bash", "-euo", "pipefail", "-c"]
+
+# Mostrar lista de recetas disponibles por defecto
+default:
+    @just --list --unsorted
+
+# ==============================================================================
+#  1. PERFILES DE DESPLIEGUE COMPLETO
+# ==============================================================================
+
+# Ejecuta la instalación completa para estación de trabajo Fedora 45 Workstation
+setup-all: post-install rpmfusion zram tuning laptop fingerprint printer security fonts shell zsh starship fastfetch kitty ghostty ptyxis apariencia gnome-setup gnome-extensions gsconnect multimedia flatpak chrome firefox steam virtualization podman git mise languages ide
+    @echo "✅ Despliegue integral de Fedora 45 Workstation (GNOME Wayland) completado."
+
+# Perfil optimizado para Portátil de Desarrollo AMD Ryzen (HP ProBook 455 G10)
+setup-laptop-amd: post-install-amd rpmfusion zram tuning laptop fingerprint printer security fonts shell zsh starship fastfetch kitty ghostty ptyxis apariencia gnome-setup gnome-extensions gsconnect multimedia flatpak chrome firefox virtualization podman git mise languages ide
+    @echo "✅ Perfil Portátil Desarrollo AMD Ryzen en Fedora 45 Workstation completado."
+
+# Perfil para Sobremesa / Media Center Intel Core
+setup-media-desktop: post-install-intel rpmfusion zram tuning security fonts shell starship fastfetch kitty apariencia gnome-setup gnome-extensions multimedia flatpak chrome firefox
+    @echo "✅ Perfil Sobremesa Multimedia Intel en Fedora 45 Workstation completado."
+
+# ==============================================================================
+#  2. DIAGNÓSTICO GLOBAL (--status)
+# ==============================================================================
+
+# Muestra el estado global de todos los componentes de Fedora 45 Workstation
+status:
+    ./Setup/post-install-amd.sh --status
+    ./Setup/zram-setup.sh --status
+    ./Setup/fedora-tuning.sh --status
+    ./Setup/laptop-setup.sh --status
+    ./Setup/seguridad.sh --status
+    ./Setup/apariencia.sh --status
+    ./Setup/gnome-settings.sh --status
+    ./Setup/gnome-extensions.sh --status
+    ./Setup/multimedia.sh --status
+    ./Setup/flatpak.sh --status
+    ./Podman/install/podman-install.sh --status
+    ./Virtualizacion/virtualization.sh --status
+
+# ==============================================================================
+#  3. SISTEMA BASE, RPM FUSION OBLIGATORIO, KERNEL Y HARDWARE
+# ==============================================================================
+
+# Instala y verifica obligatoriamente RPM Fusion (Free, Non-Free, Tainted & OpenH264)
+rpmfusion:
+    ./Setup/rpmfusion.sh
+
+# Diagnóstico del estado de los repositorios RPM Fusion
+rpmfusion-status:
+    ./Setup/rpmfusion.sh --status
+
+# Post-instalación base con auto-detección de CPU (AMD Ryzen vs Intel Core)
+post-install:
+    ./Setup/post-install.sh
+
+# Post-instalación específica para AMD Ryzen y gráficos Radeon (RADV + VA-API Freeworld)
+post-install-amd:
+    ./Setup/post-install-amd.sh
+
+# Post-instalación específica para Intel Core
+post-install-intel:
+    ./Setup/post-install-intel.sh
+
+# Configura Swap en ZRAM (zstd, 50% RAM, prioridad 100)
+zram:
+    ./Setup/zram-setup.sh
+
+# Muestra el estado actual de ZRAM y dispositivos de swap
+zram-status:
+    ./Setup/zram-setup.sh --status
+
+# Aplica optimizaciones de Kernel (sysctl), límites (ulimit) y exclusiones de GNOME Tracker
+tuning:
+    ./Setup/fedora-tuning.sh
+
+# Muestra el diagnóstico de optimización del sistema (sysctl, límites, Tracker)
+tuning-status:
+    ./Setup/fedora-tuning.sh --status
+
+# Optimización para portátil (energía, Touchpad Wayland, multimonitor, logind y Bluetooth)
+laptop:
+    ./Setup/laptop-setup.sh
+
+# Muestra telemetría de batería, CPU EPP y pantallas DRM del portátil
+laptop-status:
+    ./Setup/laptop-setup.sh --status
+
+# Configura lector de huella dactilar (fprintd + authselect PAM)
+fingerprint:
+    ./Setup/fingerprint-setup.sh
+
+# Estado del lector de huella dactilar
+fingerprint-status:
+    ./Setup/fingerprint-setup.sh --status
+
+# Configura impresora HP (CUPS, HPLIP, colas IPP Everywhere y Firewalld)
+printer *args:
+    ./Setup/hp-printer-setup.sh {{args}}
+
+# Estado del subsistema de impresión HP
+printer-status:
+    ./Setup/hp-printer-setup.sh --status
+
+# Endurecimiento de red con Firewalld exclusivo, DNS-over-TLS y sysctl
+security:
+    ./Setup/seguridad.sh
+
+# Habilita puertos de desarrollo local en Firewalld (3000, 5173, 8000, 8080 TCP)
+dev-ports:
+    ./Setup/seguridad.sh --dev-ports
+
+# Muestra el estado de Firewalld, zonas activas y endurecimiento sysctl
+security-status:
+    ./Setup/seguridad.sh --status
+
+# Instala y activa la consola web de administración Cockpit (puerto 9090)
+cockpit *args:
+    ./Setup/cockpit.sh {{args}}
+
+# Estado de Cockpit
+cockpit-status:
+    ./Setup/cockpit.sh --status
+
+# Abre Cockpit en el navegador predeterminado
+cockpit-open:
+    ./Setup/cockpit.sh --open
+
+# ==============================================================================
+#  4. ESCRITORIO GNOME SHELL (WAYLAND), APARIENCIA Y TERMINALES
+# ==============================================================================
+
+# Configura temas GTK (adw-gtk3-dark), iconos Papirus-Dark y cursor Bibata (24px)
+apariencia:
+    ./Setup/apariencia.sh
+
+# Selector interactivo de apariencia (tema claro/oscuro, iconos y cursores)
+apariencia-interactive:
+    ./Setup/apariencia.sh --interactive
+
+# Muestra el estado actual de apariencia en GNOME
+apariencia-status:
+    ./Setup/apariencia.sh --status
+
+# Configura GNOME Shell Wayland (reloj 24h, Night Light 4000K, Mutter VRR, Nautilus)
+gnome-setup:
+    ./Setup/gnome-settings.sh
+
+# Asistente interactivo de configuración de GNOME Shell
+gnome-interactive:
+    ./Setup/gnome-settings.sh --interactive
+
+# Diagnóstico de ajustes de GNOME Shell
+gnome-status:
+    ./Setup/gnome-settings.sh --status
+
+# Instala y activa las extensiones recomendadas de GNOME Shell
+gnome-extensions:
+    ./Setup/gnome-extensions.sh
+
+# Muestra el estado de las extensiones de GNOME Shell
+gnome-extensions-status:
+    ./Setup/gnome-extensions.sh --status
+
+# Configura GSConnect (KDE Connect nativo para GNOME) y Firewalld
+gsconnect:
+    ./Setup/gsconnect.sh
+
+# Estado de GSConnect y puertos 1714-1764 en Firewalld
+gsconnect-status:
+    ./Setup/gsconnect.sh --status
+
+# Instala y configura Kitty Terminal (Catppuccin Mocha, opacidad 75% y Nautilus)
+kitty:
+    ./Setup/kitty.sh
+
+# Estado de Kitty Terminal
+kitty-status:
+    ./Setup/kitty.sh --status
+
+# Instala y configura Ghostty Terminal (Catppuccin Mocha y Nautilus)
+ghostty:
+    ./Setup/ghostty.sh
+
+# Estado de Ghostty Terminal
+ghostty-status:
+    ./Setup/ghostty.sh --status
+
+# Instala y configura Ptyxis Terminal (Catppuccin Mocha, opacidad 85% y Nautilus)
+ptyxis:
+    ./Setup/ptyxis.sh
+
+# Estado de Ptyxis Terminal
+ptyxis-status:
+    ./Setup/ptyxis.sh --status
+
+# ==============================================================================
+#  5. SHELLS (BASH & ZSH), TIPOGRAFÍAS, STARSHIP Y FASTFETCH
+# ==============================================================================
+
+# Instala Nerd Fonts (JetBrainsMono, FiraCode, CascadiaCode, Meslo, Hack)
+fonts:
+    ./Setup/fonts.sh
+
+# Estado de fuentes Nerd Fonts instaladas
+fonts-status:
+    ./Setup/fonts.sh --status
+
+# Configura herramientas modernas de terminal y entorno modular Bash (~/.bashrc.d)
+shell:
+    ./Setup/shell.sh
+
+# Estado de herramientas CLI y entorno Bash
+shell-status:
+    ./Setup/shell.sh --status
+
+# Instala, configura Zsh y lo establece como shell predeterminada
+zsh:
+    ./Setup/zsh-setup.sh
+
+# Configura Zsh y lo establece como shell predeterminada del usuario
+zsh-default:
+    ./Setup/zsh-setup.sh --default-shell
+
+# Estado de Zsh y módulos ~/.zshrc.d
+zsh-status:
+    ./Setup/zsh-setup.sh --status
+
+# Instala y configura el prompt Starship con paleta Fedora
+starship:
+    ./Setup/starship.sh
+
+# Estado del prompt Starship
+starship-status:
+    ./Setup/starship.sh --status
+
+# Instala y aplica el tema Hero de Fastfetch para Fedora 45 Workstation
+fastfetch:
+    ./Setup/fastfetch.sh
+
+# Selector interactivo de temas para Fastfetch
+fastfetch-menu:
+    ./Setup/fastfetch.sh --menu
+
+# Estado de Fastfetch
+fastfetch-status:
+    ./Setup/fastfetch.sh --status
+
+# ==============================================================================
+#  6. MULTIMEDIA, FLATPAK, NAVEGADORES Y GAMING
+# ==============================================================================
+
+# Instala RPM Fusion, FFmpeg completo, VA-API Freeworld, GStreamer y reproductores Wayland
+multimedia:
+    ./Setup/multimedia.sh
+
+# Instala únicamente códecs multimedia, drivers VA-API freeworld y plugins GStreamer
+multimedia-codecs:
+    ./Setup/multimedia.sh --codecs
+
+# Instala únicamente reproductores multimedia GNOME Wayland (Showtime, Celluloid, MPV, VLC)
+multimedia-players:
+    ./Setup/multimedia.sh --players
+
+# Estado de RPM Fusion, códecs multimedia, VA-API y MPV
+multimedia-status:
+    ./Setup/multimedia.sh --status
+
+# Configura yt-dlp, FFmpeg, aria2 y Deno
+yt-dlp:
+    ./Setup/yt-dlp-setup.sh
+
+# Instala el perfil estándar de aplicaciones Flatpak desde Flathub
+flatpak:
+    ./Setup/flatpak.sh
+
+# Instala el catálogo completo de aplicaciones Flatpak
+flatpak-all:
+    ./Setup/flatpak.sh --all
+
+# Estado de aplicaciones Flatpak instaladas
+flatpak-status:
+    ./Setup/flatpak.sh --status
+
+# Instala Google Chrome oficial con aceleración Wayland Ozone y VA-API
+chrome:
+    ./Setup/chrome.sh
+
+# Estado de Google Chrome
+chrome-status:
+    ./Setup/chrome.sh --status
+
+# Instala y optimiza Mozilla Firefox nativo con soporte VA-API y Wayland
+firefox:
+    ./Setup/firefox.sh
+
+# Estado de Mozilla Firefox
+firefox-status:
+    ./Setup/firefox.sh --status
+
+# Instala Steam desde RPM Fusion Non-Free, drivers Vulkan 32-bit, GameMode, MangoHud y Proton-GE
+steam:
+    ./Setup/steam.sh
+
+# Estado de Steam y herramientas de gaming
+steam-status:
+    ./Setup/steam.sh --status
+
+# ==============================================================================
+#  7. CONTENEDORES (PODMAN ROOTLESS) Y VIRTUALIZACIÓN (KVM/QEMU)
+# ==============================================================================
+
+# Configura Podman Rootless, socket de usuario, linger y systemd Quadlets
+podman:
+    ./Podman/install/podman-install.sh
+    ./Podman/install/quadlets-setup.sh
+
+# Estado de Podman Rootless y Quadlets
+podman-status:
+    ./Podman/install/podman-install.sh --status
+    ./Podman/install/quadlets-setup.sh --status
+
+# Instala y optimiza KVM/QEMU, Libvirt modular y virt-manager
+virtualization:
+    ./Virtualizacion/virtualization.sh
+
+# Estado de KVM/QEMU y Libvirt
+virtualization-status:
+    ./Virtualizacion/virtualization.sh --status
+
+# ==============================================================================
+#  8. DESARROLLO, LENGUAJES (MISE / UV) E IDEs
+# ==============================================================================
+
+# Configura Git, Delta, Lazygit y GitHub CLI (gh)
+git:
+    ./IDE/git.sh
+
+# Estado de Git, Delta, Lazygit y GitHub CLI
+git-status:
+    ./IDE/git.sh --status
+
+# Instala y configura Mise (gestor de runtimes polyglot)
+mise:
+    ./ProgrammingLanguages/mise.sh
+
+# Instala y optimiza el entorno de Rust
+rust:
+    ./ProgrammingLanguages/rust.sh
+
+# Diagnóstico de Rust
+rust-status:
+    ./ProgrammingLanguages/rust.sh --status
+
+# Instala los entornos de programación (Python + uv, Node.js, Rust, Java, .NET, Angular)
+languages:
+    ./ProgrammingLanguages/python.sh
+    ./ProgrammingLanguages/nodejs.sh
+    ./ProgrammingLanguages/rust.sh
+    ./ProgrammingLanguages/java.sh
+    ./ProgrammingLanguages/dotnet.sh
+    ./ProgrammingLanguages/angular.sh
+
+# Instala la suite de IDEs (Google Antigravity Desktop, CLI, IDE Engine y OpenCode)
+ide:
+    ./IDE/antigravity.sh
+    ./IDE/antigravity-cli.sh
+    ./IDE/antigravity-ide.sh
+    ./IDE/opencode.sh
+
+# Estado de la suite Antigravity y OpenCode
+ide-status:
+    ./IDE/antigravity.sh --status
+    ./IDE/antigravity-cli.sh --status
+    ./IDE/antigravity-ide.sh --status
+    ./IDE/opencode.sh --status
+
+# ==============================================================================
+#  9. MANTENIMIENTO DEL SISTEMA (DNF5 + FLATPAK + MISE)
+# ==============================================================================
+
+# Actualiza todo el sistema Fedora 45 (DNF5, Flatpak y Mise)
+upgrade:
+    sudo dnf5 upgrade --refresh -y
+    flatpak update -y
+    ~/.local/bin/mise upgrade || true
+
+# Limpia paquetes huérfanos, caché de DNF5 y runtimes Flatpak no utilizados
+clean:
+    sudo dnf5 autoremove -y
+    sudo dnf5 clean all
+    flatpak uninstall --unused -y

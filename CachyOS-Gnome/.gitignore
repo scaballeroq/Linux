@@ -1,0 +1,30 @@
+# Entornos y temporales
+*.swp
+*.swo
+*~
+.DS_Store
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Rust
+target/
+**/*.rs.bk
+
+# Archivos comprimidos temporales
+*.tar.gz
+*.zip
+*.iso
+
+# Ignorar proyectos locales creados en Podman pero mantener la carpeta
+Podman/projects/*
+!Podman/projects/.gitkeep

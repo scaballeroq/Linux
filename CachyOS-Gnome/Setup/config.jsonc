@@ -1,0 +1,147 @@
+{
+    "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+    // =========================================================================
+    //  CachyOS Workstation (GNOME Wayland) - Categorized Hero Theme
+    //  Color Primario: CachyOS Emerald/Cyan (RGB: 0, 212, 170 -> 38;2;0;212;170)
+    // =========================================================================
+    "logo": {
+        "type": "small",
+        "source": "cachyos",
+        "color": {
+            "1": "38;2;0;212;170",
+            "2": "38;2;255;255;255"
+        },
+        "padding": {
+            "top": 1,
+            "left": 2,
+            "right": 3
+        }
+    },
+    "display": {
+        "separator": "  ",
+        "color": {
+            "keys": "38;2;0;212;170",
+            "title": "1;38;2;0;212;170"
+        },
+        "key": {
+            "width": 16
+        },
+        "bar": {
+            "char": {
+                "elapsed": "■",
+                "total": "･"
+            },
+            "width": 14,
+            "border": {
+                "left": "[",
+                "right": "]"
+            }
+        },
+        "percent": {
+            "type": 3
+        }
+    },
+    "modules": [
+        "title",
+        "separator",
+        {
+            "type": "custom",
+            "format": "\u001b[1;38;2;0;212;170m┌────────────────── HARDWARE ──────────────────┐\u001b[0m"
+        },
+        {
+            "type": "host",
+            "key": "  󰌢 Equipo"
+        },
+        {
+            "type": "cpu",
+            "key": "  󰻠 CPU",
+            "showPeCoreCount": true
+        },
+        {
+            "type": "gpu",
+            "key": "  󰢮 GPU"
+        },
+        {
+            "type": "display",
+            "key": "  󰍹 Pantalla",
+            "compactType": "original-with-refresh-rate"
+        },
+        {
+            "type": "memory",
+            "key": "  󰑭 Memoria RAM"
+        },
+        {
+            "type": "swap",
+            "key": "  󰓡 Swap (ZRAM)"
+        },
+        {
+            "type": "disk",
+            "key": "  󰋊 Disco (/)"
+        },
+        {
+            "type": "custom",
+            "format": "\u001b[1;38;2;0;212;170m├─────────────────── SYSTEM ───────────────────┤\u001b[0m"
+        },
+        {
+            "type": "os",
+            "key": "   Sistema"
+        },
+        {
+            "type": "kernel",
+            "key": "  󰌽 Kernel"
+        },
+        {
+            "type": "packages",
+            "key": "  󰏖 Paquetes"
+        },
+        {
+            "type": "uptime",
+            "key": "  󰅐 Uptime"
+        },
+        {
+            "type": "custom",
+            "format": "\u001b[1;38;2;0;212;170m├───────────── THEMING & DESKTOP ──────────────┤\u001b[0m"
+        },
+        {
+            "type": "de",
+            "key": "  󰕮 Escritorio"
+        },
+        {
+            "type": "wm",
+            "key": "  󱂬 Compositor"
+        },
+        {
+            "type": "theme",
+            "key": "  󰉼 Tema GTK"
+        },
+        {
+            "type": "icons",
+            "key": "  󰀻 Iconos"
+        },
+        {
+            "type": "cursor",
+            "key": "  󰇀 Cursor"
+        },
+        {
+            "type": "terminal",
+            "key": "  󰆍 Terminal"
+        },
+        {
+            "type": "terminalfont",
+            "key": "  󰛖 Fuente"
+        },
+        {
+            "type": "shell",
+            "key": "  󰞷 Shell"
+        },
+        {
+            "type": "custom",
+            "format": "\u001b[1;38;2;0;212;170m└──────────────────────────────────────────────┘\u001b[0m"
+        },
+        {
+            "type": "colors",
+            "paddingLeft": 2,
+            "symbol": "circle"
+        }
+    ]
+}

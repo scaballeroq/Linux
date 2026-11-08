@@ -1,0 +1,45 @@
+# ProgrammingLanguages Sub-Justfile - Fedora Workstation
+
+# Instalar todos los lenguajes y runtimes
+languages: mise node python rust dotnet java angular
+    @echo "✅ Todos los lenguajes han sido instalados correctamente."
+
+# Gestor de versiones Mise
+mise:
+    ./mise.sh
+
+# Node.js LTS & pnpm vía Mise
+node:
+    ./nodejs.sh
+
+# Python con UV package manager
+python:
+    ./python.sh
+
+# Inicializador de proyectos Python con UV
+python-uv *args:
+    ./python-uv-init.sh {{args}}
+
+# Rust toolchain y optimizaciones
+rust:
+    ./rust.sh
+
+# Diagnóstico de Rust
+rust-status:
+    ./rust.sh --status
+
+# Actualización de Rust
+rust-update:
+    ./rust.sh --update
+
+# .NET SDK
+dotnet:
+    ./Revisar/dotnet.sh
+
+# OpenJDK Java LTS
+java:
+    ./java.sh
+
+# Angular CLI
+angular:
+    ./Revisar/angular.sh

@@ -1,0 +1,116 @@
+# 🚀 Starship Config: CachyOS Workstation (Optimized for CachyOS + GNOME + Nerd Fonts)
+
+# Tiempo límite de ejecución de módulos (evita retardos en repositorios grandes)
+command_timeout = 800
+
+# Formato general del prompt (Limpio, con alto contraste y soporte de contenedores)
+format = """
+$os\
+$container\
+$directory\
+$git_branch\
+$git_status\
+$package\
+$nodejs\
+$rust\
+$python\
+$dotnet\
+$docker_context\
+$cmd_duration\
+$line_break\
+$character"""
+
+# Línea en blanco entre comandos para legibilidad
+add_newline = true
+
+# Carácter del prompt (Minimalista)
+[character]
+success_symbol = "[❯](bold cyan)"
+error_symbol = "[✖](bold red)"
+
+# Icono del SO (Muestra el logotipo oficial con Nerd Fonts en Cyan / Verde CachyOS)
+[os]
+format = "[$symbol]($style) "
+style = "bold #00d4aa"
+disabled = false
+
+[os.symbols]
+CachyOS = " "
+Arch = " "
+Fedora = " "
+Ubuntu = " "
+Debian = " "
+
+# Contenedores Fedora (Toolbx, Distrobox, Podman)
+[container]
+format = "[$symbol $name]($style) "
+symbol = "⬢"
+style = "bold yellow"
+
+# Configuración del Directorio
+[directory]
+truncation_length = 3
+truncation_symbol = "…/"
+style = "bold cyan"
+read_only = " 󰌾"
+home_symbol = "󱂵 ~"
+
+# Git Branch (Con icono de Nerd Fonts)
+[git_branch]
+symbol = " "
+style = "bold magenta"
+format = "on [$symbol$branch]($style) "
+
+# Git Status (Visual y detallado)
+[git_status]
+format = '([\[$all_status$ahead_behind\]]($style) )'
+style = "bold red"
+ahead = "⇡${count}"
+behind = "⇣${count}"
+diverged = "󰹹 ⇡${ahead_count}⇣${behind_count}"
+conflicted = "󰞇 "
+untracked = "󰋗 "
+stashed = "󰏖 "
+modified = "󰏫 "
+staged = "󰐖 "
+renamed = "󰏬 "
+deleted = "󰆴 "
+
+# Duración de comandos lentos (>= 2 segundos)
+[cmd_duration]
+min_time = 2000
+format = "took [$duration]($style) "
+style = "yellow"
+
+# --- Módulos de Lenguajes (Solo se muestran si estás en un proyecto) ---
+
+[nodejs]
+symbol = " "
+style = "bold green"
+format = "via [$symbol($version)]($style) "
+
+[rust]
+symbol = " "
+style = "bold orange"
+format = "via [$symbol($version)]($style) "
+
+[python]
+symbol = " "
+style = "bold yellow"
+format = "via [$symbol($version) ($virtualenv)]($style) "
+
+[dotnet]
+symbol = "󰪮 "
+style = "bold blue"
+format = "via [$symbol($version)]($style) "
+
+# Podman / Docker Context
+[docker_context]
+symbol = " "
+style = "bold blue"
+format = "on [$symbol$context]($style) "
+
+# Package Manager
+[package]
+symbol = "󰏗 "
+format = "is [$symbol$version]($style) "

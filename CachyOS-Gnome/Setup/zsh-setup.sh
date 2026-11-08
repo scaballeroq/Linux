@@ -1,0 +1,293 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ==============================================================================
+#  zsh-setup.sh - Replicación y Configuración Integral de Zsh en CachyOS Workstation
+#  Basado en la arquitectura modular de Bash.Setup + Plugins nativos + Starship
+# ==============================================================================
+
+BOLD=$'\033[1m'
+GREEN=$'\033[0;32m'
+YELLOW=$'\033[1;33m'
+RED=$'\033[0;31m'
+CYAN=$'\033[0;36m'
+NC=$'\033[0m'
+
+log_info() { echo -e "${CYAN}ℹ️  $1${NC}"; }
+log_ok()   { echo -e "${GREEN}✅ $1${NC}"; }
+log_warn() { echo -e "${YELLOW}⚠️  $1${NC}"; }
+log_err()  { echo -e "${RED}❌ $1${NC}"; }
+
+if [[ $EUID -eq 0 ]]; then
+    REAL_USER="${SUDO_USER:-$(logname 2>/dev/null || echo "${USER:-root}")}"
+else
+    REAL_USER="${USER:-$(whoami)}"
+fi
+USER_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
+
+ZSHRC_FILE="$USER_HOME/.zshrc"
+ZSHRC_D="$USER_HOME/.zshrc.d"
+SET_DEFAULT_SHELL=true
+ACTION="install"
+
+show_help() {
+    cat << EOF
+${BOLD}🐚 Configurador Integral de Zsh - CachyOS Workstation (GNOME Wayland)${NC}
+
+Instala Zsh, plugins nativos (autosuggestions, syntax-highlighting), integraciones
+modernas (FZF, Zoxide, Mise, Starship), establece Zsh como shell predeterminada y
+genera la arquitectura modular en ${BOLD}~/.zshrc.d/${NC} adaptada a CachyOS y Pacman.
+
+${BOLD}Uso:${NC}
+  $0 [OPCIONES]
+
+${BOLD}Opciones:${NC}
+  (sin argumentos)        Instala paquetes, despliega ~/.zshrc y establece Zsh como shell por defecto
+  -d, --default-shell     Establece explícitamente Zsh como shell por defecto (activado por defecto)
+  -n, --no-default-shell  Instala y configura Zsh pero sin cambiar la shell por defecto del usuario
+  -s, --status            Muestra el estado actual de Zsh, plugins y módulos en ~/.zshrc.d
+  -h, --help              Muestra esta ayuda
+EOF
+}
+
+show_status() {
+    echo -e "${BOLD}======================================================================${NC}"
+    echo -e "  🐚 ${BOLD}ESTADO DEL ENTORNO ZSH - FEDORA 45 WORKSTATION ($REAL_USER)${NC}"
+    echo -e "${BOLD}======================================================================${NC}"
+
+    if command -v zsh &>/dev/null; then
+        echo -e "  • Binario Zsh:               ${GREEN}$(zsh --version)${NC}"
+    else
+        echo -e "  • Binario Zsh:               ${RED}No instalado${NC}"
+    fi
+
+    local current_shell
+    current_shell=$(getent passwd "$REAL_USER" | cut -d: -f7 2>/dev/null || echo "${SHELL:-/bin/bash}")
+    if [[ "$current_shell" == *"zsh"* ]]; then
+        echo -e "  • Shell por defecto:         ${GREEN}${current_shell} (Zsh activo)${NC}"
+    else
+        echo -e "  • Shell por defecto:         ${CYAN}${current_shell}${NC} (ejecuta './zsh-setup.sh' para cambiar a Zsh)"
+    fi
+
+    for pkg in zsh-autosuggestions zsh-syntax-highlighting fzf zoxide eza bat fd ripgrep; do
+        if pacman -Q "$pkg" &>/dev/null; then
+            echo -e "  • Paquete $(printf '%-23s' "$pkg"): ${GREEN}Instalado${NC}"
+        else
+            echo -e "  • Paquete $(printf '%-23s' "$pkg"): ${YELLOW}No instalado${NC}"
+        fi
+    done
+
+    if [[ -f "$ZSHRC_FILE" ]]; then
+        echo -e "  • Archivo ~/.zshrc:          ${GREEN}Configurado${NC}"
+    else
+        echo -e "  • Archivo ~/.zshrc:          ${YELLOW}No existe${NC}"
+    fi
+
+    if [[ -d "$ZSHRC_D" ]]; then
+        local count
+        count=$(find "$ZSHRC_D" -maxdepth 1 \( -name "*.zsh" -o -name "*.sh" \) | wc -l)
+        echo -e "  • Módulos en ~/.zshrc.d/:    ${GREEN}${count} módulos activos${NC}"
+    else
+        echo -e "  • Módulos en ~/.zshrc.d/:    ${YELLOW}Directorio no creado${NC}"
+    fi
+    echo -e "${BOLD}======================================================================${NC}"
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -s|--status)            ACTION="status"; shift ;;
+        -d|--default-shell)     SET_DEFAULT_SHELL=true; shift ;;
+        -n|--no-default-shell)  SET_DEFAULT_SHELL=false; shift ;;
+        -h|--help)              show_help; exit 0 ;;
+        *) log_err "Opción desconocida: $1"; show_help; exit 1 ;;
+    esac
+done
+
+if [[ "$ACTION" == "status" ]]; then
+    show_status
+    exit 0
+fi
+
+log_info "Verificando e instalando paquetes Zsh y utilidades CLI en CachyOS (Pacman)..."
+ZSH_PKGS=(
+    zsh
+    zsh-autosuggestions
+    zsh-syntax-highlighting
+    zsh-completions
+    fzf
+    zoxide
+    eza
+    bat
+    fd
+    ripgrep
+    btop
+    curl
+    git
+    jq
+    wl-clipboard
+)
+
+MISSING_PKGS=()
+for p in "${ZSH_PKGS[@]}"; do
+    pacman -Q "$p" &>/dev/null || MISSING_PKGS+=("$p")
+done
+
+if [[ ${#MISSING_PKGS[@]} -gt 0 ]]; then
+    sudo pacman -S --needed --noconfirm "${MISSING_PKGS[@]}"
+else
+    log_ok "Todos los paquetes base para Zsh ya están instalados."
+fi
+
+mkdir -p "$ZSHRC_D" "$USER_HOME/.cache/zsh"
+
+if [[ -f "$ZSHRC_FILE" ]] && ! grep -q "Configuración Modular Zsh - CachyOS Workstation" "$ZSHRC_FILE" 2>/dev/null; then
+    cp "$ZSHRC_FILE" "${ZSHRC_FILE}.bak.$(date +%Y%m%d%H%M%S)"
+    log_info "Backup de ~/.zshrc previo creado."
+fi
+
+log_info "Generando $ZSHRC_FILE para CachyOS Workstation..."
+cat << 'EOF' > "$ZSHRC_FILE"
+# ==============================================================================
+#  ~/.zshrc - Configuración Modular Zsh - CachyOS Workstation (GNOME Wayland)
+# ==============================================================================
+
+# Si no es interactivo, salir inmediatamente
+[[ -o interactive ]] || return
+
+# Variables de entorno base y XDG
+export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$HOME/bin:$PATH"
+export EDITOR="nano"
+export VISUAL="nano"
+export SYSTEMD_EDITOR="nano"
+
+# Opciones avanzadas de navegación e historial en Zsh
+setopt AUTO_CD
+setopt INTERACTIVE_COMMENTS
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_SAVE_NO_DUPS
+setopt HIST_REDUCE_BLANKS
+setopt INC_APPEND_HISTORY
+setopt SHARE_HISTORY
+setopt EXTENDED_HISTORY
+
+mkdir -p "$HOME/.cache/zsh"
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=50000
+SAVEHIST=50000
+
+# Inicialización de sistema de autocompletado Zsh con caché
+autoload -Uz compinit
+compinit -d "$HOME/.cache/zsh/zcompdump-$ZSH_VERSION"
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
+
+# Teclas estándar (Home, End, Delete, Ctrl+Flechas, búsqueda por prefijo)
+bindkey -e
+bindkey '^[[H'  beginning-of-line
+bindkey '^[[F'  end-of-line
+bindkey '^[[3~' delete-char
+bindkey '^[[1;5C' forward-word
+bindkey '^[[1;5D' backward-word
+bindkey '^[[A' history-beginning-search-backward
+bindkey '^[[B' history-beginning-search-forward
+
+# Cargar módulos personalizados desde ~/.zshrc.d/*.{sh,zsh}
+if [[ -d "$HOME/.zshrc.d" ]]; then
+    for config_file in "$HOME/.zshrc.d"/*.{sh,zsh}(N); do
+        [[ -r "$config_file" ]] && source "$config_file"
+    done
+fi
+
+# Plugins nativos (zsh-autosuggestions y zsh-syntax-highlighting)
+for p in /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh; do
+    if [[ -f "$p" ]]; then source "$p"; break; fi
+done
+for p in /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh; do
+    if [[ -f "$p" ]]; then source "$p"; break; fi
+done
+
+# Integración con FZF
+if command -v fzf &>/dev/null; then
+    source <(fzf --zsh 2>/dev/null) || {
+        [[ -f /usr/share/fzf/shell/key-bindings.zsh ]] && source /usr/share/fzf/shell/key-bindings.zsh
+    }
+fi
+
+# Integración con Zoxide
+if command -v zoxide &>/dev/null; then
+    eval "$(zoxide init zsh)"
+fi
+
+# Integración con Mise (gestor polyglot de runtimes)
+if [[ -x "$HOME/.local/bin/mise" ]]; then
+    eval "$("$HOME/.local/bin/mise" activate zsh)"
+elif command -v mise &>/dev/null; then
+    eval "$(mise activate zsh)"
+fi
+
+# Prompt: Starship si está instalado, o prompt Powerline nativo con estado Git
+if command -v starship &>/dev/null; then
+    eval "$(starship init zsh)"
+else
+    autoload -Uz vcs_info
+    precmd() { vcs_info }
+    zstyle ':vcs_info:git:*' formats ' (%b)'
+    setopt PROMPT_SUBST
+    PROMPT='%F{blue}%B%n@%m%b%f:%F{cyan}%~%f%F{yellow}${vcs_info_msg_0_}%f %# '
+fi
+EOF
+
+# Sincronizar scripts modulares desde Bash.Setup/ (compatibilidad dual Bash & Zsh)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+BASH_SETUP_DIR="$REPO_ROOT/Bash.Setup"
+
+log_info "Sincronizando módulos compartidos desde Bash.Setup/ a $ZSHRC_D/..."
+if [[ -d "$BASH_SETUP_DIR" ]]; then
+    # Limpiar copias estáticas previas o symlinks rotos
+    find -L "$ZSHRC_D" -maxdepth 1 -type l -exec rm -f {} + 2>/dev/null || true
+    rm -f "$ZSHRC_D/aliases.zsh" "$ZSHRC_D/environment.zsh" 2>/dev/null || true
+    for mod in functions gnome_settings podman-functions rclone_aliases yt-dlp_aliases; do
+        rm -f "$ZSHRC_D/${mod}.zsh" 2>/dev/null || true
+    done
+
+    # Enlazar todos los scripts modulares de Bash.Setup
+    for sh_file in "$BASH_SETUP_DIR"/*.sh; do
+        if [[ -f "$sh_file" ]]; then
+            base_name="$(basename "$sh_file")"
+            ln -sf "$sh_file" "$ZSHRC_D/$base_name"
+            if [[ -d "$USER_HOME/.bashrc.d" ]]; then
+                ln -sf "$sh_file" "$USER_HOME/.bashrc.d/$base_name"
+            fi
+        fi
+    done
+    log_ok "Módulos de Bash.Setup enlazados en ~/.zshrc.d/ y ~/.bashrc.d/ ($(find "$ZSHRC_D" -maxdepth 1 -name "*.sh" | wc -l) módulos)."
+fi
+
+if [[ $EUID -eq 0 && "$REAL_USER" != "root" ]]; then
+    chown -R "$REAL_USER:$REAL_USER" "$ZSHRC_FILE" "$ZSHRC_D" "$USER_HOME/.cache/zsh"
+fi
+
+if [[ "$SET_DEFAULT_SHELL" == true ]]; then
+    ZSH_PATH=$(command -v zsh 2>/dev/null || echo "/usr/bin/zsh")
+    CURRENT_SHELL=$(getent passwd "$REAL_USER" | cut -d: -f7 2>/dev/null || echo "${SHELL:-/bin/bash}")
+    if [[ "$CURRENT_SHELL" != "$ZSH_PATH" && "$CURRENT_SHELL" != "/bin/zsh" ]]; then
+        log_info "Configurando $ZSH_PATH como shell predeterminada para $REAL_USER..."
+        if ! grep -Fxq "$ZSH_PATH" /etc/shells 2>/dev/null; then
+            echo "$ZSH_PATH" | sudo tee -a /etc/shells >/dev/null
+        fi
+        if command -v chsh &>/dev/null; then
+            sudo chsh -s "$ZSH_PATH" "$REAL_USER" || sudo usermod -s "$ZSH_PATH" "$REAL_USER"
+        else
+            sudo usermod -s "$ZSH_PATH" "$REAL_USER"
+        fi
+        log_ok "Shell predeterminada actualizada a $ZSH_PATH para $REAL_USER."
+        log_info "💡 Nota: En las terminales ya abiertas seguirá activa la shell anterior."
+        log_info "   Abre una nueva pestaña/ventana o ejecuta 'exec zsh' para entrar directamente."
+    else
+        log_ok "Zsh ya es la shell predeterminada ($CURRENT_SHELL) para $REAL_USER."
+    fi
+fi
+
+log_ok "Entorno Zsh configurado correctamente para CachyOS Workstation."
+show_status

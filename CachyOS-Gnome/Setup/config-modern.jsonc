@@ -1,0 +1,98 @@
+{
+    "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+    // =========================================================================
+    //  Fedora 45 Workstation (GNOME Wayland) - Modern Box Theme
+    // =========================================================================
+    "logo": {
+        "source": "fedora",
+        "color": {
+            "1": "38;2;60;110;180",
+            "2": "38;2;255;255;255"
+        },
+        "padding": {
+            "top": 2,
+            "left": 2,
+            "right": 4
+        }
+    },
+    "display": {
+        "separator": "  ",
+        "color": {
+            "keys": "38;2;137;180;250",
+            "title": "1;38;2;60;110;180"
+        },
+        "key": {
+            "width": 15
+        }
+    },
+    "modules": [
+        "title",
+        "separator",
+        {
+            "type": "os",
+            "key": " Distro"
+        },
+        {
+            "type": "kernel",
+            "key": "󰌽 Kernel"
+        },
+        {
+            "type": "de",
+            "key": "󰕮 GNOME"
+        },
+        {
+            "type": "wm",
+            "key": "󱂬 Mutter"
+        },
+        {
+            "type": "shell",
+            "key": "󰞷 Shell"
+        },
+        {
+            "type": "terminal",
+            "key": "󰆍 Terminal"
+        },
+        {
+            "type": "packages",
+            "key": "󰏖 Paquetes"
+        },
+        {
+            "type": "cpu",
+            "key": "󰻠 Procesador"
+        },
+        {
+            "type": "gpu",
+            "key": "󰢮 Gráficos"
+        },
+        {
+            "type": "display",
+            "key": "󰍹 Monitores",
+            "compactType": "original-with-refresh-rate"
+        },
+        {
+            "type": "memory",
+            "key": "󰑭 Memoria RAM"
+        },
+        {
+            "type": "swap",
+            "key": "󰓡 Swap ZRAM"
+        },
+        {
+            "type": "disk",
+            "key": "󰋊 NVMe SSD"
+        },
+        {
+            "type": "battery",
+            "key": "󰁹 Batería"
+        },
+        {
+            "type": "uptime",
+            "key": "󰅐 Actividad"
+        },
+        "break",
+        {
+            "type": "colors",
+            "symbol": "diamond"
+        }
+    ]
+}
