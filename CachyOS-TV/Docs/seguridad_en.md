@@ -2,140 +2,162 @@
 sidebar_position: 1
 ---
 
-# CachyOS Security Hardening
+# Security Hardening and Firewall Configuration in CachyOS TV
 
-This guide details the security hardening process applied to a **CachyOS** system with **GNOME** for a development workstation, as automated in the `Setup/seguridad.sh` script.
+This guide details the security, firewall, and network optimization process applied to the **CachyOS (Arch Linux)** system on the **HP Z230 SFF Workstation (Sony TV)** media center, as automated in [`Setup/seguridad.sh`](file:///home/televisor/Proyectos/Linux/CachyOS-TV/Setup/seguridad.sh).
 
-The process covers exclusive firewall configuration (**Firewalld**), Podman and KVM integration, DNS privacy, MAC Randomization, and kernel hardening.
+The setup covers an exclusive firewall (**Firewalld** using the `nftables` backend), essential service access for home streaming (NAS, Kodi, Stremio, GSConnect, Cockpit), **DNS-over-TLS (DoT)** privacy, and kernel TCP buffer tuning for stutter-free 1080p video playback.
 
-## 1. Firewall Configuration (Firewalld)
+---
 
-**Firewalld** is used exclusively with the default `home` zone, integrating isolated zones for containers and virtual machines. UFW is uninstalled and purged.
+## 1. Exclusive Firewall Configuration (Firewalld)
 
-1. Disable and remove UFW if it came pre-installed with CachyOS, then install/enable Firewalld:
-   ```bash
-   sudo systemctl disable --now ufw 2>/dev/null || true
-   sudo pacman -Rns --noconfirm ufw 2>/dev/null || true
-   sudo pacman -S --needed --noconfirm firewalld
-   sudo systemctl enable --now firewalld
-   ```
+**Firewalld** is used exclusively with the default `home` zone, ensuring that UFW and conflicting legacy `iptables` rules are uninstalled and purged.
 
-2. Configure default `home` zone and services for development:
-   ```bash
-   # Default zone: home
-   sudo firewall-cmd --set-default-zone=home
-   sudo firewall-cmd --permanent --zone=home --add-service=mdns
-   sudo firewall-cmd --permanent --zone=home --add-service=ssh
+### 1.1 UFW Removal and Firewalld Installation
+```bash
+sudo systemctl disable --now ufw 2>/dev/null || true
+sudo pacman -Rns --noconfirm ufw 2>/dev/null || true
+sudo pacman -S --needed --noconfirm firewalld
+sudo systemctl enable --now firewalld.service
+```
 
-   # Isolated zone for Podman Rootless
-   sudo firewall-cmd --permanent --zone=trusted --add-interface=podman+ 2>/dev/null || true
+### 1.2 Custom Multimedia Service Definitions
+The script provisions two custom service XML files under `/etc/firewalld/services/`:
+- **Kodi Media Center (`kodi.xml`)**: Port `8080/tcp` (HTTP API and mobile remotes like Kore/Yatse) and `9777/udp` (Kodi EventServer).
+- **Stremio Engine (`stremio.xml`)**: Port `11470/tcp` (local streaming server and Web API).
 
-   # Zone for KVM / libvirt virtual network
-   sudo firewall-cmd --permanent --zone=libvirt --add-interface=virbr0 2>/dev/null || true
+### 1.3 Setting the `home` Zone and Authorizing Services
+```bash
+# Set default zone to home
+sudo firewall-cmd --set-default-zone=home
 
-   sudo firewall-cmd --reload
-   ```
+# Media & local network services
+sudo firewall-cmd --permanent --zone=home --add-service=samba-client
+sudo firewall-cmd --permanent --zone=home --add-service=nfs
+sudo firewall-cmd --permanent --zone=home --add-service=mdns
+sudo firewall-cmd --permanent --zone=home --add-service=upnp-client
+sudo firewall-cmd --permanent --zone=home --add-service=kdeconnect
+sudo firewall-cmd --permanent --zone=home --add-service=ssh
+sudo firewall-cmd --permanent --zone=home --add-service=cockpit
+sudo firewall-cmd --permanent --zone=home --add-service=kodi
+sudo firewall-cmd --permanent --zone=home --add-service=stremio
 
-3. Verify status:
-   ```bash
-   sudo firewall-cmd --state
-   sudo firewall-cmd --get-default-zone
-   sudo firewall-cmd --zone=home --list-all
-   ```
+# Reload rules
+sudo firewall-cmd --reload
+```
+
+---
 
 ## 2. DNS Privacy (DNS-over-TLS)
 
-To prevent ISPs from spying on your web queries, DNS traffic is encrypted via `systemd-resolved`.
+To protect streaming queries from ISP snooping and ensure fast resolution, traffic is encrypted via **Systemd-resolved** with **Quad9** (malware protection) and **Cloudflare** (low latency).
 
-1. Configure DNS-over-TLS by creating `/etc/systemd/resolved.conf.d/dot.conf`:
-   ```bash
-   sudo mkdir -p /etc/systemd/resolved.conf.d/
-   sudo tee /etc/systemd/resolved.conf.d/dot.conf > /dev/null <<'EOF'
-   [Resolve]
-   DNSOverTLS=opportunistic
-   DNSSEC=allow-downgrade
-   EOF
-   ```
-
-2. Restart the service:
-   ```bash
-   sudo systemctl restart systemd-resolved
-   ```
-
-3. Verify status:
-   ```bash
-   resolvectl status
-   ```
-
-## 3. Network Privacy (MAC Randomization)
-
-Randomizes Wi-Fi MAC address to prevent tracking on public networks.
-
-1. Configure NetworkManager by creating `/etc/NetworkManager/conf.d/00-macrandomize.conf`:
-   ```bash
-   sudo mkdir -p /etc/NetworkManager/conf.d
-   sudo tee /etc/NetworkManager/conf.d/00-macrandomize.conf > /dev/null <<'EOF'
-   [device]
-   wifi.scan-rand-mac-address=yes
-
-   [connection]
-   wifi.cloned-mac-address=stable
-   EOF
-   ```
-
-2. Reload NetworkManager:
-   ```bash
-   sudo systemctl reload NetworkManager
-   ```
-
-## 4. Kernel Hardening (sysctl)
-
-Applies security restrictions to the kernel compatible with Podman rootless.
-
-Configuration in `/etc/sysctl.d/99-security.conf`:
+File `/etc/systemd/resolved.conf.d/dot.conf`:
 ```ini
-# Kernel restrictions
-kernel.dmesg_restrict=1
-kernel.kptr_restrict=2
+[Resolve]
+DNS=9.9.9.9#dns.quad9.net 149.112.112.112#dns.quad9.net 1.1.1.1#cloudflare-dns.com 1.0.0.1#cloudflare-dns.com
+FallbackDNS=8.8.8.8#dns.google 8.8.4.4#dns.google
+DNSOverTLS=opportunistic
+DNSSEC=allow-downgrade
+MulticastDNS=resolve
+LLMNR=no
+Cache=yes
+CacheTimeSecMax=86400
+```
 
-# Network protection
+Restart service:
+```bash
+sudo systemctl enable --now systemd-resolved.service
+sudo systemctl restart systemd-resolved
+```
+
+---
+
+## 3. Kernel Hardening & Streaming Buffers (Sysctl)
+
+Optimized for the HP Z230 SFF's Intel I217-LM Gigabit adapter and 8 GB RAM.
+
+File `/etc/sysctl.d/99-tv-security.conf`:
+```ini
+# Anti-spoofing & SYN protection
 net.ipv4.conf.all.rp_filter=1
 net.ipv4.conf.default.rp_filter=1
 net.ipv4.tcp_syncookies=1
+net.ipv4.tcp_rfc1337=1
 
-# Rootless container support (Podman)
-kernel.unprivileged_userns_clone=1
-user.max_user_namespaces=28633
+# Ignore broadcast ICMP & bogus error responses
+net.ipv4.icmp_echo_ignore_broadcasts=1
+net.ipv4.icmp_ignore_bogus_error_responses=1
+net.ipv4.conf.all.accept_redirects=0
+net.ipv4.conf.default.accept_redirects=0
+net.ipv4.conf.all.send_redirects=0
+net.ipv4.conf.default.send_redirects=0
+net.ipv4.conf.all.accept_source_route=0
+net.ipv4.conf.default.accept_source_route=0
+
+# Socket buffers optimized for HD streaming
+net.core.rmem_max=16777216
+net.core.wmem_max=16777216
+net.core.rmem_default=1048576
+net.core.wmem_default=1048576
+net.ipv4.tcp_rmem=4096 87380 16777216
+net.ipv4.tcp_wmem=4096 65536 16777216
+net.ipv4.udp_rmem_min=8192
+net.ipv4.udp_wmem_min=8192
+
+# Keepalive optimization for continuous NAS playback
+net.ipv4.tcp_keepalive_time=300
+net.ipv4.tcp_keepalive_intvl=15
+net.ipv4.tcp_keepalive_probes=5
+net.ipv4.tcp_fin_timeout=15
+
+# Security restrictions
 net.ipv4.ip_unprivileged_port_start=80
+user.max_user_namespaces=65536
+kernel.dmesg_restrict=1
+kernel.kptr_restrict=1
+fs.protected_hardlinks=1
+fs.protected_symlinks=1
 ```
 
-Apply changes:
+Apply immediately:
 ```bash
 sudo sysctl --system
 ```
 
-## 5. Critical Permissions Auditing
+---
 
-Restricts permissions for vital OS files and folders.
+## 4. File Permissions Auditing
 
+Strict restriction on `/root`:
 ```bash
 sudo chmod 700 /root
 ```
 
-## Verification
+---
 
-To verify the security configuration:
+## 5. Usage & Verification CLI
+
+The [`Setup/seguridad.sh`](file:///home/televisor/Proyectos/Linux/CachyOS-TV/Setup/seguridad.sh) script provides a complete CLI interface:
 
 ```bash
-# Firewall
-sudo firewall-cmd --state
+# View comprehensive status
+./Setup/seguridad.sh --status
+# or via just
+just security-status
 
-# DNS-over-TLS
-resolvectl status
+# Apply full security configuration
+sudo ./Setup/seguridad.sh
+# or via just
+just security
 
-# MAC Randomization
-cat /etc/NetworkManager/conf.d/00-macrandomize.conf
+# Open custom port (e.g., 8000/tcp)
+sudo ./Setup/seguridad.sh --add-port 8000/tcp
 
-# Kernel sysctl
-sysctl kernel.dmesg_restrict kernel.kptr_restrict net.ipv4.tcp_syncookies user.max_user_namespaces
+# Close custom port
+sudo ./Setup/seguridad.sh --remove-port 8000/tcp
+
+# Reset to media center defaults
+sudo ./Setup/seguridad.sh --reset
 ```
