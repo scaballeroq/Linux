@@ -1,0 +1,17 @@
+[Unit]
+Description=Redis for __PROJECT__
+Requires=network-online.target
+After=network-online.target
+
+[Container]
+ContainerName=__PROJECT__-redis
+Image=docker.io/library/redis:7-alpine
+Volume=__PROJECT__-redis-data:/data
+Network=__PROJECT__.network
+
+[Service]
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=__PROJECT__.target

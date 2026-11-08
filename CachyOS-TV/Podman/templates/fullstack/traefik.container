@@ -1,0 +1,20 @@
+[Unit]
+Description=Traefik Reverse Proxy for __PROJECT__
+Requires=network-online.target
+After=network-online.target
+
+[Container]
+ContainerName=__PROJECT__-traefik
+Image=docker.io/library/traefik:v3.0
+PublishPort=80:80
+PublishPort=443:443
+PublishPort=8080:8080
+Volume=__PROJECT__-traefik-config:/etc/traefik:ro
+Network=__PROJECT__.network
+
+[Service]
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=__PROJECT__.target

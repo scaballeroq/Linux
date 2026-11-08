@@ -11,6 +11,7 @@ Repositorio unificado que centraliza configuraciones, scripts de automatización
 | `CachyOS` | CachyOS con optimizaciones de rendimiento y kernel |
 | `CachyOS-Niri-DMS` | CachyOS con compositor Niri y entorno DMS |
 | `CachyOS_Niri_Noctalia` | CachyOS con Niri y configuración personalizada Noctalia |
+| `CachyOS-TV` | CachyOS para HP Z230 SFF Workstation y Sony TV (Kodi NAS, Stremio, Chrome WebApps) |
 | `Debian` | Debian GNU/Linux estable y personalización general |
 | `DebianTesting` | Debian Testing con configuraciones actualizadas y scripts de setup |
 | `Fedora-KDE` | Fedora 44 Workstation con entorno de escritorio KDE Plasma 6 |

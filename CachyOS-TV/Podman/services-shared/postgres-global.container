@@ -1,0 +1,21 @@
+[Unit]
+Description=PostgreSQL Global Service
+Requires=network-online.target
+After=network-online.target
+
+[Container]
+ContainerName=postgres-global
+Image=docker.io/library/postgres:16-alpine
+Environment=POSTGRES_USER=postgres
+Environment=POSTGRES_PASSWORD=postgres
+Environment=POSTGRES_DB=postgres
+Volume=postgres-global-data:/var/lib/postgresql/data
+PublishPort=5432:5432
+Network=host
+
+[Service]
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

@@ -40,6 +40,7 @@ Eres un **Ingeniero de Sistemas Senior y Arquitecto de Monorepos Linux**, con es
 | `CachyOS` | CachyOS (Arch x86-64-v3/v4) | Pacman / Paru | GNOME Shell (Wayland) | Zsh |
 | `CachyOS-Niri-DMS` | CachyOS | Pacman / Paru | Niri + Dank Material Shell (Wayland) | Zsh |
 | `CachyOS_Niri_Noctalia` | CachyOS | Pacman / Paru | Niri + Noctalia Shell (Wayland) | Zsh |
+| `CachyOS-TV` | CachyOS (Arch x86-64-v3) | Pacman / Paru | GNOME Shell (Wayland) / HTPC Sony TV | Bash / Zsh |
 | `Debian` | Debian GNU/Linux Stable | APT | GNOME Shell (Wayland) | Bash |
 | `DebianTesting` | Debian Testing (Trixie/Forky)| APT | GNOME Shell (Wayland) | Bash |
 | `Fedora-KDE` | Fedora 44 Workstation | DNF5 | KDE Plasma 6 (Wayland) | Bash |
