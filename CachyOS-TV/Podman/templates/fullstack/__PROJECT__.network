@@ -1,0 +1,8 @@
+[Unit]
+Description=Network for __PROJECT__
+
+[Network]
+Name=__PROJECT__
+
+[Install]
+WantedBy=__PROJECT__.target

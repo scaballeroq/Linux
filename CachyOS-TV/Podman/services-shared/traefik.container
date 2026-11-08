@@ -1,0 +1,21 @@
+[Unit]
+Description=Traefik Reverse Proxy
+Requires=network-online.target
+After=network-online.target
+
+[Container]
+ContainerName=traefik
+Image=docker.io/library/traefik:v3.0
+PublishPort=80:80
+PublishPort=443:443
+PublishPort=8080:8080
+Volume=traefik-config:/etc/traefik:ro
+Volume=/run/user/%U/podman/podman.sock:/var/run/docker.sock:ro
+Network=__PROJECT__.network
+
+[Service]
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

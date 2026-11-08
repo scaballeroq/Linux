@@ -1,0 +1,206 @@
+# =============================================================================
+# CachyOS TV & Multimedia Center Justfile
+# Hardware: HP Z230 SFF Workstation (Intel Core i7-4790 / Intel HD 4600 / Sony TV)
+# Sistema: CachyOS (Arch Linux con GNOME Shell Wayland)
+# =============================================================================
+
+# Objetivo por defecto: configurar centro multimedia TV completo
+default: setup-tv
+
+# Perfil completo exclusivo para HP Z230 SFF conectado a la televisión Sony
+setup-tv: post-install-intel multimedia flatpak chrome tv-webapps nas-setup tuning gnome-setup security fonts fastfetch kitty yt-dlp audio
+    @echo "🚀 Centro Multimedia CachyOS TV para HP Z230 SFF (Sony TV) configurado con éxito. Por favor, reinicia el sistema."
+
+# Alias de compatibilidad
+setup-all: setup-tv
+setup-media-desktop: setup-tv
+
+# Diagnóstico integral del sistema TV, hardware Haswell, VA-API, NAS, audio Sony TV y Flatpaks
+status:
+    @echo "================================================================="
+    @echo "🔍 DIAGNÓSTICO INTEGRAL CACHYOS TV (HP Z230 SFF - SONY TV)"
+    @echo "================================================================="
+    @./Setup/cachyos-tuning.sh --status
+    @echo ""
+    @./Setup/multimedia.sh --status
+    @echo ""
+    @./Setup/tv-streaming.sh --status
+    @echo ""
+    @./Setup/nas-setup.sh --status
+    @echo ""
+    @./Setup/seguridad.sh --status
+
+# =============================================================================
+# CONFIGURACIÓN BASE DEL SISTEMA
+# =============================================================================
+
+# Configuración base post-instalación para HP Z230 SFF
+post-install:
+    ./Setup/post-install.sh
+
+# Configuración post-instalación para Intel Haswell Core i7-4790 (Microcódigo Intel, i965 VA-API, Kodi, Stremio, VLC, PipeWire)
+post-install-intel:
+    ./Setup/post-install-intel.sh
+
+# =============================================================================
+# PLATAFORMAS DE STREAMING Y NAVEGADOR WEB (CHROME CON WIDEVINE)
+# =============================================================================
+
+# Instalación y optimización de Google Chrome (Wayland + VA-API Haswell)
+chrome *args:
+    ./Setup/chrome.sh {{args}}
+
+# Lanzadores WebApp para TV y configuración del Dock multimedia (Netflix, Prime Video, RTVE, Pluto TV, YouTube)
+tv-webapps *args:
+    ./Setup/tv-streaming.sh {{args}}
+
+# Organizar favoritos del Dock de GNOME para TV de salón
+tv-dock:
+    ./Setup/tv-streaming.sh --dock
+
+# =============================================================================
+# REPRODUCTORES MULTIMEDIA (KODI & STREMIO)
+# =============================================================================
+
+# Lanzar Kodi Media Center (Nativo Pacman con VA-API i965 y PipeWire)
+kodi:
+    env LIBVA_DRIVER_NAME=i965 kodi --audio-backend=pipewire
+
+# Lanzar Stremio (Flatpak con aceleración por hardware)
+stremio:
+    flatpak run com.stremio.Stremio
+
+# Lanzar VLC (Flatpak)
+vlc:
+    flatpak run org.videolan.VLC
+
+# Pila multimedia completa (Codecs, Kodi, Stremio, VLC, audio)
+multimedia *args:
+    ./Setup/multimedia.sh {{args}}
+
+# =============================================================================
+# CONEXIÓN A NAS DOMÉSTICO (PELÍCULAS Y SERIES)
+# =============================================================================
+
+# Configurar integración con NAS doméstico (SMB, NFS, Avahi mDNS y carpetas /mnt/nas)
+nas-setup *args:
+    ./Setup/nas-setup.sh {{args}}
+
+# Diagnóstico de conexión y estado del NAS
+nas-status:
+    ./Setup/nas-setup.sh --status
+
+# =============================================================================
+# OPTIMIZACIÓN DE AUDIO TV (PIPEWIRE & WIREPLUMBER)
+# =============================================================================
+
+# Optimizar fidelidad de audio HDMI para Sony TV (PipeWire, WirePlumber normalización y Stremio MPV)
+audio:
+    ./Setup/multimedia.sh --audio
+
+# Diagnóstico de audio PipeWire y WirePlumber
+audio-status:
+    wpctl status
+
+# =============================================================================
+# GESTIÓN FLATPAK
+# =============================================================================
+
+# Configuración e instalación de Flatpaks multimedia (Stremio, VLC, Flatseal)
+flatpak *args:
+    ./Setup/flatpak.sh {{args}}
+
+# Diagnóstico de estado Flatpak
+flatpak-status:
+    ./Setup/flatpak.sh --status
+
+# =============================================================================
+# ENTORNO GNOME Y APARIENCIA TV
+# =============================================================================
+
+# Personalización de GNOME Shell (Modo oscuro, pantalla TV sin reposo, Mutter)
+gnome-setup *args:
+    ./Setup/gnome-settings.sh {{args}}
+
+# Extensiones de GNOME Shell desde repositorios
+gnome-extensions:
+    ./Setup/gnome-extensions.sh
+
+# Fuentes para terminal y sistema
+fonts:
+    ./Setup/fonts.sh
+
+# Resumen estético del sistema (Fastfetch)
+fastfetch:
+    ./Setup/fastfetch.sh
+
+# Terminal Kitty acelerada por GPU
+kitty:
+    ./Setup/kitty.sh
+
+# Herramientas modernas de shell
+shell:
+    ./Setup/shell.sh
+
+# Starship Prompt (opcional)
+starship *args:
+    ./Setup/starship.sh {{args}}
+
+# =============================================================================
+# RENDIMIENTO Y CORTAFUEGOS
+# =============================================================================
+
+# Optimizaciones avanzadas de rendimiento (Sysctl, ZRAM, límites, Systemd)
+tuning *args:
+    ./Setup/cachyos-tuning.sh {{args}}
+
+# Estado actual de las optimizaciones y métricas de rendimiento
+tuning-status:
+    ./Setup/cachyos-tuning.sh --status
+
+# Seguridad y cortafuegos Firewalld (Samba, NFS, mDNS, SSH, GSConnect)
+security *args:
+    ./Setup/seguridad.sh {{args}}
+
+# Estado del cortafuegos Firewalld
+security-status:
+    ./Setup/seguridad.sh --status
+
+# =============================================================================
+# RED PRIVADA Y BYPASS DE BLOQUEOS (CLOUDFLARE WARP / LA LIGA)
+# =============================================================================
+
+# Instalar y gestionar Cloudflare WARP (bypass bloqueos de La Liga en Stremio)
+warp *args:
+    ./Setup/cloudflare-warp.sh {{args}}
+
+# Conectar Cloudflare WARP
+warp-on:
+    ./Setup/cloudflare-warp.sh --connect
+
+# Desconectar Cloudflare WARP
+warp-off:
+    ./Setup/cloudflare-warp.sh --disconnect
+
+# Estado de la conexión Cloudflare WARP
+warp-status:
+    ./Setup/cloudflare-warp.sh --status
+
+# Multimedia adicional (yt-dlp stack)
+yt-dlp:
+    ./Setup/yt-dlp-setup.sh
+
+# =============================================================================
+# MANTENIMIENTO DEL SISTEMA
+# =============================================================================
+
+# Actualizar sistema completo (Pacman, AUR y Flatpak)
+update:
+    sudo pacman -Syu --noconfirm
+    flatpak update -y
+
+# Limpiar paquetes huérfanos y cachés para proteger el SSD de 256 GB
+clean:
+    sudo pacman -Sc --noconfirm
+    flatpak uninstall --unused -y
+    sudo fstrim -va

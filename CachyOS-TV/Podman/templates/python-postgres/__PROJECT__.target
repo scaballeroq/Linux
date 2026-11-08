@@ -1,0 +1,6 @@
+[Unit]
+Description=__PROJECT__ Project Target
+Requires=__PROJECT__.network
+
+[Install]
+WantedBy=default.target
