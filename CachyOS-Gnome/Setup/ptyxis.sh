@@ -57,10 +57,19 @@ NAUTILUS_SCRIPT_DIR="$USER_HOME/.local/share/nautilus/scripts"
 XDG_TERMINALS_FILE="$USER_HOME/.config/xdg-terminals.list"
 
 OPACITY="0.85"
-FONT_NAME="JetBrainsMono Nerd Font 11"
+
+# Detección inteligente de tipografía Nerd Font disponible
+if (fc-list "JetBrainsMono Nerd Font" 2>/dev/null || true) | grep -q .; then
+    FONT_NAME="JetBrainsMono Nerd Font 11"
+elif (fc-list "MesloLGL Nerd Font Mono" 2>/dev/null || true) | grep -q .; then
+    FONT_NAME="MesloLGL Nerd Font Mono 11"
+else
+    FONT_NAME="JetBrainsMono Nerd Font 11"
+fi
+
 PALETTE_NAME="Catppuccin Mocha"
 DO_INSTALL=true
-BIND_KEY=false
+BIND_KEY=true
 SET_DEFAULT_TERM=false
 UNINSTALL_NAUTILUS=false
 ACTION="run"

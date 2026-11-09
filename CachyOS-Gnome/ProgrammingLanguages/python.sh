@@ -326,7 +326,7 @@ fi
 if ! python3 -m venv --help &>/dev/null; then
     log_warn "El módulo python3-venv no responde. Asegurando paquetes del sistema..."
     if [ -n "$SUDO" ] && command -v sudo &>/dev/null; then
-        $SUDO $DNF_CMD install -y python3-devel 2>/dev/null || true
+        $SUDO pacman -S --needed --noconfirm python 2>/dev/null || true
     fi
 fi
 

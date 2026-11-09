@@ -272,7 +272,11 @@ if ! pacman -Q firewalld &>/dev/null; then
     $SUDO pacman -S --needed --noconfirm firewalld
 fi
 
-# Neutralizar UFW si existiera algún residuo
+# Neutralizar UFW si existiera algún residuo y purgar reglas activas del kernel
+if command -v ufw &>/dev/null; then
+    log_info "Desactivando reglas activas de UFW..."
+    $SUDO ufw disable 2>/dev/null || true
+fi
 if systemctl list-unit-files 2>/dev/null | grep -q "^ufw.service"; then
     $SUDO systemctl disable --now ufw.service 2>/dev/null || true
 fi
