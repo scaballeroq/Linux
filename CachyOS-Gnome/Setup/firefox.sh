@@ -157,8 +157,8 @@ install_firefox() {
         firefox
         firefox-i18n-es-es
         ffmpeg
-        libva-mesa-driver
-        mesa-vdpau
+        mesa
+        vulkan-radeon
         libva-utils
     )
     $SUDO pacman -S --needed --noconfirm "${pkgs[@]}" 2>/dev/null || true

@@ -113,16 +113,14 @@ show_status() {
     echo -e "  • Controlador Kernel (GPU)          : $(lspci -k 2>/dev/null | grep -A 2 -E "VGA|3D" | grep "Kernel driver in use" | awk '{print $5}' || echo 'amdgpu')"
     echo -e "  • Dispositivo Vulkan Primario       : $(vulkaninfo --summary 2>/dev/null | grep -m1 "deviceName" | cut -d= -f2 | sed 's/^[ \t]*//' || echo 'Radeon Graphics (RADV)')"
 
-    echo -e "\n${BOLD}📦 Controladores de Aceleración Gráfica (Mesa / VA-API / VDPAU):${NC}"
+    echo -e "\n${BOLD}📦 Controladores de Aceleración Gráfica (Mesa / VA-API / Vulkan):${NC}"
     local mesa_pkgs=(
         "mesa"
         "vulkan-radeon"
         "libva-mesa-driver"
-        "mesa-vdpau"
         "lib32-mesa"
         "lib32-vulkan-radeon"
         "lib32-libva-mesa-driver"
-        "lib32-mesa-vdpau"
     )
     for pkg in "${mesa_pkgs[@]}"; do
         if is_pkg_installed "$pkg"; then
@@ -191,21 +189,17 @@ install_hwaccel_amd() {
     local amd_pkgs=(
         "mesa"
         "vulkan-radeon"
-        "libva-mesa-driver"
-        "mesa-vdpau"
         "vulkan-tools"
         "libva-utils"
         "vdpauinfo"
         "clinfo"
         "lib32-mesa"
         "lib32-vulkan-radeon"
-        "lib32-libva-mesa-driver"
-        "lib32-mesa-vdpau"
     )
 
     $SUDO pacman -S --needed --noconfirm "${amd_pkgs[@]}" 2>/dev/null || {
         log_warn "Algunas librerías multilib (32-bit) pueden requerir habilitar [multilib] en /etc/pacman.conf."
-        $SUDO pacman -S --needed --noconfirm mesa vulkan-radeon libva-mesa-driver mesa-vdpau vulkan-tools libva-utils
+        $SUDO pacman -S --needed --noconfirm mesa vulkan-radeon vulkan-tools libva-utils
     }
     log_ok "Controladores gráficos y VA-API AMD instalados."
 }

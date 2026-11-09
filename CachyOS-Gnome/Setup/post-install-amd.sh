@@ -189,19 +189,13 @@ run_setup() {
     $SUDO pacman -S --needed --noconfirm \
         mesa \
         vulkan-radeon \
-        libva-mesa-driver \
-        mesa-vdpau \
         vulkan-tools \
         libva-utils \
         lib32-mesa \
-        lib32-vulkan-radeon \
-        lib32-libva-mesa-driver \
-        lib32-mesa-vdpau 2>/dev/null || \
+        lib32-vulkan-radeon 2>/dev/null || \
     $SUDO pacman -S --needed --noconfirm \
         mesa \
         vulkan-radeon \
-        libva-mesa-driver \
-        mesa-vdpau \
         vulkan-tools \
         libva-utils
 
