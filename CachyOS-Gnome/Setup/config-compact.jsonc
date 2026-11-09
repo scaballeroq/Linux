@@ -64,6 +64,14 @@
             "type": "memory"
         },
         {
+            "key": "│ {#31}󰓡 swap    {#keys}│",
+            "type": "swap"
+        },
+        {
+            "key": "│ {#32}󰁹 battery {#keys}│",
+            "type": "battery"
+        },
+        {
             "key": "│ {#36}󰩟 network {#keys}│",
             "type": "localip",
             "format": "{ipv4} ({ifname})"

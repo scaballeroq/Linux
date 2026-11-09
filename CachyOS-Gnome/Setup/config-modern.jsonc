@@ -58,11 +58,13 @@
         },
         {
             "type": "cpu",
-            "key": "󰻠 Procesador"
+            "key": "󰻠 Procesador",
+            "temp": true
         },
         {
             "type": "gpu",
-            "key": "󰢮 Gráficos"
+            "key": "󰢮 Gráficos",
+            "temp": true
         },
         {
             "type": "display",
@@ -79,7 +81,8 @@
         },
         {
             "type": "disk",
-            "key": "󰋊 NVMe SSD"
+            "key": "󰋊 NVMe SSD (/)",
+            "folders": "/"
         },
         {
             "type": "battery",

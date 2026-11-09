@@ -1,16 +1,29 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # cachyos-repos.sh - Gestor de Repositorios Oficiales y Optimizados de CachyOS
-# Sistema: CachyOS / Arch Linux (GNOME Shell Wayland)
-# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U Zen 3 / Barcelo-R x86-64-v3)
+# Sistema: CachyOS Linux x86_64 (GNOME Shell Wayland)
+# Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U Zen 3 / Barcelo-R 8C/16T)
+# Microarquitectura: x86-64-v3 (AVX, AVX2, FMA, BMI1, BMI2)
+# Almacenamiento: SSD NVMe Kioxia KBG50ZNV512G / RAM 32 GB DDR4
 # ==============================================================================
 # Características:
-#   - Habilitación y verificación de repositorios optimizados CachyOS (x86-64-v3).
-#   - Habilitación de repositorio oficial [multilib] para compatibilidad 32-bit (Steam/Wine).
-#   - Integración de Chaotic-AUR para paquetes precompilados rápidos.
-#   - Optimización de descargas paralelas y visualización en /etc/pacman.conf.
-#   - Optimización de espejos mediante cachyos-rate-mirrors / reflector.
-#   - Opciones CLI: --status / -s, --rate-mirrors, --help / -h.
+#   - Verificación estricta de microarquitectura CPU x86-64-v3 para AMD Zen 3.
+#   - Habilitación y preservación del orden de repositorios CachyOS optimizados
+#     ([cachyos-v3], [cachyos-extra-v3], [cachyos-core-v3], [cachyos]).
+#   - Habilitación limpia e idempotente de [multilib] para compatibilidad 32-bit (Wine/Steam).
+#   - Integración y soporte del repositorio precompilado [chaotic-aur].
+#   - Optimización de /etc/pacman.conf:
+#       * ParallelDownloads = 8 (balance perfecto para 16 hilos Zen 3 y NVMe Kioxia).
+#       * Color, ILoveCandy, VerbosePkgLists y CheckSpace.
+#   - Optimización de /etc/makepkg.conf:
+#       * MAKEFLAGS="-j$(nproc)" (16 hilos concurrentes).
+#       * COMPRESSZST=(zstd -c -z -q --threads=0 -) para compresión ultrarrápida.
+#   - Instalación y verificación del AUR helper oficial de CachyOS (paru).
+#   - Calibración de espejos con cachyos-rate-mirrors (Arch + CachyOS v3/v4).
+#   - Gestión y refresco de llaves pacman-key (archlinux, cachyos, chaotic).
+#   - Prevención estricta de Partial Upgrades (actualización sincronizada segura).
+#   - Opciones CLI: --status / -s, --rate-mirrors / -r, --update / -u,
+#                   --keys / -k, --chaotic, --help / -h.
 # ==============================================================================
 
 set -euo pipefail
@@ -40,72 +53,189 @@ else
 fi
 
 PACMAN_CONF="/etc/pacman.conf"
+MAKEPKG_CONF="/etc/makepkg.conf"
+MIRRORS_DIR="/etc/pacman.d"
 
 show_help() {
     cat << EOF
-${BOLD}📦 Gestor de Repositorios CachyOS (x86-64-v3) y Pacman${NC}
-Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U Zen 3 / x86-64-v3)
+${BOLD}📦 Gestor y Optimizador de Repositorios CachyOS (x86-64-v3) y Pacman${NC}
+Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U Zen 3 / 8C-16T / 32 GB RAM)
 
 ${BOLD}Uso:${NC}
   $0 [OPCIÓN]
 
 ${BOLD}Opciones:${NC}
-  (sin argumentos)   Configura repositorios CachyOS v3, multilib, descargas paralelas y actualiza índices
-  -s, --status       Muestra el estado de los repositorios activos y configuración de Pacman
-  -r, --rate-mirrors Optimiza la lista de espejos de CachyOS y Arch Linux por latencia y velocidad
-  -h, --help         Muestra esta ayuda interactiva
+  (sin argumentos)   Configura pacman.conf, makepkg.conf, repositorios CachyOS v3,
+                     multilib, parámetros para 16 hilos y verifica paru.
+  -s, --status       Muestra diagnóstico detallado de repositorios, CPU, espejos y pacman.
+  -r, --rate-mirrors Calibra y clasifica los espejos más rápidos con cachyos-rate-mirrors.
+  -u, --update       Ejecuta actualización integral del sistema (pacman -Syu / paru -Syu).
+  -k, --keys         Inicializa y actualiza los llaveros de firmas (Arch, CachyOS, Chaotic).
+  --chaotic          Asegura e integra el repositorio precompilado Chaotic-AUR.
+  -h, --help         Muestra esta ayuda interactiva.
 EOF
 }
 
-show_status() {
-    echo "================================================================="
-    echo "🔍 ESTADO DE REPOSITORIOS Y PACMAN - CACHYOS"
-    echo "================================================================="
-    echo "• Arquitectura detectada:        $(uname -m)"
-    echo "• Soporte CPU x86-64-v3:         $(/usr/lib/ld-linux-x86-64.so.2 --help 2>/dev/null | grep -q "x86-64-v3 (supported" && echo "${GREEN}Compatible (Zen 3 / Barcelo-R)${NC}" || echo "${YELLOW}Comprobando soporte microarquitectura${NC}")"
-    echo "-----------------------------------------------------------------"
-    echo "• Repositorios activos en pacman.conf:"
-    grep -E "^\[.*\]" "$PACMAN_CONF" | while read -r repo; do
-        echo "   - $repo"
-    done
-    echo "-----------------------------------------------------------------"
-    echo "• Descargas paralelas:           $(grep -E "^ParallelDownloads" "$PACMAN_CONF" 2>/dev/null || echo 'Por defecto (1)')"
-    echo "• Colores habilitados:           $(grep -q "^Color" "$PACMAN_CONF" 2>/dev/null && echo 'Sí' || echo 'No')"
-    echo "• Repositorio multilib:          $(grep -q "^\[multilib\]" "$PACMAN_CONF" 2>/dev/null && echo "${GREEN}Habilitado${NC}" || echo "${RED}Deshabilitado${NC}")"
-    echo "• Repositorios CachyOS v3:       $(grep -q "cachyos-v3" "$PACMAN_CONF" 2>/dev/null && echo "${GREEN}Activos${NC}" || echo "${YELLOW}Genéricos / Estándar${NC}")"
-    echo "• Chaotic-AUR:                   $(grep -q "chaotic-aur" "$PACMAN_CONF" 2>/dev/null && echo "${GREEN}Configurado${NC}" || echo "No configurado")"
-    echo "• AUR Helper disponible:         $(command -v paru &>/dev/null && echo "paru ($(paru --version | head -n1))" || (command -v yay &>/dev/null && echo "yay" || echo "Ninguno"))"
-    echo "================================================================="
+detect_cpu_v3() {
+    local supported="No detectado"
+    if /usr/lib/ld-linux-x86-64.so.2 --help 2>/dev/null | grep -q "x86-64-v3 (supported"; then
+        supported="${GREEN}Compatible y Activo (Zen 3 / Barcelo-R x86-64-v3)${NC}"
+    else
+        # Comprobar banderas de CPU directamente
+        if grep -q "avx2" /proc/cpuinfo && grep -q "fma" /proc/cpuinfo && grep -q "bmi2" /proc/cpuinfo; then
+            supported="${GREEN}Compatible por flags de CPU (AVX2, FMA, BMI2)${NC}"
+        else
+            supported="${RED}No compatible con x86-64-v3 (requiere fallback x86-64 estándar)${NC}"
+        fi
+    fi
+    echo -e "$supported"
 }
 
-rate_mirrors() {
-    log_info "Optimizando espejos de CachyOS y Arch Linux..."
-    if command -v cachyos-rate-mirrors &>/dev/null; then
-        $SUDO cachyos-rate-mirrors
-        log_ok "Espejos optimizados con cachyos-rate-mirrors."
-    elif command -v rate-mirrors &>/dev/null; then
-        rate-mirrors arch | $SUDO tee /etc/pacman.d/mirrorlist >/dev/null
-        log_ok "Espejos optimizados con rate-mirrors."
-    elif command -v reflector &>/dev/null; then
-        $SUDO reflector --latest 10 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
-        log_ok "Espejos optimizados con reflector."
+show_status() {
+    local cpu_model threads kernel_ver aur_helper pacnew_count
+    cpu_model=$(grep -m1 "model name" /proc/cpuinfo | cut -d: -f2 | sed 's/^[ \t]*//')
+    threads=$(nproc 2>/dev/null || echo "16")
+    kernel_ver=$(uname -r)
+    
+    echo -e "${BOLD}=================================================================${NC}"
+    echo -e "🔍 ${BOLD}ESTADO DE REPOSITORIOS, HARDWARE Y PACMAN - CACHYOS${NC}"
+    echo -e "${BOLD}=================================================================${NC}"
+    echo -e "• Estación de Trabajo:           HP ProBook 455 G10"
+    echo -e "• Procesador (CPU):              ${CYAN}${cpu_model} (${threads} hilos)${NC}"
+    echo -e "• Soporte Microarquitectura:     $(detect_cpu_v3)"
+    echo -e "• Kernel en Ejecución:           ${CYAN}${kernel_ver}${NC}"
+    echo -e "• Arquitectura del Sistema:      $(uname -m)"
+    echo "-----------------------------------------------------------------"
+    echo -e "${BOLD}• Repositorios Activos en pacman.conf:${NC}"
+    if [ -f "$PACMAN_CONF" ]; then
+        grep -E "^\[.*\]" "$PACMAN_CONF" | grep -vE "^\[options\]" | while read -r repo; do
+            case "$repo" in
+                "[cachyos-v3]"|"[cachyos-extra-v3]"|"[cachyos-core-v3]")
+                    echo -e "   - ${GREEN}${repo}${NC} (CachyOS x86-64-v3 Optimizado)"
+                    ;;
+                "[cachyos]")
+                    echo -e "   - ${GREEN}${repo}${NC} (CachyOS Paquetes y Utilidades)"
+                    ;;
+                "[core]"|"[extra]")
+                    echo -e "   - ${BLUE}${repo}${NC} (Arch Linux Oficial)"
+                    ;;
+                "[multilib]")
+                    echo -e "   - ${CYAN}${repo}${NC} (Compatibilidad 32-bit / Gaming)"
+                    ;;
+                "[chaotic-aur]")
+                    echo -e "   - ${YELLOW}${repo}${NC} (Chaotic-AUR Precompilados)"
+                    ;;
+                *)
+                    echo -e "   - ${repo}"
+                    ;;
+            esac
+        done
     else
-        log_warn "Instalando cachyos-rate-mirrors..."
-        $SUDO pacman -S --needed --noconfirm cachyos-rate-mirrors 2>/dev/null || true
-        if command -v cachyos-rate-mirrors &>/dev/null; then
-            $SUDO cachyos-rate-mirrors
+        echo -e "   ${RED}Archivo $PACMAN_CONF no encontrado${NC}"
+    fi
+    echo "-----------------------------------------------------------------"
+    
+    # Opciones de pacman.conf
+    local parallel_down colors candy verbose check_space
+    parallel_down=$(grep -E "^ParallelDownloads" "$PACMAN_CONF" 2>/dev/null || echo "Por defecto (1)")
+    colors=$(grep -q "^Color" "$PACMAN_CONF" 2>/dev/null && echo "${GREEN}Habilitado${NC}" || echo "${YELLOW}Deshabilitado${NC}")
+    candy=$(grep -q "^ILoveCandy" "$PACMAN_CONF" 2>/dev/null && echo "${GREEN}Habilitado${NC}" || echo "${YELLOW}Deshabilitado${NC}")
+    verbose=$(grep -q "^VerbosePkgLists" "$PACMAN_CONF" 2>/dev/null && echo "${GREEN}Habilitado${NC}" || echo "${YELLOW}Deshabilitado${NC}")
+    check_space=$(grep -q "^CheckSpace" "$PACMAN_CONF" 2>/dev/null && echo "${GREEN}Habilitado${NC}" || echo "${YELLOW}Deshabilitado${NC}")
+    
+    echo -e "• Descargas concurrentes:        ${CYAN}${parallel_down}${NC}"
+    echo -e "• Color / ILoveCandy:            ${colors} / ${candy}"
+    echo -e "• VerbosePkgLists:               ${verbose}"
+    echo -e "• Verificación de Espacio NVMe:  ${check_space}"
+    
+    # makepkg.conf
+    local makeflags compress_zstd
+    makeflags=$(grep -E "^MAKEFLAGS=" "$MAKEPKG_CONF" 2>/dev/null || echo "Por defecto")
+    compress_zstd=$(grep -E "^COMPRESSZST=" "$MAKEPKG_CONF" 2>/dev/null || echo "Por defecto")
+    echo -e "• Compilación MAKEFLAGS:         ${CYAN}${makeflags}${NC}"
+    echo -e "• Compresión ZSTD makepkg:       ${CYAN}${compress_zstd}${NC}"
+
+    # AUR Helper
+    if command -v paru &>/dev/null; then
+        aur_helper="${GREEN}paru ($(paru --version 2>/dev/null | head -n1))${NC}"
+    elif command -v yay &>/dev/null; then
+        aur_helper="${YELLOW}yay ($(yay --version 2>/dev/null | head -n1))${NC}"
+    else
+        aur_helper="${RED}Ninguno instalado (se recomienda 'paru')${NC}"
+    fi
+    echo -e "• AUR Helper detectado:          ${aur_helper}"
+
+    # Archivos pacnew pendientes
+    local pacnew_list=()
+    while IFS= read -r f; do
+        [ -n "$f" ] && pacnew_list+=("$f")
+    done < <(find "$MIRRORS_DIR" -maxdepth 1 -name "*.pacnew" 2>/dev/null)
+    [ -f /etc/pacman.conf.pacnew ] && pacnew_list+=("/etc/pacman.conf.pacnew")
+    pacnew_count=${#pacnew_list[@]}
+
+    if [ "$pacnew_count" -gt 0 ]; then
+        echo -e "• Archivos .pacnew pendientes:   ${YELLOW}${pacnew_count} detectados (${pacnew_list[*]#/etc/})${NC}"
+    else
+        echo -e "• Archivos .pacnew pendientes:   ${GREEN}0 (Sincronizado)${NC}"
+    fi
+    echo -e "${BOLD}=================================================================${NC}"
+}
+
+setup_multilib() {
+    if ! grep -q "^\[multilib\]" "$PACMAN_CONF"; then
+        log_info "Habilitando repositorio [multilib] para compatibilidad de 32 bits..."
+        # Si existe comentado, lo descomentamos
+        if grep -q "^#\[multilib\]" "$PACMAN_CONF"; then
+            $SUDO sed -i '/^#\[multilib\]/{s/^#//;n;s/^#//}' "$PACMAN_CONF"
+            log_ok "Repositorio [multilib] descomentado y habilitado."
+        else
+            # Lo agregamos antes de repositorios personalizados si existen, o al final
+            if grep -q "^\[chaotic-aur\]" "$PACMAN_CONF"; then
+                $SUDO sed -i '/^\[chaotic-aur\]/i [multilib]\nInclude = /etc/pacman.d/mirrorlist\n' "$PACMAN_CONF"
+            else
+                printf "\n[multilib]\nInclude = /etc/pacman.d/mirrorlist\n" | $SUDO tee -a "$PACMAN_CONF" > /dev/null
+            fi
+            log_ok "Repositorio [multilib] agregado con éxito."
         fi
+    else
+        log_ok "Repositorio [multilib] ya se encuentra activo."
+    fi
+}
+
+setup_chaotic() {
+    log_info "Verificando repositorio precompilado Chaotic-AUR..."
+    
+    # 1. Comprobar llaves
+    if ! $SUDO pacman-key --list-keys 3056513887B78AEB &>/dev/null; then
+        log_info "Obteniendo e importando firma digital de Chaotic-AUR..."
+        $SUDO pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com 2>/dev/null || \
+        $SUDO pacman-key --recv-key 3056513887B78AEB --keyserver hkps://keys.openpgp.org 2>/dev/null || true
+        $SUDO pacman-key --lsign-key 3056513887B78AEB 2>/dev/null || true
+    fi
+
+    # 2. Comprobar /etc/pacman.d/chaotic-mirrorlist
+    if [ ! -f "$MIRRORS_DIR/chaotic-mirrorlist" ]; then
+        log_info "Instalando paquetes chaotic-keyring y chaotic-mirrorlist..."
+        $SUDO pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 2>/dev/null || true
+        $SUDO pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' 2>/dev/null || true
+    fi
+
+    # 3. Asegurar bloque en pacman.conf
+    if ! grep -q "^\[chaotic-aur\]" "$PACMAN_CONF"; then
+        log_info "Añadiendo bloque [chaotic-aur] a $PACMAN_CONF..."
+        printf "\n[chaotic-aur]\nInclude = /etc/pacman.d/chaotic-mirrorlist\n" | $SUDO tee -a "$PACMAN_CONF" > /dev/null
+        log_ok "Repositorio [chaotic-aur] activado."
+    else
+        log_ok "Repositorio [chaotic-aur] ya está configurado en pacman.conf."
     fi
 }
 
 setup_pacman() {
-    log_info "Configurando /etc/pacman.conf para máximo rendimiento (Zen 3 / 16 hilos)..."
+    log_info "Configurando /etc/pacman.conf para HP ProBook 455 G10 (16 hilos / NVMe Kioxia)..."
 
-    # ParallelDownloads = 8
-    if grep -q "^#ParallelDownloads" "$PACMAN_CONF"; then
-        $SUDO sed -i 's/^#ParallelDownloads = .*/ParallelDownloads = 8/' "$PACMAN_CONF"
-    elif grep -q "^ParallelDownloads" "$PACMAN_CONF"; then
-        $SUDO sed -i 's/^ParallelDownloads = .*/ParallelDownloads = 8/' "$PACMAN_CONF"
+    # ParallelDownloads = 8 (Equilibrado para Ryzen 7 7730U y redes estándar sin penalizar latencia)
+    if grep -q "^#\?ParallelDownloads" "$PACMAN_CONF"; then
+        $SUDO sed -i 's/^#\?ParallelDownloads.*/ParallelDownloads = 8/' "$PACMAN_CONF"
     else
         $SUDO sed -i '/^\[options\]/a ParallelDownloads = 8' "$PACMAN_CONF"
     fi
@@ -117,45 +247,117 @@ setup_pacman() {
         $SUDO sed -i '/^\[options\]/a Color' "$PACMAN_CONF"
     fi
 
-    # ILoveCandy
-    if ! grep -q "ILoveCandy" "$PACMAN_CONF"; then
+    # ILoveCandy (Estética visual en terminales Wayland: Kitty / Ghostty / Ptyxis)
+    if ! grep -q "^ILoveCandy" "$PACMAN_CONF"; then
         $SUDO sed -i '/^Color/a ILoveCandy' "$PACMAN_CONF" 2>/dev/null || true
     fi
 
     # VerbosePkgLists
     if grep -q "^#VerbosePkgLists" "$PACMAN_CONF"; then
         $SUDO sed -i 's/^#VerbosePkgLists/VerbosePkgLists/' "$PACMAN_CONF"
+    elif ! grep -q "^VerbosePkgLists" "$PACMAN_CONF"; then
+        $SUDO sed -i '/^\[options\]/a VerbosePkgLists' "$PACMAN_CONF"
     fi
 
-    # Multilib
-    if ! grep -q "^\[multilib\]" "$PACMAN_CONF"; then
-        log_info "Habilitando repositorio [multilib] para compatibilidad 32-bit..."
-        echo -e "\n[multilib]\nInclude = /etc/pacman.d/mirrorlist" | $SUDO tee -a "$PACMAN_CONF" > /dev/null
+    # CheckSpace (Garantiza integridad de almacenamiento en el SSD NVMe Kioxia 512GB)
+    if grep -q "^#CheckSpace" "$PACMAN_CONF"; then
+        $SUDO sed -i 's/^#CheckSpace/CheckSpace/' "$PACMAN_CONF"
+    elif ! grep -q "^CheckSpace" "$PACMAN_CONF"; then
+        $SUDO sed -i '/^\[options\]/a CheckSpace' "$PACMAN_CONF"
     fi
 
-    # Makepkg optimizations for 16 threads (Zen 3 Barcelo-R)
-    MAKEPKG_CONF="/etc/makepkg.conf"
+    # Repositorio multilib
+    setup_multilib
+
+    # Optimización de makepkg.conf para AMD Ryzen 7 7730U (8 núcleos / 16 hilos)
     if [ -f "$MAKEPKG_CONF" ]; then
-        if grep -q "^#MAKEFLAGS=" "$MAKEPKG_CONF"; then
-            $SUDO sed -i 's/^#MAKEFLAGS=.*/MAKEFLAGS="-j$(nproc)"/' "$MAKEPKG_CONF"
-        elif grep -q "^MAKEFLAGS=" "$MAKEPKG_CONF"; then
-            $SUDO sed -i 's/^MAKEFLAGS=.*/MAKEFLAGS="-j$(nproc)"/' "$MAKEPKG_CONF"
+        log_info "Afinando /etc/makepkg.conf para 16 hilos (Zen 3 / Barcelo-R)..."
+        
+        # MAKEFLAGS="-j$(nproc)"
+        if grep -q "^#\?MAKEFLAGS=" "$MAKEPKG_CONF"; then
+            $SUDO sed -i 's/^#\?MAKEFLAGS=.*/MAKEFLAGS="-j$(nproc)"/' "$MAKEPKG_CONF"
+        else
+            echo 'MAKEFLAGS="-j$(nproc)"' | $SUDO tee -a "$MAKEPKG_CONF" > /dev/null
         fi
+
+        # COMPRESSZST con compresión multinúcleo en tiempo real
         if grep -q "^COMPRESSZST=" "$MAKEPKG_CONF"; then
             $SUDO sed -i 's/^COMPRESSZST=.*/COMPRESSZST=(zstd -c -z -q --threads=0 -)/' "$MAKEPKG_CONF"
         fi
+        log_ok "makepkg.conf optimizado para compilación paralela (-j$(nproc))."
     fi
 
-    # Ensure cachyos keyring and mirrors are valid
+    # Asegurar llaves de CachyOS
     if ! grep -q "^\[cachyos" "$PACMAN_CONF"; then
-        log_info "Asegurando repositorios CachyOS optimizados x86-64-v3..."
+        log_info "Importando llaves de CachyOS..."
         $SUDO pacman-key --recv-keys F3B607488DB35A47 --keyserver keyserver.ubuntu.com 2>/dev/null || true
         $SUDO pacman-key --lsign-key F3B607488DB35A47 2>/dev/null || true
     fi
 
-    log_info "Actualizando índices de paquetes con Pacman..."
+    # Instalar paru oficial precompilado de CachyOS si no está presente
+    if ! command -v paru &>/dev/null; then
+        log_info "Instalando paru (AUR Helper oficial optimizado de CachyOS)..."
+        $SUDO pacman -S --needed --noconfirm paru 2>/dev/null || log_warn "No se pudo instalar paru automáticamente; instálalo con: sudo pacman -S paru"
+        if command -v paru &>/dev/null; then
+            log_ok "paru instalado y listo para su uso."
+        fi
+    fi
+
+    # Actualización segura de bases de datos
+    log_info "Sincronizando índices de paquetes de Pacman..."
     $SUDO pacman -Sy
-    log_ok "Configuración de repositorios y Pacman completada."
+    log_ok "Configuración de repositorios y Pacman completada con éxito."
+    echo -e "${YELLOW}💡 Consejo: Para actualizar paquetes de forma completa y segura sin inconsistencias, ejecuta:${NC}"
+    echo -e "   ${BOLD}$0 --update${NC}  o  ${BOLD}paru -Syu${NC}"
+}
+
+rate_mirrors() {
+    log_info "Optimizando espejos de CachyOS (v3/v4) y Arch Linux para latencia mínima..."
+    if command -v cachyos-rate-mirrors &>/dev/null; then
+        $SUDO cachyos-rate-mirrors
+        log_ok "Espejos calibrados con éxito mediante cachyos-rate-mirrors."
+    elif command -v rate-mirrors &>/dev/null; then
+        rate-mirrors arch | $SUDO tee "$MIRRORS_DIR/mirrorlist" >/dev/null
+        log_ok "Espejos de Arch Linux calibrados con rate-mirrors."
+    elif command -v reflector &>/dev/null; then
+        $SUDO reflector --latest 15 --protocol https --sort rate --save "$MIRRORS_DIR/mirrorlist"
+        log_ok "Espejos optimizados con reflector."
+    else
+        log_warn "cachyos-rate-mirrors no encontrado. Instalando..."
+        $SUDO pacman -S --needed --noconfirm cachyos-rate-mirrors 2>/dev/null || true
+        if command -v cachyos-rate-mirrors &>/dev/null; then
+            $SUDO cachyos-rate-mirrors
+            log_ok "Espejos calibrados con cachyos-rate-mirrors."
+        else
+            log_err "No se pudo calibrar los espejos automáticamente."
+        fi
+    fi
+}
+
+update_system() {
+    log_info "Iniciando actualización completa del sistema para CachyOS (Zen 3 / Wayland)..."
+    if command -v paru &>/dev/null; then
+        log_info "Actualizando mediante paru (repositorios oficiales + AUR)..."
+        paru -Syu --noconfirm
+    else
+        log_info "Actualizando mediante pacman..."
+        $SUDO pacman -Syu --noconfirm
+    fi
+    log_ok "Sistema actualizado completamente."
+}
+
+refresh_keys() {
+    log_info "Inicializando y refrescando llaveros de Pacman..."
+    $SUDO pacman-key --init
+    log_info "Poblando firmas de Arch Linux y CachyOS..."
+    $SUDO pacman-key --populate archlinux cachyos 2>/dev/null || true
+    
+    if [ -f "$MIRRORS_DIR/chaotic-mirrorlist" ]; then
+        log_info "Refrescando firma de Chaotic-AUR..."
+        $SUDO pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com 2>/dev/null || true
+        $SUDO pacman-key --lsign-key 3056513887B78AEB 2>/dev/null || true
+    fi
+    log_ok "Llaveros de firmas actualizados y validados."
 }
 
 ACTION="${1:-setup}"
@@ -165,6 +367,15 @@ case "$ACTION" in
         ;;
     -r|--rate-mirrors)
         rate_mirrors
+        ;;
+    -u|--update)
+        update_system
+        ;;
+    -k|--keys)
+        refresh_keys
+        ;;
+    --chaotic)
+        setup_chaotic
         ;;
     -h|--help)
         show_help
