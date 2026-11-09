@@ -28,7 +28,8 @@ alias gdrive-software="rclone sync \"/run/media/caballero/NVME_EXT/Software\" \"
 alias gdrive-kdenlive="rclone sync \"\$HOME/Workspace/Kdenlive/\" \"GoogleDrive:Workspace/Kdenlive\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_kdenlive.log\""
 alias gdrive-repos="rclone sync \"\$HOME/Proyectos\" \"GoogleDrive:Proyectos\" $RCLONE_OPTS --include \"*.zip\" --log-file \"$RCLONE_LOG_DIR/rclone_repos.log\""
 alias gdrive-repos-debian="rclone sync \"\$HOME/Proyectos/Debian\" \"GoogleDrive:Proyectos/Debian\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_debian.log\""
-alias gdrive-repos-fedora="rclone sync \"\$HOME/Proyectos/Fedora\" \"GoogleDrive:Proyectos/Fedora\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_fedora.log\""
+alias gdrive-repos-cachyos="rclone sync \"\$HOME/Proyectos/Linux/CachyOS-Gnome\" \"GoogleDrive:Proyectos/CachyOS-Gnome\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_cachyos.log\""
+alias gdrive-repos-cachyos="rclone sync \"\$HOME/Proyectos/Linux/CachyOS-Gnome\" \"GoogleDrive:Proyectos/CachyOS-Gnome\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_cachyos.log\""
 alias gdrive-repos-loladelacamara="rclone sync \"\$HOME/Proyectos/loladelacamara.es\" \"GoogleDrive:Proyectos/loladelacamara.es\" $RCLONE_OPTS --log-file \"$RCLONE_LOG_DIR/rclone_repos_loladelacamara.log\""
 
 # -----------------------------------------------------------------------------

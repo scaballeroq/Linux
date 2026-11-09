@@ -2,11 +2,11 @@
 sidebar_position: 5
 ---
 
-# Development Environments and IDEs on Fedora 45
+# Development Environments and IDEs on CachyOS Workstation
 
 This guide details the developer tools, AI coding assistants, and version control utilities managed in the `IDE` folder.
 
-All tools are optimized for **Fedora 45 Workstation**, the **Wayland** display server, the **GNOME** desktop environment, and **Bash** (default) and **Zsh** (compatible if `~/.zshrc` exists) shells.
+All tools are optimized for **CachyOS Workstation**, the **Wayland** display server, the **GNOME** desktop environment, and **Bash** (default) and **Zsh** (compatible if `~/.zshrc` exists) shells.
 
 ---
 
@@ -30,10 +30,10 @@ Installs the standalone Antigravity IDE engine, symlinks binaries, and configure
 
 ## 2. Git Version Control Tools (`git.sh`)
 
-Installs and optimizes the modern Git ecosystem on Fedora 45:
-- **git**: Core version control system via DNF5.
+Installs and optimizes the modern Git ecosystem on CachyOS Workstation:
+- **git**: Core version control system via Pacman.
 - **delta** (`git-delta`): Modern syntax-highlighting pager for `git diff` and `git show`.
-- **lazygit**: Terminal UI (TUI) for interactive Git workflows (installed via COPR or official release binary).
+- **lazygit**: Terminal UI (TUI) for interactive Git workflows (installed via official repositories).
 - **github-cli** (`gh`): Official GitHub command-line tool.
 
 Configures recommended global Git settings:

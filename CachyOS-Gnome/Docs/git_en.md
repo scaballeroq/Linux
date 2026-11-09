@@ -2,7 +2,7 @@
 sidebar_position: 4
 ---
 
-# Git & Version Control Configuration on Fedora 45
+# Git & Version Control Configuration on CachyOS Workstation
 
 This guide details the version control environment and optimized toolchain configured in [IDE/git.sh](../IDE/git.sh).
 
@@ -12,13 +12,11 @@ The environment includes the standard **Git** client, the **Git-Delta** visual d
 
 ## 1. Unified Automation (`git.sh`)
 
-The main script automates installation via DNF5 and establishes modern version control best practices:
+The main script automates installation via Pacman and establishes modern version control best practices:
 
 1. **Package Installation**:
    ```bash
-   sudo dnf5 install -y git git-delta gh
-   # Lazygit via COPR or official release binary:
-   sudo dnf5 copr enable -y dejan/lazygit && sudo dnf5 install -y lazygit
+   sudo pacman -S --needed --noconfirm git git-delta lazygit github-cli
    ```
 
 2. **Global User Configuration**:

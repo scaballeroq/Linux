@@ -2,9 +2,9 @@
 
 # Complete Guide to GNOME Shell Extensions
 
-This guide details the set of **12 GNOME Shell extensions** and auxiliary tools automatically installed and configured via the [`Setup/gnome-extensions.sh`](file:///home/caballero/Proyectos/Linux/FedoraTesting/Setup/gnome-extensions.sh) script and the `just extensions` command.
+This guide details the set of **12 GNOME Shell extensions** and auxiliary tools automatically installed and configured via the [`Setup/gnome-extensions.sh`](../Setup/gnome-extensions.sh) script and the `just extensions` command.
 
-The goal of this selection is to optimize the GNOME desktop environment in Fedora 45 (Trixie), combining **advanced window management**, **productivity enhancements**, **system tray support**, and **modern visual aesthetics** (glassmorphism/blur, dynamic wallpapers, and audio panel), with **Dash to Dock** as the primary native dock.
+The goal of this selection is to optimize the GNOME desktop environment in CachyOS Workstation, combining **advanced window management**, **productivity enhancements**, **system tray support**, and **modern visual aesthetics** (glassmorphism/blur, dynamic wallpapers, and audio panel), with **Dash to Dock** as the primary native dock.
 
 ---
 
@@ -14,7 +14,7 @@ Before installing extensions, the setup script deploys baseline support to ensur
 
 | Tool | Type | Description |
 | :--- | :--- | :--- |
-| **`gnome-browser-connector`** | DNF5 Package | Native connector enabling extension installation and management directly from [extensions.gnome.org](https://extensions.gnome.org/). |
+| **`gnome-browser-connector`** | Pacman Package | Native connector enabling extension installation and management directly from [extensions.gnome.org](https://extensions.gnome.org/). |
 | **`extension-manager`** | GTK4/Adwaita App | Native graphical application to search, install, update, and configure GNOME extensions without requiring a web browser. |
 | **`gnome-extensions-cli` (`gext`)** | CLI Tool (Python/pipx) | Command-line utility used by setup scripts for automated batch installation via official APIs. |
 | **`glib-compile-schemas`** | GSettings Compiler | Automatically compiles GSettings schemas into `~/.local/share/gnome-shell/extensions/<UUID>/schemas`, preventing `Disabled` or `Error` states. |

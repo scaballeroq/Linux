@@ -2,15 +2,15 @@
 sidebar_position: 7
 ---
 
-# Guía de Desarrollo en Python con uv en Fedora 45 Workstation
+# Guía de Desarrollo en Python con uv en CachyOS Workstation
 
-Esta guía describe el flujo de trabajo moderno y seguro para el desarrollo en **Python** en Fedora 45 Workstation, utilizando **`uv`** y entornos virtuales aislados sin interferir con las aplicaciones ni las herramientas del sistema operativo (**GNOME Tweaks / Retoques**, Pacman, extensiones, etc.).
+Esta guía describe el flujo de trabajo moderno y seguro para el desarrollo en **Python** en CachyOS Workstation, utilizando **`uv`** y entornos virtuales aislados sin interferir con las aplicaciones ni las herramientas del sistema operativo (**GNOME Tweaks / Retoques**, Pacman, extensiones, etc.).
 
 ---
 
 ## 🧠 Filosofía y Arquitectura del Entorno
 
-En distribuciones rolling-release como **Arch Linux** y **Fedora 45 Workstation**, muchas herramientas críticas del sistema operativo (como *Retoques de GNOME*, *Lutris*, scripts de empaquetado y utilidades del sistema) dependen de **`/usr/bin/python3`** y sus librerías empaquetadas por Pacman (`python-gobject`, `libadwaita`, etc.).
+En distribuciones modernas como **CachyOS Workstation**, muchas herramientas críticas del sistema operativo (como *Retoques de GNOME*, *Lutris*, scripts de empaquetado y utilidades del sistema) dependen de **`/usr/bin/python3`** y sus librerías empaquetadas por Pacman (`python-gobject`, `libadwaita`, etc.).
 
 > [!CAUTION]
 > **Nunca registres una versión de Python global en gestores como Mise (`mise use --global python@...`)**.
@@ -117,7 +117,7 @@ python = "3.12"
 ```
 
 * **Dentro del proyecto**: La terminal usará Python 3.12.
-* **Fuera del proyecto**: La terminal y el escritorio volverán inmediatamente al Python nativo de Fedora 45 Workstation.
+* **Fuera del proyecto**: La terminal y el escritorio volverán inmediatamente al Python nativo de CachyOS Workstation.
 
 ---
 

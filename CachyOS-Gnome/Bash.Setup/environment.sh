@@ -1,5 +1,5 @@
 # =============================================================================
-# VARIABLES DE ENTORNO (environment.sh) - Adaptado para Fedora 45 Workstation (GNOME)
+# VARIABLES DE ENTORNO (environment.sh) - Adaptado para CachyOS Workstation (GNOME)
 # =============================================================================
 # Este archivo define variables de entorno globales para la sesión de usuario.
 
@@ -49,8 +49,10 @@ export LIBVA_DRIVER_NAME="radeonsi"
 # uv (Python) en sistemas Linux
 export UV_LINK_MODE="copy"
 
-# JAVA_HOME canónico en Fedora 45 (OpenJDK 21+)
-if [ -d "/usr/lib/jvm/java-21-openjdk" ]; then
+# JAVA_HOME canónico en CachyOS (archlinux-java / OpenJDK LTS)
+if [ -d "/usr/lib/jvm/default" ]; then
+    export JAVA_HOME="/usr/lib/jvm/default"
+elif [ -d "/usr/lib/jvm/java-21-openjdk" ]; then
     export JAVA_HOME="/usr/lib/jvm/java-21-openjdk"
 elif [ -d "/etc/alternatives/jre_openjdk" ]; then
     export JAVA_HOME="/etc/alternatives/jre_openjdk"

@@ -83,12 +83,12 @@ EOF
 
 show_status() {
     echo "================================================================="
-    echo "🔍 ESTADO DE GSCONNECT Y CORTAFUEGOS - FEDORA WORKSTATION"
+    echo "🔍 ESTADO DE GSCONNECT Y CORTAFUEGOS - CACHYOS WORKSTATION"
     echo "================================================================="
 
     local ext_installed ext_enabled
     if [ -d "/usr/share/gnome-shell/extensions/$GSCONNECT_UUID" ] || [ -d "$USER_HOME/.local/share/gnome-shell/extensions/$GSCONNECT_UUID" ]; then
-        ext_installed="✅ Instalada (paquete RPM/EGO)"
+        ext_installed="✅ Instalada (paquete Pacman/EGO)"
     elif run_as_user gnome-extensions list 2>/dev/null | grep -q "^$GSCONNECT_UUID$"; then
         ext_installed="✅ Instalada (GNOME Shell)"
     else
@@ -218,7 +218,7 @@ disable_service() {
 configure_firewall() {
     echo "ℹ️ Configurando reglas en Firewalld (puertos 1714-1764 TCP/UDP y mDNS)..."
     if ! command -v firewall-cmd &>/dev/null; then
-        $SUDO $DNF_CMD install -y firewalld 2>/dev/null || true
+        $SUDO pacman -S --needed --noconfirm firewalld 2>/dev/null || true
     fi
 
     $SUDO systemctl enable --now firewalld 2>/dev/null || true

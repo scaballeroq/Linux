@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# python.sh - Verificación de Python Nativo (Fedora) y Gestor 'uv' vía Mise
-# Fedora Workstation (GNOME Shell 51 Wayland / Systemd User Environment)
+# python.sh - Verificación de Python Nativo (CachyOS) y Gestor 'uv' vía Mise
+# CachyOS Workstation (GNOME Shell Wayland / Systemd User Environment)
 # Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3, 8C/16T) | 32 GB RAM
 # ==============================================================================
 # Principios de Diseño:
 # - Cumplimiento estricto de PEP 668: Python NO se instala globalmente a través
 #   de gestores de versiones (Mise/Pyenv) para garantizar la integridad absoluta
-#   de las herramientas del sistema Fedora (DNF5, Firewalld, systemd, GNOME Shell).
-# - Se valida que el sistema disponga del Python 3 nativo de Fedora y sus paquetes base.
+#   de las herramientas del sistema CachyOS (Pacman, Firewalld, systemd, GNOME Shell).
+# - Se valida que el sistema disponga del Python 3 nativo de CachyOS y sus paquetes base.
 # - Para proyectos que requieran versiones específicas de Python (3.11, 3.12, 3.13, etc.),
 #   se utiliza 'uv' de forma aislada por proyecto (per-project) sin alterar el sistema.
 # - Optimización con UV_LINK_MODE="copy" para compatibilidad con snapshots y clonado Btrfs/NVMe.
@@ -60,8 +60,6 @@ if [ "$EUID" -ne 0 ]; then
 else
     SUDO=""
 fi
-
-DNF_CMD=$(command -v dnf5 2>/dev/null || command -v dnf 2>/dev/null || echo "dnf5")
 
 # Exportar rutas de usuario y herramientas en el PATH de la sesión
 export PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:/usr/local/bin:/usr/bin:$PATH"
@@ -119,13 +117,13 @@ get_uvx_bin() {
 # ------------------------------------------------------------------------------
 show_help() {
     cat <<EOF
-🐍 Gestor de Entorno Python & Gestor 'uv' - Fedora Workstation
+🐍 Gestor de Entorno Python & Gestor 'uv' - CachyOS Workstation
    Hardware: AMD Ryzen 7 7730U (16 hilos) | 32 GB RAM | NVMe Kioxia | GNOME Wayland
 
 Filosofía de Aislamiento (PEP 668):
-  • El sistema operativo utiliza exclusivamente el Python nativo de Fedora (/usr/bin/python3).
+  • El sistema operativo utiliza exclusivamente el Python nativo de CachyOS (/usr/bin/python3).
   • Python NO se instala globalmente en Mise para garantizar la integridad del sistema
-    (DNF5, Firewalld, GNOME Shell, PipeWire).
+    (Pacman, Firewalld, GNOME Shell, PipeWire).
   • Los proyectos que requieran versiones específicas de Python se gestionan de forma
     aislada mediante 'uv' (ej: 'uv init', 'uv venv --python 3.13').
 
@@ -135,7 +133,7 @@ Uso:
 Opciones:
   (sin argumentos)    Verifica el Python nativo del sistema, asegura 'uv' en Mise,
                       desactiva shims globales conflictivos y genera autocompletados.
-  --status, -s        Muestra diagnóstico detallado del Python nativo de Fedora,
+  --status, -s        Muestra diagnóstico detallado del Python nativo de CachyOS,
                       módulo venv, gestor 'uv', concurrencia y aislamiento de Mise.
   --update, -u        Actualiza 'uv' a la última versión disponible en Mise.
   --help, -h          Muestra este mensaje de ayuda.
@@ -148,7 +146,7 @@ EOF
 
 show_status() {
     echo -e "${CYAN}=================================================================${NC}"
-    echo -e "${BOLD}🔍 DIAGNÓSTICO DEL ENTORNO PYTHON (NATIVO FEDORA + GESTOR UV)${NC}"
+    echo -e "${BOLD}🔍 DIAGNÓSTICO DEL ENTORNO PYTHON (NATIVO CACHYOS + GESTOR UV)${NC}"
     echo -e "${CYAN}=================================================================${NC}"
 
     local py_bin py_ver py_pkg venv_status pip_status mise_py uv_status uvx_status
@@ -156,7 +154,7 @@ show_status() {
 
     py_bin=$(which python3 2>/dev/null || echo "No encontrado")
     py_ver=$(python3 --version 2>/dev/null || echo "No disponible")
-    py_pkg=$(rpm -q python3 2>/dev/null || echo "Paquete nativo")
+    py_pkg=$(pacman -Q python 2>/dev/null || echo "Paquete nativo")
 
     if python3 -m venv --help &>/dev/null; then
         venv_status="${GREEN}✅ Operativo (módulo venv nativo)${NC}"
@@ -167,7 +165,7 @@ show_status() {
     if python3 -m pip --version &>/dev/null; then
         local pip_ver
         pip_ver=$(python3 -m pip --version 2>/dev/null | awk '{print $2}')
-        pip_status="${GREEN}✅ v$pip_ver (paquete RPM de Fedora)${NC}"
+        pip_status="${GREEN}✅ v$pip_ver (paquete Pacman de CachyOS)${NC}"
     else
         pip_status="${YELLOW}⚠️  No instalado a nivel de sistema (cumple aislamiento PEP 668)${NC}"
     fi
@@ -197,10 +195,10 @@ show_status() {
         uvx_status="${RED}❌ No instalado${NC}"
     fi
 
-    echo -e "${BOLD}1. Python Nativo del Sistema (Fedora Workstation):${NC}"
+    echo -e "${BOLD}1. Python Nativo del Sistema (CachyOS Workstation):${NC}"
     echo -e "  • Binario ejecutable:    $py_bin"
     echo -e "  • Versión activa:        ${CYAN}$py_ver${NC}"
-    echo -e "  • Paquete RPM:           $py_pkg"
+    echo -e "  • Paquete Pacman:        $py_pkg"
     echo -e "  • Módulo python3-venv:   $venv_status"
     echo -e "  • Gestor pip de sistema: $pip_status"
     echo -e "-----------------------------------------------------------------"
@@ -296,32 +294,32 @@ case "${1:-}" in
 esac
 
 echo -e "${CYAN}=================================================================${NC}"
-echo -e "${BOLD}🐍 Configurando Python Nativo de Fedora y Gestor 'uv' (Mise)${NC}"
-echo -e "   Hardware: AMD Ryzen 7 7730U (16T) | 32GB RAM | Fedora Workstation"
+echo -e "${BOLD}🐍 Configurando Python Nativo de CachyOS y Gestor 'uv' (Mise)${NC}"
+echo -e "   Hardware: AMD Ryzen 7 7730U (16T) | 32GB RAM | CachyOS Workstation"
 echo -e "${CYAN}=================================================================${NC}"
 
 # ------------------------------------------------------------------------------
-# 6. VERIFICAR PYTHON NATIVO DE FEDORA
+# 6. VERIFICAR PYTHON NATIVO DE CACHYOS
 # ------------------------------------------------------------------------------
-log_step "[1/4] Comprobando integridad del Python nativo de Fedora..."
+log_step "[1/4] Comprobando integridad del Python nativo de CachyOS..."
 MISSING_PKGS=()
-for pkg in python3 python3-devel; do
-    if ! rpm -q "$pkg" &>/dev/null; then
+for pkg in python python-pip; do
+    if ! pacman -Q "$pkg" &>/dev/null; then
         MISSING_PKGS+=("$pkg")
     fi
 done
 
 if [ ${#MISSING_PKGS[@]} -gt 0 ]; then
-    log_info "Instalando paquetes nativos faltantes vía $DNF_CMD: ${MISSING_PKGS[*]}..."
+    log_info "Instalando paquetes nativos faltantes vía Pacman: ${MISSING_PKGS[*]}..."
     if [ -n "$SUDO" ] && ! command -v sudo &>/dev/null; then
         log_warn "No se dispone de 'sudo' para instalar paquetes del sistema: ${MISSING_PKGS[*]}"
     else
-        $SUDO $DNF_CMD install -y "${MISSING_PKGS[@]}" 2>/dev/null || true
+        $SUDO pacman -S --needed --noconfirm "${MISSING_PKGS[@]}" 2>/dev/null || true
     fi
-    log_ok "Paquetes nativos de Fedora asegurados."
+    log_ok "Paquetes nativos de CachyOS asegurados."
 else
     local_ver=$(python3 --version 2>/dev/null || echo "Python 3")
-    log_ok "Python nativo de Fedora ($local_ver) y cabeceras de desarrollo intactas."
+    log_ok "Python nativo de CachyOS ($local_ver) y cabeceras intactas."
 fi
 
 # Validar módulo venv
@@ -365,14 +363,14 @@ run_as_user mkdir -p "$ENV_DIR" "$BASHRC_D" "$BASH_COMPLETIONS_DIR"
 
 # 9.1. Integración con sesión gráfica GNOME Shell (systemd user)
 cat << 'EOF' | run_as_user tee "$ENV_DIR/10-python.conf" > /dev/null
-# Integración de Python & uv para Wayland / GNOME Shell (Fedora Workstation)
+# Integración de Python & uv para Wayland / GNOME Shell (CachyOS Workstation)
 PYTHONUNBUFFERED=1
 UV_LINK_MODE=copy
 EOF
 
 # 9.2. Shell Bash (predeterminada)
 cat << 'EOF' | run_as_user tee "$BASHRC_D/python.sh" > /dev/null
-# Python & uv Environment Settings (Fedora Workstation)
+# Python & uv Environment Settings (CachyOS Workstation)
 export PYTHONUNBUFFERED=1
 export UV_LINK_MODE=copy
 EOF
@@ -382,7 +380,7 @@ if [ -f "$USER_HOME/.zshrc" ] || [ -d "$USER_HOME/.zshrc.d" ]; then
     ZSHRC_D="$USER_HOME/.zshrc.d"
     run_as_user mkdir -p "$ZSHRC_D"
     cat << 'EOF' | run_as_user tee "$ZSHRC_D/python.zsh" > /dev/null
-# Python & uv Environment Settings (Fedora Workstation)
+# Python & uv Environment Settings (CachyOS Workstation)
 export PYTHONUNBUFFERED=1
 export UV_LINK_MODE=copy
 EOF
@@ -428,7 +426,7 @@ if [ -n "$UV_BIN" ] && [ -x "$UV_BIN" ]; then
 fi
 
 echo -e "${CYAN}=================================================================${NC}"
-echo -e "${GREEN}${BOLD}✅ Entorno Python & uv listo para Fedora Workstation y GNOME:${NC}"
+echo -e "${GREEN}${BOLD}✅ Entorno Python & uv listo para CachyOS Workstation y GNOME:${NC}"
 echo -e "  • Python Sistema: ${CYAN}$PYTHON_VER${NC} (/usr/bin/python3 nativo)"
 echo -e "  • Gestor uv:      ${GREEN}$UV_VER${NC} (gestión per-project en espacio de usuario)"
 echo -e "  • Optimización:   UV_LINK_MODE=copy | MAKEFLAGS=\"-j$NPROC\" (AMD Ryzen 7 7730U)"

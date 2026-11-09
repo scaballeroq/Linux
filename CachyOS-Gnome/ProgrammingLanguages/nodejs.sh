@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # nodejs.sh - Instalación y Optimización de Node.js (Última LTS) vía Mise
-# Sistema: Fedora Linux Workstation | Escritorio: GNOME Shell (Wayland)
+# Sistema: CachyOS Workstation | Escritorio: GNOME Shell (Wayland)
 # Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3, 8C/16T) | 32 GB RAM
 # ==============================================================================
 # Características:
@@ -50,8 +50,6 @@ if [ "$EUID" -ne 0 ]; then
 else
     SUDO=""
 fi
-
-DNF_CMD=$(command -v dnf5 2>/dev/null || command -v dnf 2>/dev/null || echo "dnf")
 
 # Flags de optimización multinúcleo (AMD Ryzen 7 7730U -> 16 hilos) para node-gyp
 NPROC=$(nproc 2>/dev/null || echo 16)
@@ -105,7 +103,7 @@ run_mise() {
 # 3. AYUDA Y ESTADO
 # ------------------------------------------------------------------------------
 show_help() {
-    echo -e "${BOLD}🟢 Instalador y Optimizador de Node.js (LTS) - Fedora Workstation (Mise)${NC}"
+    echo -e "${BOLD}🟢 Instalador y Optimizador de Node.js (LTS) - CachyOS Workstation (Mise)${NC}"
     echo -e "Hardware objetivo: AMD Ryzen 7 7730U (${NPROC} hilos) | GNOME 51 Wayland"
     echo ""
     echo -e "${BOLD}Uso:${NC}"
@@ -122,7 +120,7 @@ show_help() {
 
 show_status() {
     echo -e "${CYAN}=================================================================${NC}"
-    echo -e "${BOLD}🔍 DIAGNÓSTICO DE NODE.JS & GESTORES DE PAQUETES (MISE + FEDORA)${NC}"
+    echo -e "${BOLD}🔍 DIAGNÓSTICO DE NODE.JS & GESTORES DE PAQUETES (MISE + CACHYOS)${NC}"
     echo -e "   Hardware: AMD Ryzen 7 7730U (${NPROC} hilos) | GNOME Shell Wayland"
     echo -e "${CYAN}=================================================================${NC}"
 
@@ -226,26 +224,26 @@ update_nodejs() {
 }
 
 # ------------------------------------------------------------------------------
-# 5. DEPENDENCIAS DE COMPILACIÓN NATIVA (node-gyp / DNF5)
+# 5. DEPENDENCIAS DE COMPILACIÓN NATIVA (node-gyp / Pacman)
 # ------------------------------------------------------------------------------
 ensure_native_build_deps() {
     log_info "[1/5] Verificando dependencias del sistema para módulos C++ nativos (node-gyp)..."
     local missing_pkgs=()
-    for pkg in make gcc-c++ curl python3; do
-        if ! rpm -q "$pkg" &>/dev/null; then
+    for pkg in base-devel curl python; do
+        if ! pacman -Q "$pkg" &>/dev/null; then
             missing_pkgs+=("$pkg")
         fi
     done
 
     if [ ${#missing_pkgs[@]} -gt 0 ]; then
         if [ "$EUID" -eq 0 ] || sudo -n true 2>/dev/null; then
-            log_step "Instalando paquetes faltantes vía $DNF_CMD: ${missing_pkgs[*]}..."
-            $SUDO $DNF_CMD install -y "${missing_pkgs[@]}" 2>/dev/null || {
+            log_step "Instalando paquetes faltantes vía Pacman: ${missing_pkgs[*]}..."
+            $SUDO pacman -S --needed --noconfirm "${missing_pkgs[@]}" 2>/dev/null || {
                 log_warn "No se pudieron instalar automáticamente: ${missing_pkgs[*]}."
             }
         else
             log_warn "Faltan paquetes de compilación C++ nativos en el sistema: ${missing_pkgs[*]}."
-            log_warn "Para compilar módulos node-gyp nativos en C++, ejecuta cuando puedas: sudo $DNF_CMD install -y ${missing_pkgs[*]}"
+            log_warn "Para compilar módulos node-gyp nativos en C++, ejecuta cuando puedas: sudo pacman -S --needed ${missing_pkgs[*]}"
         fi
     else
         log_ok "Todas las dependencias nativas del sistema ya están presentes."
@@ -337,7 +335,7 @@ EOF
 
     # 9.2. Shell Bash (~/.bashrc.d/nodejs.sh)
     cat << EOF | run_as_user tee "$bashrc_d/nodejs.sh" > /dev/null
-# Node.js & npm/pnpm Multithreaded Build Settings (Fedora Workstation - AMD Ryzen 7 7730U)
+# Node.js & npm/pnpm Multithreaded Build Settings (CachyOS Workstation - AMD Ryzen 7 7730U)
 export MAKEFLAGS="-j$NPROC"
 export JOBS="$NPROC"
 export npm_config_jobs="$NPROC"
@@ -349,7 +347,7 @@ EOF
         local zshrc_d="$USER_HOME/.zshrc.d"
         run_as_user mkdir -p "$zshrc_d"
         cat << EOF | run_as_user tee "$zshrc_d/nodejs.zsh" > /dev/null
-# Node.js & npm/pnpm Multithreaded Build Settings (Fedora Workstation - AMD Ryzen 7 7730U)
+# Node.js & npm/pnpm Multithreaded Build Settings (CachyOS Workstation - AMD Ryzen 7 7730U)
 export MAKEFLAGS="-j$NPROC"
 export JOBS="$NPROC"
 export npm_config_jobs="$NPROC"
@@ -407,7 +405,7 @@ case "${1:-}" in
         ;;
     "")
         echo -e "${CYAN}=================================================================${NC}"
-        echo -e "${BOLD}🟢 CONFIGURACIÓN DE NODE.JS LTS & PNPM - FEDORA WORKSTATION${NC}"
+        echo -e "${BOLD}🟢 CONFIGURACIÓN DE NODE.JS LTS & PNPM - CACHYOS WORKSTATION${NC}"
         echo -e "   Hardware: AMD Ryzen 7 7730U (${NPROC} hilos) | GNOME Shell Wayland"
         echo -e "${CYAN}=================================================================${NC}"
         ensure_native_build_deps
@@ -418,7 +416,7 @@ case "${1:-}" in
         echo ""
         show_status
         echo -e "${BOLD}=================================================================${NC}"
-        echo -e "${GREEN}✅ Node.js LTS y pnpm configurados con éxito para Fedora Workstation.${NC}"
+        echo -e "${GREEN}✅ Node.js LTS y pnpm configurados con éxito para CachyOS Workstation.${NC}"
         echo -e "💡 Abre una nueva terminal o ejecuta: ${CYAN}source ~/.bashrc${NC}"
         echo -e "${BOLD}=================================================================${NC}"
         ;;

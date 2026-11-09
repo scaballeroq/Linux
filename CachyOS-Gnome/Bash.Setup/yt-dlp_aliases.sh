@@ -1,6 +1,6 @@
 # =============================================================================
 # ALIASES Y FUNCIONES PARA YT-DLP (yt-dlp_aliases.sh)
-# Sistema: Fedora 45 Workstation (GNOME Shell Wayland)
+# Sistema: CachyOS Workstation (GNOME Shell Wayland)
 # Compatible con Zsh y Bash (HP ProBook 455 G10 / AMD Ryzen 7 7730U)
 # ==============================================================================
 # Características:
@@ -27,7 +27,7 @@ elif command -v mise &> /dev/null && mise which node &>/dev/null; then
 fi
 
 # ------------------------------------------------------------------------------
-# 2. NAVEGADOR PREDETERMINADO PARA COOKIES EN FEDORA GNOME
+# 2. NAVEGADOR PREDETERMINADO PARA COOKIES EN CACHYOS GNOME
 # ------------------------------------------------------------------------------
 if [ -z "${YT_BROWSER:-}" ]; then
     if [ -d "$HOME/.mozilla/firefox" ]; then
@@ -111,5 +111,5 @@ ytclip-audio() {
 
 # Feedback discreto en terminales interactivas
 if [[ -t 1 ]]; then
-    echo "✅ Aliases de yt-dlp para Fedora 45 GNOME cargados (ytvideo, ytaudio, ytlista, ytplay, ytclip)"
+    echo "✅ Aliases de yt-dlp para CachyOS GNOME cargados (ytvideo, ytaudio, ytlista, ytplay, ytclip)"
 fi

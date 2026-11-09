@@ -91,7 +91,7 @@ ${BOLD}Uso:${NC}
 ${BOLD}Opciones Generales:${NC}
   (sin argumentos)           Instala utilidades y aplica toda la configuración recomendada
   -i, --interactive          Ejecuta el asistente interactivo de configuración
-  --no-install, --config     Aplica ajustes GSettings/Nautilus sin ejecutar DNF5
+  --no-install, --config     Aplica ajustes GSettings/Nautilus sin reinstalar paquetes
   -s, --status               Muestra el diagnóstico completo de GNOME Shell y hardware
   -h, --help                 Muestra esta ayuda
 
@@ -102,7 +102,7 @@ ${BOLD}Selectores de Preferencias:${NC}
   --buttons <right|left>     Posición de botones minimizar/maximizar/cerrar (por defecto: right)
 
 ${BOLD}Ejecución Modular (ejecuta solo los módulos indicados):${NC}
-  --packages                 Solo instala paquetes de soporte GNOME mediante DNF5
+  --packages                 Solo instala paquetes de soporte GNOME mediante Pacman
   --appearance               Solo aplica tema, luz nocturna, fuentes subpixel y reloj
   --windows                  Solo aplica botones, Mutter Wayland y multitarea multimonitor
   --touchpad                 Solo configura gestos de touchpad y persistencia de teclado numérico
@@ -118,7 +118,7 @@ EOF
 # ------------------------------------------------------------------------------
 show_status() {
     echo -e "${BOLD}======================================================================${NC}"
-    echo -e "  🖥️  ${BOLD}ESTADO DE GNOME SHELL (WAYLAND) - FEDORA 45 WORKSTATION${NC}"
+    echo -e "  🖥️  ${BOLD}ESTADO DE GNOME SHELL (WAYLAND) - CACHYOS WORKSTATION${NC}"
     echo -e "      ${CYAN}HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8 / 32 GB RAM)${NC}"
     echo -e "${BOLD}======================================================================${NC}"
 
@@ -199,7 +199,7 @@ show_status() {
 # ------------------------------------------------------------------------------
 run_interactive() {
     echo -e "${BOLD}======================================================================${NC}"
-    echo -e "  🖥️  ${BOLD}ASISTENTE INTERACTIVO DE GNOME SHELL - FEDORA 45 WORKSTATION${NC}"
+    echo -e "  🖥️  ${BOLD}ASISTENTE INTERACTIVO DE GNOME SHELL - CACHYOS WORKSTATION${NC}"
     echo -e "${BOLD}======================================================================${NC}"
 
     echo -e "\n${BOLD}1) Tema del Escritorio:${NC}"
@@ -232,13 +232,13 @@ run_interactive() {
 # 7. MÓDULOS DE CONFIGURACIÓN
 # ------------------------------------------------------------------------------
 install_gnome_packages() {
-    log_info "Verificando herramientas y paquetes de integración GNOME Wayland ($DNF_BIN)..."
+    log_info "Verificando herramientas y paquetes de integración GNOME Wayland (Pacman)..."
     local pkgs=(
         gnome-tweaks
         dconf-editor
         wl-clipboard
         libnotify
-        nautilus-python
+        python-nautilus
         papirus-icon-theme
         grim
         slurp

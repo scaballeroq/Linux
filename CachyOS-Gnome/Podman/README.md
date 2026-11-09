@@ -33,9 +33,9 @@ Podman/
 
 ---
 
-## Configuración y Despliegue en Fedora 45
+## Configuración y Despliegue en CachyOS
 
-Podman viene preinstalado de forma nativa en **Fedora 45**. El script de configuración optimiza el entorno Rootless, habilita persistencia (linger), activa el socket de API compatible con Docker y enlaza la CLI `podman-utils`.
+Podman viene preinstalado de forma nativa en **CachyOS**. El script de configuración optimiza el entorno Rootless, habilita persistencia (linger), activa el socket de API compatible con Docker y enlaza la CLI `podman-utils`.
 
 ### 1. Configuración Completa de Podman Rootless y Quadlets
 

@@ -2,18 +2,31 @@
 sidebar_position: 3
 ---
 
-# Configuración de Terminal y Shells en Fedora 45 Workstation (Bash & Zsh)
+# Configuración de Terminal y Shells en CachyOS Workstation (Zsh & Bash)
 
-Esta guía detalla la configuración del entorno de terminal (optimizado para **Bash** como shell predeterminada del proyecto y compatible con **Zsh** si existe `~/.zshrc`) junto a las utilidades integradas en los scripts modulares de la carpeta `Bash.Setup`.
+Esta guía detalla la configuración del entorno de terminal (optimizado para **Zsh como shell principal predeterminada** de CachyOS y compatible con **Bash**) junto a las utilidades integradas en los scripts modulares de la carpeta `Bash.Setup`.
 
-La carga modular está estructurada a través de los directorios `~/.bashrc.d/` (predeterminado) y `~/.zshrc.d/` (compatibilidad) para garantizar la limpieza, velocidad y mantenibilidad de tus configuraciones.
+La carga modular está estructurada a través de los directorios `~/.zshrc.d/` (shell principal Zsh) y `~/.bashrc.d/` (compatibilidad Bash) para garantizar la limpieza, velocidad y mantenibilidad de tus configuraciones.
 
 ---
 
 ## 1. Carga Modular del Entorno
 
-### Para Bash (Predeterminado - `~/.bashrc`)
-Añade el siguiente bloque a tu archivo `~/.bashrc`:
+### Para Zsh (Shell Principal - `~/.zshrc`)
+El script `./Setup/zsh-setup.sh` (o `just zsh`) configura automáticamente tu `~/.zshrc`:
+
+```zsh
+# Carga modular de configuraciones y aliases (~/.zshrc.d)
+if [ -d "$HOME/.zshrc.d" ]; then
+    for script in "$HOME/.zshrc.d"/*.{sh,zsh}(N); do
+        [ -r "$script" ] && source "$script"
+    done
+    unset script
+fi
+```
+
+### Para Bash (Compatibilidad - `~/.bashrc`)
+Si abres una subshell de Bash, añade el siguiente bloque a tu archivo `~/.bashrc`:
 
 ```bash
 # Carga modular de scripts de Bash.Setup
@@ -24,9 +37,6 @@ if [ -d "$HOME/.bashrc.d" ]; then
     unset script
 fi
 ```
-
-### Para Zsh (Compatibilidad condicional si existe `~/.zshrc`)
-Si utilizas Zsh y existe `~/.zshrc` en tu sistema:
 
 ```zsh
 # Carga modular de configuraciones y aliases (~/.zshrc.d)
@@ -43,12 +53,12 @@ Puedes habilitar todos los módulos ejecutando `./Setup/shell.sh` o manualmente:
 ```bash
 # Para Bash (Predeterminado)
 mkdir -p ~/.bashrc.d
-ln -sf ~/Proyectos/Linux/Fedora-Workstation/Bash.Setup/*.sh ~/.bashrc.d/
+ln -sf ~/Proyectos/Linux/CachyOS-Gnome/Bash.Setup/*.sh ~/.bashrc.d/
 
 # Para Zsh (si existe ~/.zshrc)
 if [ -f "$HOME/.zshrc" ]; then
     mkdir -p ~/.zshrc.d
-    ln -sf ~/Proyectos/Linux/Fedora-Workstation/Bash.Setup/*.sh ~/.zshrc.d/
+    ln -sf ~/Proyectos/Linux/CachyOS-Gnome/Bash.Setup/*.sh ~/.zshrc.d/
 fi
 ```
 
@@ -99,13 +109,14 @@ Sustituye comandos estándar por alternativas enriquecidas y seguras:
 - **Visualización** (si están instalados `eza` y `bat`):
   - `ls` → `eza --icons --git --group-directories-first`
   - `cat` → `bat --paging=never`
-- **Gestión de Paquetes (DNF5)**:
-  - `update` → `sudo dnf5 check-update --refresh`
-  - `upgrade` → `sudo dnf5 upgrade --refresh -y`
-  - `install` → `sudo dnf5 install`
-  - `remove` → `sudo dnf5 remove`
-  - `search` → `dnf5 search`
-  - `clean` → `sudo dnf5 autoremove -y && sudo dnf5 clean all`
+- **Gestión de Paquetes (Pacman / Paru)**:
+  - `update` → `paru -Syu` (actualiza repositorios y AUR)
+  - `upgrade` → `sudo pacman -Syu` (actualización oficial del sistema)
+  - `install` → `sudo pacman -S --needed` / `paru -S`
+  - `remove` → `sudo pacman -Rns` (desinstalación limpia con dependencias)
+  - `search` → `pacman -Ss` / `paru -Ss`
+  - `clean` → `sudo pacman -Sc && paru -Sc` (limpieza de caché)
+  - `mirrors` → `sudo cachyos-rate-mirrors` (optimización de espejos)
 - **GNOME y Escritorio**:
   - `open` / `o` → `xdg-open`
   - `nautilus` / `files` → Abre Nautilus en directorio actual

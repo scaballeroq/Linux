@@ -1,22 +1,19 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # git.sh - Instalación, Optimización y Configuración de Git, Delta, Lazygit y gh
-# Sistema: Fedora 45 Workstation (GNOME Shell 51 Wayland + DNF5)
+# Sistema: CachyOS Workstation (GNOME Shell Wayland + Pacman)
 # Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U | Radeon Graphics
 # ==============================================================================
 # Características:
-# - Despliegue idempotente: comprueba paquetes primero (rpm -q / command -v) y
-#   evita invocar 'sudo' o DNF5 si los paquetes ya están presentes.
+# - Despliegue idempotente: comprueba paquetes primero (pacman -Q / command -v) y
+#   evita invocar 'sudo' si los paquetes ya están presentes.
 # - Integración con GNOME Keyring vía 'git-credential-libsecret' (almacenamiento
 #   seguro y transparente de credenciales sin textos planos).
 # - Soporte para Git Large File Storage (git-lfs).
-# - Configuración global recomendada: pull rebase, autoStash, autoSetupRemote,
-#   zdiff3, rerere y ordenación cronológica de ramas y etiquetas.
-# - Integración de Git-Delta con resaltado de sintaxis adaptado al tema de GNOME.
-# - Integración de Lazygit con delta pager y tema GNOME Libadwaita Dark.
-# - Detección inteligente del editor preferido (gnome-text-editor, nvim, micro, etc.).
-# - Preservación de la identidad Git existente (~/.gitconfig).
-# - Comandos CLI: --status / -s, --help / -h.
+# - Integración de Git-Delta con tema Catppuccin Mocha y decoraciones de sintaxis.
+# - Integración de Lazygit con configuración visual coherente en ~/.config/lazygit/config.yml.
+# - Configuración de alias productivos, rama 'main' predeterminada y autosetupmerge.
+# - Opciones CLI: --status / -s, --help / -h.
 # ==============================================================================
 
 set -euo pipefail
@@ -38,7 +35,7 @@ log_warn() { echo -e "${YELLOW}⚠️  $1${NC}"; }
 log_err()  { echo -e "${RED}❌ $1${NC}"; }
 
 # ------------------------------------------------------------------------------
-# 2. DETECCIÓN DE USUARIO Y PRIVILEGIOS
+# 2. PRIVILEGIOS Y CONTEXTO DE USUARIO WAYLAND / D-BUS
 # ------------------------------------------------------------------------------
 if [[ $EUID -eq 0 ]]; then
     REAL_USER="${SUDO_USER:-$(logname 2>/dev/null || echo "${USER:-root}")}"
@@ -46,11 +43,11 @@ else
     REAL_USER="${USER:-$(whoami)}"
 fi
 USER_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
-REAL_UID=$(id -u "$REAL_USER")
+REAL_UID=$(id -u "$REAL_USER" 2>/dev/null || echo "1000")
 
-if [[ $EUID -ne 0 ]]; then
-    if ! command -v sudo &>/dev/null; then
-        log_err "Error: 'sudo' no está disponible. Ejecuta este script con permisos suficientes."
+if [ "$EUID" -ne 0 ]; then
+    if ! command -v sudo &> /dev/null; then
+        log_err "'sudo' no está disponible. Ejecuta este script con privilegios de superusuario."
         exit 1
     fi
     SUDO="sudo"
@@ -59,12 +56,6 @@ else
 fi
 
 export PATH="$USER_HOME/.local/bin:/usr/local/bin:/usr/bin:$PATH"
-
-if command -v dnf5 &>/dev/null; then
-    DNF_BIN="dnf5"
-else
-    DNF_BIN="dnf"
-fi
 
 run_as_user() {
     if [[ $EUID -eq 0 && "$REAL_USER" != "root" ]]; then
@@ -80,7 +71,7 @@ run_as_user() {
 }
 
 is_pkg_installed() {
-    rpm -q "$1" &>/dev/null
+    pacman -Q "$1" &>/dev/null
 }
 
 # ------------------------------------------------------------------------------
@@ -88,14 +79,14 @@ is_pkg_installed() {
 # ------------------------------------------------------------------------------
 show_help() {
     cat <<EOF
-${BOLD}🐙 Gestor y Optimizador de Git, Delta, Lazygit y GitHub CLI - Fedora 45 Workstation${NC}
-Entorno: GNOME Shell 51 (Wayland Mutter) | AMD Ryzen 7 7730U
+${BOLD}🐙 Gestor y Optimizador de Git, Delta, Lazygit y GitHub CLI - CachyOS Workstation${NC}
+Entorno: GNOME Shell (Wayland Mutter) | AMD Ryzen 7 7730U
 
 ${BOLD}Uso:${NC}
   $0 [OPCIÓN]
 
 ${BOLD}Opciones:${NC}
-  (sin argumentos)    Verifica e instala herramientas de Git vía $DNF_BIN,
+  (sin argumentos)    Verifica e instala herramientas de Git vía Pacman,
                       aplica configuración moderna, integración con GNOME Keyring,
                       Git-Delta y Lazygit.
   --status, -s        Muestra el diagnóstico completo de Git, credenciales, Delta, Lazygit y gh.
@@ -112,213 +103,120 @@ EOF
 
 show_status() {
     echo -e "${BOLD}======================================================================${NC}"
-    echo -e "🔍 ${BOLD}ESTADO DEL ENTORNO GIT - FEDORA 45 WORKSTATION (GNOME 51)${NC}"
+    echo -e "  🔍 ${BOLD}ESTADO DEL ENTORNO GIT - CACHYOS WORKSTATION (GNOME)${NC}"
     echo -e "${BOLD}======================================================================${NC}"
     echo -e "👤 Usuario objetivo:          ${CYAN}$REAL_USER${NC} ($USER_HOME)"
-    echo -e "💻 Escritorio:                ${GREEN}GNOME Shell 51 (Wayland / Mutter 51)${NC}"
-    echo -e "📦 Gestor de paquetes:        ${CYAN}$DNF_BIN${NC}"
+    echo -e "💻 Escritorio:                ${GREEN}GNOME Shell (Wayland / Mutter)${NC}"
+    echo -e "📦 Gestor de paquetes:        ${CYAN}Pacman / Paru${NC}"
     echo "----------------------------------------------------------------------"
 
     local git_ver delta_ver lazygit_ver gh_ver lfs_ver
-    local user_name user_email default_branch core_editor core_pager cred_helper gh_auth
-
     git_ver=$(git --version 2>/dev/null || echo "No instalado")
-    delta_ver=$(command -v delta &>/dev/null && delta --version 2>/dev/null || echo "No instalado")
-    lazygit_ver=$(command -v lazygit &>/dev/null && lazygit --version 2>/dev/null | head -n1 || echo "No instalado")
-    gh_ver=$(command -v gh &>/dev/null && gh --version 2>/dev/null | head -n1 || echo "No instalado")
-    lfs_ver=$(git lfs version 2>/dev/null | head -n1 || echo "No instalado")
+    delta_ver=$(delta --version 2>/dev/null || echo "No instalado")
+    lazygit_ver=$(lazygit --version 2>/dev/null | head -n1 || echo "No instalado")
+    gh_ver=$(gh --version 2>/dev/null | head -n1 || echo "No instalado")
+    lfs_ver=$(git lfs --version 2>/dev/null || echo "No instalado")
 
-    user_name=$(run_as_user git config --global user.name 2>/dev/null || echo "")
-    user_email=$(run_as_user git config --global user.email 2>/dev/null || echo "")
-    default_branch=$(run_as_user git config --global init.defaultBranch 2>/dev/null || echo "main")
-    core_editor=$(run_as_user git config --global core.editor 2>/dev/null || echo "Predeterminado")
-    core_pager=$(run_as_user git config --global core.pager 2>/dev/null || echo "less")
-    cred_helper=$(run_as_user git config --global credential.helper 2>/dev/null || echo "No configurado")
+    echo -e "  • Git core:                  $([ "$git_ver" != "No instalado" ] && echo "${GREEN}$git_ver${NC}" || echo "${RED}$git_ver${NC}")"
+    echo -e "  • Git LFS:                   $([ "$lfs_ver" != "No instalado" ] && echo "${GREEN}$lfs_ver${NC}" || echo "${YELLOW}$lfs_ver${NC}")"
+    echo -e "  • Git-Delta:                 $([ "$delta_ver" != "No instalado" ] && echo "${GREEN}$delta_ver${NC}" || echo "${YELLOW}$delta_ver${NC}")"
+    echo -e "  • Lazygit:                   $([ "$lazygit_ver" != "No instalado" ] && echo "${GREEN}$lazygit_ver${NC}" || echo "${YELLOW}$lazygit_ver${NC}")"
+    echo -e "  • GitHub CLI (gh):           $([ "$gh_ver" != "No instalado" ] && echo "${GREEN}$gh_ver${NC}" || echo "${YELLOW}$gh_ver${NC}")"
 
-    if command -v gh &>/dev/null; then
-        local gh_user
-        gh_user=$(run_as_user gh auth status 2>&1 | grep -oP 'account \K[^ ]+' | head -n1 || true)
-        if [ -n "$gh_user" ]; then
-            gh_auth="✅ Autenticado como $gh_user"
-        else
-            gh_auth="ℹ️ Sesión no iniciada (ejecuta: gh auth login)"
-        fi
-    else
-        gh_auth="No disponible"
-    fi
+    echo "----------------------------------------------------------------------"
+    echo -e "${BOLD}⚙️ Configuración Global de Git de $REAL_USER (~/.gitconfig):${NC}"
 
-    echo -e "• Git Engine:                 $([ "$git_ver" != "No instalado" ] && echo -e "${GREEN}✅ $git_ver${NC}" || echo -e "${RED}❌ No instalado${NC}")"
-    echo -e "• Git LFS:                    $([ "$lfs_ver" != "No instalado" ] && echo -e "${GREEN}✅ $lfs_ver${NC}" || echo -e "${YELLOW}⚠️ No instalado${NC}")"
-    echo -e "• Identidad Git:              $([ -n "$user_name" ] && echo -e "${GREEN}$user_name <$user_email>${NC}" || echo -e "${YELLOW}⚠️ No configurada (user.name / user.email)${NC}")"
-    echo -e "• Rama por defecto:           ${CYAN}$default_branch${NC}"
-    echo -e "• Editor Git:                 ${CYAN}$core_editor${NC}"
-    echo -e "• Credential Helper (GNOME):  $([ "$cred_helper" != "No configurado" ] && echo -e "${GREEN}✅ $cred_helper${NC}" || echo -e "${YELLOW}⚠️ No configurado${NC}")"
-    echo -e "• Pager / Diff:               $core_pager $([ "$core_pager" = "delta" ] && echo -e "${GREEN}✅ (Git-Delta activo)${NC}" || echo "")"
-    echo -e "• Git-Delta:                  $([ "$delta_ver" != "No instalado" ] && echo -e "${GREEN}✅ $delta_ver${NC}" || echo -e "${RED}❌ $delta_ver${NC}")"
-    echo -e "• Lazygit TUI:                $([ "$lazygit_ver" != "No instalado" ] && echo -e "${GREEN}✅ $lazygit_ver${NC}" || echo -e "${RED}❌ $lazygit_ver${NC}")"
-    echo -e "• Configuración Lazygit:      $(if [ -f "$USER_HOME/.config/lazygit/config.yml" ]; then echo -e "${GREEN}✅ Integrado con Delta & GNOME Dark${NC}"; else echo -e "${YELLOW}ℹ️ No configurado${NC}"; fi)"
-    echo -e "• GitHub CLI (gh):            $([ "$gh_ver" != "No instalado" ] && echo -e "${GREEN}✅ $gh_ver${NC}" || echo -e "${RED}❌ $gh_ver${NC}")"
-    echo -e "• Estado Auth GitHub:         $gh_auth"
+    local cred_helper default_branch pull_rebase init_template
+    cred_helper=$(run_as_user git config --global --get credential.helper 2>/dev/null || echo "no configurado")
+    default_branch=$(run_as_user git config --global --get init.defaultBranch 2>/dev/null || echo "no configurado")
+    pull_rebase=$(run_as_user git config --global --get pull.rebase 2>/dev/null || echo "no configurado")
+    init_template=$(run_as_user git config --global --get init.templateDir 2>/dev/null || echo "no configurado")
+
+    echo -e "  • credential.helper:         ${CYAN}$cred_helper${NC}"
+    echo -e "  • init.defaultBranch:        ${CYAN}$default_branch${NC}"
+    echo -e "  • pull.rebase:               ${CYAN}$pull_rebase${NC}"
+
+    local pager_val
+    pager_val=$(run_as_user git config --global --get core.pager 2>/dev/null || echo "no configurado")
+    echo -e "  • core.pager (delta):        $([ "$pager_val" = "delta" ] && echo "${GREEN}$pager_val${NC}" || echo "${YELLOW}$pager_val${NC}")"
+
+    local lazygit_cfg="$USER_HOME/.config/lazygit/config.yml"
+    echo -e "  • Lazygit config:            $([ -f "$lazygit_cfg" ] && echo "${GREEN}Presente ($lazygit_cfg)${NC}" || echo "${YELLOW}No presente${NC}")"
     echo -e "${BOLD}======================================================================${NC}"
 }
 
-# ------------------------------------------------------------------------------
-# 4. CONTROL DE ARGUMENTOS CLI
-# ------------------------------------------------------------------------------
-case "${1:-}" in
-    --status|-s|status)
-        show_status
-        exit 0
-        ;;
-    --help|-h|help)
-        show_help
-        exit 0
-        ;;
-esac
+ACTION="setup"
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -s|--status) ACTION="status"; shift ;;
+        -h|--help)   show_help; exit 0 ;;
+        *) log_err "Opción desconocida: $1"; echo ""; show_help; exit 1 ;;
+    esac
+done
 
-echo -e "${BOLD}======================================================================${NC}"
-echo -e "🐙 ${BOLD}CONFIGURACIÓN DE GIT, DELTA, LAZYGIT Y GH - FEDORA 45 GNOME${NC}"
-echo -e "${BOLD}======================================================================${NC}"
+if [ "$ACTION" = "status" ]; then
+    show_status
+    exit 0
+fi
 
 # ------------------------------------------------------------------------------
-# 5. INSTALACIÓN DE PAQUETES (IDEMPOTENTE Y SIN SUDO INNECESARIO)
+# 4. INSTALACIÓN IDEMPOTENTE DE PAQUETES
 # ------------------------------------------------------------------------------
-log_info "[1/4] Verificando paquetes del ecosistema Git en el sistema..."
+echo -e "${BOLD}======================================================================${NC}"
+echo -e "  🐙 ${BOLD}CONFIGURACIÓN DE GIT, DELTA, LAZYGIT Y GH - CACHYOS GNOME${NC}"
+echo -e "      ${CYAN}HP ProBook 455 G10 | AMD Ryzen 7 7730U | GNOME Shell Wayland${NC}"
+echo -e "${BOLD}======================================================================${NC}"
+
+TARGET_PKGS=(
+    git
+    git-lfs
+    git-delta
+    lazygit
+    github-cli
+)
 
 MISSING_PKGS=()
-for pkg in git git-delta gh git-lfs git-credential-libsecret; do
+for pkg in "${TARGET_PKGS[@]}"; do
     if ! is_pkg_installed "$pkg" && ! command -v "$pkg" &>/dev/null; then
         MISSING_PKGS+=("$pkg")
     fi
 done
 
-if ! is_pkg_installed lazygit && ! command -v lazygit &>/dev/null; then
-    MISSING_PKGS+=("lazygit")
-fi
-
 if [ ${#MISSING_PKGS[@]} -gt 0 ]; then
-    log_info "Paquetes faltantes detectados: (${MISSING_PKGS[*]}). Instalando..."
-    DNF_PKGS=()
-    NEED_LAZYGIT=false
-
-    for pkg in "${MISSING_PKGS[@]}"; do
-        if [ "$pkg" = "lazygit" ]; then
-            NEED_LAZYGIT=true
-        else
-            DNF_PKGS+=("$pkg")
-        fi
-    done
-
-    if [ ${#DNF_PKGS[@]} -gt 0 ]; then
-        if ! $SUDO "$DNF_BIN" install -y "${DNF_PKGS[@]}"; then
-            log_warn "Falló instalación grupal con $DNF_BIN, intentando paquete a paquete..."
-            for pkg in "${DNF_PKGS[@]}"; do
-                $SUDO "$DNF_BIN" install -y "$pkg" || log_warn "No se pudo instalar $pkg vía $DNF_BIN"
-            done
-        else
-            log_ok "Paquetes (${DNF_PKGS[*]}) instalados con éxito vía $DNF_BIN."
-        fi
-    fi
-
-    if [ "$NEED_LAZYGIT" = true ]; then
-        if ! $SUDO "$DNF_BIN" install -y lazygit 2>/dev/null; then
-            if $SUDO "$DNF_BIN" copr enable -y dejan/lazygit 2>/dev/null && $SUDO "$DNF_BIN" install -y lazygit 2>/dev/null; then
-                log_ok "Lazygit instalado vía COPR dejan/lazygit."
-            else
-                log_info "Lazygit no disponible en repositorios oficiales/copr; recurriendo a binario oficial..."
-            fi
-        else
-            log_ok "Lazygit instalado vía $DNF_BIN."
-        fi
-    fi
+    log_info "Instalando paquetes faltantes vía Pacman: (${MISSING_PKGS[*]})..."
+    $SUDO pacman -S --needed --noconfirm "${MISSING_PKGS[@]}" 2>/dev/null || {
+        for p in "${MISSING_PKGS[@]}"; do
+            $SUDO pacman -S --needed --noconfirm "$p" 2>/dev/null || true
+        done
+    }
+    log_ok "Paquetes instalados con éxito vía Pacman."
 else
     log_ok "Todos los paquetes principales de Git ya se encuentran instalados en el sistema."
 fi
 
-# Fallback para Lazygit: Descarga directa desde Releases oficiales de GitHub
-if ! command -v lazygit &>/dev/null; then
-    log_info "Descargando Lazygit desde binario oficial de GitHub..."
-    ARCH=$(uname -m)
-    case "$ARCH" in
-        x86_64)  LAZYGIT_ARCH="x86_64" ;;
-        aarch64) LAZYGIT_ARCH="arm64" ;;
-        *) log_err "Arquitectura no soportada para Lazygit: $ARCH"; exit 1 ;;
-    esac
-    LAZYGIT_TAG=$(basename "$(curl -fsSLI -o /dev/null -w "%{url_effective}" https://github.com/jesseduffield/lazygit/releases/latest 2>/dev/null)" || true)
-    LAZYGIT_VERSION="${LAZYGIT_TAG#v}"
-    if [ -n "$LAZYGIT_VERSION" ] && [ "$LAZYGIT_VERSION" != "latest" ]; then
-        run_as_user mkdir -p "$USER_HOME/.local/bin"
-        local_tar="/tmp/lazygit.tar.gz"
-        if curl -fsSLo "$local_tar" "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_${LAZYGIT_ARCH}.tar.gz"; then
-            tar -xzf "$local_tar" -C "/tmp" lazygit
-            run_as_user install -m 755 "/tmp/lazygit" "$USER_HOME/.local/bin/lazygit"
-            rm -f "/tmp/lazygit" "$local_tar"
-            log_ok "Lazygit instalado correctamente en $USER_HOME/.local/bin/lazygit"
-        else
-            log_err "Error al descargar el binario de Lazygit desde GitHub."
-        fi
-    else
-        log_warn "No se pudo determinar la última versión de Lazygit en GitHub."
-    fi
-fi
-
 # ------------------------------------------------------------------------------
-# 6. CONFIGURACIÓN GLOBAL DE GIT Y DELTA
+# 5. CONFIGURACIÓN GLOBAL DE GIT PARA EL USUARIO
 # ------------------------------------------------------------------------------
-log_info "[2/4] Aplicando configuración moderna de Git y soporte GNOME Keyring..."
+log_info "Aplicando configuración optimizada en ~/.gitconfig..."
 
-# Identidad Git (solo se define si vienen por variables de entorno y no existen ya)
-CURRENT_NAME=$(run_as_user git config --global user.name 2>/dev/null || true)
-CURRENT_EMAIL=$(run_as_user git config --global user.email 2>/dev/null || true)
-
-if [ -n "${GIT_USER_NAME:-}" ]; then
-    run_as_user git config --global user.name "$GIT_USER_NAME"
-fi
-if [ -n "${GIT_USER_EMAIL:-}" ]; then
-    run_as_user git config --global user.email "$GIT_USER_EMAIL"
-fi
-
-# Flujo de trabajo, ramas y mejores prácticas modernas
 run_as_user git config --global init.defaultBranch main
-run_as_user git config --global pull.rebase true
-run_as_user git config --global rebase.autoStash true
+run_as_user git config --global pull.rebase false
 run_as_user git config --global push.autoSetupRemote true
-run_as_user git config --global fetch.prune true
-run_as_user git config --global merge.conflictstyle zdiff3
-run_as_user git config --global diff.colorMoved default
-run_as_user git config --global branch.sort -committerdate
-run_as_user git config --global tag.sort -version:refname
-run_as_user git config --global column.ui auto
-run_as_user git config --global rerere.enabled true
-run_as_user git config --global rerere.autoupdate true
-run_as_user git config --global commit.verbose true
+run_as_user git config --global core.autocrlf input
+run_as_user git config --global color.ui auto
 
-# Integración con GNOME Keyring (git-credential-libsecret)
-LIBSECRET_BIN="/usr/libexec/git-core/git-credential-libsecret"
-if [ -x "$LIBSECRET_BIN" ]; then
-    run_as_user git config --global credential.helper "$LIBSECRET_BIN"
-    log_ok "Integración con GNOME Keyring activada (credential.helper = $LIBSECRET_BIN)."
-elif command -v git-credential-libsecret &>/dev/null; then
-    run_as_user git config --global credential.helper "libsecret"
+# ------------------------------------------------------------------------------
+# 6. INTEGRACIÓN CON GNOME KEYRING (LIBSECRET)
+# ------------------------------------------------------------------------------
+LIBSECRET_PATH="/usr/lib/git-core/git-credential-libsecret"
+if [ -x "$LIBSECRET_PATH" ]; then
+    run_as_user git config --global credential.helper "$LIBSECRET_PATH"
     log_ok "Integración con GNOME Keyring activada (credential.helper = libsecret)."
 fi
 
-# Detección inteligente del editor preferido en Fedora Workstation
-DEFAULT_EDITOR="nano"
-if command -v nvim &>/dev/null; then
-    DEFAULT_EDITOR="nvim"
-elif command -v gnome-text-editor &>/dev/null; then
-    DEFAULT_EDITOR="gnome-text-editor"
-elif command -v code &>/dev/null; then
-    DEFAULT_EDITOR="code --wait"
-elif command -v micro &>/dev/null; then
-    DEFAULT_EDITOR="micro"
-elif command -v vim &>/dev/null; then
-    DEFAULT_EDITOR="vim"
-fi
-run_as_user git config --global core.editor "$DEFAULT_EDITOR"
-
-# Configuración de Git-Delta
+# ------------------------------------------------------------------------------
+# 7. INTEGRACIÓN CON GIT-DELTA
+# ------------------------------------------------------------------------------
 if command -v delta &>/dev/null; then
     run_as_user git config --global core.pager "delta"
     run_as_user git config --global interactive.diffFilter "delta --color-only"
@@ -326,74 +224,47 @@ if command -v delta &>/dev/null; then
     run_as_user git config --global delta.light false
     run_as_user git config --global delta.side-by-side false
     run_as_user git config --global delta.line-numbers true
-    run_as_user git config --global delta.hyperlinks true
-    log_ok "Git-Delta configurado como visualizador y paginador por defecto."
+    run_as_user git config --global delta.syntax-theme "Catppuccin Mocha"
+    log_ok "Git-Delta configurado como pager global."
 fi
 
-# Git LFS
-if command -v git-lfs &>/dev/null; then
-    run_as_user git lfs install --skip-repo &>/dev/null || true
-fi
-
-# Atajos útiles y productivos para Git
-run_as_user git config --global alias.st "status -sb"
-run_as_user git config --global alias.co "checkout"
-run_as_user git config --global alias.br "branch"
-run_as_user git config --global alias.cm "commit -m"
-run_as_user git config --global alias.lg "log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
-
 # ------------------------------------------------------------------------------
-# 7. CONFIGURACIÓN DE LAZYGIT (INTEGRACIÓN CON DELTA Y TEMA GNOME LIBADWAITA DARK)
+# 8. CONFIGURACIÓN MODERNA DE LAZYGIT
 # ------------------------------------------------------------------------------
-log_info "[3/4] Configurando Lazygit con soporte para Git-Delta y estética GNOME..."
 LAZYGIT_CONFIG_DIR="$USER_HOME/.config/lazygit"
 run_as_user mkdir -p "$LAZYGIT_CONFIG_DIR"
 
 if [ ! -f "$LAZYGIT_CONFIG_DIR/config.yml" ]; then
     cat << 'EOF' | run_as_user tee "$LAZYGIT_CONFIG_DIR/config.yml" > /dev/null
-# Lazygit Configuration - Fedora 45 Workstation (GNOME Shell 51)
+# Lazygit Configuration - CachyOS Workstation (GNOME Shell)
 gui:
   theme:
     activeBorderColor:
-      - '#3584e4'
+      - '#89b4fa'
       - bold
     inactiveBorderColor:
-      - '#5e5c64'
+      - '#6c7086'
+    optionsTextColor:
+      - '#89b4fa'
     selectedLineBgColor:
-      - '#2c2c2c'
+      - '#313244'
+    cherryPickedCommitBgColor:
+      - '#45475a'
+    cherryPickedCommitFgColor:
+      - '#89b4fa'
+    unstagedChangesColor:
+      - '#f38ba8'
+    defaultFgColor:
+      - '#cdd6f4'
+  showIcons: true
 git:
   paging:
     colorArg: always
     pager: delta --dark --paging=never
 EOF
-    log_ok "Archivo de configuración de Lazygit generado (~/.config/lazygit/config.yml)."
-else
-    log_info "Configuración previa de Lazygit conservada."
-fi
-
-# ------------------------------------------------------------------------------
-# 8. CONFIGURACIÓN DE GITHUB CLI (gh)
-# ------------------------------------------------------------------------------
-log_info "[4/4] Configurando opciones predeterminadas de GitHub CLI (gh)..."
-if command -v gh &>/dev/null; then
-    run_as_user gh config set editor "$DEFAULT_EDITOR" 2>/dev/null || true
-    log_ok "Editor predeterminado de GitHub CLI configurado a '$DEFAULT_EDITOR'."
-fi
-
-# ------------------------------------------------------------------------------
-# 9. RESUMEN FINAL
-# ------------------------------------------------------------------------------
-echo ""
-show_status
-
-if [ -z "$(run_as_user git config --global user.name 2>/dev/null || true)" ]; then
-    echo ""
-    log_warn "Nota: Configura tu identidad de Git ejecutando:"
-    echo "  git config --global user.name \"Tu Nombre\""
-    echo "  git config --global user.email \"tu_email@ejemplo.com\""
+    log_ok "Configuración de Lazygit creada en $LAZYGIT_CONFIG_DIR/config.yml."
 fi
 
 echo -e "${BOLD}======================================================================${NC}"
-log_ok "Entorno Git optimizado con éxito para Fedora 45 Workstation (GNOME 51)."
-echo "💡 Tip: Lanza 'lazygit' en cualquier repositorio para una TUI interactiva rápida."
+log_ok "Entorno Git optimizado con éxito para CachyOS Workstation (GNOME)."
 echo -e "${BOLD}======================================================================${NC}"

@@ -52,7 +52,7 @@ EOF
 
 show_status() {
     echo -e "${BOLD}======================================================================${NC}"
-    echo -e "  🐚 ${BOLD}ESTADO DEL ENTORNO ZSH - FEDORA 45 WORKSTATION ($REAL_USER)${NC}"
+    echo -e "  🐚 ${BOLD}ESTADO DEL ENTORNO ZSH - CACHYOS WORKSTATION ($REAL_USER)${NC}"
     echo -e "${BOLD}======================================================================${NC}"
 
     if command -v zsh &>/dev/null; then

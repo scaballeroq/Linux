@@ -2,18 +2,31 @@
 sidebar_position: 3
 ---
 
-# Terminal & Shells Configuration on Fedora 45 Workstation (Bash & Zsh)
+# Terminal & Shells Configuration on CachyOS Workstation (Zsh & Bash)
 
-This guide details the terminal environment (optimized for **Bash** as the project default shell, and compatible with **Zsh** if `~/.zshrc` exists) along with the modular scripts provided under the `Bash.Setup` folder.
+This guide details the terminal environment (optimized for **Zsh as the primary default shell** on CachyOS, with full **Bash** compatibility) along with the modular scripts provided under the `Bash.Setup` folder.
 
-The modular configuration is structured through `~/.bashrc.d/` (default) and `~/.zshrc.d/` (compatibility) directories to ensure fast, clean, and maintainable configurations.
+The modular configuration is structured through `~/.zshrc.d/` (primary shell Zsh) and `~/.bashrc.d/` (compatibility Bash) directories to ensure fast, clean, and maintainable configurations.
 
 ---
 
 ## 1. Modular Environment Loading
 
-### For Bash (Default - `~/.bashrc`)
-Add the following block to your `~/.bashrc`:
+### For Zsh (Primary Shell - `~/.zshrc`)
+The `./Setup/zsh-setup.sh` script (or `just zsh`) automatically configures your `~/.zshrc`:
+
+```zsh
+# Modular configuration loader (~/.zshrc.d)
+if [ -d "$HOME/.zshrc.d" ]; then
+    for script in "$HOME/.zshrc.d"/*.{sh,zsh}(N); do
+        [ -r "$script" ] && source "$script"
+    done
+    unset script
+fi
+```
+
+### For Bash (Compatibility - `~/.bashrc`)
+When launching a Bash subshell, add the following block to your `~/.bashrc`:
 
 ```bash
 # Modular configuration loader (~/.bashrc.d)
@@ -24,9 +37,6 @@ if [ -d "$HOME/.bashrc.d" ]; then
     unset script
 fi
 ```
-
-### For Zsh (Conditional compatibility if `~/.zshrc` exists)
-If you use Zsh and `~/.zshrc` exists on your system:
 
 ```zsh
 # Modular configuration loader (~/.zshrc.d)
@@ -43,12 +53,12 @@ You can link all modules automatically by running `./Setup/shell.sh` or manually
 ```bash
 # For Bash (Default)
 mkdir -p ~/.bashrc.d
-ln -sf ~/Proyectos/Linux/Fedora-Workstation/Bash.Setup/*.sh ~/.bashrc.d/
+ln -sf ~/Proyectos/Linux/CachyOS-Gnome/Bash.Setup/*.sh ~/.bashrc.d/
 
 # For Zsh (if ~/.zshrc exists)
 if [ -f "$HOME/.zshrc" ]; then
     mkdir -p ~/.zshrc.d
-    ln -sf ~/Proyectos/Linux/Fedora-Workstation/Bash.Setup/*.sh ~/.zshrc.d/
+    ln -sf ~/Proyectos/Linux/CachyOS-Gnome/Bash.Setup/*.sh ~/.zshrc.d/
 fi
 ```
 
@@ -99,13 +109,14 @@ Replaces standard commands with enriched and safe alternatives:
 - **File Visualization** (if `eza` and `bat` installed):
   - `ls` → `eza --icons --git --group-directories-first`
   - `cat` → `bat --paging=never`
-- **Package Management (DNF5)**:
-  - `update` → `sudo dnf5 check-update --refresh`
-  - `upgrade` → `sudo dnf5 upgrade --refresh -y`
-  - `install` → `sudo dnf5 install`
-  - `remove` → `sudo dnf5 remove`
-  - `search` → `dnf5 search`
-  - `clean` → `sudo dnf5 autoremove -y && sudo dnf5 clean all`
+- **Package Management (Pacman / Paru)**:
+  - `update` → `paru -Syu` (updates repos and AUR)
+  - `upgrade` → `sudo pacman -Syu` (official system upgrade)
+  - `install` → `sudo pacman -S --needed` / `paru -S`
+  - `remove` → `sudo pacman -Rns` (clean removal with dependencies)
+  - `search` → `pacman -Ss` / `paru -Ss`
+  - `clean` → `sudo pacman -Sc && paru -Sc` (cache cleanup)
+  - `mirrors` → `sudo cachyos-rate-mirrors` (mirror speed optimization)
 - **GNOME & Desktop**:
   - `open` / `o` → `xdg-open`
   - `nautilus` / `files` → Opens Nautilus in current directory

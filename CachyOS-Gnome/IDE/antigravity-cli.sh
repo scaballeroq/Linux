@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # antigravity-cli.sh - Gestor e Instalador de Google Antigravity CLI (agy)
-# Optimizado para Fedora Workstation (GNOME Shell Wayland Mutter)
+# Optimizado para CachyOS Workstation (GNOME Shell Wayland Mutter)
 # Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3) | Radeon Graphics (Vega 8)
 # ==============================================================================
 # Características:
@@ -46,11 +46,6 @@ ZSHRC_FILE="$ZSHRC_D/antigravity-cli.zsh"
 ENV_D="$USER_HOME/.config/environment.d"
 ENV_FILE="$ENV_D/10-antigravity-cli.conf"
 
-if command -v dnf5 &>/dev/null; then
-    DNF_CMD="dnf5"
-else
-    DNF_CMD="dnf"
-fi
 
 MANIFEST_BASE_URL="https://antigravity-cli-auto-updater-974169037036.us-central1.run.app"
 OFFICIAL_INSTALLER_URL="https://antigravity.google/cli/install.sh"
@@ -130,15 +125,15 @@ check_dependencies() {
     command -v tar &>/dev/null || missing+=("tar")
 
     if [ ${#missing[@]} -gt 0 ]; then
-        echo -e "ℹ️  ${YELLOW}Instalando herramientas requeridas con $DNF_CMD: ${missing[*]}...${NC}"
+        echo -e "ℹ️  ${YELLOW}Instalando herramientas requeridas con Pacman: ${missing[*]}...${NC}"
         if [ "$EUID" -ne 0 ]; then
             if ! command -v sudo &>/dev/null; then
                 echo -e "${RED}❌ Error: Se requiere 'sudo' para instalar ${missing[*]}${NC}" >&2
                 exit 1
             fi
-            sudo "$DNF_CMD" install -y "${missing[@]}"
+            sudo pacman -S --needed --noconfirm "${missing[@]}"
         else
-            "$DNF_CMD" install -y "${missing[@]}"
+            pacman -S --needed --noconfirm "${missing[@]}"
         fi
     fi
 }
@@ -183,7 +178,7 @@ EOF
 # ------------------------------------------------------------------------------
 show_status() {
     echo -e "${BOLD}=================================================================${NC}"
-    echo -e "🛸 ${BOLD}Estado de Google Antigravity CLI (agy) en Fedora Workstation${NC}"
+    echo -e "🛸 ${BOLD}Estado de Google Antigravity CLI (agy) en CachyOS Workstation${NC}"
     echo -e "${BOLD}=================================================================${NC}"
 
     local installed_v
@@ -191,7 +186,7 @@ show_status() {
     local remote_v
     remote_v=$(get_remote_version)
 
-    echo -e "💻 ${BOLD}Sistema:${NC}          Fedora $(grep -oP 'VERSION_ID="\K[^"]+' /etc/os-release 2>/dev/null || echo "Linux") (GNOME Shell Wayland Mutter)"
+    echo -e "💻 ${BOLD}Sistema:${NC}          CachyOS (GNOME Shell Wayland Mutter)"
     echo -e "⚡ ${BOLD}Hardware:${NC}         AMD Ryzen 7 7730U | Radeon Graphics (Mesa RADV/VA-API)"
     echo -e "👤 ${BOLD}Usuario objetivo:${NC} $REAL_USER ($USER_HOME)"
 

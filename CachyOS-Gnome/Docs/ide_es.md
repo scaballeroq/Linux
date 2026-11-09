@@ -2,11 +2,11 @@
 sidebar_position: 5
 ---
 
-# Entornos de Desarrollo e IDEs en Fedora 45
+# Entornos de Desarrollo e IDEs en CachyOS Workstation
 
 Esta guía detalla las herramientas de desarrollo, plataformas con soporte de Inteligencia Artificial y utilidades de control de versiones gestionadas en la carpeta `IDE`.
 
-Todas las herramientas están optimizadas para **Fedora 45 Workstation**, el compositor **Wayland**, el entorno **GNOME** y las terminales **Bash** (predeterminada) y **Zsh** (compatible si existe `~/.zshrc`).
+Todas las herramientas están optimizadas para **CachyOS Workstation**, el compositor **Wayland**, el entorno **GNOME** y las terminales **Bash** (predeterminada) y **Zsh** (compatible si existe `~/.zshrc`).
 
 ---
 
@@ -30,8 +30,8 @@ Instala el motor IDE independiente de Antigravity, vinculando los binarios y el 
 
 ## 2. Herramientas de Control de Versiones Git (`git.sh`)
 
-Instala y optimiza la pila moderna de herramientas para Git en Fedora 45:
-- **git**: Sistema de control de versiones vía DNF5.
+Instala y optimiza la pila moderna de herramientas para Git en CachyOS Workstation:
+- **git**: Sistema de control de versiones vía Pacman.
 - **delta** (`git-delta`): Paginador con resaltado de sintaxis moderno para `git diff` y `git show`.
 - **lazygit**: Interfaz de terminal (TUI) para operaciones interactivas con Git (instalado vía COPR o binario oficial).
 - **github-cli** (`gh`): Herramienta oficial de línea de comandos de GitHub.

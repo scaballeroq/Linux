@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # antigravity-ide.sh - Gestor e Instalador de Google Antigravity IDE Engine
-# Optimizado para Fedora Workstation (GNOME Shell Wayland Mutter)
+# Optimizado para CachyOS Workstation (GNOME Shell Wayland Mutter)
 # Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3) | Radeon Graphics (Vega 8)
 # ==============================================================================
 # Características:
 #  - Comprobación de estado (--status) e inspección de versión 100% rootless.
-#  - Verificación idempotente de dependencias RPM sin llamadas innecesarias a DNF/DNF5.
+#  - Verificación idempotente de dependencias Pacman.
 #  - Detección inteligente de versión: evita descargar si ya está al día.
 #  - Helper /usr/local/bin/update-antigravity-ide modular con rollback atómico.
 #  - Integración nativa con GNOME Shell Wayland (Ozone auto, decoraciones nativas).
@@ -46,11 +46,6 @@ else
     USER_HOME="${HOME:-/home/$REAL_USER}"
 fi
 
-if command -v dnf5 &>/dev/null; then
-    DNF_CMD="dnf5"
-else
-    DNF_CMD="dnf"
-fi
 
 # Integraciones de escritorio de usuario (GNOME Nautilus y opcional Dolphin)
 NAUTILUS_SCRIPTS_DIR="$USER_HOME/.local/share/nautilus/scripts"
@@ -94,29 +89,29 @@ get_remote_version() {
 check_dependencies() {
     local pkgs=(
         ca-certificates curl tar desktop-file-utils nss
-        libdrm mesa-libgbm libsecret
+        libdrm mesa libsecret
     )
     local missing=()
 
     for pkg in "${pkgs[@]}"; do
-        if ! rpm -q "$pkg" &>/dev/null; then
+        if ! pacman -Q "$pkg" &>/dev/null; then
             missing+=("$pkg")
         fi
     done
     if ! command -v python3 &>/dev/null; then
-        missing+=("python3")
+        missing+=("python")
     fi
 
     if [ ${#missing[@]} -gt 0 ]; then
-        echo -e "ℹ️  ${YELLOW}Instalando paquetes requeridos con $DNF_CMD: ${missing[*]}...${NC}"
+        echo -e "ℹ️  ${YELLOW}Instalando paquetes requeridos con Pacman: ${missing[*]}...${NC}"
         if [ "$EUID" -ne 0 ]; then
             if ! command -v sudo &>/dev/null; then
                 echo -e "${RED}❌ Error: 'sudo' no está disponible para instalar paquetes.${NC}" >&2
                 exit 1
             fi
-            sudo "$DNF_CMD" install -y "${missing[@]}"
+            sudo pacman -S --needed --noconfirm "${missing[@]}"
         else
-            "$DNF_CMD" install -y "${missing[@]}"
+            pacman -S --needed --noconfirm "${missing[@]}"
         fi
     fi
 }
@@ -126,7 +121,7 @@ check_dependencies() {
 # ------------------------------------------------------------------------------
 show_status() {
     echo -e "${BOLD}=================================================================${NC}"
-    echo -e "🚀 ${BOLD}Estado de Google Antigravity IDE Engine (Fedora Workstation)${NC}"
+    echo -e "🚀 ${BOLD}Estado de Google Antigravity IDE Engine (CachyOS Workstation)${NC}"
     echo -e "${BOLD}=================================================================${NC}"
 
     local installed_v
@@ -134,7 +129,7 @@ show_status() {
     local remote_v
     remote_v=$(get_remote_version)
 
-    echo -e "💻 ${BOLD}Sistema:${NC}          Fedora $(grep -oP 'VERSION_ID="\K[^"]+' /etc/os-release 2>/dev/null || echo "Linux") (GNOME Shell Wayland Mutter)"
+    echo -e "💻 ${BOLD}Sistema:${NC}          CachyOS (GNOME Shell Wayland Mutter)"
     echo -e "⚡ ${BOLD}Hardware:${NC}         AMD Ryzen 7 7730U | Radeon Graphics (Mesa RADV/VA-API)"
     echo -e "👤 ${BOLD}Usuario objetivo:${NC} $REAL_USER ($USER_HOME)"
 
@@ -203,14 +198,14 @@ show_status() {
     fi
 
     echo ""
-    echo -e "${BOLD}🧩 Dependencias del sistema (RPM):${NC}"
+    echo -e "${BOLD}🧩 Dependencias del sistema (Pacman):${NC}"
     local pkgs=(
         ca-certificates curl tar desktop-file-utils nss
-        libdrm mesa-libgbm libsecret
+        libdrm mesa libsecret
     )
     local missing_count=0
     for pkg in "${pkgs[@]}"; do
-        if ! rpm -q "$pkg" &>/dev/null; then
+        if ! pacman -Q "$pkg" &>/dev/null; then
             ((missing_count++)) || true
         fi
     done
@@ -219,7 +214,7 @@ show_status() {
     fi
 
     if [ "$missing_count" -eq 0 ]; then
-        echo -e "  • Dependencias base:   ${GREEN}Todas satisfechas (verificadas con RPM)${NC}"
+        echo -e "  • Dependencias base:   ${GREEN}Todas satisfechas (verificadas con Pacman)${NC}"
     else
         echo -e "  • Dependencias base:   ${YELLOW}$missing_count paquete(s) pendientes de instalar${NC}"
     fi
@@ -686,7 +681,7 @@ install_or_update() {
     echo -e "${BOLD}=================================================================${NC}"
 
     # 1. Dependencias del sistema
-    echo -e "ℹ️  [1/4] Comprobando dependencias del sistema en Fedora ($DNF_CMD)..."
+    echo -e "ℹ️  [1/4] Comprobando dependencias del sistema en CachyOS (Pacman)..."
     check_dependencies
 
     # 2. Comprobación de versión

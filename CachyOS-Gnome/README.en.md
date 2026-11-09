@@ -1,15 +1,15 @@
-# 🔧 Fedora 45 Workstation Environment Configuration (GNOME Shell Wayland)
+# 🔧 CachyOS Workstation Environment Configuration (GNOME Shell Wayland)
 
-This repository contains an organized, modular, and automated collection of configuration scripts for **Fedora 45 Workstation** systems running the **GNOME Shell (Wayland / Mutter)** desktop environment, **DNF5** package manager, mandatory **RPM Fusion (Free, Non-Free & Tainted)** repositories, and hardware optimizations for **HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Graphics)** workstations in dark mode.
+This repository contains an organized, modular, and automated collection of configuration scripts for **CachyOS Linux** systems (optimized **x86-64-v3** architecture with BORE / sched-ext kernel) running the **GNOME Shell (Wayland / Mutter)** desktop environment, **Pacman / Paru** package managers, official CachyOS performance repositories, and hardware optimizations for **HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Graphics Vega 8)** workstations in dark mode.
 
 ---
 
 ## 📂 Repository Organization
 
 ### 🐚 [Bash.Setup](./Bash.Setup/)
-Terminal configuration core, optimized for **Bash** (modular support via `~/.bashrc.d`) and **Zsh** (modular support via `~/.zshrc.d`):
-- **`aliases.sh`**: Productivity aliases, dynamic shell reload, Nautilus, Git, Firewalld (`fw*`), Libvirt, Podman, and **DNF5** package manager shortcuts.
-- **`environment.sh`**: Global variables (`EDITOR`, `PATH`, Wayland/GNOME, `QT_QPA_PLATFORMTHEME="gnome"`, `DOCKER_HOST`, `LIBVIRT_DEFAULT_URI`) and Mise initialization.
+Terminal configuration core, optimized for **Zsh as the primary shell** (modular support via `~/.zshrc.d`) and dual compatibility with **Bash** (via `~/.bashrc.d`):
+- **`aliases.sh`**: Productivity aliases, dynamic shell reload, Nautilus, Git, Firewalld (`fw*`), Libvirt, Podman, and **Pacman / Paru** shortcuts (`update`, `upgrade`, `install`, `remove`, `pacup`, `pacin`, `pacrem`, `mirrors`).
+- **`environment.sh`**: Global variables (`EDITOR`, `PATH`, Wayland/GNOME, `QT_QPA_PLATFORMTHEME="gnome"`, `ELECTRON_OZONE_PLATFORM_HINT="auto"`, `DOCKER_HOST`, `LIBVIRT_DEFAULT_URI`) and Mise initialization.
 - **`functions.sh`**: Advanced shell helper functions (`mkcd`, `up`, `hg`) and media processing utilities.
 - **`gnome_settings.sh`**: Environment settings and keybindings for GNOME Wayland (dark theme `adw-gtk3-dark`, Night Light 4000K, Wayland capture with `grim`/`slurp`/`satty`, Nautilus).
 - **`history.sh`**: Optimized shell history (deduplication, instant sync, timestamps).
@@ -25,57 +25,79 @@ Rootless container ecosystem with native systemd Quadlets:
 - **`lib/podman-utils.sh`**: Project management CLI (`create`, `start`, `stop`, `restart`, `logs`, `status`, `destroy`, `doctor`).
 
 ### 🖥️ [Virtualizacion](./Virtualizacion/)
-- **`virtualization.sh`**: KVM/QEMU, modular Libvirt, `virt-manager`, `virtio-win`, Btrfs NoCoW, and Firewalld configuration for Fedora 45 (`--status`).
-- **`notas_virtualizacion_fedora.md`**: In-depth virtualization notes for KVM, VirtIO, bridge networking, and storage on Fedora 45.
+- **`virtualization.sh`**: KVM/QEMU, modular Libvirt, `virt-manager`, `virtio-win`, Btrfs NoCoW, and Firewalld configuration for CachyOS (`--status`).
+- **`notas_virtualizacion_cachyos.md`**: In-depth virtualization notes for KVM, VirtIO, bridge networking, and storage on CachyOS.
 
 ### ⚙️ [Setup](./Setup/)
 Operating system setup, GNOME Shell personalization, and hardening:
 - **`post-install.sh`**: Intelligent dispatcher with CPU auto-detection (AMD Ryzen vs Intel Core, `--status`).
-- **`post-install-amd.sh`**: Post-installation optimized for AMD Ryzen & Radeon (**mandatory RPM Fusion Free/Non-Free/Tainted**, `fedora-cisco-openh264`, AMD microcode, RADV Vulkan, `mesa-va-drivers-freeworld`, full FFmpeg, ZRAM zstd, Flathub, `--status`).
-- **`post-install-intel.sh`**: Post-installation optimized for Intel Core / Media Center (**mandatory RPM Fusion**, Intel VA-API, full FFmpeg, PipeWire, `--status`).
+- **`post-install-amd.sh`**: Post-installation optimized for AMD Ryzen & Radeon (AMD microcode, RADV Vulkan `vulkan-radeon`, `libva-mesa-driver`, full FFmpeg, ZRAM zstd, Flathub, CachyOS v3 repos, `--status`).
+- **`post-install-intel.sh`**: Post-installation optimized for Intel Core / Media Center (Intel VA-API, full FFmpeg, PipeWire, `--status`).
 - **`zram-setup.sh`**: Dedicated compressed RAM swap configurator via `zram-generator` (`zstd`, 50% RAM, priority 100, `vm.page-cluster=0`, `--status`, `--disable`).
-- **`fedora-tuning.sh`**: Kernel tuning (`sysctl` inotify 1M, `max_map_count` 16M, TCP BBR), resource limits (`limits.d`), Systemd fast shutdown timeouts, and GNOME Tracker exclusions (`--status`, `--sysctl`, `--limits`, `--tracker`, `--zram`).
-- **`laptop-setup.sh`**: Laptop optimizations (`tuned-ppd`/`power-profiles-daemon`, battery Wh health telemetry, AMD P-State EPP, DRM multi-monitor topology `DP-3`/`DP-4`/`eDP-1`, docked lid behavior with safe `systemctl reload systemd-logind`, Touchpad Wayland gestures, and Bluetooth `FastConnectable=true`, `--status`).
-- **`apariencia.sh`**: Modular and interactive (`--interactive`) GTK theme (`adw-gtk3-dark`), icon (`Papirus-Dark`), and cursor (`Bibata-Modern-Classic` / `Bibata-Modern-Ice`) manager (`--status`).
-- **`gnome-settings.sh`**: Comprehensive and interactive (`--interactive`) GNOME Shell Wayland configurator (dark mode, terminal selector `kitty`/`ghostty`/`ptyxis`/`gnome-terminal`, window buttons, Mutter VRR, Night Light 4000K, 24h clock, and Nautilus Python extensions, `--status`).
+- **`cachyos-tuning.sh`**: Kernel tuning (`sysctl` inotify 1M, `max_map_count` 16M, TCP BBR), resource limits (`limits.d`), Systemd fast shutdown timeouts, and BORE/sched-ext optimizations (`--status`).
+- **`laptop-setup.sh`**: Laptop optimizations (`power-profiles-daemon`, battery Wh health telemetry, AMD P-State EPP, DRM multi-monitor topology `DP-3`/`DP-4`/`eDP-1`, docked lid behavior with safe `systemctl reload systemd-logind`, Touchpad Wayland gestures, and Bluetooth `FastConnectable=true`, `--status`).
+- **`apariencia.sh`**: Modular and interactive (`--interactive`) GTK theme (`adw-gtk3-dark`), icon (`Papirus-Dark`), and cursor (`Bibata-Modern-Classic`) manager (`--status`).
+- **`gnome-settings.sh`**: Comprehensive and interactive (`--interactive`) GNOME Shell Wayland configurator (dark mode, terminal selector `kitty`/`ghostty`/`ptyxis`/`gnome-terminal`, window buttons, Mutter VRR, Night Light 4000K, 24h clock, and Nautilus Python extensions via `python-nautilus`, `--status`).
 - **`gnome-extensions.sh`**: Extension manager and installer (GSConnect, Dash to Dock, AppIndicator, Blur my Shell, Tiling Shell, `--status`).
 - **`gsconnect.sh`**: Mobile integration with GSConnect and automatic Firewalld rules (`--status`).
-- **`fingerprint-setup.sh`**: Biometric fingerprint authentication setup (`fprintd` + `authselect` PAM, `--status`).
+- **`fingerprint-setup.sh`**: Biometric fingerprint authentication setup (`fprintd` + PAM on CachyOS/Arch, `--status`).
 - **`hp-printer-setup.sh`**: HP printer installer and manager (CUPS, HPLIP, proprietary plugin, Firewalld, `--status`).
-- **`kitty.sh`**: GPU-accelerated Kitty terminal with 75% opacity, blur 32, Catppuccin Mocha theme, and top-level Nautilus context menu (`nautilus-python`, `--status`).
+- **`kitty.sh`**: GPU-accelerated Kitty terminal with 75% opacity, blur 32, Catppuccin Mocha theme, and top-level Nautilus context menu (`python-nautilus`, `--status`).
 - **`ghostty.sh`**: Ghostty terminal with Catppuccin Mocha theme, 85% opacity, and top-level Nautilus context menu (`--status`, `--default-terminal`).
 - **`ptyxis.sh`**: Native container-aware Ptyxis terminal with Catppuccin Mocha palette, 85% opacity, and top-level Nautilus context menu (`--status`, `--default-terminal`).
 - **`zsh-setup.sh`**: Full Zsh replication (`zsh-autosuggestions`, `zsh-syntax-highlighting`, FZF, Zoxide, Mise, Starship, and modular `~/.zshrc.d/*.zsh`, `--status`, `--default-shell`).
-- **`shell.sh`**: Modern terminal utilities (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd-find`, `btop`, `jq`, `--status`).
-- **`starship.sh` & `starship.toml`**: Modern Starship prompt with Fedora theme (`--status`).
-- **`fastfetch.sh` & `config-*.jsonc`**: System info summary with multi-theme support (`fedora` categorized Hero theme, `fedora-simple`, `modern`, `compact`, `--menu`, `--preview`, `--status`).
-- **`fonts.sh`**: Automated Nerd Fonts installer (`--status`).
-- **`seguridad.sh`**: Security hardening with exclusive Firewalld (`ufw` masked, `FedoraWorkstation` zone, GSConnect, `podman+` in `trusted`, `virbr0` in `libvirt`, `--dev-ports` for 3000/5173/8000/8080, DNS-over-TLS, and sysctl with `accept_ra=2`, `--status`).
-- **`cockpit.sh`**: Cockpit web management console (`--status`).
-- **`multimedia.sh`**: **Mandatory RPM Fusion (Free, Non-Free & Tainted)** + Cisco OpenH264, unrestricted `ffmpeg`, freeworld VA-API (`mesa-va-drivers-freeworld`), GStreamer 1.26+, Nautilus thumbnails (`glycin-loaders`, `ffmpegthumbnailer`), and Wayland players (Showtime, Loupe, Amberol, Celluloid, MPV Vulkan/VA-API, VLC, `--status`).
-- **`flatpak.sh`**: Decoupled Flathub catalog (Flatseal, Podman Desktop, Warehouse, Kdenlive, Shotcut, VLC, OBS Studio, LocalSend...) with Wayland/GTK overrides (`--status`, `--all`).
-- **`chrome.sh`**, **`firefox.sh`**, **`steam.sh`**
+- **`shell.sh`**: Modern terminal utilities (`eza`, `bat`, `fzf`, `zoxide`, `ripgrep`, `fd`, `btop`, `jq`, `--status`).
+- **`starship.sh` & `starship.toml`**: Modern Starship prompt with CachyOS theme (`--status`).
+- **`fastfetch.sh` & `config-*.jsonc`**: Aesthetic system summary with theme selector (`cachyos` Hero, `modern`, `compact`, `--menu`, `--preview`, `--status`).
+- **`fonts.sh`**: Automated developer fonts installation (JetBrainsMono, FiraCode, CascadiaCode, Meslo, Hack Nerd Fonts, `--status`).
+- **`seguridad.sh`**: System hardening with Firewalld (`ufw` permanently masked, active zone configuration, GSConnect, Podman in `trusted`, Libvirt `virbr0`, `--dev-ports` flag, `--status`).
+- **`cockpit.sh`**: Cockpit web management console for Podman, KVM VMs, storage, and networking (`--status`).
+- **`multimedia.sh`**: Full hardware multimedia acceleration (VA-API `libva-mesa-driver`, full FFmpeg, GStreamer, Nautilus video thumbnails, and native Wayland players, `--status`).
+- **`yt-dlp-setup.sh`**: Optimized multimedia download dependencies (`yt-dlp`, FFmpeg, AtomicParsley, Deno JS runtime, `--status`).
+- **`flatpak.sh`**: Decoupled Flathub application catalog with Wayland/GTK overrides (`--status`, `--all`).
+- **`chrome.sh`**: Precompiled Google Chrome from **Chaotic-AUR** via Pacman/Paru with Wayland Ozone flags and VA-API acceleration (`--status`).
+- **`firefox.sh`**: Native Mozilla Firefox on Wayland with VA-API enterprise policies (`/etc/firefox/policies/policies.json`, `--status`).
+- **`steam.sh`**: Native Steam gaming setup with 32-bit multilib libraries, GameMode, MangoHud, and Proton-GE (`--status`).
 
-### 💻 [IDE](./IDE/) & ⚡ [ProgrammingLanguages](./ProgrammingLanguages/)
-- **`antigravity.sh`**, **`antigravity-cli.sh`**, **`antigravity-ide.sh`**, **`git.sh`**, **`opencode.sh`**
-- **`mise.sh`**, **`python.sh`** & **`python-uv-init.sh`**, **`nodejs.sh`**, **`rust.sh`**, **`java.sh`**, **`dotnet.sh`**, **`angular.sh`**
+### 💻 [IDE](./IDE/)
+- **`antigravity.sh`**: Google Antigravity Desktop 2.0 setup (`--status`).
+- **`antigravity-cli.sh`**: Google Antigravity CLI (`agy`) setup (`--status`).
+- **`antigravity-ide.sh`**: Google Antigravity IDE Engine setup (`--status`).
+- **`git.sh`**: Git, Delta, Lazygit, and GitHub CLI (`gh`) setup (`--status`).
+- **`opencode.sh`**: OpenCode AI CLI setup (`--status`).
+
+### ⚡ [ProgrammingLanguages](./ProgrammingLanguages/)
+Modern runtime management via **Mise** and Python project isolation via **uv**:
+- **`mise.sh`**: Mise version manager with `environment.d` and shell integration (`--status`).
+- **`python.sh`** & **`python-uv-init.sh`**: System Python verification and `uv` project isolation (`UV_LINK_MODE=copy`) complying with PEP 668.
+- **`angular.sh`**, **`dotnet.sh`**, **`java.sh`**, **`nodejs.sh`**, **`rust.sh`**
 
 ---
 
-## 🚀 Fast Deployment with Just
+## 🚀 Quick Deployment with Justfile
 
 ```bash
 chmod +x Setup/*.sh Virtualizacion/*.sh ProgrammingLanguages/*.sh IDE/*.sh Podman/install/*.sh Podman/lib/*.sh
 
-# Development Laptop (AMD Ryzen + RPM Fusion + GNOME Wayland + Virtualization + Podman):
+# Full Workstation Setup for AMD Ryzen & GNOME Wayland:
 just setup-laptop-amd
 
-# Full default setup:
+# Default full installation:
 just setup-all
 
-# Provision mandatory RPM Fusion (Free, Non-Free, Tainted), FFmpeg & VA-API Freeworld:
-just rpmfusion
+# CachyOS mirror speed optimization:
+just rate-mirrors
 
-# Check status across all subsystems:
+# Run full multi-subsystem status diagnosis:
 just status
 ```
+
+---
+
+## 🔒 Monorepo Rules on CachyOS Workstation
+
+* **Pacman + Paru Mandatory:** Scripts use native `pacman` and `paru` with idempotence checks (`pacman -T`), leveraging x86-64-v3 packages.
+* **Firewalld Mandatory:** All network ports are managed via `firewall-cmd`. `ufw` is masked and disabled.
+* **Native Wayland:** No legacy X11 utilities (`xclip`, `xrandr`, `xdotool`).
+* **Protected System Python:** Exclusive use of `uv` per-project virtual environments respecting PEP 668.
+* **Rootless Podman:** Unprivileged containers orchestrated with native systemd Quadlets.

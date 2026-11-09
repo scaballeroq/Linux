@@ -1,18 +1,16 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # yt-dlp-setup.sh - Instalación, Optimización y Diagnóstico de yt-dlp y FFmpeg
-# Sistema: Fedora 45 Workstation | Escritorio: GNOME Shell (Wayland)
+# Sistema: CachyOS / Arch Linux | Escritorio: GNOME Shell (Wayland)
 # Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8)
 # ==============================================================================
 # Características:
-# - Stack multimedia de alto rendimiento: yt-dlp + FFmpeg oficial RPM Fusion + aria2.
-# - Inserción nativa de carátulas, metadatos y capítulos con FFmpeg, Mutagen y AtomicParsley.
-# - Detección y despliegue robusto de motor JavaScript (Deno/Node.js vía Mise o sistema).
+# - Despliegue nativo de yt-dlp, FFmpeg, aria2 y librerías de metadatos vía Pacman.
+# - Integración y gestión de Deno mediante Mise para soporte de cifrado JavaScript.
 # - Configuración global optimizada (~/.config/yt-dlp/config) con subtítulos, no-mtime y SponsorBlock.
-# - Eliminación del anti-patrón --rm-cache-dir en la config persistente (acelera descargas).
-# - Comprobación inteligente e idempotente de paquetes DNF5 faltantes.
 # - Diagnóstico visual completo del entorno multimedia (--status).
 # - Actualización centralizada y limpieza de caché selectiva (--update, --clean-cache).
+# - Opciones CLI: --status, --config, --update, --clean-cache, --help.
 # ==============================================================================
 
 set -euo pipefail
@@ -27,8 +25,10 @@ REQUIRED_PACKAGES=(
     "yt-dlp"
     "ffmpeg"
     "aria2"
-    "python3-mutagen"
-    "AtomicParsley"
+    "python-mutagen"
+    "atomicparsley"
+    "python-pycryptodomex"
+    "python-secretstorage"
 )
 
 # Colores ANSI para terminal
@@ -41,7 +41,7 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 
 # ------------------------------------------------------------------------------
-# 2. DETECCIÓN DE USUARIO Y ELEVACIÓN DE PRIVILEGIOS
+# 2. DETECCIÓN DE USUARIO Y RUTAS
 # ------------------------------------------------------------------------------
 if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
     REAL_USER="$SUDO_USER"
@@ -51,20 +51,10 @@ else
     USER_HOME="${HOME:-/home/$REAL_USER}"
 fi
 
-REAL_UID=$(id -u "$REAL_USER" 2>/dev/null || echo "1000")
-
-# Propagar shims de Mise y rutas de binarios del usuario en PATH
-export PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH"
-
 CONFIG_DIR="$USER_HOME/$CONFIG_DIR_REL"
 CONFIG_FILE="$USER_HOME/$CONFIG_FILE_REL"
+CACHE_DIR="$USER_HOME/.cache/yt-dlp"
 MISE_BIN="$USER_HOME/.local/bin/mise"
-
-if command -v dnf5 &>/dev/null; then
-    DNF_CMD="dnf5"
-else
-    DNF_CMD="dnf"
-fi
 
 if [ "$EUID" -ne 0 ]; then
     SUDO="sudo"
@@ -72,32 +62,11 @@ else
     SUDO=""
 fi
 
-require_root() {
-    if command -v dnf5 &>/dev/null; then
-    DNF_CMD="dnf5"
-else
-    DNF_CMD="dnf"
-fi
-
-if [ "$EUID" -ne 0 ]; then
-        if ! command -v sudo &>/dev/null; then
-            echo -e "${RED}❌ Error:${NC} Esta operación requiere privilegios de administrador ('sudo')." >&2
-            exit 1
-        fi
-    fi
-}
-
 run_as_user() {
-    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
-        sudo -u "$REAL_USER" env \
-            HOME="$USER_HOME" \
-            USER="$REAL_USER" \
-            PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" \
-            XDG_RUNTIME_DIR="/run/user/$REAL_UID" \
-            DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$REAL_UID/bus}" \
-            "$@"
+    if [ "$EUID" -eq 0 ] && [ "$REAL_USER" != "root" ]; then
+        sudo -u "$REAL_USER" env HOME="$USER_HOME" USER="$REAL_USER" PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:/usr/local/bin:/usr/bin:$PATH" "$@"
     else
-        PATH="$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:$PATH" "$@"
+        "$@"
     fi
 }
 
@@ -113,7 +82,7 @@ get_mise_executable() {
 
 is_pkg_installed() {
     local pkg="$1"
-    rpm -q "$pkg" >/dev/null 2>&1
+    pacman -Q "$pkg" >/dev/null 2>&1
 }
 
 # ------------------------------------------------------------------------------
@@ -123,7 +92,7 @@ get_ytdlp_version() {
     if command -v yt-dlp &>/dev/null; then
         yt-dlp --version 2>/dev/null || echo "Desconocida"
     elif is_pkg_installed yt-dlp; then
-        rpm -q --qf '%{VERSION}\n' yt-dlp 2>/dev/null
+        pacman -Q yt-dlp 2>/dev/null | awk '{print $2}'
     else
         echo "No instalado"
     fi
@@ -131,9 +100,9 @@ get_ytdlp_version() {
 
 get_ffmpeg_version() {
     if command -v ffmpeg &>/dev/null; then
-        local ver
-        ver=$(ffmpeg -version 2>/dev/null | awk 'NR==1 {for(i=1;i<=NF;i++) if($i ~ /^[0-9]/) {print $i; exit}}')
-        echo "${ver:-Instalado}"
+        ffmpeg -version 2>/dev/null | head -n1 | awk '{print $3}' || echo "Desconocida"
+    elif is_pkg_installed ffmpeg; then
+        pacman -Q ffmpeg 2>/dev/null | awk '{print $2}'
     else
         echo "No instalado"
     fi
@@ -141,183 +110,132 @@ get_ffmpeg_version() {
 
 get_aria2_version() {
     if command -v aria2c &>/dev/null; then
-        local ver
-        ver=$(aria2c --version 2>/dev/null | awk 'NR==1 {print $3}')
-        echo "${ver:-Instalado}"
+        aria2c --version 2>/dev/null | head -n1 | awk '{print $3}' || echo "Desconocida"
+    elif is_pkg_installed aria2; then
+        pacman -Q aria2 2>/dev/null | awk '{print $2}'
     else
         echo "No instalado"
     fi
 }
 
 get_mutagen_version() {
-    if is_pkg_installed python3-mutagen; then
-        rpm -q --qf '%{VERSION}\n' python3-mutagen 2>/dev/null
+    if is_pkg_installed python-mutagen; then
+        pacman -Q python-mutagen 2>/dev/null | awk '{print $2}'
     else
         echo "No instalado"
     fi
 }
 
 get_atomicparsley_version() {
-    if is_pkg_installed AtomicParsley || is_pkg_installed atomicparsley; then
-        rpm -q --qf '%{VERSION}\n' AtomicParsley 2>/dev/null || rpm -q --qf '%{VERSION}\n' atomicparsley 2>/dev/null
+    if is_pkg_installed atomicparsley; then
+        pacman -Q atomicparsley 2>/dev/null | awk '{print $2}'
     elif command -v AtomicParsley &>/dev/null; then
-        local ver
-        ver=$(AtomicParsley --version 2>&1 | awk '{for(i=1;i<=NF;i++) if($i ~ /^[0-9]/) {print $i; exit}}')
-        echo "${ver:-Instalado}"
+        echo "Instalado"
     else
         echo "No instalado"
     fi
 }
 
-get_js_engine_info() {
+get_deno_version() {
     local mise_cmd
     mise_cmd=$(get_mise_executable)
-
-    # 1. Deno en PATH o vía Mise
-    if command -v deno &>/dev/null; then
-        local deno_ver
-        deno_ver=$(deno --version 2>/dev/null | awk 'NR==1 {print $2}')
-        echo "Deno $deno_ver (Activo en PATH)"
-        return 0
-    elif [ -n "$mise_cmd" ] && run_as_user "$mise_cmd" where deno &>/dev/null; then
-        local deno_path deno_ver
-        deno_path=$(run_as_user "$mise_cmd" where deno 2>/dev/null)
-        if [ -x "$deno_path/bin/deno" ]; then
-            deno_ver=$("$deno_path/bin/deno" --version 2>/dev/null | awk 'NR==1 {print $2}')
-            echo "Deno $deno_ver (vía Mise: $deno_path)"
-            return 0
-        fi
+    if [ -n "$mise_cmd" ] && run_as_user "$mise_cmd" which deno &>/dev/null; then
+        local deno_path
+        deno_path=$(run_as_user "$mise_cmd" which deno 2>/dev/null)
+        "$deno_path" --version 2>/dev/null | head -n1 | awk '{print $2}' || echo "Instalado (Mise)"
+    elif command -v deno &>/dev/null; then
+        deno --version 2>/dev/null | head -n1 | awk '{print $2}' || echo "Instalado (Sistema)"
+    else
+        echo "No instalado"
     fi
-
-    # 2. Node.js en PATH o vía Mise
-    if command -v node &>/dev/null; then
-        local node_ver
-        node_ver=$(node --version 2>/dev/null)
-        echo "Node.js $node_ver (Activo en PATH)"
-        return 0
-    elif [ -n "$mise_cmd" ] && run_as_user "$mise_cmd" where node &>/dev/null; then
-        local node_path node_ver
-        node_path=$(run_as_user "$mise_cmd" where node 2>/dev/null)
-        if [ -x "$node_path/bin/node" ]; then
-            node_ver=$("$node_path/bin/node" --version 2>/dev/null)
-            echo "Node.js $node_ver (vía Mise: $node_path)"
-            return 0
-        fi
-    fi
-
-    # 3. QuickJS (qjs / quickjs)
-    if command -v qjs &>/dev/null; then
-        echo "QuickJS (Activo: qjs)"
-        return 0
-    elif command -v quickjs &>/dev/null; then
-        echo "QuickJS (Activo: quickjs)"
-        return 0
-    fi
-
-    echo "No detectado"
 }
 
 # ------------------------------------------------------------------------------
 # 4. DIAGNÓSTICO Y AYUDA
 # ------------------------------------------------------------------------------
-show_help() {
-    echo -e "${BOLD}🎬 Gestor y Optimizador Multimedia yt-dlp - Fedora 45 (GNOME Shell)${NC}
+show_status() {
+    echo -e "${BOLD}=================================================================${NC}"
+    echo -e "🎬 ${BOLD}DIAGNÓSTICO DEL ENTORNO YT-DLP - CACHYOS WORKSTATION${NC}"
+    echo -e "${BOLD}=================================================================${NC}"
 
-${BOLD}Uso:${NC}
-  $0 [OPCIÓN]
+    echo -n "• yt-dlp:                     "
+    local yt_v
+    yt_v=$(get_ytdlp_version)
+    if [ "$yt_v" != "No instalado" ]; then
+        echo -e "${GREEN}✔ Instalado ($yt_v)${NC}"
+    else
+        echo -e "${RED}✘ No instalado${NC}"
+    fi
 
-${BOLD}Opciones:${NC}
-  (sin argumentos)       Instala y optimiza yt-dlp, FFmpeg, aria2, Mutagen, AtomicParsley, motor JS y genera la configuración.
-  -i, --install          Fuerza la comprobación e instalación de paquetes y configuración.
-  -c, --config           Genera o actualiza la configuración (~/.config/yt-dlp/config) en modo usuario.
-  -s, --status           Muestra el estado detallado de herramientas multimedia y motor JavaScript.
-  -u, --update           Actualiza los paquetes vía DNF5, el motor JS en Mise y limpia la caché de yt-dlp.
-  -k, --clean-cache      Limpia la caché de tokens y descifrado de yt-dlp (~/.cache/yt-dlp).
-  -h, --help             Muestra este mensaje de ayuda.
+    echo -n "• FFmpeg:                     "
+    local ff_v
+    ff_v=$(get_ffmpeg_version)
+    if [ "$ff_v" != "No instalado" ]; then
+        echo -e "${GREEN}✔ Instalado ($ff_v)${NC}"
+    else
+        echo -e "${RED}✘ No instalado${NC}"
+    fi
 
-${BOLD}Características configuradas:${NC}
-  • ${BOLD}Stack Multimedia:${NC}   yt-dlp + FFmpeg oficial para muxing y conversión de alta fidelidad.
-  • ${BOLD}Metadatos & Tags:${NC}   Mutagen y AtomicParsley para incrustar carátulas, capítulos y tags en MP4/M4A/MP3/Opus.
-  • ${BOLD}Aceleración:${NC}       Descargas multihilo concurrentes con fragmentos paralelos (--concurrent-fragments 5).
-  • ${BOLD}Motor JavaScript:${NC}   Deno/Node.js (gestionados con Mise o nativos) para retos n-sig/n-token de YouTube.
-  • ${BOLD}SponsorBlock:${NC}       Marcado automático de capítulos para saltar publicidad e intros en reproductores.
-  • ${BOLD}GNOME & Nautilus:${NC}      Marca temporal actual (--no-mtime) para orden cronológico en Nautilus y nombres seguros.
-  • ${BOLD}Configuración:${NC}      Genera $CONFIG_FILE con opciones optimizadas para Fedora.
+    echo -n "• aria2c:                     "
+    local ar_v
+    ar_v=$(get_aria2_version)
+    if [ "$ar_v" != "No instalado" ]; then
+        echo -e "${GREEN}✔ Instalado ($ar_v)${NC}"
+    else
+        echo -e "${YELLOW}✘ No instalado (opcional para descargas multi-hilo)${NC}"
+    fi
 
-${BOLD}Ejemplos:${NC}
-  $0                    # Instalación y verificación estándar idempotente
-  $0 --status           # Comprueba estado y versiones activas
-  $0 --update           # Actualiza paquetes multimedia y motor JS
-  $0 --clean-cache      # Limpia la caché residual de yt-dlp"
+    echo -n "• python-mutagen:             "
+    local mu_v
+    mu_v=$(get_mutagen_version)
+    if [ "$mu_v" != "No instalado" ]; then
+        echo -e "${GREEN}✔ Instalado ($mu_v)${NC}"
+    else
+        echo -e "${YELLOW}✘ No instalado${NC}"
+    fi
+
+    echo -n "• AtomicParsley:              "
+    local ap_v
+    ap_v=$(get_atomicparsley_version)
+    if [ "$ap_v" != "No instalado" ]; then
+        echo -e "${GREEN}✔ Instalado ($ap_v)${NC}"
+    else
+        echo -e "${YELLOW}✘ No instalado${NC}"
+    fi
+
+    echo -n "• Deno (JS Engine en Mise):   "
+    local de_v
+    de_v=$(get_deno_version)
+    if [ "$de_v" != "No instalado" ]; then
+        echo -e "${GREEN}✔ Configurado ($de_v)${NC}"
+    else
+        echo -e "${YELLOW}✘ No detectado${NC}"
+    fi
+
+    echo -n "• Archivo de configuración:   "
+    if [ -f "$CONFIG_FILE" ]; then
+        echo -e "${GREEN}✔ Presente ($CONFIG_FILE)${NC}"
+    else
+        echo -e "${YELLOW}✘ No configurado${NC}"
+    fi
+    echo -e "${BOLD}=================================================================${NC}"
 }
 
-show_status() {
-    echo -e "${CYAN}=================================================================${NC}"
-    echo -e "${BOLD}🔍 ESTADO MULTIMEDIA YT-DLP - FEDORA WORKSTATION (GNOME SHELL)${NC}"
-    echo -e "${CYAN}=================================================================${NC}"
+show_help() {
+    cat << EOF
+${BOLD}🎬 Gestor y Optimizador Multimedia yt-dlp - CachyOS Workstation (GNOME)${NC}
 
-    # 1. yt-dlp
-    local ytdlp_ver
-    ytdlp_ver=$(get_ytdlp_version)
-    if [ "$ytdlp_ver" != "No instalado" ]; then
-        echo -e "• ${BOLD}yt-dlp:${NC}                ${GREEN}✅ Instalado${NC} ($ytdlp_ver)"
-    else
-        echo -e "• ${BOLD}yt-dlp:${NC}                ${RED}❌ No instalado${NC}"
-    fi
+Uso:
+  $0 [OPCIÓN]
 
-    # 2. FFmpeg
-    local ffmpeg_ver
-    ffmpeg_ver=$(get_ffmpeg_version)
-    if [ "$ffmpeg_ver" != "No instalado" ]; then
-        echo -e "• ${BOLD}FFmpeg:${NC}                ${GREEN}✅ Instalado${NC} ($ffmpeg_ver)"
-    else
-        echo -e "• ${BOLD}FFmpeg:${NC}                ${RED}❌ No instalado${NC}"
-    fi
-
-    # 3. aria2
-    local aria2_ver
-    aria2_ver=$(get_aria2_version)
-    if [ "$aria2_ver" != "No instalado" ]; then
-        echo -e "• ${BOLD}aria2 (acelerador):${NC}    ${GREEN}✅ Instalado${NC} ($aria2_ver)"
-    else
-        echo -e "• ${BOLD}aria2 (acelerador):${NC}    ${YELLOW}⚠️ No instalado (opcional para multi-hilo)${NC}"
-    fi
-
-    # 4. Mutagen
-    local mutagen_ver
-    mutagen_ver=$(get_mutagen_version)
-    if [ "$mutagen_ver" != "No instalado" ]; then
-        echo -e "• ${BOLD}Mutagen (tags audio):${NC}  ${GREEN}✅ Instalado${NC} ($mutagen_ver)"
-    else
-        echo -e "• ${BOLD}Mutagen (tags audio):${NC}  ${YELLOW}⚠️ No instalado${NC}"
-    fi
-
-    # 5. AtomicParsley
-    local atomic_ver
-    atomic_ver=$(get_atomicparsley_version)
-    if [ "$atomic_ver" != "No instalado" ]; then
-        echo -e "• ${BOLD}AtomicParsley (MP4):${NC}   ${GREEN}✅ Instalado${NC} ($atomic_ver)"
-    else
-        echo -e "• ${BOLD}AtomicParsley (MP4):${NC}   ${YELLOW}⚠️ No instalado${NC}"
-    fi
-
-    # 6. Motor JavaScript
-    local js_engine
-    js_engine=$(get_js_engine_info)
-    if [[ "$js_engine" != "No detectado"* ]]; then
-        echo -e "• ${BOLD}Motor JavaScript:${NC}      ${GREEN}✅ $js_engine${NC}"
-    else
-        echo -e "• ${BOLD}Motor JavaScript:${NC}      ${YELLOW}⚠️ No detectado (requerido para resolver retos n-sig de YouTube)${NC}"
-    fi
-
-    # 7. Archivo de configuración
-    if [ -f "$CONFIG_FILE" ]; then
-        echo -e "• ${BOLD}Archivo de config:${NC}     ${GREEN}✅ Presente${NC} ($CONFIG_FILE)"
-    else
-        echo -e "• ${BOLD}Archivo de config:${NC}     ${YELLOW}⚠️ No configurado${NC} ($CONFIG_FILE)"
-    fi
-
-    echo -e "${CYAN}=================================================================${NC}"
+Opciones:
+  (sin argumentos)       Instala dependencias con Pacman, motor Deno en Mise y despliega configuración.
+  -c, --config           Genera o actualiza la configuración (~/.config/yt-dlp/config) en modo usuario.
+  -s, --status           Muestra el estado detallado de herramientas multimedia y motor JavaScript.
+  -u, --update           Actualiza los paquetes vía Pacman, el motor JS en Mise y limpia la caché.
+  -k, --clean-cache      Limpia la caché de tokens y descifrado de yt-dlp (~/.cache/yt-dlp).
+  -h, --help             Muestra este mensaje de ayuda.
+EOF
 }
 
 # ------------------------------------------------------------------------------
@@ -332,197 +250,131 @@ install_packages() {
     done
 
     if [ ${#missing_packages[@]} -eq 0 ]; then
-        echo -e "${GREEN}✔${NC} Paquetes multimedia ya instalados (${REQUIRED_PACKAGES[*]})."
+        echo -e "${GREEN}✔ Paquetes multimedia ya instalados (${REQUIRED_PACKAGES[*]}).${NC}"
         return 0
     fi
 
-    echo -e "${BLUE}📦 Instalando paquetes multimedia faltantes: ${missing_packages[*]} vía DNF5...${NC}"
-    require_root
-    $SUDO $DNF_CMD install -y "${missing_packages[@]}" python3-pycryptodomex python3-secretstorage 2>/dev/null || {
-        echo -e "${YELLOW}⚠️ Aviso:${NC} Intentando instalación individual de paquetes faltantes..."
+    echo -e "${BLUE}📦 Instalando paquetes multimedia faltantes vía Pacman: ${missing_packages[*]}...${NC}"
+    $SUDO pacman -S --needed --noconfirm "${missing_packages[@]}" 2>/dev/null || {
         for pkg in "${missing_packages[@]}"; do
-            $SUDO $DNF_CMD install -y "$pkg" 2>/dev/null || echo -e "${YELLOW}⚠️ No se pudo instalar $pkg (continuando...)${NC}"
+            $SUDO pacman -S --needed --noconfirm "$pkg" 2>/dev/null || true
         done
     }
-
-    echo -e "${GREEN}✔${NC} Instalación de paquetes multimedia completada."
 }
 
-configure_js_engine() {
-    echo -e "${BLUE}⚡ Verificando motor JavaScript para retos de descifrado de YouTube...${NC}"
-
+setup_deno_mise() {
     local mise_cmd
     mise_cmd=$(get_mise_executable)
-
-    # Si ya tenemos Deno disponible
-    if command -v deno &>/dev/null; then
-        local deno_ver
-        deno_ver=$(deno --version 2>/dev/null | awk 'NR==1 {print $2}')
-        echo -e "${GREEN}✔${NC} Deno $deno_ver ya está disponible en PATH."
+    if [ -z "$mise_cmd" ]; then
+        echo -e "${YELLOW}⚠️ Aviso: Mise no está instalado en el sistema. Omitiendo instalación de Deno.${NC}"
         return 0
     fi
 
-    # Desplegar Deno vía Mise si está disponible
-    if [ -n "$mise_cmd" ]; then
-        echo -e "   Desplegando Deno vía Mise ($mise_cmd)..."
-        run_as_user "$mise_cmd" use --global deno@latest || true
-        run_as_user "$mise_cmd" reshim || true
-        echo -e "${GREEN}✔${NC} Deno configurado globalmente con Mise."
-        return 0
+    echo -e "${BLUE}⚡ Verificando motor de JavaScript (Deno) mediante Mise...${NC}"
+    if ! run_as_user "$mise_cmd" which deno &>/dev/null; then
+        echo -e "${BLUE}⬇️ Instalando runtime Deno vía Mise...${NC}"
+        run_as_user "$mise_cmd" use -g deno@latest || true
+    else
+        echo -e "${GREEN}✔ Deno ya está configurado en Mise ($(get_deno_version)).${NC}"
     fi
-
-    # Si Node.js está disponible como motor alternativo
-    if command -v node &>/dev/null; then
-        local node_ver
-        node_ver=$(node --version 2>/dev/null)
-        echo -e "${GREEN}✔${NC} Node.js ($node_ver) activo como motor JS de respaldo."
-        return 0
-    fi
-
-    # Si QuickJS está disponible
-    if command -v qjs &>/dev/null || command -v quickjs &>/dev/null; then
-        echo -e "${GREEN}✔${NC} QuickJS detectado como motor JS ligero."
-        return 0
-    fi
-
-    echo -e "${YELLOW}⚠️ Aviso:${NC} Mise no detectado. Se recomienda instalar Mise ('just mise') para soporte JS."
 }
 
-generate_config() {
-    echo -e "${BLUE}⚙️ Generando configuración optimizada en $CONFIG_FILE...${NC}"
+deploy_config() {
+    echo -e "${BLUE}⚙️ Desplegando archivo de configuración optimizado en $CONFIG_FILE...${NC}"
     run_as_user mkdir -p "$CONFIG_DIR"
 
-    # Determinar preferencia de runtimes JS
-    local js_opt="--js-runtimes deno,node,quickjs"
-    local mise_deno="$USER_HOME/.local/share/mise/shims/deno"
-    local mise_node="$USER_HOME/.local/share/mise/shims/node"
-
-    if [ -x "$mise_deno" ]; then
-        js_opt="--js-runtimes deno:$mise_deno,deno,node,quickjs"
-    elif [ -x "$mise_node" ]; then
-        js_opt="--js-runtimes node:$mise_node,node,deno,quickjs"
-    fi
-
-    cat << EOF | run_as_user tee "$CONFIG_FILE" > /dev/null
+    cat << 'EOF' | run_as_user tee "$CONFIG_FILE" > /dev/null
 # =============================================================================
-# CONFIGURACIÓN GLOBAL DE YT-DLP - FEDORA WORKSTATION (GNOME SHELL)
+# CONFIGURACIÓN GLOBAL DE YT-DLP - CACHYOS WORKSTATION (GNOME SHELL)
 # =============================================================================
 
-# --- Metadatos, Portadas y Capítulos ---
+# Integración y ruta de descarga
+--paths home:~/Descargas
+--paths temp:/tmp
+
+# Nombres legibles y ordenados
+--output "%(title)s [%(id)s].%(ext)s"
+
+# Selección de formatos (hasta 1080p con mejor audio)
+--format "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best"
+--merge-output-format mkv
+
+# Metadatos, miniaturas y subtítulos
 --embed-metadata
 --embed-thumbnail
---convert-thumbnails jpg
---embed-chapters
-
-# --- Descargas y Rendimiento Concurrente ---
---concurrent-fragments 5
---no-overwrites
---continue
-
-# --- Formato y Contenedor Predeterminado ---
---merge-output-format mp4/mkv
-
-# --- Integración con Nautilus / Gestor de Archivos KDE ---
---no-mtime
---windows-filenames
-
-# --- SponsorBlock (Marcadores de Capítulos para Patrocinios/Intros) ---
---sponsorblock-mark all
-
-# --- Subtítulos ---
---sub-langs "es.*,en.*"
 --embed-subs
---compat-options no-keep-subs
+--sub-langs "es.*,en.*"
 
-# --- Motor JavaScript para retos n-token / n-sig ---
-$js_opt
+# Limpieza y compatibilidad
+--no-mtime
+--sponsorblock-mark all
+--downloader-args "aria2c:-c -j 8 -x 8 -s 8 -k 1M"
 EOF
 
-    echo -e "${GREEN}✔${NC} Configuración ~/.config/yt-dlp/config lista y optimizada."
+    echo -e "${GREEN}✔ Configuración aplicada con éxito.${NC}"
 }
 
 clean_cache() {
-    echo -e "${BLUE}🧹 Limpiando caché residual de yt-dlp...${NC}"
+    echo -e "${BLUE}🧹 Limpiando caché de yt-dlp...${NC}"
     if command -v yt-dlp &>/dev/null; then
         run_as_user yt-dlp --rm-cache-dir 2>/dev/null || true
-        echo -e "${GREEN}✔${NC} Caché de yt-dlp limpiada con éxito."
-    else
-        echo -e "${YELLOW}⚠️ Aviso:${NC} yt-dlp no está instalado todavía."
     fi
+    run_as_user rm -rf "$CACHE_DIR" 2>/dev/null || true
+    echo -e "${GREEN}✔ Caché de yt-dlp limpiada correctamente.${NC}"
 }
 
-update_components() {
+update_all() {
     echo -e "${CYAN}=================================================================${NC}"
     echo -e "${BOLD}🔄 ACTUALIZACIÓN DE YT-DLP Y COMPONENTES MULTIMEDIA${NC}"
     echo -e "${CYAN}=================================================================${NC}"
 
-    require_root
-    echo -e "${BLUE}📦 Actualizando lista de paquetes e instalando actualizaciones vía DNF5...${NC}"
-    $SUDO dnf5 upgrade --refresh -y "${REQUIRED_PACKAGES[@]}" 2>/dev/null || true
+    echo -e "${BLUE}📦 Actualizando paquetes multimedia vía Pacman...${NC}"
+    $SUDO pacman -S --needed --noconfirm "${REQUIRED_PACKAGES[@]}" 2>/dev/null || true
 
     local mise_cmd
     mise_cmd=$(get_mise_executable)
     if [ -n "$mise_cmd" ]; then
         echo -e "${BLUE}⚡ Actualizando motor JavaScript Deno vía Mise...${NC}"
-        run_as_user "$mise_cmd" upgrade deno 2>/dev/null || run_as_user "$mise_cmd" use --global deno@latest 2>/dev/null || true
-        run_as_user "$mise_cmd" reshim 2>/dev/null || true
+        run_as_user "$mise_cmd" upgrade deno 2>/dev/null || true
     fi
 
     clean_cache
-
-    echo -e "${GREEN}✅ Componentes multimedia actualizados con éxito.${NC}"
-    show_status
-}
-
-show_final_summary() {
-    echo -e "${CYAN}=================================================================${NC}"
-    echo -e "${GREEN}✅ yt-dlp y stack multimedia configurados con éxito.${NC}"
-    echo -e "   - yt-dlp:        $(get_ytdlp_version)"
-    echo -e "   - FFmpeg:        $(get_ffmpeg_version)"
-    echo -e "   - AtomicParsley: $(get_atomicparsley_version)"
-    echo -e "   - Motor JS:      $(get_js_engine_info)"
-    echo -e "   - Config:        $CONFIG_FILE"
-    echo -e "   - Aliases:       ytvideo, ytaudio, ytlista, ytlista-audio, ytdl-subs"
-    echo -e "${CYAN}=================================================================${NC}"
+    echo -e "${GREEN}✅ Actualización de componentes multimedia completada.${NC}"
 }
 
 # ------------------------------------------------------------------------------
-# 6. PARSER DE ARGUMENTOS CLI
+# 6. DESPACHADOR DE COMANDOS
 # ------------------------------------------------------------------------------
 case "${1:-}" in
     --status|-s|status)
         show_status
-        exit 0
-        ;;
-    --help|-h|help)
-        show_help
-        exit 0
         ;;
     --config|-c|config)
-        generate_config
-        exit 0
+        deploy_config
+        ;;
+    --update|-u|update)
+        update_all
+        show_status
         ;;
     --clean-cache|-k|clean-cache)
         clean_cache
-        exit 0
         ;;
-    --update|-u|update)
-        update_components
-        exit 0
+    --help|-h|help)
+        show_help
         ;;
-    --install|-i|install|"")
+    "")
         echo -e "${CYAN}=================================================================${NC}"
-        echo -e "${BOLD}🎬 CONFIGURADOR MULTIMEDIA YT-DLP - FEDORA 44${NC}"
+        echo -e "${BOLD}🎬 CONFIGURADOR MULTIMEDIA YT-DLP - CACHYOS WORKSTATION${NC}"
         echo -e "${CYAN}=================================================================${NC}"
         install_packages
-        configure_js_engine
-        generate_config
-        show_final_summary
-        exit 0
+        setup_deno_mise
+        deploy_config
+        echo ""
+        show_status
         ;;
     *)
-        echo -e "${RED}❌ Opción desconocida:${NC} ${1}"
-        echo "Ejecuta '$0 --help' para ver las opciones disponibles."
+        echo -e "${RED}❌ Opción desconocida: '$1'${NC}\n" >&2
+        show_help
         exit 1
         ;;
 esac

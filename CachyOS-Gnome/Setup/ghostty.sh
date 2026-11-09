@@ -70,7 +70,7 @@ ${BOLD}Uso:${NC}
 
 ${BOLD}Opciones:${NC}
   (sin argumentos)       Instala Ghostty y aplica toda la configuración estética
-  --no-install, --config Solo genera la configuración y extensión de Nautilus sin usar DNF5
+  --no-install, --config Solo genera la configuración y extensión de Nautilus sin reinstalar paquetes
   --opacity <0.1-1.0>    Define la opacidad del fondo (por defecto: 0.85)
   --bind-ctrl-alt-t      Asigna de forma segura el atajo global Ctrl+Alt+T en GNOME a Ghostty
   --default-terminal     Establece Ghostty como terminal por defecto en GNOME y asigna Ctrl+Alt+T
@@ -81,7 +81,7 @@ EOF
 
 show_status() {
     echo -e "${BOLD}======================================================================${NC}"
-    echo -e "  👻 ${BOLD}ESTADO DE GHOSTTY TERMINAL - FEDORA 45 WORKSTATION${NC}"
+    echo -e "  👻 ${BOLD}ESTADO DE GHOSTTY TERMINAL - CACHYOS WORKSTATION${NC}"
     echo -e "${BOLD}======================================================================${NC}"
 
     if command -v ghostty &>/dev/null; then
@@ -100,10 +100,10 @@ show_status() {
         echo -e "  • Configuración:             ${YELLOW}No configurada${NC}"
     fi
 
-    if pacman -Q nautilus-python &>/dev/null; then
-        echo -e "  • Paquete nautilus-python:   ${GREEN}Instalado${NC}"
+    if pacman -Q python-nautilus &>/dev/null; then
+        echo -e "  • Paquete python-nautilus:   ${GREEN}Instalado${NC}"
     else
-        echo -e "  • Paquete nautilus-python:   ${YELLOW}No instalado${NC}"
+        echo -e "  • Paquete python-nautilus:   ${YELLOW}No instalado${NC}"
     fi
 
     if [[ -f "/usr/share/nautilus-python/extensions/ghostty.py" ]]; then
@@ -221,7 +221,7 @@ fi
 if [[ "$DO_INSTALL" == true ]]; then
     PKGS_TO_INSTALL=()
     pacman -Q wl-clipboard &>/dev/null || PKGS_TO_INSTALL+=(wl-clipboard)
-    pacman -Q nautilus-python &>/dev/null || PKGS_TO_INSTALL+=(nautilus-python)
+    pacman -Q python-nautilus &>/dev/null || PKGS_TO_INSTALL+=(python-nautilus)
 
     if [[ ${#PKGS_TO_INSTALL[@]} -gt 0 ]]; then
         log_info "Instalando dependencias de integración en CachyOS (Pacman): ${PKGS_TO_INSTALL[*]}..."

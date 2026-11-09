@@ -8,12 +8,12 @@
 # Características:
 #   - Activación bajo demanda por socket systemd (cockpit.socket): 0% CPU y 0 MB RAM en reposo.
 #   - Módulos integrados: Podman (contenedores rootless), Machines (KVM/QEMU Libvirt),
-#     Storaged (NVMe SMART / Btrfs), NetworkManager, SELinux, PackageKit, Files y Sosreport.
+#     Storaged (NVMe SMART / Btrfs), NetworkManager, PackageKit, Files y Sosreport.
 #   - Optimización de batería y memoria para portátil HP ProBook 455 G10:
 #     * Desconexión por inactividad (/etc/cockpit/cockpit.conf -> IdleTimeout = 15 min).
 #     * Restricción y seguridad de orígenes HTTP/HTTPS (Origins / MaxStartups).
 #   - Integración nativa con Podman Rootless (podman.socket de usuario y persistencia linger).
-#   - Reglas automáticas en Firewalld exclusivo (puerto 9090 TCP en zona FedoraWorkstation).
+#   - Reglas automáticas en Firewalld exclusivo (puerto 9090 TCP en zona activa).
 #   - Integración GNOME Shell Wayland: acceso directo .desktop y cliente seguro rootless.
 #   - Diagnóstico O(1) de solo lectura sin elevación forzada de sudo (--status).
 # ==============================================================================
@@ -147,7 +147,7 @@ configure_cockpit_conf() {
 
     local host_ip host_name origins_list
     host_ip=$(get_lan_ip)
-    host_name=$(hostname 2>/dev/null || echo "fedora")
+    host_name=$(hostname 2>/dev/null || echo "cachyos")
 
     origins_list="https://localhost:9090 http://localhost:9090 https://127.0.0.1:9090 http://127.0.0.1:9090"
     if [ -n "$host_ip" ] && [ "$host_ip" != "127.0.0.1" ]; then
@@ -159,7 +159,7 @@ configure_cockpit_conf() {
 
     cat <<EOF | $SUDO tee /etc/cockpit/cockpit.conf > /dev/null
 # ==============================================================================
-# Configuración Optimizada de Cockpit - HP ProBook 455 G10 (Fedora 45 Workstation)
+# Configuración Optimizada de Cockpit - HP ProBook 455 G10 (CachyOS Workstation)
 # Hardware: AMD Ryzen 7 7730U / 32 GB RAM / NVMe Kioxia / Podman Rootless
 # ==============================================================================
 
@@ -197,7 +197,7 @@ configure_firewall() {
     log_info "[4/6] Configurando reglas de red en Firewalld (puerto 9090 TCP)..."
     if command -v firewall-cmd &>/dev/null && systemctl is-active --quiet firewalld 2>/dev/null; then
         local active_zone
-        active_zone=$(firewall-cmd --get-default-zone 2>/dev/null || echo "FedoraWorkstation")
+        active_zone=$(firewall-cmd --get-default-zone 2>/dev/null || echo "home")
 
         if ! firewall-cmd --zone="$active_zone" --list-services 2>/dev/null | grep -qw "cockpit"; then
             require_root
@@ -298,7 +298,7 @@ disable_cockpit() {
 
     if command -v firewall-cmd &>/dev/null && systemctl is-active --quiet firewalld 2>/dev/null; then
         local active_zone
-        active_zone=$(firewall-cmd --get-default-zone 2>/dev/null || echo "FedoraWorkstation")
+        active_zone=$(firewall-cmd --get-default-zone 2>/dev/null || echo "home")
         $SUDO firewall-cmd --permanent --zone="$active_zone" --remove-service=cockpit 2>/dev/null || \
         $SUDO firewall-cmd --permanent --remove-service=cockpit 2>/dev/null || true
         $SUDO firewall-cmd --reload 2>/dev/null || true
@@ -364,7 +364,7 @@ show_status() {
     fi
 
     echo -e "${BOLD}=================================================================${NC}"
-    echo -e "${BOLD}${CYAN}🔍 DIAGNÓSTICO DE CONSOLA WEB COCKPIT - FEDORA 45 WORKSTATION${NC}"
+    echo -e "${BOLD}${CYAN}🔍 DIAGNÓSTICO DE CONSOLA WEB COCKPIT - CACHYOS WORKSTATION${NC}"
     echo -e "💻 ${BOLD}Hardware:${NC} HP ProBook 455 G10 | AMD Ryzen 7 7730U (16T) | 32 GB RAM"
     echo -e "${BOLD}=================================================================${NC}"
 
@@ -376,7 +376,7 @@ show_status() {
     # Cortafuegos Firewalld
     if command -v firewall-cmd &>/dev/null && systemctl is-active --quiet firewalld 2>/dev/null; then
         local active_zone
-        active_zone=$(firewall-cmd --get-default-zone 2>/dev/null || echo "FedoraWorkstation")
+        active_zone=$(firewall-cmd --get-default-zone 2>/dev/null || echo "home")
         if firewall-cmd --zone="$active_zone" --list-services 2>/dev/null | grep -qw "cockpit"; then
             fw_stat="${GREEN}✅ Permitido (Zona: $active_zone - puerto 9090/tcp)${NC}"
         else
@@ -480,7 +480,7 @@ ${BOLD}Control de Servicios (requiere privilegios):${NC}
   --stop                 Detiene el socket y servicio de Cockpit (liberando memoria y CPU).
   --restart              Reinicia el socket y servicio de Cockpit.
   --disable              Deshabilita permanentemente el socket y retira la regla de Firewalld.
-  --no-install           Aplica configuración, socket y firewall omitiendo la descarga de paquetes DNF5.
+  --no-install           Aplica configuración, socket y firewall omitiendo la descarga de paquetes Pacman.
   --help, -h             Muestra este mensaje de ayuda.
 
 ${BOLD}Optimizaciones de Hardware para HP ProBook 455 G10:${NC}
@@ -488,7 +488,7 @@ ${BOLD}Optimizaciones de Hardware para HP ProBook 455 G10:${NC}
   • Ahorro de batería: Cierre de sesión automático por inactividad tras 15 min (IdleTimeout = 15).
   • Podman Rootless: Soporte directo con cockpit-podman vía socket de usuario /run/user/$REAL_UID/podman/podman.sock.
   • NVMe SMART: Monitoreo de salud y temperatura del SSD NVMe Kioxia KBG50ZNV512G con smartmontools.
-  • Cortafuegos Firewalld: Regla de red exclusiva y permanente en la zona FedoraWorkstation.
+  • Cortafuegos Firewalld: Regla de red exclusiva y permanente en la zona activa.
 EOF
 }
 
@@ -534,7 +534,7 @@ case "${1:-}" in
         ;;
     --no-install)
         echo -e "${BOLD}=================================================================${NC}"
-        echo -e "${BOLD}${CYAN}🌐 ACTIVANDO COCKPIT EN FEDORA 45 WORKSTATION [SIN DNF5]${NC}"
+        echo -e "${BOLD}${CYAN}🌐 ACTIVANDO COCKPIT EN CACHYOS WORKSTATION [SIN INSTALACIÓN]${NC}"
         echo -e "${BOLD}=================================================================${NC}"
         configure_cockpit_conf
         enable_socket
@@ -551,7 +551,7 @@ case "${1:-}" in
         ;;
     "")
         echo -e "${BOLD}=================================================================${NC}"
-        echo -e "${BOLD}${CYAN}🌐 CONFIGURADOR DE CONSOLA WEB COCKPIT - FEDORA 45 WORKSTATION${NC}"
+        echo -e "${BOLD}${CYAN}🌐 CONFIGURADOR DE CONSOLA WEB COCKPIT - CACHYOS WORKSTATION${NC}"
         echo -e "💻 HP ProBook 455 G10 (AMD Ryzen 7 7730U / 32 GB RAM / NVMe Kioxia)"
         echo -e "${BOLD}=================================================================${NC}"
         install_cockpit

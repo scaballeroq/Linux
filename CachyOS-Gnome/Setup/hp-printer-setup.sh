@@ -10,7 +10,7 @@
 #   - Configuración automática de colas en CUPS sin blobs propietarios vía IPP Everywhere.
 #   - Asistencia para plugin propietario de HP (hp-plugin) en modo USB host-based.
 #   - Reglas automáticas en Firewalld (IPP 631, ipp-client y mDNS 5353).
-#   - Instalación O(1) de paquetes DNF5 (verifica paquetes instalados antes de invocar DNF).
+#   - Instalación O(1) de paquetes Pacman (verifica paquetes instalados antes de invocar pacman).
 #   - Diagnóstico O(1) de solo lectura sin elevación de privilegios (--status).
 #   - Impresión de página de prueba para validación inmediata (--test-page).
 # ==============================================================================
@@ -118,8 +118,8 @@ get_network_printer_uri() {
 # ------------------------------------------------------------------------------
 show_status() {
     echo -e "${BOLD}=================================================================${NC}"
-    echo -e "${BOLD}${CYAN}🔍 DIAGNÓSTICO DEL SISTEMA DE IMPRESIÓN - HP LASERJET (FEDORA 45)${NC}"
-    echo -e "💻 ${BOLD}Estación:${NC} HP ProBook 455 G10 | AMD Ryzen 7 7730U | GNOME 51 Wayland"
+    echo -e "${BOLD}${CYAN}🔍 DIAGNÓSTICO DEL SISTEMA DE IMPRESIÓN - HP LASERJET (CACHYOS)${NC}"
+    echo -e "💻 ${BOLD}Estación:${NC} HP ProBook 455 G10 | AMD Ryzen 7 7730U | GNOME Wayland"
     echo -e "${BOLD}=================================================================${NC}"
 
     # Estado de CUPS
@@ -372,7 +372,7 @@ print_test_page() {
     local test_file="/tmp/cups-test-$$.txt"
     cat <<EOF > "$test_file"
 ================================================================================
-                    PRUEBA DE IMPRESIÓN - FEDORA 45 WORKSTATION
+                    PRUEBA DE IMPRESIÓN - CACHYOS WORKSTATION
 ================================================================================
 Fecha y Hora: $(date)
 Estación:     HP ProBook 455 G10 (AMD Ryzen 7 7730U)

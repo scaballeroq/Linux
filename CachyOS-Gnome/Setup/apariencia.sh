@@ -201,7 +201,7 @@ install_packages() {
 # ------------------------------------------------------------------------------
 show_status() {
     echo -e "${BOLD}======================================================================${NC}"
-    echo -e "  🎨 ${BOLD}${CYAN}ESTADO DE APARIENCIA Y TEMAS - FEDORA 45 WORKSTATION${NC}"
+    echo -e "  🎨 ${BOLD}${CYAN}ESTADO DE APARIENCIA Y TEMAS - CACHYOS WORKSTATION${NC}"
     echo -e "  💻 Hardware: HP ProBook 455 G10 | Triple Monitor 1080p (DP-3, DP-4, eDP-1)"
     echo -e "${BOLD}======================================================================${NC}"
 
@@ -225,10 +225,10 @@ show_status() {
     echo -e "  • Tipografía de Sistema:     ${CYAN}${font_name}${NC} (Antialiasing: ${font_anti}, Hinting: ${font_hinting})"
     echo -e "  • Tipografía Monoespacio:    ${CYAN}${mono_name}${NC}"
 
-    echo -e "\n${BOLD}📦 Paquetes y Recursos Instalados (DNF5 / Local):${NC}"
-    for pkg in adw-gtk3-theme papirus-icon-theme gnome-tweaks; do
+    echo -e "\n${BOLD}📦 Paquetes y Recursos Instalados (Pacman / Local):${NC}"
+    for pkg in adw-gtk-theme papirus-icon-theme gnome-tweaks; do
         if is_pkg_installed "$pkg"; then
-            printf "  • %-26s ${GREEN}✅ Instalado (RPM)${NC}\n" "$pkg"
+            printf "  • %-26s ${GREEN}✅ Instalado${NC}\n" "$pkg"
         else
             printf "  • %-26s ${YELLOW}⚪ No instalado${NC}\n" "$pkg"
         fi
@@ -279,7 +279,7 @@ show_status() {
 # ------------------------------------------------------------------------------
 run_interactive() {
     echo -e "${BOLD}======================================================================${NC}"
-    echo -e "  🎨 ${BOLD}SELECTOR INTERACTIVO DE APARIENCIA - FEDORA 45 WORKSTATION${NC}"
+    echo -e "  🎨 ${BOLD}SELECTOR INTERACTIVO DE APARIENCIA - CACHYOS WORKSTATION${NC}"
     echo -e "${BOLD}======================================================================${NC}"
 
     echo -e "\n${BOLD}1) Selecciona el Esquema de Color:${NC}"
@@ -347,7 +347,7 @@ show_help() {
 ${BOLD}🎨 Gestor de Apariencia (Temas, Iconos y Cursores) - CachyOS Workstation${NC}
 Optimizado para HP ProBook 455 G10 (AMD Ryzen 7 7730U + Triple Monitor FHD)
 
-Instala paquetes visuales mediante DNF5 (${BOLD}adw-gtk3-theme${NC}, ${BOLD}papirus-icon-theme${NC}) y el
+Instala paquetes visuales mediante Pacman/AUR (${BOLD}adw-gtk-theme${NC}, ${BOLD}papirus-icon-theme${NC}) y el
 cursor ${BOLD}Bibata Modern${NC} (Classic e Ice), aplicando la configuración en GNOME Wayland
 y sincronizando GTK3, GTK4 y Flatpak.
 
@@ -358,7 +358,7 @@ ${BOLD}Opciones de Diagnóstico y Flujo:${NC}
   (sin argumentos)       Instala temas y aplica perfil predeterminado (Dark + Papirus-Dark + Bibata Classic 24px)
   -s, --status           Muestra el diagnóstico completo de apariencia, temas, iconos y fuentes
   -i, --interactive      Inicia el selector interactivo paso a paso
-  --no-install, --config Aplica temas en GSettings/GTK sin ejecutar DNF5 ni descargas
+  --no-install, --config Aplica temas en GSettings/GTK sin reinstalar paquetes ni descargas
   --install              Solo instala los paquetes y cursores sin alterar configuraciones
   -h, --help             Muestra esta ayuda
 

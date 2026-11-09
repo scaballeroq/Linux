@@ -1,5 +1,5 @@
 #!/bin/bash
-# quadlets-setup.sh - Configuración de directorios y servicios systemd Quadlets para Podman en Fedora 45 + GNOME
+# quadlets-setup.sh - Configuración de directorios y servicios systemd Quadlets para Podman en CachyOS + GNOME
 #
 # Uso:
 #   ./quadlets-setup.sh              -> Prepara los directorios de Quadlets e inicializa systemd user
@@ -34,7 +34,7 @@ require_podman() {
 
 show_help() {
     cat <<EOF
-⚙️ Gestor de Quadlets para Podman - Fedora 45 (GNOME)
+⚙️ Gestor de Quadlets para Podman - CachyOS (GNOME)
 
 Uso:
   $0 [OPCIÓN]
@@ -55,7 +55,7 @@ EOF
 
 show_status() {
     echo "================================================================="
-    echo "🔍 ESTADO DE SYSTEMD QUADLETS - FEDORA 45"
+    echo "🔍 ESTADO DE SYSTEMD QUADLETS - CACHYOS WORKSTATION"
     echo "================================================================="
     echo "• Directorio Quadlets: $HOME/.config/containers/systemd"
     echo "• Generador Quadlet:   $(if [ -f /usr/lib/systemd/user-generators/podman-user-generator ]; then echo 'Presente (/usr/lib/systemd/user-generators/podman-user-generator)'; else echo 'No detectado'; fi)"
@@ -149,7 +149,7 @@ verify_quadlets() {
     local podman_version
     podman_version=$(podman --version | grep -oP '\d+\.\d+' | head -1 || echo "6.1")
     
-    log_ok "Quadlets soportado nativamente (Podman $podman_version en Fedora 45)."
+    log_ok "Quadlets soportado nativamente (Podman $podman_version en CachyOS)."
     echo ""
     echo "============================================"
     log_ok "Quadlets configurado correctamente"
@@ -184,7 +184,7 @@ case "${1:-}" in
         ;;
     "")
         echo "============================================"
-        echo "  Configurador de Quadlets - Fedora 45"
+        echo "  Configurador de Quadlets - CachyOS"
         echo "============================================"
         echo ""
         require_podman

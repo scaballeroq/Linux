@@ -2,9 +2,9 @@
 sidebar_position: 7
 ---
 
-# High-Performance Virtualization (KVM/QEMU) on Fedora 45
+# High-Performance Virtualization (KVM/QEMU) on CachyOS
 
-This guide details the installation, configuration, and optimization of the virtualization stack automated in [`Virtualizacion/virtualization.sh`](file:///home/caballero/Proyectos/Linux/Fedora-Workstation/Virtualizacion/virtualization.sh) and documented in [`Virtualizacion/notas_virtualizacion_fedora.md`](file:///home/caballero/Proyectos/Linux/Fedora-Workstation/Virtualizacion/notas_virtualizacion_fedora.md).
+This guide details the installation, configuration, and optimization of the virtualization stack automated in [`Virtualizacion/virtualization.sh`](../Virtualizacion/virtualization.sh) and documented in [`Virtualizacion/notas_virtualizacion_cachyos.md`](../Virtualizacion/notas_virtualizacion_cachyos.md).
 
 The architecture utilizes the **KVM** hypervisor and **QEMU** emulator, with native **PipeWire** audio passthrough, **nftables** firewall filtering, **VirGL** 3D hardware acceleration, **VirtioFS** ultra-fast folder sharing, **`vhost_vsock`** memory sockets, **Btrfs NoCoW** storage optimization, modular Libvirt 12+ daemons, and nested virtualization.
 
@@ -66,7 +66,7 @@ dynamic_ownership = 1
   firewall_backend = "nftables"
   ```
 - In Firewalld:
-  Virtual interface `virbr0` is assigned to the `libvirt` zone with forwarding enabled (`--add-forward`), and `masquerade` is enabled on the active workstation zone (`FedoraWorkstation`).
+  Virtual interface `virbr0` is assigned to the `libvirt` zone with forwarding enabled (`--add-forward`), and `masquerade` is enabled on the active network zone (`home` or `public`).
 
 ---
 
@@ -87,7 +87,7 @@ polkit.addRule(function(action, subject) {
 
 ## 6. Modular Libvirt 12+ Sockets
 
-Libvirt 12+ on Fedora relies on on-demand systemd socket activation:
+Libvirt 12+ on CachyOS relies on on-demand systemd socket activation:
 
 ```bash
 sudo systemctl enable --now \
@@ -104,7 +104,7 @@ sudo systemctl enable --now \
 
 ## 7. Storage with Btrfs NoCoW (+C)
 
-When `/var/lib/libvirt/images` resides on a Btrfs filesystem (default in Fedora), the `+C` attribute is set to disable Copy-on-Write and prevent disk fragmentation:
+When `/var/lib/libvirt/images` resides on a Btrfs filesystem (common in CachyOS), the `+C` attribute is set to disable Copy-on-Write and prevent disk fragmentation:
 
 ```bash
 sudo mkdir -p /var/lib/libvirt/images

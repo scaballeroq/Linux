@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # firefox.sh - Instalación y Optimización de Mozilla Firefox Nativo en Wayland
-# Sistema: Fedora 45 Workstation (DNF5 + RPM Fusion VA-API + Policies JSON)
+# Sistema: CachyOS / Arch Linux (Pacman + Mesa VA-API + Policies JSON)
 # Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8 / VA-API)
 # ==============================================================================
 # Características:
-#   - Instalación del paquete nativo Firefox desde repositorios DNF5.
-#   - Paquetes de idioma (firefox-langpacks) y codec mozilla-openh264 de Cisco.
-#   - Integración con Setup/rpmfusion.sh para decodificación por hardware (mesa-va-drivers-freeworld).
+#   - Instalación del paquete nativo Firefox desde repositorios oficiales de CachyOS / Arch.
+#   - Paquete de idioma en español (firefox-i18n-es-es).
+#   - Decodificación por hardware nativa VA-API (libva-mesa-driver, ffmpeg).
 #   - Aceleración por hardware VA-API (Mesa radeonsi) y WebRender GPU activo.
 #   - Políticas empresariales (/etc/firefox/policies/policies.json) para privacidad y Wayland.
-#   - Variables de entorno de sesión (/etc/environment.d/90-firefox-wayland.conf).
+#   - Variables de entorno de sesión (~/.config/environment.d/90-firefox-wayland.conf).
 #   - Opciones CLI: --status / -s, --install / -i, --update / -u, --wayland / -w,
 #                   --uninstall, --help / -h.
 # ==============================================================================
@@ -47,23 +47,16 @@ else
     USER_HOME="${HOME:-/home/$REAL_USER}"
 fi
 
-if command -v dnf5 &>/dev/null; then
-    DNF_BIN="dnf5"
-else
-    DNF_BIN="dnf"
-fi
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 POLICIES_DIR="/etc/firefox/policies"
 POLICIES_FILE="$POLICIES_DIR/policies.json"
 ENV_FILE="$USER_HOME/.config/environment.d/90-firefox-wayland.conf"
 
 show_help() {
     cat << EOF
-${BOLD}🦊 Instalador y Optimizador de Mozilla Firefox - Fedora 45 Workstation (GNOME Wayland)${NC}
+${BOLD}🦊 Instalador y Optimizador de Mozilla Firefox - CachyOS Workstation (GNOME Wayland)${NC}
 
-Instala Firefox nativo mediante DNF5 junto con el soporte de decodificación por
-hardware VA-API de ${BOLD}RPM Fusion${NC} (${BOLD}ffmpeg${NC}, ${BOLD}mesa-va-drivers-freeworld${NC}, ${BOLD}mozilla-openh264${NC}),
+Instala Firefox nativo mediante Pacman junto con el soporte de decodificación por
+hardware VA-API (${BOLD}ffmpeg${NC}, ${BOLD}libva-mesa-driver${NC}, ${BOLD}libva-utils${NC}),
 y despliega políticas empresariales (${BOLD}/etc/firefox/policies/policies.json${NC}) para
 activar aceleración GPU en Wayland, XDG Portals y desactivar telemetría.
 
@@ -71,36 +64,23 @@ ${BOLD}Uso:${NC}
   $0 [OPCIONES]
 
 ${BOLD}Opciones:${NC}
-  (sin argumentos)   Instala Firefox, códecs RPM Fusion y aplica optimización Wayland/VA-API
+  (sin argumentos)   Instala Firefox, códecs y aplica optimización Wayland/VA-API
   -i, --install      Instala Firefox, paquetes de idioma y códecs VA-API
-  -u, --update       Actualiza Firefox y complementos mediante DNF5
+  -u, --update       Actualiza Firefox y complementos mediante Pacman
   -w, --wayland      Aplica solo políticas de aceleración VA-API y variables Wayland
   --uninstall        Desinstala Firefox y limpia políticas personalizadas
-  -s, --status       Muestra el estado de Firefox, OpenH264, RPM Fusion VA-API y políticas
+  -s, --status       Muestra el estado de Firefox, VA-API y políticas
   -h, --help         Muestra esta ayuda
 EOF
 }
 
-ensure_rpmfusion() {
-    if [[ -x "$SCRIPT_DIR/rpmfusion.sh" ]]; then
-        "$SCRIPT_DIR/rpmfusion.sh"
-    else
-        local fed_ver
-        fed_ver=$(rpm -E %fedora 2>/dev/null || echo "45")
-        $SUDO "$DNF_BIN" install -y \
-            "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${fed_ver}.noarch.rpm" \
-            "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${fed_ver}.noarch.rpm" 2>/dev/null || true
-        $SUDO "$DNF_BIN" config-manager setopt fedora-cisco-openh264.enabled=1 2>/dev/null || true
-    fi
-}
-
 is_pkg_installed() {
-    rpm -q "$1" &>/dev/null
+    pacman -Q "$1" &>/dev/null
 }
 
 show_status() {
     echo -e "${BOLD}======================================================================${NC}"
-    echo -e "  🦊 ${BOLD}ESTADO DE MOZILLA FIREFOX - FEDORA 45 WORKSTATION (WAYLAND)${NC}"
+    echo -e "  🦊 ${BOLD}ESTADO DE MOZILLA FIREFOX - CACHYOS WORKSTATION (WAYLAND)${NC}"
     echo -e "${BOLD}======================================================================${NC}"
 
     if command -v firefox &>/dev/null; then
@@ -109,7 +89,7 @@ show_status() {
         echo -e "  • Binario Firefox:           ${RED}No instalado${NC}"
     fi
 
-    for pkg in firefox-langpacks mozilla-openh264 ffmpeg mesa-va-drivers-freeworld libva-utils; do
+    for pkg in firefox firefox-i18n-es-es ffmpeg libva-mesa-driver libva-utils; do
         if is_pkg_installed "$pkg"; then
             echo -e "  • $(printf '%-26s' "$pkg"): ${GREEN}Instalado${NC}"
         else
@@ -161,7 +141,7 @@ EOF
 
     mkdir -p "$(dirname "$ENV_FILE")"
     cat << 'EOF' > "$ENV_FILE"
-# Forzar protocolo nativo Wayland para Mozilla Firefox en Fedora 45 Workstation
+# Forzar protocolo nativo Wayland para Mozilla Firefox en CachyOS Workstation
 MOZ_ENABLE_WAYLAND=1
 EOF
 
@@ -172,17 +152,18 @@ EOF
 }
 
 install_firefox() {
-    ensure_rpmfusion
-    log_info "Instalando Firefox nativo, langpacks, OpenH264 y drivers VA-API desde DNF5 / RPM Fusion..."
-    $SUDO "$DNF_BIN" install -y --skip-unavailable firefox firefox-langpacks mozilla-openh264 gstreamer1-plugin-openh264 libva-utils
-    $SUDO "$DNF_BIN" swap -y ffmpeg-free ffmpeg --allowerasing 2>/dev/null || \
-        $SUDO "$DNF_BIN" install -y --allowerasing ffmpeg ffmpeg-libs
-
-    if lspci 2>/dev/null | grep -E "VGA|3D" | grep -qiE "AMD|ATI|Radeon"; then
-        $SUDO "$DNF_BIN" swap -y mesa-va-drivers mesa-va-drivers-freeworld 2>/dev/null || \
-            $SUDO "$DNF_BIN" install -y --allowerasing mesa-va-drivers-freeworld 2>/dev/null || true
-    fi
+    log_info "Instalando Firefox nativo, idioma español y drivers VA-API desde repositorios de CachyOS..."
+    local pkgs=(
+        firefox
+        firefox-i18n-es-es
+        ffmpeg
+        libva-mesa-driver
+        mesa-vdpau
+        libva-utils
+    )
+    $SUDO pacman -S --needed --noconfirm "${pkgs[@]}" 2>/dev/null || true
     configure_wayland_policies
+    log_ok "Mozilla Firefox instalado y optimizado."
 }
 
 ACTION="all"
@@ -205,8 +186,8 @@ case "$ACTION" in
         show_status
         ;;
     update)
-        log_info "Actualizando Firefox mediante $DNF_BIN..."
-        $SUDO "$DNF_BIN" upgrade --refresh -y firefox firefox-langpacks mozilla-openh264
+        log_info "Actualizando Firefox mediante Pacman..."
+        $SUDO pacman -S --needed --noconfirm firefox firefox-i18n-es-es
         log_ok "Firefox actualizado."
         ;;
     wayland)
@@ -214,7 +195,7 @@ case "$ACTION" in
         ;;
     uninstall)
         log_warn "Desinstalando Firefox y eliminando políticas personalizadas..."
-        $SUDO "$DNF_BIN" remove -y firefox
+        $SUDO pacman -Rns --noconfirm firefox 2>/dev/null || true
         $SUDO rm -f "$POLICIES_FILE"
         rm -f "$ENV_FILE"
         log_ok "Firefox desinstalado."

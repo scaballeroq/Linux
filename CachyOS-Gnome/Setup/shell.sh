@@ -234,9 +234,10 @@ else
     echo "  ℹ️ Cargador modular ya presente en ~/.bashrc"
 fi
 
-# 3. Integración en Zsh (si existe ~/.zshrc)
-if [ -f "$ZSHRC" ]; then
-    echo "⚙️ [3/4] Detectado ~/.zshrc. Configurando integraciones en Zsh..."
+# 3. Integración en Zsh (Shell principal de CachyOS)
+if command -v zsh &>/dev/null || [ -f "$ZSHRC" ] || [ -f "/bin/zsh" ]; then
+    echo "⚙️ [3/4] Configurando integraciones en Zsh (~/.zshrc y ~/.zshrc.d)..."
+    run_as_user touch "$ZSHRC"
     run_as_user mkdir -p "$ZSHRC_D"
 
     # 3.1. Zoxide en Zsh
@@ -284,7 +285,7 @@ EOF
         echo "  ℹ️ Cargador modular ya presente en ~/.zshrc"
     fi
 else
-    echo "ℹ️ [3/4] No se detectó ~/.zshrc. Se omite Zsh (entorno exclusivo Bash activo)."
+    echo "ℹ️ [3/4] Zsh no instalado aún en el sistema."
 fi
 
 # 4. Enlazar scripts de Bash.Setup a ~/.bashrc.d (y ~/.zshrc.d)

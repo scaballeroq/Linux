@@ -2,9 +2,9 @@
 
 # Guía Completa de Extensiones de GNOME Shell
 
-Esta guía detalla el conjunto de **12 extensiones de GNOME Shell** y herramientas auxiliares que se instalan y configuran de forma automatizada a través del script [`Setup/gnome-extensions.sh`](file:///home/caballero/Proyectos/Linux/FedoraTesting/Setup/gnome-extensions.sh) y el comando `just extensions`.
+Esta guía detalla el conjunto de **12 extensiones de GNOME Shell** y herramientas auxiliares que se instalan y configuran de forma automatizada a través del script [`Setup/gnome-extensions.sh`](../Setup/gnome-extensions.sh) y el comando `just extensions`.
 
-El objetivo de esta selección es optimizar el entorno de escritorio GNOME en Fedora 45 (Trixie), combinando **gestión avanzada de ventanas**, **mejora de la productividad**, **soporte de bandeja del sistema** y una **estética visual moderna** (glassmorphism/blur, fondos dinámicos y audio mixer), utilizando **Dash to Dock** como lanzador y dock principal nativo.
+El objetivo de esta selección es optimizar el entorno de escritorio GNOME en CachyOS Workstation, combinando **gestión avanzada de ventanas**, **mejora de la productividad**, **soporte de bandeja del sistema** y una **estética visual moderna** (glassmorphism/blur, fondos dinámicos y audio mixer), utilizando **Dash to Dock** como lanzador y dock principal nativo.
 
 ---
 
@@ -14,7 +14,7 @@ Antes de instalar las extensiones, el script despliega el soporte base para gara
 
 | Herramienta | Tipo | Descripción |
 | :--- | :--- | :--- |
-| **`gnome-browser-connector`** | Paquete DNF5 | Conector nativo que permite instalar y gestionar extensiones directamente desde el sitio web [extensions.gnome.org](https://extensions.gnome.org/). |
+| **`gnome-browser-connector`** | Paquete Pacman | Conector nativo que permite instalar y gestionar extensiones directamente desde el sitio web [extensions.gnome.org](https://extensions.gnome.org/). |
 | **`extension-manager`** | Aplicación GTK4/Adwaita | Aplicación gráfica para buscar, instalar, actualizar y configurar extensiones de GNOME de forma nativa sin necesidad de navegador. |
 | **`gnome-extensions-cli` (`gext`)** | Herramienta CLI (Python/pipx) | Utilidad de línea de comandos utilizada por los scripts para instalar y actualizar extensiones masivamente mediante la API oficial. |
 | **`glib-compile-schemas`** | Compilador GSettings | Compila automáticamente las esquemas GSettings en `~/.local/share/gnome-shell/extensions/<UUID>/schemas`, previniendo errores de estado `Disabled` o `Error`. |

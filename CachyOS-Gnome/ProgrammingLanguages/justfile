@@ -1,4 +1,4 @@
-# ProgrammingLanguages Sub-Justfile - Fedora Workstation
+# ProgrammingLanguages Sub-Justfile - CachyOS Workstation
 
 # Instalar todos los lenguajes y runtimes
 languages: mise node python rust dotnet java angular
@@ -34,7 +34,7 @@ rust-update:
 
 # .NET SDK
 dotnet:
-    ./Revisar/dotnet.sh
+    ./dotnet.sh
 
 # OpenJDK Java LTS
 java:
@@ -42,4 +42,4 @@ java:
 
 # Angular CLI
 angular:
-    ./Revisar/angular.sh
+    ./angular.sh

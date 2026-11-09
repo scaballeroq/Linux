@@ -1,5 +1,5 @@
 # =============================================================================
-# OPCIONES DE LA SHELL (options.sh) - Adaptado para Bash y Zsh en Fedora 45 Workstation
+# OPCIONES DE LA SHELL (options.sh) - Adaptado para Bash y Zsh en CachyOS Workstation
 # =============================================================================
 # Configura el comportamiento interno de la shell (navegación, globbing y completado).
 

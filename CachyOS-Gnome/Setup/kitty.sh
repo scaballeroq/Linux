@@ -80,7 +80,7 @@ EOF
 
 show_status() {
     echo -e "${BOLD}======================================================================${NC}"
-    echo -e "  🐱 ${BOLD}ESTADO DE KITTY TERMINAL - FEDORA 45 WORKSTATION${NC}"
+    echo -e "  🐱 ${BOLD}ESTADO DE KITTY TERMINAL - CACHYOS WORKSTATION${NC}"
     echo -e "${BOLD}======================================================================${NC}"
 
     if command -v kitty &>/dev/null; then
@@ -99,10 +99,10 @@ show_status() {
         echo -e "  • Configuración:             ${YELLOW}No configurada${NC}"
     fi
 
-    if pacman -Q nautilus-python &>/dev/null; then
-        echo -e "  • Paquete nautilus-python:   ${GREEN}Instalado${NC}"
+    if pacman -Q python-nautilus &>/dev/null; then
+        echo -e "  • Paquete python-nautilus:   ${GREEN}Instalado${NC}"
     else
-        echo -e "  • Paquete nautilus-python:   ${YELLOW}No instalado${NC}"
+        echo -e "  • Paquete python-nautilus:   ${YELLOW}No instalado${NC}"
     fi
 
     if [[ -f "$NAUTILUS_EXT_FILE" ]]; then
@@ -219,13 +219,13 @@ if [[ "$DO_INSTALL" == true ]]; then
     PKGS_TO_INSTALL=()
     pacman -Q kitty &>/dev/null || PKGS_TO_INSTALL+=(kitty)
     pacman -Q wl-clipboard &>/dev/null || PKGS_TO_INSTALL+=(wl-clipboard)
-    pacman -Q nautilus-python &>/dev/null || PKGS_TO_INSTALL+=(nautilus-python)
+    pacman -Q python-nautilus &>/dev/null || PKGS_TO_INSTALL+=(python-nautilus)
 
     if [[ ${#PKGS_TO_INSTALL[@]} -gt 0 ]]; then
         log_info "Instalando paquetes en CachyOS (Pacman): ${PKGS_TO_INSTALL[*]}..."
         sudo pacman -S --needed --noconfirm "${PKGS_TO_INSTALL[@]}"
     else
-        log_ok "Kitty, wl-clipboard y nautilus-python ya están instalados."
+        log_ok "Kitty, wl-clipboard y python-nautilus ya están instalados."
     fi
 fi
 

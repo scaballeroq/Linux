@@ -2,13 +2,13 @@
 sidebar_position: 1
 ---
 
-# Security Hardening & Firewall on Fedora 45 (GNOME)
+# Security Hardening & Firewall on CachyOS (GNOME)
 
-This guide details the security, privacy, and system hardening process automated in [`Setup/seguridad.sh`](file:///home/caballero/Proyectos/Linux/Fedora/Setup/seguridad.sh), tailored for developer laptops and workstations running **Fedora 45** with **GNOME**.
+This guide details the security, privacy, and system hardening process automated in [`Setup/seguridad.sh`](../Setup/seguridad.sh), tailored for developer laptops and workstations running **CachyOS** with **GNOME**.
 
 ---
 
-## 1. Native Firewall (Firewalld - `FedoraWorkstation` Zone)
+## 1. Native Firewall (Firewalld)
 
 Configures Firewalld to safeguard the machine from unauthorized incoming connections while ensuring full support for local development, GNOME tools, and home networks:
 
@@ -20,7 +20,7 @@ Configures Firewalld to safeguard the machine from unauthorized incoming connect
 2. **Cleaning Unnecessary Services**:
    Removes legacy or unnecessary services from the default zone:
    ```bash
-   sudo firewall-cmd --permanent --zone=FedoraWorkstation --remove-service=samba-client
+   sudo firewall-cmd --permanent --remove-service=samba-client
    ```
 
 3. **GNOME & Developer Rules**:
@@ -28,9 +28,9 @@ Configures Firewalld to safeguard the machine from unauthorized incoming connect
    - **Local Discovery (`mdns`)**: Enables printer (HP LaserJet), media device, and local service discovery.
    - **Remote Access (`ssh`)**: Maintains secure incoming SSH access.
    ```bash
-   sudo firewall-cmd --permanent --zone=FedoraWorkstation --add-service=kdeconnect
-   sudo firewall-cmd --permanent --zone=FedoraWorkstation --add-service=mdns
-   sudo firewall-cmd --permanent --zone=FedoraWorkstation --add-service=ssh
+   sudo firewall-cmd --permanent --add-service=kdeconnect
+   sudo firewall-cmd --permanent --add-service=mdns
+   sudo firewall-cmd --permanent --add-service=ssh
    sudo firewall-cmd --reload
    ```
 

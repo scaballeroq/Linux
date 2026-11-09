@@ -1,6 +1,6 @@
 # ==============================================================================
-#  Justfile - Orquestador de Configuración para Fedora 45 Workstation (GNOME Wayland)
-#  Gestor de Paquetes: DNF5 + RPM Fusion (Free & Non-Free Obligatorio) + Flatpak
+#  Justfile - Orquestador de Configuración para CachyOS Workstation (GNOME Wayland)
+#  Gestor de Paquetes: Pacman / Paru + Repositorios CachyOS (x86-64-v3) + Flatpak
 # ==============================================================================
 
 set shell := ["bash", "-euo", "pipefail", "-c"]
@@ -13,27 +13,28 @@ default:
 #  1. PERFILES DE DESPLIEGUE COMPLETO
 # ==============================================================================
 
-# Ejecuta la instalación completa para estación de trabajo Fedora 45 Workstation
-setup-all: post-install rpmfusion zram tuning laptop fingerprint printer security fonts shell zsh starship fastfetch kitty ghostty ptyxis apariencia gnome-setup gnome-extensions gsconnect multimedia flatpak chrome firefox steam virtualization podman git mise languages ide
-    @echo "✅ Despliegue integral de Fedora 45 Workstation (GNOME Wayland) completado."
+# Ejecuta la instalación completa para estación de trabajo CachyOS Workstation
+setup-all: post-install cachyos-repos zram tuning laptop fingerprint printer security fonts shell zsh starship fastfetch kitty ghostty ptyxis apariencia gnome-setup gnome-extensions gsconnect multimedia flatpak chrome firefox steam virtualization podman git mise languages ide
+    @echo "✅ Despliegue integral de CachyOS Workstation (GNOME Wayland) completado."
 
 # Perfil optimizado para Portátil de Desarrollo AMD Ryzen (HP ProBook 455 G10)
-setup-laptop-amd: post-install-amd rpmfusion zram tuning laptop fingerprint printer security fonts shell zsh starship fastfetch kitty ghostty ptyxis apariencia gnome-setup gnome-extensions gsconnect multimedia flatpak chrome firefox virtualization podman git mise languages ide
-    @echo "✅ Perfil Portátil Desarrollo AMD Ryzen en Fedora 45 Workstation completado."
+setup-laptop-amd: post-install-amd cachyos-repos zram tuning laptop fingerprint printer security fonts shell zsh starship fastfetch kitty ghostty ptyxis apariencia gnome-setup gnome-extensions gsconnect multimedia flatpak chrome firefox virtualization podman git mise languages ide
+    @echo "✅ Perfil Portátil Desarrollo AMD Ryzen en CachyOS Workstation completado."
 
 # Perfil para Sobremesa / Media Center Intel Core
-setup-media-desktop: post-install-intel rpmfusion zram tuning security fonts shell starship fastfetch kitty apariencia gnome-setup gnome-extensions multimedia flatpak chrome firefox
-    @echo "✅ Perfil Sobremesa Multimedia Intel en Fedora 45 Workstation completado."
+setup-media-desktop: post-install-intel cachyos-repos zram tuning security fonts shell starship fastfetch kitty apariencia gnome-setup gnome-extensions multimedia flatpak chrome firefox
+    @echo "✅ Perfil Sobremesa Multimedia Intel en CachyOS Workstation completado."
 
 # ==============================================================================
 #  2. DIAGNÓSTICO GLOBAL (--status)
 # ==============================================================================
 
-# Muestra el estado global de todos los componentes de Fedora 45 Workstation
+# Muestra el estado global de todos los componentes de CachyOS Workstation
 status:
     ./Setup/post-install-amd.sh --status
+    ./Setup/cachyos-repos.sh --status
     ./Setup/zram-setup.sh --status
-    ./Setup/fedora-tuning.sh --status
+    ./Setup/cachyos-tuning.sh --status
     ./Setup/laptop-setup.sh --status
     ./Setup/seguridad.sh --status
     ./Setup/apariencia.sh --status
@@ -45,22 +46,26 @@ status:
     ./Virtualizacion/virtualization.sh --status
 
 # ==============================================================================
-#  3. SISTEMA BASE, RPM FUSION OBLIGATORIO, KERNEL Y HARDWARE
+#  3. SISTEMA BASE, REPOSITORIOS CACHYOS, KERNEL Y HARDWARE
 # ==============================================================================
 
-# Instala y verifica obligatoriamente RPM Fusion (Free, Non-Free, Tainted & OpenH264)
-rpmfusion:
-    ./Setup/rpmfusion.sh
+# Configura y optimiza los repositorios de CachyOS (v3, multilib, chaotic-aur) y pacman.conf
+cachyos-repos:
+    ./Setup/cachyos-repos.sh
 
-# Diagnóstico del estado de los repositorios RPM Fusion
-rpmfusion-status:
-    ./Setup/rpmfusion.sh --status
+# Diagnóstico de los repositorios y espejos de CachyOS
+cachyos-repos-status:
+    ./Setup/cachyos-repos.sh --status
+
+# Calibra y clasifica los espejos más rápidos con cachyos-rate-mirrors
+rate-mirrors:
+    ./Setup/cachyos-repos.sh --rate-mirrors
 
 # Post-instalación base con auto-detección de CPU (AMD Ryzen vs Intel Core)
 post-install:
     ./Setup/post-install.sh
 
-# Post-instalación específica para AMD Ryzen y gráficos Radeon (RADV + VA-API Freeworld)
+# Post-instalación específica para AMD Ryzen y gráficos Radeon (Mesa RADV + VA-API)
 post-install-amd:
     ./Setup/post-install-amd.sh
 
@@ -68,7 +73,7 @@ post-install-amd:
 post-install-intel:
     ./Setup/post-install-intel.sh
 
-# Configura Swap en ZRAM (zstd, 50% RAM, prioridad 100)
+# Configura Swap en ZRAM (zstd, 50-100% RAM, prioridad 100)
 zram:
     ./Setup/zram-setup.sh
 
@@ -76,13 +81,13 @@ zram:
 zram-status:
     ./Setup/zram-setup.sh --status
 
-# Aplica optimizaciones de Kernel (sysctl), límites (ulimit) y exclusiones de GNOME Tracker
+# Aplica optimizaciones de Kernel (sysctl), Ananicy-CPP, UKSMD y exclusiones de Tracker
 tuning:
-    ./Setup/fedora-tuning.sh
+    ./Setup/cachyos-tuning.sh
 
 # Muestra el diagnóstico de optimización del sistema (sysctl, límites, Tracker)
 tuning-status:
-    ./Setup/fedora-tuning.sh --status
+    ./Setup/cachyos-tuning.sh --status
 
 # Optimización para portátil (energía, Touchpad Wayland, multimonitor, logind y Bluetooth)
 laptop:
@@ -92,7 +97,7 @@ laptop:
 laptop-status:
     ./Setup/laptop-setup.sh --status
 
-# Configura lector de huella dactilar (fprintd + authselect PAM)
+# Configura lector de huella dactilar (fprintd + PAM)
 fingerprint:
     ./Setup/fingerprint-setup.sh
 
@@ -112,127 +117,139 @@ printer-status:
 security:
     ./Setup/seguridad.sh
 
-# Habilita puertos de desarrollo local en Firewalld (3000, 5173, 8000, 8080 TCP)
-dev-ports:
+# Habilita puertos de desarrollo local en Firewalld (3000, 5173, 8000, 8080)
+security-dev-ports:
     ./Setup/seguridad.sh --dev-ports
 
-# Muestra el estado de Firewalld, zonas activas y endurecimiento sysctl
+# Estado del cortafuegos Firewalld y reglas de seguridad
 security-status:
     ./Setup/seguridad.sh --status
 
-# Instala y activa la consola web de administración Cockpit (puerto 9090)
-cockpit *args:
-    ./Setup/cockpit.sh {{args}}
+# Instala e integra la consola web de administración Cockpit (socket bajo demanda)
+cockpit:
+    ./Setup/cockpit.sh
 
-# Estado de Cockpit
+# Estado de la consola web Cockpit
 cockpit-status:
     ./Setup/cockpit.sh --status
 
-# Abre Cockpit en el navegador predeterminado
-cockpit-open:
-    ./Setup/cockpit.sh --open
-
 # ==============================================================================
-#  4. ESCRITORIO GNOME SHELL (WAYLAND), APARIENCIA Y TERMINALES
+#  4. ESCRITORIO GNOME, APARIENCIA Y WAYLAND
 # ==============================================================================
 
-# Configura temas GTK (adw-gtk3-dark), iconos Papirus-Dark y cursor Bibata (24px)
-apariencia:
-    ./Setup/apariencia.sh
-
-# Selector interactivo de apariencia (tema claro/oscuro, iconos y cursores)
-apariencia-interactive:
-    ./Setup/apariencia.sh --interactive
-
-# Muestra el estado actual de apariencia en GNOME
-apariencia-status:
-    ./Setup/apariencia.sh --status
-
-# Configura GNOME Shell Wayland (reloj 24h, Night Light 4000K, Mutter VRR, Nautilus)
+# Configuración global de GNOME Shell (Luz nocturna, fuentes subpixel, botones y VRR)
 gnome-setup:
     ./Setup/gnome-settings.sh
 
-# Asistente interactivo de configuración de GNOME Shell
+# Asistente interactivo de configuración de GNOME
 gnome-interactive:
     ./Setup/gnome-settings.sh --interactive
 
-# Diagnóstico de ajustes de GNOME Shell
+# Aplica configuración de GNOME sin reinstalar paquetes
+gnome-config-only:
+    ./Setup/gnome-settings.sh --config
+
+# Estado de la configuración de GNOME Shell
 gnome-status:
     ./Setup/gnome-settings.sh --status
 
-# Instala y activa las extensiones recomendadas de GNOME Shell
+# Aplica tema oscuro Catppuccin Mocha, acentos Libadwaita y fuentes
+apariencia:
+    ./Setup/apariencia.sh
+
+# Cambia la apariencia al tema claro (Light)
+apariencia-light:
+    ./Setup/apariencia.sh --light
+
+# Cambia la apariencia al tema oscuro (Dark)
+apariencia-dark:
+    ./Setup/apariencia.sh --dark
+
+# Estado de la apariencia del escritorio y temas aplicados
+apariencia-status:
+    ./Setup/apariencia.sh --status
+
+# Instala y activa extensiones de GNOME Shell recomendadas (Dash to Dock, Blur, etc.)
 gnome-extensions:
     ./Setup/gnome-extensions.sh
 
-# Muestra el estado de las extensiones de GNOME Shell
+# Activa todas las extensiones instaladas
+gnome-extensions-enable:
+    ./Setup/gnome-extensions.sh --enable-all
+
+# Estado de las extensiones de GNOME Shell
 gnome-extensions-status:
     ./Setup/gnome-extensions.sh --status
 
-# Configura GSConnect (KDE Connect nativo para GNOME) y Firewalld
+# Instala y configura GSConnect (integración móvil KDE Connect) y Firewalld
 gsconnect:
     ./Setup/gsconnect.sh
 
-# Estado de GSConnect y puertos 1714-1764 en Firewalld
+# Estado de GSConnect y puertos de red (1714-1764 TCP/UDP)
 gsconnect-status:
     ./Setup/gsconnect.sh --status
 
-# Instala y configura Kitty Terminal (Catppuccin Mocha, opacidad 75% y Nautilus)
-kitty:
-    ./Setup/kitty.sh
-
-# Estado de Kitty Terminal
-kitty-status:
-    ./Setup/kitty.sh --status
-
-# Instala y configura Ghostty Terminal (Catppuccin Mocha y Nautilus)
-ghostty:
-    ./Setup/ghostty.sh
-
-# Estado de Ghostty Terminal
-ghostty-status:
-    ./Setup/ghostty.sh --status
-
-# Instala y configura Ptyxis Terminal (Catppuccin Mocha, opacidad 85% y Nautilus)
-ptyxis:
-    ./Setup/ptyxis.sh
-
-# Estado de Ptyxis Terminal
-ptyxis-status:
-    ./Setup/ptyxis.sh --status
-
-# ==============================================================================
-#  5. SHELLS (BASH & ZSH), TIPOGRAFÍAS, STARSHIP Y FASTFETCH
-# ==============================================================================
-
-# Instala Nerd Fonts (JetBrainsMono, FiraCode, CascadiaCode, Meslo, Hack)
+# Instala fuentes de desarrollo recomendadas (JetBrainsMono Nerd Font, FiraCode)
 fonts:
     ./Setup/fonts.sh
 
-# Estado de fuentes Nerd Fonts instaladas
+# Estado de fuentes del sistema
 fonts-status:
     ./Setup/fonts.sh --status
 
-# Configura herramientas modernas de terminal y entorno modular Bash (~/.bashrc.d)
+# ==============================================================================
+#  5. TERMINALES Y SHELL (BASH / ZSH)
+# ==============================================================================
+
+# Instala y optimiza utilidades modernas de terminal (eza, bat, fd, ripgrep, btop, zoxide)
 shell:
     ./Setup/shell.sh
 
-# Estado de herramientas CLI y entorno Bash
+# Estado de utilidades modernas de terminal
 shell-status:
     ./Setup/shell.sh --status
 
-# Instala, configura Zsh y lo establece como shell predeterminada
+# Configura Zsh como shell avanzada con plugins, autocompletados y Starship
 zsh:
     ./Setup/zsh-setup.sh
 
-# Configura Zsh y lo establece como shell predeterminada del usuario
-zsh-default:
-    ./Setup/zsh-setup.sh --default-shell
-
-# Estado de Zsh y módulos ~/.zshrc.d
+# Estado de la configuración de Zsh
 zsh-status:
     ./Setup/zsh-setup.sh --status
 
-# Instala y configura el prompt Starship con paleta Fedora
+# Instala y configura Kitty (terminal acelerada por GPU) con tema Catppuccin
+kitty:
+    ./Setup/kitty.sh
+
+# Aplica configuración de Kitty sin reinstalar
+kitty-config:
+    ./Setup/kitty.sh --config-only
+
+# Estado de la terminal Kitty
+kitty-status:
+    ./Setup/kitty.sh --status
+
+# Instala y configura Ghostty (terminal nativa moderna)
+ghostty:
+    ./Setup/ghostty.sh
+
+# Estado de la terminal Ghostty
+ghostty-status:
+    ./Setup/ghostty.sh --status
+
+# Instala y configura Ptyxis (terminal nativa de GNOME con soporte de contenedores)
+ptyxis:
+    ./Setup/ptyxis.sh
+
+# Aplica la paleta Catppuccin Mocha a Ptyxis
+ptyxis-theme:
+    ./Setup/ptyxis.sh --theme-only
+
+# Estado de la terminal Ptyxis
+ptyxis-status:
+    ./Setup/ptyxis.sh --status
+
+# Instala y configura el prompt Starship con paleta CachyOS
 starship:
     ./Setup/starship.sh
 
@@ -240,7 +257,7 @@ starship:
 starship-status:
     ./Setup/starship.sh --status
 
-# Instala y aplica el tema Hero de Fastfetch para Fedora 45 Workstation
+# Instala y aplica el tema Hero de Fastfetch para CachyOS Workstation
 fastfetch:
     ./Setup/fastfetch.sh
 
@@ -256,19 +273,19 @@ fastfetch-status:
 #  6. MULTIMEDIA, FLATPAK, NAVEGADORES Y GAMING
 # ==============================================================================
 
-# Instala RPM Fusion, FFmpeg completo, VA-API Freeworld, GStreamer y reproductores Wayland
+# Instala códecs completos, aceleración HW AMD VA-API, GStreamer y reproductores Wayland
 multimedia:
     ./Setup/multimedia.sh
 
-# Instala únicamente códecs multimedia, drivers VA-API freeworld y plugins GStreamer
+# Instala únicamente códecs multimedia, drivers VA-API y plugins GStreamer
 multimedia-codecs:
     ./Setup/multimedia.sh --codecs
 
-# Instala únicamente reproductores multimedia GNOME Wayland (Showtime, Celluloid, MPV, VLC)
+# Instala únicamente reproductores multimedia Wayland (Celluloid, MPV, VLC, Loupe)
 multimedia-players:
     ./Setup/multimedia.sh --players
 
-# Estado de RPM Fusion, códecs multimedia, VA-API y MPV
+# Estado de códecs multimedia, aceleración VA-API y MPV
 multimedia-status:
     ./Setup/multimedia.sh --status
 
@@ -288,7 +305,7 @@ flatpak-all:
 flatpak-status:
     ./Setup/flatpak.sh --status
 
-# Instala Google Chrome oficial con aceleración Wayland Ozone y VA-API
+# Instala Google Chrome con aceleración Wayland Ozone y VA-API
 chrome:
     ./Setup/chrome.sh
 
@@ -304,7 +321,7 @@ firefox:
 firefox-status:
     ./Setup/firefox.sh --status
 
-# Instala Steam desde RPM Fusion Non-Free, drivers Vulkan 32-bit, GameMode, MangoHud y Proton-GE
+# Instala Steam vía multilib, drivers Vulkan 32-bit, GameMode, MangoHud y Proton-GE
 steam:
     ./Setup/steam.sh
 
@@ -382,17 +399,17 @@ ide-status:
     ./IDE/opencode.sh --status
 
 # ==============================================================================
-#  9. MANTENIMIENTO DEL SISTEMA (DNF5 + FLATPAK + MISE)
+#  9. MANTENIMIENTO DEL SISTEMA (PACMAN / PARU + FLATPAK + MISE)
 # ==============================================================================
 
-# Actualiza todo el sistema Fedora 45 (DNF5, Flatpak y Mise)
+# Actualiza todo el sistema CachyOS (Pacman/Paru, Flatpak y Mise)
 upgrade:
-    sudo dnf5 upgrade --refresh -y
+    @if command -v paru &>/dev/null; then paru -Syu --noconfirm; else sudo pacman -Syu --noconfirm; fi
     flatpak update -y
     ~/.local/bin/mise upgrade || true
 
-# Limpia paquetes huérfanos, caché de DNF5 y runtimes Flatpak no utilizados
+# Limpia paquetes huérfanos, caché de Pacman y runtimes Flatpak no utilizados
 clean:
-    sudo dnf5 autoremove -y
-    sudo dnf5 clean all
+    sudo pacman -Rns $(pacman -Qtdq) 2>/dev/null || true
+    sudo paccache -r 2>/dev/null || sudo pacman -Sc --noconfirm
     flatpak uninstall --unused -y

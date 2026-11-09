@@ -1,4 +1,4 @@
-# 🚀 Bash.Setup (Fedora 45 Workstation + GNOME)
+# 🚀 Bash.Setup (CachyOS Workstation + GNOME)
 
 Colección de scripts modulares de configuración, aliases y funciones avanzadas para potenciar tu terminal en **Bash** (shell predeterminada en este proyecto) y **Zsh** (compatible si existe `~/.zshrc`).
 
@@ -10,7 +10,7 @@ Este repositorio organiza de forma limpia tus alias, variables de entorno, utili
 
 | Archivo | Descripción |
 | :--- | :--- |
-| `aliases.sh` | Atajos generales de navegación, seguridad (`rm -i`), gestión de paquetes DNF5, recarga dinámica y utilidades Rust (`eza`, `bat`). |
+| `aliases.sh` | Atajos generales de navegación, seguridad (`rm -i`), gestión de paquetes Pacman/Paru, recarga dinámica y utilidades Rust (`eza`, `bat`). |
 | `functions.sh` | "Navaja suiza": utilidades multimedia (FFmpeg / ImageMagick), gestión de discos, extracción universal y navegación (`mkcd`, `up`, `hg`). |
 | `podman-functions.sh` | Funciones y aliases específicos para **Podman** y gestión de Pods / Quadlets (compatible con arrays de Bash y Zsh). |
 | `rclone_aliases.sh` | Sincronización avanzada con la nube (Google Drive / OneDrive) mediante **Rclone**. |
@@ -30,7 +30,7 @@ Crea el directorio `~/.bashrc.d/` y enlaza los scripts:
 
 ```bash
 mkdir -p ~/.bashrc.d
-ln -sf ~/Proyectos/Linux/Fedora-Workstation/Bash.Setup/*.sh ~/.bashrc.d/
+ln -sf ~/Proyectos/Linux/CachyOS-Gnome/Bash.Setup/*.sh ~/.bashrc.d/
 ```
 
 Y añade a tu `~/.bashrc`:
@@ -53,7 +53,7 @@ Si utilizas Zsh y existe `~/.zshrc` en tu sistema:
 
 ```bash
 mkdir -p ~/.zshrc.d
-ln -sf ~/Proyectos/Linux/Fedora-Workstation/Bash.Setup/*.sh ~/.zshrc.d/
+ln -sf ~/Proyectos/Linux/CachyOS-Gnome/Bash.Setup/*.sh ~/.zshrc.d/
 ```
 
 Asegúrate de que tu `~/.zshrc` contenga el bloque de carga modular:

@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# podman-utils - CLI para gestión de proyectos y servicios Quadlets con Podman en Fedora 45 Workstation
+# podman-utils - CLI para gestión de proyectos y servicios Quadlets con Podman en CachyOS Workstation
 # =============================================================================
 
 set -euo pipefail
@@ -453,7 +453,7 @@ cmd_list_templates() {
 # =============================================================================
 cmd_doctor() {
     echo "================================================================="
-    echo "🩺 DIAGNÓSTICO DE PODMAN ROOTLESS - FEDORA 45 (GNOME)"
+    echo "🩺 DIAGNÓSTICO DE PODMAN ROOTLESS - CACHYOS (GNOME)"
     echo "================================================================="
 
     # 1. Podman CLI
@@ -528,7 +528,7 @@ cmd_doctor() {
 # =============================================================================
 usage() {
     cat <<EOF
-🐳 podman-utils - Gestor de Proyectos y Contenedores Quadlets (Fedora 45 Workstation)
+🐳 podman-utils - Gestor de Proyectos y Contenedores Quadlets (CachyOS Workstation)
 
 Uso:
   podman-utils <comando> [argumentos]

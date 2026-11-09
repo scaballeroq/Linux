@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # java.sh - Instalación, Optimización y Diagnóstico de OpenJDK y Maven
-# Sistema: Fedora Linux Workstation (GNOME Shell 51 / Wayland)
+# Sistema: CachyOS Linux (x86-64-v3 / GNOME Shell Wayland)
 # Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3, 8C/16T) | 32 GB RAM
 # ==============================================================================
 # Características de Alto Rendimiento:
-# - Despliegue idempotente del JDK LTS de referencia desde repositorios oficiales Fedora (DNF5).
-# - Detección dinámica y resiliente de la versión de OpenJDK (25 LTS por defecto en Fedora 45,
-#   con soporte para 21 LTS, 17 LTS o versiones personalizadas).
-# - Instalación completa del kit de desarrollo: JRE, compilador javac (devel), jmods y javadoc/src.
+# - Despliegue idempotente del JDK LTS de referencia desde repositorios oficiales de CachyOS/Arch (Pacman).
+# - Detección dinámica y resiliente de la versión de OpenJDK (21 LTS / 25 LTS por defecto,
+#   con soporte para 17 LTS o versiones personalizadas).
+# - Instalación completa del kit de desarrollo: JDK, JRE, maven, nss y pcsclite.
 # - Integración nativa con Apache Maven y optimización multinúcleo para AMD Ryzen (16 hilos).
-# - Resolución canónica y robusta de JAVA_HOME (/usr/lib/jvm/...).
+# - Resolución canónica de JAVA_HOME (/usr/lib/jvm/default o /usr/lib/jvm/java-<ver>-openjdk).
 # - Compatibilidad gráfica para Mutter Wayland (_JAVA_AWT_WM_NONREPARENTING=1).
 # - Integración desacoplada con GNOME Shell (environment.d) y Shells (Bash / Zsh).
 # - Diagnóstico en tiempo real (--status) con soporte para coexistencia con Mise.
@@ -53,8 +53,6 @@ else
     SUDO=""
 fi
 
-DNF_CMD=$(command -v dnf5 2>/dev/null || command -v dnf 2>/dev/null || echo "dnf")
-
 run_as_user() {
     if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
         sudo -u "$REAL_USER" env HOME="$USER_HOME" PATH="$USER_HOME/.local/bin:$PATH" "$@"
@@ -84,66 +82,47 @@ detect_target_openjdk() {
     fi
 
     # 2. Respetar versión instalada a nivel de sistema si existe
-    local installed_ver
-    installed_ver=$(rpm -qa "java-*-openjdk-headless" 2>/dev/null | sed -nE 's/.*java-([0-9]+)-openjdk.*/\1/p' | head -n1 || true)
-    if [ -n "$installed_ver" ]; then
-        echo "$installed_ver"
-        return 0
+    if command -v archlinux-java &>/dev/null; then
+        local current_default
+        current_default=$(archlinux-java get 2>/dev/null || true)
+        if [ -n "$current_default" ]; then
+            local parsed_ver
+            parsed_ver=$(echo "$current_default" | sed -nE 's/java-([0-9]+)-openjdk/\1/p')
+            if [ -n "$parsed_ver" ]; then
+                echo "$parsed_ver"
+                return 0
+            fi
+        fi
     fi
 
-    # 3. Probar versiones candidatas en repositorios oficiales de Fedora (priorizando LTS)
+    # 3. Priorizar LTS disponible en CachyOS/Arch
     for v in 25 21 17; do
-        if $DNF_CMD list --available "java-${v}-openjdk-devel" &>/dev/null; then
+        if pacman -Si "jdk${v}-openjdk" &>/dev/null; then
             echo "$v"
             return 0
         fi
     done
 
-    # 4. Fallback a java-latest
-    if $DNF_CMD list --available "java-latest-openjdk-devel" &>/dev/null; then
-        echo "latest"
-        return 0
-    fi
-
-    echo "25"
+    echo "21"
 }
 
 resolve_java_home() {
     local candidate=""
-    local cur_target="${1:-${TARGET_VER:-25}}"
+    local cur_target="${1:-${TARGET_VER:-21}}"
 
-    # 1. Resolución canónica a través de 'javac' (herramienta del JDK)
-    if command -v javac &>/dev/null; then
-        local javac_bin
-        javac_bin=$(readlink -f "$(command -v javac)" 2>/dev/null || true)
-        if [ -n "$javac_bin" ] && [ -f "$javac_bin" ]; then
-            candidate=$(dirname "$(dirname "$javac_bin")")
-        fi
+    # 1. Enlace por defecto oficial de Arch/CachyOS
+    if [ -d "/usr/lib/jvm/default" ] && [ -f "/usr/lib/jvm/default/bin/javac" ]; then
+        candidate="/usr/lib/jvm/default"
     fi
 
-    # 2. Alternativas estándar del sistema en Fedora (/etc/alternatives)
-    if [ -z "$candidate" ] || [ ! -d "$candidate" ]; then
-        for alt in \
-            "/etc/alternatives/java_sdk" \
-            "/etc/alternatives/java_sdk_${cur_target}" \
-            "/etc/alternatives/java_sdk_25" \
-            "/etc/alternatives/java_sdk_21" \
-            "/etc/alternatives/java_sdk_17"; do
-            if [ -d "$alt" ]; then
-                candidate=$(readlink -f "$alt" 2>/dev/null || echo "$alt")
-                break
-            fi
-        done
-    fi
-
-    # 3. Directorios canónicos de Fedora en /usr/lib/jvm
+    # 2. Si no es default o se busca una versión específica
     if [ -z "$candidate" ] || [ ! -d "$candidate" ]; then
         for p in \
             "/usr/lib/jvm/java-${cur_target}-openjdk" \
             "/usr/lib/jvm/java-25-openjdk" \
             "/usr/lib/jvm/java-21-openjdk" \
             "/usr/lib/jvm/java-17-openjdk" \
-            "/usr/lib/jvm/java-openjdk"; do
+            "/usr/lib/jvm/default"; do
             if [ -d "$p" ]; then
                 candidate="$p"
                 break
@@ -151,13 +130,13 @@ resolve_java_home() {
         done
     fi
 
-    # 4. Fallback dinámico a través de 'java' (JRE)
+    # 3. Fallback canónico a través de javac
     if [ -z "$candidate" ] || [ ! -d "$candidate" ]; then
-        if command -v java &>/dev/null; then
-            local java_bin
-            java_bin=$(readlink -f "$(command -v java)" 2>/dev/null || true)
-            if [ -n "$java_bin" ] && [ -f "$java_bin" ]; then
-                candidate=$(dirname "$(dirname "$java_bin")")
+        if command -v javac &>/dev/null; then
+            local javac_bin
+            javac_bin=$(readlink -f "$(command -v javac)" 2>/dev/null || true)
+            if [ -n "$javac_bin" ] && [ -f "$javac_bin" ]; then
+                candidate=$(dirname "$(dirname "$javac_bin")")
             fi
         fi
     fi
@@ -202,7 +181,7 @@ configure_shells() {
     run_as_user mkdir -p "$bashrc_d"
 
     run_as_user bash -c "cat > '$bash_file'" <<EOF
-# OpenJDK & Java Tools Environment (Fedora Workstation)
+# OpenJDK & Java Tools Environment (CachyOS Workstation)
 export JAVA_HOME="$jhome"
 export JDK_HOME="$jhome"
 
@@ -231,7 +210,7 @@ EOF
         run_as_user mkdir -p "$zshrc_d"
 
         run_as_user bash -c "cat > '$zsh_file'" <<EOF
-# OpenJDK & Java Tools Environment (Fedora Workstation - Zsh)
+# OpenJDK & Java Tools Environment (CachyOS Workstation - Zsh)
 export JAVA_HOME="$jhome"
 export JDK_HOME="$jhome"
 
@@ -261,7 +240,7 @@ show_status() {
     target_ver=$(detect_target_openjdk)
 
     echo -e "${CYAN}=================================================================${NC}"
-    echo -e "${BOLD}☕ ESTADO DEL ENTORNO OPENJDK & MAVEN - FEDORA WORKSTATION${NC}"
+    echo -e "${BOLD}☕ ESTADO DEL ENTORNO OPENJDK & MAVEN - CACHYOS WORKSTATION${NC}"
     echo -e "   ${CYAN}Hardware:${NC} AMD Ryzen 7 7730U (8C/16T) | 32 GB RAM | GNOME Wayland"
     echo -e "${CYAN}=================================================================${NC}"
 
@@ -283,7 +262,7 @@ show_status() {
         javac_ver=$(javac -version 2>&1 | awk '{print $2}' || echo "instalado")
         javac_status="${GREEN}✅ v$javac_ver ($javac_bin)${NC}"
     else
-        javac_status="${YELLOW}⚠️ No instalado (instale java-${target_ver}-openjdk-devel)${NC}"
+        javac_status="${YELLOW}⚠️ No instalado (instale jdk${target_ver}-openjdk)${NC}"
     fi
 
     # 2. Build Tools (Maven)
@@ -314,7 +293,7 @@ show_status() {
         if run_as_user "$mise_bin" which java 2>/dev/null >/dev/null; then
             mise_java="${YELLOW}⚠️ Shim de Java activo en Mise ($(run_as_user "$mise_bin" current java 2>/dev/null))${NC}"
         else
-            mise_java="${GREEN}✅ Mise activo (utilizando OpenJDK del sistema Fedora)${NC}"
+            mise_java="${GREEN}✅ Mise activo (utilizando OpenJDK del sistema CachyOS)${NC}"
         fi
     else
         mise_java="${CYAN}ℹ️ Mise no detectado${NC}"
@@ -348,52 +327,44 @@ install_java() {
     TARGET_VER=$(detect_target_openjdk)
 
     echo -e "${CYAN}=================================================================${NC}"
-    echo -e "${BOLD}☕ INSTALACIÓN Y CONFIGURACIÓN DE OPENJDK & MAVEN (FEDORA 45)${NC}"
-    echo -e "   ${CYAN}Hardware:${NC} AMD Ryzen 7 7730U | GNOME Shell 51 Wayland"
+    echo -e "${BOLD}☕ INSTALACIÓN Y CONFIGURACIÓN DE OPENJDK & MAVEN (CACHYOS)${NC}"
+    echo -e "   ${CYAN}Hardware:${NC} AMD Ryzen 7 7730U | GNOME Shell Wayland"
     echo -e "${CYAN}=================================================================${NC}"
 
     log_info "Versión objetivo de OpenJDK detectada: ${BOLD}Java ${TARGET_VER}${NC}"
 
-    # Paquetes requeridos
+    # Paquetes requeridos en CachyOS/Arch
     local required_pkgs=()
-    if [ "$TARGET_VER" == "latest" ]; then
-        required_pkgs=("java-latest-openjdk" "java-latest-openjdk-devel" "java-latest-openjdk-jmods" "maven")
+    if pacman -Si "jdk${TARGET_VER}-openjdk" &>/dev/null; then
+        required_pkgs+=("jdk${TARGET_VER}-openjdk" "jre${TARGET_VER}-openjdk")
     else
-        required_pkgs=("java-${TARGET_VER}-openjdk" "java-${TARGET_VER}-openjdk-devel" "java-${TARGET_VER}-openjdk-jmods" "maven")
+        required_pkgs+=("jdk-openjdk" "jre-openjdk")
     fi
+    required_pkgs+=("maven" "nss" "pcsclite")
 
-    # Paquetes opcionales útiles para IDEs (fuentes JDK)
-    local optional_pkg=""
-    if [ "$TARGET_VER" == "latest" ]; then
-        optional_pkg="java-latest-openjdk-src"
-    else
-        optional_pkg="java-${TARGET_VER}-openjdk-src"
-    fi
+    # Filtrar paquetes no instalados con pacman -T
+    local missing_pkgs
+    missing_pkgs=$(pacman -T "${required_pkgs[@]}" 2>/dev/null || true)
 
-    # Filtrar paquetes no instalados
-    local missing_pkgs=()
-    for pkg in "${required_pkgs[@]}"; do
-        if ! rpm -q "$pkg" &>/dev/null; then
-            missing_pkgs+=("$pkg")
-        fi
-    done
-
-    # Comprobar paquete opcional si está disponible en repo y no instalado
-    if ! rpm -q "$optional_pkg" &>/dev/null; then
-        if $DNF_CMD list --available "$optional_pkg" &>/dev/null; then
-            missing_pkgs+=("$optional_pkg")
-        fi
-    fi
-
-    if [ ${#missing_pkgs[@]} -gt 0 ]; then
-        log_step "Instalando paquetes faltantes vía $DNF_CMD: ${BOLD}${missing_pkgs[*]}${NC}..."
+    if [ -n "$missing_pkgs" ]; then
+        log_step "Instalando paquetes faltantes vía pacman: ${BOLD}${missing_pkgs}${NC}..."
         if [ "$EUID" -ne 0 ]; then
-            log_warn "Se requieren privilegios administrativos para instalar paquetes RPM con $DNF_CMD."
+            log_warn "Se requieren privilegios administrativos para instalar paquetes con pacman."
         fi
-        $SUDO $DNF_CMD install -y "${missing_pkgs[@]}"
-        log_ok "Paquetes OpenJDK y Maven instalados con éxito."
+        $SUDO pacman -S --needed --noconfirm $missing_pkgs
+        log_ok "Paquetes OpenJDK y dependencias instalados con éxito."
     else
         log_ok "Todos los paquetes necesarios de OpenJDK ${TARGET_VER} y Maven ya están instalados."
+    fi
+
+    # Configurar JVM por defecto con archlinux-java si está disponible
+    if command -v archlinux-java &>/dev/null; then
+        local lts_jvm
+        lts_jvm=$(archlinux-java status 2>/dev/null | grep -E "java-(${TARGET_VER}|25|21)-openjdk" | tail -n1 | awk '{print $1}' || true)
+        if [ -n "$lts_jvm" ]; then
+            log_step "Estableciendo JVM por defecto a $lts_jvm con archlinux-java..."
+            $SUDO archlinux-java set "$lts_jvm" 2>/dev/null || true
+        fi
     fi
 
     # Resolver JAVA_HOME
@@ -401,8 +372,8 @@ install_java() {
     resolved_home=$(resolve_java_home "$TARGET_VER")
 
     if [ -z "$resolved_home" ] || [ ! -d "$resolved_home" ]; then
-        log_warn "No se pudo resolver automáticamente JAVA_HOME, usando ruta estándar."
-        resolved_home="/usr/lib/jvm/java-${TARGET_VER}-openjdk"
+        log_warn "No se pudo resolver automáticamente JAVA_HOME, usando /usr/lib/jvm/default."
+        resolved_home="/usr/lib/jvm/default"
     fi
 
     log_ok "JAVA_HOME resuelto canónicamente: ${BOLD}$resolved_home${NC}"
@@ -427,22 +398,17 @@ update_java() {
     target_ver=$(detect_target_openjdk)
 
     echo -e "${CYAN}=================================================================${NC}"
-    echo -e "${BOLD}🔄 ACTUALIZANDO PAQUETES OPENJDK Y MAVEN VÍA $DNF_CMD${NC}"
+    echo -e "${BOLD}🔄 ACTUALIZANDO PAQUETES OPENJDK Y MAVEN VÍA PACMAN${NC}"
     echo -e "${CYAN}=================================================================${NC}"
 
-    local update_pkgs=()
-    if [ "$target_ver" == "latest" ]; then
-        update_pkgs=("java-latest-openjdk*" "maven")
-    else
-        update_pkgs=("java-${target_ver}-openjdk*" "maven")
-    fi
+    local update_pkgs=("jdk${target_ver}-openjdk" "jre${target_ver}-openjdk" "maven")
 
     log_step "Ejecutando actualización de paquetes: ${BOLD}${update_pkgs[*]}${NC}..."
     if [ "$EUID" -ne 0 ]; then
-        log_warn "Se requieren privilegios administrativos para actualizar paquetes con $DNF_CMD."
+        log_warn "Se requieren privilegios administrativos para actualizar paquetes con pacman."
     fi
 
-    $SUDO $DNF_CMD upgrade -y "${update_pkgs[@]}"
+    $SUDO pacman -S --needed --noconfirm "${update_pkgs[@]}"
     log_ok "Actualización completada exitosamente."
     echo ""
     show_status
@@ -453,27 +419,27 @@ update_java() {
 # ------------------------------------------------------------------------------
 show_help() {
     cat <<EOF
-☕ Gestor y Optimizador de OpenJDK & Maven - Fedora Workstation
-   GNOME Shell 51 Wayland | AMD Ryzen 7 7730U | 32 GB RAM
+☕ Gestor y Optimizador de OpenJDK & Maven - CachyOS Workstation
+   GNOME Shell Wayland | AMD Ryzen 7 7730U | 32 GB RAM
 
 Uso:
   $0 [OPCIÓN]
 
 Opciones:
-  (sin argumentos)    Verifica e instala OpenJDK (Java 25 LTS por defecto en Fedora 45),
-                      compilador javac, jmods, fuentes y Apache Maven. Resuelve JAVA_HOME
-                      de forma canónica e inyecta la configuración en environment.d,
-                      ~/.bashrc.d y ~/.zshrc.d de forma modular e idempotente.
+  (sin argumentos)    Verifica e instala OpenJDK (Java LTS por defecto en CachyOS),
+                      compilador javac, dependencias de seguridad y Apache Maven.
+                      Resuelve JAVA_HOME de forma canónica e inyecta la configuración en
+                      environment.d, ~/.bashrc.d y ~/.zshrc.d de forma modular e idempotente.
   --install, -i       Fuerza la ejecución del proceso de instalación y configuración.
-  --version, -v <num> Selecciona la versión específica de OpenJDK (ej. 25, 21, 17 o latest).
+  --version, -v <num> Selecciona la versión específica de OpenJDK (ej. 25, 21, 17).
   --status, -s        Muestra diagnóstico detallado del Runtime, Compilador javac,
                       Maven, JAVA_HOME, variables Wayland e integración en shells.
-  --update, -u        Actualiza los paquetes de OpenJDK y Maven vía DNF5.
+  --update, -u        Actualiza los paquetes de OpenJDK y Maven vía Pacman.
   --help, -h          Muestra este mensaje de ayuda.
 
 Ejemplos:
   $0                  # Instala y optimiza OpenJDK según la versión del sistema
-  $0 --version 25     # Fuerza la instalación de OpenJDK 25
+  $0 --version 21     # Fuerza la instalación de OpenJDK 21
   $0 --status         # Muestra el estado actual del entorno Java
   $0 --update         # Actualiza OpenJDK y Maven a las últimas versiones disponibles
 EOF
@@ -504,7 +470,7 @@ while [[ $# -gt 0 ]]; do
                 TARGET_VER="$2"
                 shift 2
             else
-                log_error "Debe especificar una versión válida para Java (ej. 25, 21, 17, latest)"
+                log_error "Debe especificar una versión válida para Java (ej. 25, 21, 17)"
                 exit 1
             fi
             ;;

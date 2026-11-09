@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==============================================================================
 # opencode.sh - Gestor e Instalador de OpenCode AI CLI
-# Optimizado para Fedora Workstation (GNOME Shell Wayland Mutter)
+# Optimizado para CachyOS Workstation (GNOME Shell Wayland Mutter)
 # Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3) | Radeon Graphics (Vega 8)
 # ==============================================================================
 # Características:
@@ -33,11 +33,6 @@ else
     USER_HOME="${HOME:-/home/$REAL_USER}"
 fi
 
-if command -v dnf5 &>/dev/null; then
-    DNF_CMD="dnf5"
-else
-    DNF_CMD="dnf"
-fi
 
 OPENCODE_DIR="$USER_HOME/.opencode"
 OPENCODE_BIN="$OPENCODE_DIR/bin/opencode"
@@ -90,7 +85,7 @@ show_help() {
 
 show_status() {
     echo -e "${BOLD}=================================================================${NC}"
-    echo -e "🤖 ${BOLD}Estado de OpenCode AI CLI en Fedora Workstation${NC}"
+    echo -e "🤖 ${BOLD}Estado de OpenCode AI CLI en CachyOS Workstation${NC}"
     echo -e "${BOLD}=================================================================${NC}"
     
     local installed_version="No detectada"
@@ -104,7 +99,7 @@ show_status() {
         is_installed=true
     fi
     
-    echo -e "💻 ${BOLD}Sistema:${NC}          Fedora $(grep -oP 'VERSION_ID="\K[^"]+' /etc/os-release 2>/dev/null || echo "Linux") (GNOME Shell Wayland Mutter)"
+    echo -e "💻 ${BOLD}Sistema:${NC}          CachyOS (GNOME Shell Wayland Mutter)"
     echo -e "⚡ ${BOLD}Hardware:${NC}         AMD Ryzen 7 7730U | Radeon Graphics"
     echo -e "👤 ${BOLD}Usuario objetivo:${NC} $REAL_USER ($USER_HOME)"
     
@@ -183,15 +178,15 @@ check_dependencies() {
     command -v tar &>/dev/null || missing+=("tar")
     
     if [ ${#missing[@]} -gt 0 ]; then
-        echo -e "ℹ️  ${YELLOW}Instalando dependencias requeridas del sistema con $DNF_CMD (${missing[*]})...${NC}"
+        echo -e "ℹ️  ${YELLOW}Instalando dependencias requeridas del sistema con Pacman (${missing[*]})...${NC}"
         if [ "$EUID" -ne 0 ]; then
             if ! command -v sudo &>/dev/null; then
                 echo -e "${RED}❌ Error: 'sudo' no está disponible para instalar ${missing[*]}.${NC}"
                 exit 1
             fi
-            sudo "$DNF_CMD" install -y "${missing[@]}"
+            sudo pacman -S --needed --noconfirm "${missing[@]}"
         else
-            "$DNF_CMD" install -y "${missing[@]}"
+            pacman -S --needed --noconfirm "${missing[@]}"
         fi
     fi
 }

@@ -2,13 +2,13 @@
 sidebar_position: 1
 ---
 
-# Endurecimiento de Seguridad y Cortafuegos en Fedora 45 (GNOME)
+# Endurecimiento de Seguridad y Cortafuegos en CachyOS (GNOME)
 
-Esta guía detalla el proceso de seguridad, privacidad y endurecimiento del sistema (hardening) automatizado en [`Setup/seguridad.sh`](file:///home/caballero/Proyectos/Linux/Fedora/Setup/seguridad.sh), optimizado para una estación de trabajo y portátil de desarrollo con **Fedora 45** y **GNOME**.
+Esta guía detalla el proceso de seguridad, privacidad y endurecimiento del sistema (hardening) automatizado en [`Setup/seguridad.sh`](../Setup/seguridad.sh), optimizado para una estación de trabajo y portátil de desarrollo con **CachyOS** y **GNOME**.
 
 ---
 
-## 1. Cortafuegos Nativo (Firewalld - Zona `FedoraWorkstation`)
+## 1. Cortafuegos Nativo (Firewalld)
 
 Configura Firewalld para proteger el sistema contra conexiones no autorizadas mientras mantiene la integración con herramientas de desarrollo, GNOME y redes locales:
 
@@ -20,7 +20,7 @@ Configura Firewalld para proteger el sistema contra conexiones no autorizadas mi
 2. **Limpieza de Servicios Innecesarios**:
    Elimina servicios obsoletos o inseguros en redes públicas/domésticas:
    ```bash
-   sudo firewall-cmd --permanent --zone=FedoraWorkstation --remove-service=samba-client
+   sudo firewall-cmd --permanent --remove-service=samba-client
    ```
 
 3. **Reglas para GNOME y Desarrollo**:
@@ -28,9 +28,9 @@ Configura Firewalld para proteger el sistema contra conexiones no autorizadas mi
    - **Descubrimiento Local (`mdns`)**: Permite detectar impresoras (HP LaserJet), dispositivos multimedia y servicios locales.
    - **Acceso Remoto (`ssh`)**: Mantiene el acceso seguro por SSH.
    ```bash
-   sudo firewall-cmd --permanent --zone=FedoraWorkstation --add-service=kdeconnect
-   sudo firewall-cmd --permanent --zone=FedoraWorkstation --add-service=mdns
-   sudo firewall-cmd --permanent --zone=FedoraWorkstation --add-service=ssh
+   sudo firewall-cmd --permanent --add-service=kdeconnect
+   sudo firewall-cmd --permanent --add-service=mdns
+   sudo firewall-cmd --permanent --add-service=ssh
    sudo firewall-cmd --reload
    ```
 

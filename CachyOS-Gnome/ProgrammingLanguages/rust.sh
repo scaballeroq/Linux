@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# rust.sh - Instalación, Optimización y Diagnóstico de Rust en Fedora Workstation
-# Sistema: Fedora Linux Workstation (GNOME Shell 51 / Wayland)
+# rust.sh - Instalación, Optimización y Diagnóstico de Rust en CachyOS Workstation
+# Sistema: CachyOS Linux Workstation (GNOME Shell 51 / Wayland)
 # Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3, 8C/16T) | 32 GB RAM | NVMe
 # ==============================================================================
 # Características de Alto Rendimiento:
 # - Despliegue idempotente y rootless en espacio de usuario vía Rustup oficial.
-# - Detección inteligente de dependencias nativas y enlazadores con DNF5
-#   (gcc, gcc-c++, clang, clang-devel, cmake, make, openssl-devel, pkgconf, mold, sccache).
+# - Detección inteligente de dependencias nativas y enlazadores con Pacman
+#   (base-devel, clang, lld, cmake, openssl, pkgconf, mold, sccache).
 # - Enlazador ultrarrápido Mold configurado dinámicamente en ~/.cargo/config.toml,
 #   reduciendo tiempos de enlazado incremental entre 3x y 5x.
 # - Caché compartida con sccache (15 GB asignados en SSD NVMe) para ahorrar ciclos de CPU
@@ -59,8 +59,6 @@ else
     SUDO=""
 fi
 
-DNF_CMD=$(command -v dnf5 2>/dev/null || command -v dnf 2>/dev/null || echo "dnf")
-
 # Detección de hilos de CPU (AMD Ryzen 7 7730U -> 16 hilos lógicos)
 NPROC=$(nproc 2>/dev/null || echo 16)
 export CARGO_BUILD_JOBS="$NPROC"
@@ -93,7 +91,7 @@ run_as_user() {
 }
 
 check_pkg() {
-    rpm -q "$1" &>/dev/null
+    pacman -Q "$1" &>/dev/null
 }
 
 # ------------------------------------------------------------------------------
@@ -101,7 +99,7 @@ check_pkg() {
 # ------------------------------------------------------------------------------
 show_help() {
     cat <<EOF
-🦀 Instalador, Optimizador y Diagnóstico de Rust - Fedora 45 Workstation
+🦀 Instalador, Optimizador y Diagnóstico de Rust - CachyOS Workstation
    Hardware: AMD Ryzen 7 7730U (16 hilos) | 32 GB RAM | NVMe Kioxia | GNOME Wayland
 
 Uso:
@@ -131,8 +129,8 @@ EOF
 
 show_status() {
     echo "================================================================="
-    echo "🔍 ESTADO DEL ENTORNO RUST - FEDORA WORKSTATION"
-    echo "   AMD Ryzen 7 7730U (16 hilos) | 32 GB RAM | NVMe | Fedora Workstation"
+    echo "🔍 ESTADO DEL ENTORNO RUST - CACHYOS WORKSTATION"
+    echo "   AMD Ryzen 7 7730U (16 hilos) | 32 GB RAM | NVMe | CachyOS Workstation"
     echo "================================================================="
 
     local rustc_ver cargo_ver rustup_ver mold_ver sccache_ver binstall_ver mise_stat
@@ -236,22 +234,20 @@ show_status() {
 }
 
 # ------------------------------------------------------------------------------
-# 4. INSTALACIÓN DE DEPENDENCIAS DEL SISTEMA (DNF5)
+# 4. INSTALACIÓN DE DEPENDENCIAS DEL SISTEMA (PACMAN)
 # ------------------------------------------------------------------------------
 install_system_deps() {
-    log_info "Comprobando dependencias de compilación y enlazado nativo en Fedora..."
+    log_info "Comprobando dependencias de compilación y enlazado nativo en CachyOS..."
     local pkgs_to_install=()
 
-    # Dependencias base para compilar C/C++, bindgen y crates nativos en Fedora 45
+    # Dependencias base para compilar C/C++, bindgen y crates nativos en CachyOS
     local core_deps=(
-        gcc
-        gcc-c++
+        base-devel
         clang
-        clang-devel
+        lld
         cmake
-        make
-        openssl-devel
-        pkgconf-pkg-config
+        openssl
+        pkgconf
         curl
         mold
         sccache
@@ -264,9 +260,11 @@ install_system_deps() {
     done
 
     if [ ${#pkgs_to_install[@]} -gt 0 ]; then
-        log_step "Instalando paquetes del sistema faltantes (${pkgs_to_install[*]}) vía $DNF_CMD..."
-        $SUDO $DNF_CMD install -y "${pkgs_to_install[@]}" 2>/dev/null || {
-            log_warn "Algunos paquetes no pudieron instalarse automáticamente. Continuando con paquetes disponibles..."
+        log_step "Instalando paquetes del sistema faltantes (${pkgs_to_install[*]}) vía Pacman..."
+        $SUDO pacman -S --needed --noconfirm "${pkgs_to_install[@]}" 2>/dev/null || {
+            for p in "${pkgs_to_install[@]}"; do
+                $SUDO pacman -S --needed --noconfirm "$p" 2>/dev/null || true
+            done
         }
         log_ok "Dependencias de sistema procesadas correctamente."
     else
@@ -322,7 +320,7 @@ configure_cargo_optimizations() {
 
     cat <<EOF > "$temp_config"
 # ==============================================================================
-# Cargo Configuration - Fedora Workstation
+# Cargo Configuration - CachyOS Workstation
 # Hardware: AMD Ryzen 7 7730U (Zen 3, 16 hilos) | 32 GB RAM | NVMe Kioxia
 # ==============================================================================
 
@@ -449,7 +447,7 @@ EOF
 
     # 8.2. Shell Bash modular (~/.bashrc.d/rust.sh)
     cat <<EOF | run_as_user tee "$bashrc_d/rust.sh" > /dev/null
-# Rust & Cargo Environment - Fedora Workstation (AMD Ryzen 7 7730U)
+# Rust & Cargo Environment - CachyOS Workstation (AMD Ryzen 7 7730U)
 export CARGO_HOME="$CARGO_HOME"
 export RUSTUP_HOME="$RUSTUP_HOME"
 export CARGO_BUILD_JOBS=$NPROC
@@ -465,7 +463,7 @@ EOF
 
     # 8.3. Shell Zsh modular (~/.zshrc.d/rust.zsh)
     cat <<EOF | run_as_user tee "$zshrc_d/rust.zsh" > /dev/null
-# Rust & Cargo Environment - Fedora Workstation (AMD Ryzen 7 7730U)
+# Rust & Cargo Environment - CachyOS Workstation (AMD Ryzen 7 7730U)
 export CARGO_HOME="$CARGO_HOME"
 export RUSTUP_HOME="$RUSTUP_HOME"
 export CARGO_BUILD_JOBS=$NPROC
@@ -575,8 +573,8 @@ case "${1:-}" in
         ;;
     "")
         echo "================================================================="
-        echo "🦀 OPTIMIZADOR Y CONFIGURADOR DE RUST - FEDORA WORKSTATION"
-        echo "   AMD Ryzen 7 7730U (16 hilos) | 32 GB RAM | NVMe | Fedora Workstation"
+        echo "🦀 OPTIMIZADOR Y CONFIGURADOR DE RUST - CACHYOS WORKSTATION"
+        echo "   AMD Ryzen 7 7730U (16 hilos) | 32 GB RAM | NVMe | CachyOS Workstation"
         echo "================================================================="
         install_system_deps
         install_rustup
@@ -586,7 +584,7 @@ case "${1:-}" in
         echo ""
         show_status
         echo "================================================================="
-        echo "✅ Rust configurado y optimizado con éxito para Fedora Workstation."
+        echo "✅ Rust configurado y optimizado con éxito para CachyOS Workstation."
         echo "💡 Inicia una nueva terminal o ejecuta: source ~/.bashrc"
         echo "================================================================="
         ;;

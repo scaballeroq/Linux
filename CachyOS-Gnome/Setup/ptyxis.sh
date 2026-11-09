@@ -79,7 +79,7 @@ ${BOLD}Uso:${NC}
 
 ${BOLD}Opciones:${NC}
   (sin argumentos)       Instala dependencias y aplica toda la configuración estética
-  --no-install, --config Solo aplica la configuración sin invocar el gestor DNF5
+  --no-install, --config Solo aplica la configuración sin reinstalar paquetes
   --opacity <0.1-1.0>    Define la opacidad del perfil (por defecto: 0.85)
   --font <fuente>        Define la tipografía (por defecto: 'JetBrainsMono Nerd Font 11')
   --palette <nombre>     Define el nombre de la paleta (por defecto: 'Catppuccin Mocha')
@@ -93,7 +93,7 @@ EOF
 
 show_status() {
     echo -e "${BOLD}======================================================================${NC}"
-    echo -e "  📦 ${BOLD}ESTADO DE PTYXIS TERMINAL - FEDORA 45 WORKSTATION${NC}"
+    echo -e "  📦 ${BOLD}ESTADO DE PTYXIS TERMINAL - CACHYOS WORKSTATION${NC}"
     echo -e "${BOLD}======================================================================${NC}"
 
     # 1. Binario y paquetes
@@ -105,12 +105,12 @@ show_status() {
         echo -e "  • Paquete ptyxis:            ${RED}No instalado${NC}"
     fi
 
-    if pacman -Q nautilus-python &>/dev/null; then
+    if pacman -Q python-nautilus &>/dev/null; then
         local np_ver
-        np_ver=$(pacman -Q nautilus-python 2>/dev/null | awk '{print $2}' || echo "OK")
-        echo -e "  • Paquete nautilus-python:   ${GREEN}Instalado (${np_ver})${NC}"
+        np_ver=$(pacman -Q python-nautilus 2>/dev/null | awk '{print $2}' || echo "OK")
+        echo -e "  • Paquete python-nautilus:   ${GREEN}Instalado (${np_ver})${NC}"
     else
-        echo -e "  • Paquete nautilus-python:   ${YELLOW}No instalado${NC}"
+        echo -e "  • Paquete python-nautilus:   ${YELLOW}No instalado${NC}"
     fi
 
     if pacman -Q wl-clipboard &>/dev/null; then
@@ -309,7 +309,7 @@ fi
 if [[ "$DO_INSTALL" == true ]]; then
     PKGS_TO_INSTALL=()
     pacman -Q ptyxis &>/dev/null || PKGS_TO_INSTALL+=(ptyxis)
-    pacman -Q nautilus-python &>/dev/null || PKGS_TO_INSTALL+=(nautilus-python)
+    pacman -Q python-nautilus &>/dev/null || PKGS_TO_INSTALL+=(python-nautilus)
     pacman -Q wl-clipboard &>/dev/null || PKGS_TO_INSTALL+=(wl-clipboard)
 
     if [[ ${#PKGS_TO_INSTALL[@]} -gt 0 ]]; then
@@ -321,7 +321,7 @@ if [[ "$DO_INSTALL" == true ]]; then
         fi
         log_ok "Paquetes instalados correctamente."
     else
-        log_ok "Ptyxis, nautilus-python y wl-clipboard ya están instalados."
+        log_ok "Ptyxis, python-nautilus y wl-clipboard ya están instalados."
     fi
 fi
 

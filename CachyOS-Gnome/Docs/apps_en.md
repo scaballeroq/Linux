@@ -2,40 +2,37 @@
 sidebar_position: 9
 ---
 
-# Applications, Flatpak, and Gaming on Fedora 45 Workstation
+# Applications, Flatpak, and Gaming on CachyOS Workstation
 
-This guide details the installation of desktop applications, visual utilities, and gaming platforms on **Fedora 45 Workstation (GNOME Wayland)** combining **DNF5**, the mandatory **RPM Fusion (Free & Non-Free)** repositories, and **Flatpak / Flathub**.
+This guide details the deployment of desktop applications, visual tools, and gaming platforms on **CachyOS Workstation (GNOME Wayland)** combining **Pacman / Paru**, optimized **x86-64-v3 / multilib** repositories, and **Flatpak / Flathub**.
 
 ---
 
 ## 1. Decoupled Flatpak Catalog (`./Setup/flatpak.sh`)
 
-The `./Setup/flatpak.sh` script enables the unfiltered official **Flathub** remote and installs modular application profiles with automatic overrides for GNOME (Bibata cursors, PipeWire audio, Wayland, and GPU DRI acceleration):
+The `./Setup/flatpak.sh` script enables the official unfiltered **Flathub** repository and deploys modular application profiles with GNOME overrides (Bibata cursors, PipeWire integration, Wayland, and GPU/DRI hardware acceleration):
 
 ```bash
-./Setup/flatpak.sh            # Default recommended profile
-./Setup/flatpak.sh --all      # Full catalog (Essential, Dev, Multimedia, Office/Social)
-./Setup/flatpak.sh --status   # Fast O(1) catalog status check
+./Setup/flatpak.sh            # Standard recommended profile
+./Setup/flatpak.sh --all      # Full catalog (Essentials, Development, Multimedia, Productivity)
+./Setup/flatpak.sh --status   # Quick status of installed catalog
 ```
 
 ---
 
 ## 2. Steam, GameMode, MangoHud, and Proton-GE (`./Setup/steam.sh`)
 
-On **Fedora 45 Workstation**, Steam is installed natively from **RPM Fusion Non-Free** alongside 32-bit Mesa Vulkan/DRI drivers (`mesa-vulkan-drivers.i686`, `mesa-dri-drivers.i686`), **GameMode**, **MangoHud**, and **Proton-GE**:
+On **CachyOS Workstation**, Steam is installed natively from CachyOS repositories alongside 32-bit multilib drivers (`lib32-vulkan-radeon`, `lib32-mesa`), **GameMode**, **MangoHud**, and the **Proton-GE** compatibility layer:
 
 ```bash
-# Automated installation via repository script or Justfile:
+# Automated installation using the setup script or Justfile:
 ./Setup/steam.sh
 # or:
 just steam
 ```
 
-### Equivalent Manual Commands (DNF5 + RPM Fusion):
+### Manual equivalent commands (Pacman):
 ```bash
-sudo dnf5 install -y \
-  "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm" \
-  "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
-sudo dnf5 install -y steam gamemode mangohud mesa-vulkan-drivers.i686 mesa-dri-drivers.i686 pipewire-alsa.i686
+sudo pacman -S --needed --noconfirm steam gamemode mangohud lib32-vulkan-radeon lib32-mesa lib32-pipewire
 flatpak install --user -y flathub com.valvesoftware.Steam.CompatibilityTool.Proton-GE
 ```

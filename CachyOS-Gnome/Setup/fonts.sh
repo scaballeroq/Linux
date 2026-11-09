@@ -13,7 +13,7 @@
 # - Detección inteligente tanto en estructura plana como en subdirectorios.
 # - Corrección de coincidencia para CascadiaCode (CaskaydiaCove Nerd Font).
 # - Comandos CLI: --status, --list, --force, --clean, --update-cache, --help.
-# - Modo de usuario rootless: no invoca sudo ni DNF5 a menos que falten binarios.
+# - Modo de usuario rootless: no invoca sudo ni pacman a menos que falten binarios.
 # - Descargas resilientes con reintentos y barra de progreso.
 # ==============================================================================
 

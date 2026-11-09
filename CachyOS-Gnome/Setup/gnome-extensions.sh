@@ -120,7 +120,7 @@ sync_user_schemas() {
 }
 
 # ------------------------------------------------------------------------------
-# 5. INSTALACIÓN DE PAQUETES OFICIALES (DNF5)
+# 5. INSTALACIÓN DE PAQUETES OFICIALES (PACMAN)
 # ------------------------------------------------------------------------------
 install_system_packages() {
     log_info "[1/4] Verificando e instalando herramientas oficiales y extensiones (Pacman)..."
@@ -333,7 +333,7 @@ configure_extensions() {
 # ------------------------------------------------------------------------------
 show_status() {
     echo -e "${BOLD}======================================================================${NC}"
-    echo -e "  🧩 ${BOLD}ESTADO DE EXTENSIONES DE GNOME SHELL - FEDORA 45 WORKSTATION${NC}"
+    echo -e "  🧩 ${BOLD}ESTADO DE EXTENSIONES DE GNOME SHELL - CACHYOS WORKSTATION${NC}"
     echo -e "      ${CYAN}HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8 / 32 GB RAM)${NC}"
     echo -e "${BOLD}======================================================================${NC}"
 
@@ -387,7 +387,7 @@ ${BOLD}Uso:${NC}
   $0 [OPCIÓN]
 
 ${BOLD}Opciones:${NC}
-  (sin argumentos)    Instala paquetes oficiales vía DNF5, descarga desde EGO, activa y configura
+  (sin argumentos)    Instala paquetes oficiales vía Pacman, descarga desde EGO, activa y configura
   -s, --status        Muestra el diagnóstico detallado de cada extensión gestionada
   --enable-all        Activa todas las extensiones instaladas configuradas
   --disable-all       Desactiva globalmente las extensiones de usuario
@@ -431,7 +431,7 @@ case "${1:-}" in
         ;;
     "")
         echo -e "${BOLD}======================================================================${NC}"
-        echo -e "  🚀 ${BOLD}CONFIGURADOR DE EXTENSIONES GNOME - FEDORA 45 WORKSTATION${NC}"
+        echo -e "  🚀 ${BOLD}CONFIGURADOR DE EXTENSIONES GNOME - CACHYOS WORKSTATION${NC}"
         echo -e "      ${CYAN}HP ProBook 455 G10 (AMD Ryzen 7 7730U / Triple Pantalla FHD)${NC}"
         echo -e "${BOLD}======================================================================${NC}"
         install_system_packages

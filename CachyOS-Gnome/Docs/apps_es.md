@@ -2,9 +2,9 @@
 sidebar_position: 9
 ---
 
-# Aplicaciones, Flatpak y Juegos en Fedora 45 Workstation
+# Aplicaciones, Flatpak y Juegos en CachyOS Workstation
 
-Esta guía detalla la instalación de aplicaciones de escritorio, herramientas visuales y plataformas de juegos en **Fedora 45 Workstation (GNOME Wayland)** combinando **DNF5**, los repositorios obligatorios **RPM Fusion (Free y Non-Free)** y **Flatpak / Flathub**.
+Esta guía detalla la instalación de aplicaciones de escritorio, herramientas visuales y plataformas de juegos en **CachyOS Workstation (GNOME Wayland)** combinando **Pacman / Paru**, los repositorios optimizados en **x86-64-v3 / multilib** y **Flatpak / Flathub**.
 
 ---
 
@@ -22,7 +22,7 @@ El script `./Setup/flatpak.sh` habilita el repositorio oficial **Flathub** sin f
 
 ## 2. Steam, GameMode, MangoHud y Proton-GE (`./Setup/steam.sh`)
 
-En **Fedora 45 Workstation**, Steam se instala de forma nativa desde **RPM Fusion Non-Free** junto con los controladores gráficos Mesa Vulkan/DRI de 32 bits (`mesa-vulkan-drivers.i686`, `mesa-dri-drivers.i686`), **GameMode**, **MangoHud** y la capa de compatibilidad **Proton-GE**:
+En **CachyOS Workstation**, Steam se instala de forma nativa desde los repositorios oficiales de CachyOS junto con el soporte multilib de 32 bits (`lib32-vulkan-radeon`, `lib32-mesa`), **GameMode**, **MangoHud** y la capa de compatibilidad **Proton-GE**:
 
 ```bash
 # Instalación automatizada mediante el script del repositorio o Justfile:
@@ -31,11 +31,8 @@ En **Fedora 45 Workstation**, Steam se instala de forma nativa desde **RPM Fusio
 just steam
 ```
 
-### Comandos manuales equivalentes (DNF5 + RPM Fusion):
+### Comandos manuales equivalentes (Pacman):
 ```bash
-sudo dnf5 install -y \
-  "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm" \
-  "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
-sudo dnf5 install -y steam gamemode mangohud mesa-vulkan-drivers.i686 mesa-dri-drivers.i686 pipewire-alsa.i686
+sudo pacman -S --needed --noconfirm steam gamemode mangohud lib32-vulkan-radeon lib32-mesa lib32-pipewire
 flatpak install --user -y flathub com.valvesoftware.Steam.CompatibilityTool.Proton-GE
 ```

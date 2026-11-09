@@ -1,8 +1,8 @@
 # =============================================================================
-# ARCHIVO DE ALIASES (aliases.sh) - Adaptado para Fedora Workstation (GNOME)
+# ARCHIVO DE ALIASES (aliases.sh) - Adaptado para CachyOS Workstation (GNOME)
 # =============================================================================
 # Este archivo contiene atajos (aliases) para comandos utilizados frecuentemente.
-# Optimizado para Fedora Workstation con GNOME, Wayland y herramientas Rust.
+# Optimizado para CachyOS Workstation con GNOME, Wayland y herramientas Rust.
 
 # Evitar ejecución en subshells y sesiones no interactivas (ej: scp, rsync)
 [[ $- != *i* ]] && return 0 2>/dev/null || true
@@ -14,6 +14,7 @@ alias ....='cd ../../..'
 alias ~='cd ~'
 alias repo='cd ~/Proyectos'
 alias repos='cd ~/Proyectos'
+alias cachyos='cd ~/Proyectos/Linux/CachyOS-Gnome'
 alias fedora='cd ~/Proyectos/Linux/Fedora-Workstation'
 
 # 2. INTEGRACIÓN CON GNOME Y ESCRITORIO
@@ -57,30 +58,37 @@ alias gco='git checkout'
 alias gcb='git checkout -b'
 alias gba='git branch -a'
 
-# 5. GESTIÓN DE PAQUETES (DNF / DNF5)
-if command -v dnf5 &>/dev/null; then
-    alias update='sudo dnf5 check-update --refresh'
-    alias upgrade='sudo dnf5 upgrade --refresh -y'
-    alias install='sudo dnf5 install'
-    alias remove='sudo dnf5 remove'
-    alias search='dnf5 search'
-    alias clean='sudo dnf5 autoremove -y && sudo dnf5 clean all'
-    alias list='dnf5 list --upgrades'
-    alias installed='dnf5 list --installed'
-    alias pkg-info='dnf5 info'
-    alias pkg-history='dnf5 history'
+# 5. GESTIÓN DE PAQUETES (PACMAN / PARU)
+if command -v paru &>/dev/null; then
+    alias update='paru -Sy'
+    alias upgrade='paru -Syu'
+    alias install='paru -S --needed'
+    alias remove='sudo pacman -Rns'
+    alias search='paru -Ss'
+    alias clean='sudo pacman -Rns $(pacman -Qtdq) 2>/dev/null || true && sudo paccache -r 2>/dev/null || sudo pacman -Sc --noconfirm'
+    alias list='pacman -Qu'
+    alias installed='pacman -Qe'
+    alias pkg-info='pacman -Qi'
+    alias pkg-files='pacman -Ql'
+    alias pacup='paru -Syu --noconfirm'
+    alias pacin='paru -S --needed'
+    alias pacrem='sudo pacman -Rns'
 else
-    alias update='sudo dnf check-update --refresh'
-    alias upgrade='sudo dnf upgrade --refresh -y'
-    alias install='sudo dnf install'
-    alias remove='sudo dnf remove'
-    alias search='dnf search'
-    alias clean='sudo dnf autoremove -y && sudo dnf clean all'
-    alias list='dnf list --upgrades'
-    alias installed='dnf list --installed'
-    alias pkg-info='dnf info'
-    alias pkg-history='dnf history'
+    alias update='sudo pacman -Sy'
+    alias upgrade='sudo pacman -Syu'
+    alias install='sudo pacman -S --needed'
+    alias remove='sudo pacman -Rns'
+    alias search='pacman -Ss'
+    alias clean='sudo pacman -Rns $(pacman -Qtdq) 2>/dev/null || true && sudo pacman -Sc --noconfirm'
+    alias list='pacman -Qu'
+    alias installed='pacman -Qe'
+    alias pkg-info='pacman -Qi'
+    alias pkg-files='pacman -Ql'
+    alias pacup='sudo pacman -Syu --noconfirm'
+    alias pacin='sudo pacman -S --needed'
+    alias pacrem='sudo pacman -Rns'
 fi
+alias mirrors='sudo cachyos-rate-mirrors'
 
 # 6. SEGURIDAD Y PREVENCIÓN DE ERRORES
 alias rm='rm -i'
@@ -164,7 +172,7 @@ check-kernel-update() {
     echo "================================================================="
     if [ "$latest_kernel" != "Desconocido" ] && [[ "$active_kernel" != *"$latest_kernel"* ]]; then
         echo "💡 Hay una versión más reciente disponible en el sistema/repositorios:"
-        echo "   sudo dnf upgrade --refresh"
+        echo "   sudo pacman -Syu"
     else
         echo "✅ Tu kernel está actualizado a la última versión estable."
     fi
@@ -181,4 +189,4 @@ alias vminfo='virsh dominfo'
 alias update-antigravity='sudo /usr/local/bin/update-antigravity'
 alias update-antigravity-ide='sudo /usr/local/bin/update-antigravity-ide'
 
-echo "✅ Aliases modernizados cargados (DNF/DNF5, GNOME, Firewalld, Git, Rust tools)"
+echo "✅ Aliases modernizados cargados (Pacman/Paru, GNOME, Firewalld, Git, Rust tools)"

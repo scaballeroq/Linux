@@ -4,7 +4,7 @@
 # Sistema: CachyOS / Arch Linux | Escritorio: GNOME Shell (Wayland)
 # ==============================================================================
 # Características:
-#   - Instalación nativa mediante DNF5 con fallback al instalador oficial de Starship.
+#   - Instalación nativa mediante Pacman con fallback al instalador oficial de Starship.
 #   - Arquitectura modular desacoplada: ~/.bashrc.d/starship.sh y ~/.zshrc.d/starship.zsh.
 #   - Despliegue seguro de starship.toml con soporte para Nerd Fonts y contenedores.
 #   - Opciones CLI: --status / -s, --enable / -e, --disable / -d, --update / -u, --help / -h.

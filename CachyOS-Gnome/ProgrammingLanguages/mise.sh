@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # mise.sh - Instalador, Optimizador y Diagnóstico de Mise (Language Runtime Manager)
-# Sistema: Fedora Linux Workstation | Escritorio: GNOME Shell (Wayland)
+# Sistema: CachyOS Linux (x86-64-v3) | Escritorio: GNOME Shell (Wayland)
 # Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3, 8C/16T) | 32 GB RAM
 # ==============================================================================
 # Características:
@@ -85,7 +85,7 @@ get_mise_bin() {
 # 3. AYUDA Y ESTADO
 # ------------------------------------------------------------------------------
 show_help() {
-    echo -e "${BOLD}⚡ Gestor de Runtimes Mise - Fedora Workstation${NC}"
+    echo -e "${BOLD}⚡ Gestor de Runtimes Mise - CachyOS Workstation${NC}"
     echo -e "Hardware objetivo: AMD Ryzen 7 7730U (${NPROC} hilos) | GNOME 51 Wayland"
     echo ""
     echo -e "${BOLD}Uso:${NC}"
@@ -105,7 +105,7 @@ show_status() {
     mise_cmd=$(get_mise_bin)
 
     echo -e "${CYAN}=================================================================${NC}"
-    echo -e "${BOLD}🔍 DIAGNÓSTICO DE MISE (RUNTIME MANAGER) - FEDORA WORKSTATION${NC}"
+    echo -e "${BOLD}🔍 DIAGNÓSTICO DE MISE (RUNTIME MANAGER) - CACHYOS WORKSTATION${NC}"
     echo -e "   Hardware: AMD Ryzen 7 7730U (${NPROC} hilos) | GNOME Shell Wayland"
     echo -e "${CYAN}=================================================================${NC}"
 
@@ -212,7 +212,7 @@ configure_mise_hardware() {
     if [ ! -f "$config_file" ]; then
         cat <<EOF | run_as_user tee "$config_file" > /dev/null
 # ==============================================================================
-# Mise Configuration - Fedora Workstation (GNOME Shell Wayland)
+# Mise Configuration - CachyOS Workstation (GNOME Shell Wayland)
 # Hardware: AMD Ryzen 7 7730U (8C/16T) | 32 GB RAM | SSD NVMe Kioxia
 # ==============================================================================
 
@@ -268,7 +268,7 @@ configure_environment() {
 
     # 6.1. Sesión gráfica Wayland / GNOME Shell (systemd --user)
     cat << 'EOF' | run_as_user tee "$env_dir/10-mise.conf" > /dev/null
-# Mise Runtime Manager Environment (Fedora Workstation - GNOME Wayland)
+# Mise Runtime Manager Environment (CachyOS Workstation - GNOME Wayland)
 PATH=${HOME}/.local/share/mise/shims:${HOME}/.local/bin:${PATH}
 EOF
 
@@ -369,7 +369,7 @@ case "${1:-}" in
         ;;
     "")
         echo -e "${CYAN}=================================================================${NC}"
-        echo -e "${BOLD}⚡ CONFIGURACIÓN DE MISE (RUNTIME MANAGER) - FEDORA WORKSTATION${NC}"
+        echo -e "${BOLD}⚡ CONFIGURACIÓN DE MISE (RUNTIME MANAGER) - CACHYOS WORKSTATION${NC}"
         echo -e "   Hardware: AMD Ryzen 7 7730U (${NPROC} hilos) | GNOME Shell Wayland"
         echo -e "${CYAN}=================================================================${NC}"
         install_mise
@@ -378,7 +378,7 @@ case "${1:-}" in
         echo ""
         show_status
         echo -e "${BOLD}=================================================================${NC}"
-        echo -e "${GREEN}✅ Mise está listo para su uso en Fedora Workstation y GNOME Shell.${NC}"
+        echo -e "${GREEN}✅ Mise está listo para su uso en CachyOS Workstation y GNOME Shell.${NC}"
         echo -e "💡 Abre una nueva terminal o ejecuta: ${CYAN}source ~/.bashrc${NC}"
         echo -e "${BOLD}=================================================================${NC}"
         ;;

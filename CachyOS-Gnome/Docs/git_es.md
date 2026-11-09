@@ -2,7 +2,7 @@
 sidebar_position: 4
 ---
 
-# Configuración de Git en Fedora 45
+# Configuración de Git en CachyOS Workstation
 
 Esta guía detalla el entorno de control de versiones y el conjunto de herramientas optimizadas en [IDE/git.sh](../IDE/git.sh).
 
@@ -16,9 +16,7 @@ El script principal automatiza la instalación y define las mejores prácticas d
 
 1. **Instalación de Paquetes**:
    ```bash
-   sudo dnf5 install -y git git-delta gh
-   # Lazygit vía COPR o release oficial:
-   sudo dnf5 copr enable -y dejan/lazygit && sudo dnf5 install -y lazygit
+   sudo pacman -S --needed --noconfirm git git-delta lazygit github-cli
    ```
 
 2. **Configuración Global del Usuario**:

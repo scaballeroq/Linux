@@ -135,7 +135,7 @@ while [[ $# -gt 0 ]]; do
         -d|--diff)        ACTION="diff"; shift ;;
         -m|--menu)        ACTION="menu"; shift ;;
         -f|--force)       FORCE=true; shift ;;
-        -t|--theme)       THEME="${2:-fedora}"; FORCE=true; shift 2 ;;
+        -t|--theme)       THEME="${2:-cachyos}"; FORCE=true; shift 2 ;;
         -p|--preview)
             if [[ -n "${2:-}" && "${2:0:1}" != "-" ]]; then
                 THEME="$2"

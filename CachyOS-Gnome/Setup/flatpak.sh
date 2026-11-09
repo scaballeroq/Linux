@@ -3,7 +3,7 @@ set -euo pipefail
 
 # ==============================================================================
 #  flatpak.sh - Gestor e Instalador de Software Flatpak (Flathub)
-#  Sistema: Fedora 45 Workstation (GNOME Shell 51+ Wayland / Mutter)
+#  Sistema: CachyOS Workstation (GNOME Shell Wayland / Mutter)
 #  Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8 / 32 GB RAM)
 #  Topología: Triple Pantalla Full HD 1080p (DP-3, DP-4, eDP-1)
 # ==============================================================================
@@ -51,9 +51,6 @@ run_as_user() {
             "$@"
     fi
 }
-
-DNF_BIN="dnf5"
-command -v dnf5 &>/dev/null || DNF_BIN="dnf"
 
 # ------------------------------------------------------------------------------
 # 3. CATÁLOGO MODULAR DE APLICACIONES FLATHUB
@@ -104,9 +101,9 @@ INSTALL_SCOPE="auto"
 # ------------------------------------------------------------------------------
 show_help() {
     cat << EOF
-${BOLD}📦 Gestor e Instalador de Software Flatpak (Flathub) - Fedora 45 Workstation${NC}
+${BOLD}📦 Gestor e Instalador de Software Flatpak (Flathub) - CachyOS Workstation${NC}
 Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8 / 32 GB RAM)
-Compositor: GNOME Shell 51+ (Mutter Wayland) / Topología Triple Pantalla FHD
+Compositor: GNOME Shell (Mutter Wayland) / Topología Triple Pantalla FHD
 
 Configura Flathub sin filtros, optimiza permisos Wayland/GPU (Mesa RADV, VA-API,
 PipeWire, tema oscuro adw-gtk3-dark y fuentes) e instala catálogos desacoplados.
@@ -140,11 +137,11 @@ EOF
 # ------------------------------------------------------------------------------
 ensure_flatpak_flathub() {
     if ! command -v flatpak &>/dev/null; then
-        log_info "Instalando flatpak y soporte GNOME mediante $DNF_BIN..."
+        log_info "Instalando flatpak y soporte GNOME mediante pacman..."
         if [[ $EUID -eq 0 ]]; then
-            "$DNF_BIN" install -y flatpak gnome-software
+            pacman -S --needed --noconfirm flatpak xdg-desktop-portal-gnome
         else
-            sudo "$DNF_BIN" install -y flatpak gnome-software
+            sudo pacman -S --needed --noconfirm flatpak xdg-desktop-portal-gnome
         fi
     fi
 
@@ -224,7 +221,7 @@ apply_overrides() {
 # ------------------------------------------------------------------------------
 show_status() {
     echo -e "${BOLD}======================================================================${NC}"
-    echo -e "  🔍 ${BOLD}ESTADO DE FLATPAK Y FLATHUB - FEDORA 45 WORKSTATION${NC}"
+    echo -e "  🔍 ${BOLD}ESTADO DE FLATPAK Y FLATHUB - CACHYOS WORKSTATION${NC}"
     echo -e "      ${CYAN}HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8 / 32 GB RAM)${NC}"
     echo -e "${BOLD}======================================================================${NC}"
 
@@ -238,11 +235,7 @@ show_status() {
     # Estado de Flathub a nivel sistema y usuario
     local flathub_sys="No configurado" flathub_usr="No configurado"
     if flatpak remotes 2>/dev/null | grep -q "flathub"; then
-        if flatpak remotes --show-details 2>/dev/null | grep "flathub" | grep -q "fedora-flathub.filter"; then
-            flathub_sys="${YELLOW}Filtrado (Catálogo Fedora reducido)${NC}"
-        else
-            flathub_sys="${GREEN}Sin filtros (Catálogo oficial completo)${NC}"
-        fi
+        flathub_sys="${GREEN}Sin filtros (Catálogo oficial completo)${NC}"
     fi
 
     if run_as_user flatpak remotes --user 2>/dev/null | grep -q "flathub"; then

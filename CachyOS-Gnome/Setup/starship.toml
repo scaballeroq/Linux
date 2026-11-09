@@ -41,7 +41,7 @@ Fedora = " "
 Ubuntu = " "
 Debian = " "
 
-# Contenedores Fedora (Toolbx, Distrobox, Podman)
+# Contenedores (Distrobox, Toolbx, Podman)
 [container]
 format = "[$symbol $name]($style) "
 symbol = "⬢"

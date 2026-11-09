@@ -99,7 +99,7 @@ EOF
 
 show_status() {
     echo -e "${BOLD}======================================================================${NC}"
-    echo -e "  🛡️  ${BOLD}ESTADO DE SEGURIDAD Y FIREWALLD - FEDORA 45 WORKSTATION${NC}"
+    echo -e "  🛡️  ${BOLD}ESTADO DE SEGURIDAD Y FIREWALLD - CACHYOS WORKSTATION${NC}"
     echo -e "${BOLD}======================================================================${NC}"
 
     # 1. Firewalld Daemon

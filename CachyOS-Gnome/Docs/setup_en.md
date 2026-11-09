@@ -2,135 +2,87 @@
 sidebar_position: 2
 ---
 
-# Fedora 45 Workstation System Configuration
+# System Configuration on CachyOS Workstation
 
-This guide details the base system setup, terminal optimization, essential software installation, multimedia support, and desktop user environment customization applied to a **Fedora 45 Workstation** system (powered by DNF5 package management) with **GNOME** (Dark Mode).
+This guide details the base setup, terminal optimizations, essential tooling, multimedia capabilities, and desktop customization applied to a **CachyOS Workstation** system (powered by **x86-64-v3** architecture, BORE / sched-ext kernel, and **Pacman / Paru** package management) running **GNOME Shell (Wayland / Dark Mode)**.
 
-These settings are automated through the scripts located in the `Setup` folder.
+All configurations are automated through scripts located in the `Setup` directory.
 
 ---
 
 ## 1. Base Post-Installation (`post-install.sh`)
 
-Prepares the base system by optimizing repositories, installing essential software, and setting up hardware acceleration. The script auto-detects the CPU (AMD Ryzen vs Intel Core) and runs the corresponding configuration.
+Prepares the base system by optimizing mirrors, installing essential packages, and configuring hardware acceleration. The script auto-detects CPU vendor (AMD Ryzen vs Intel Core):
 
 1. **CPU Auto-Detection**:
    ```bash
    CPU_VENDOR=$(grep -m1 'vendor_id' /proc/cpuinfo | awk '{print $3}')
    ```
-   - `AuthenticAMD` → Runs `post-install-amd.sh`
-   - `GenuineIntel` → Runs `post-install-intel.sh`
+   - `AuthenticAMD` → Executes `post-install-amd.sh`
+   - `GenuineIntel` → Executes `post-install-intel.sh`
 
-2. **DNF5 Optimization**:
-   - `max_parallel_downloads=10`
-   - `fastestmirror=True`
-   - `clean_requirements_on_remove=True`
+2. **Mirror & Pacman Optimization**:
+   - Mirror ranking via `cachyos-rate-mirrors`.
+   - Parallel downloads and color enabled in `/etc/pacman.conf`.
 
 3. **Essential Software**:
-   - Compilation: `@development-tools`, `cmake`, `gcc-c++`
-   - Monitoring: `btop`, `htop`, `inxi`
-   - Utilities: `curl`, `fuse`, `fuse3`, `exfatprogs`, `p7zip`, `p7zip-plugins`, `unrar`, `zip`, `unzip`, `bzip2`, `xz`
-   - Graphics & Multimedia: `vlc`, `gimp`, `gparted`
-   - Universal Packages: `flatpak` (with Flathub remote enabled)
+   Installs developer tools, system monitoring, and utilities:
+   - Build tools: `base-devel`, `cmake`
+   - System monitoring: `btop`, `htop`, `inxi`
+   - File utilities: `curl`, `fuse3`, `exfatprogs`, `p7zip`, `unrar`, `zip`, `unzip`, `bzip2`, `xz`
+   - Desktop tools: `vlc`, `gimp`, `gparted`
+   - Universal packages: `flatpak` (with Flathub enabled)
 
-4. **Multimedia Codecs and HW Acceleration**:
+4. **Multimedia Codecs & Hardware Acceleration**:
    ```bash
-   # AMD
-   sudo dnf5 install -y mesa-va-drivers mesa-vdpau-drivers vulkan-loader mesa-vulkan-drivers
+   # AMD (Radeon Graphics / Vega 8)
+   sudo pacman -S --needed mesa libva-mesa-driver vulkan-radeon libva-utils vdpauinfo
    # Intel
-   sudo dnf5 install -y libva-intel-driver intel-media-driver libvdpau-va-gl vulkan-loader mesa-vulkan-drivers
+   sudo pacman -S --needed intel-media-driver vulkan-intel libva-utils
    ```
 
-5. **ZRAM**: Configured with ZSTD algorithm natively in Fedora.
+5. **ZRAM**: Configured via `zram-generator` with `zstd` algorithm at 50% RAM.
 
 ---
 
-## 2. Terminal and Shell Environment (`shell.sh`, `starship.sh`, `fastfetch.sh`, and `fonts.sh`)
+## 2. Terminal Environment & Shell (`shell.sh`, `starship.sh`, `fastfetch.sh`, `fonts.sh`)
 
-Installs modern console utilities, development fonts, and provides an optional manager for the Starship prompt.
+Installs modern command-line tools, developer fonts, and manages Starship prompt and Fastfetch.
 
-### Modern Terminal Utilities (`shell.sh`)
-Modern alternatives to classic commands are installed with modular integration for Bash (by default) and Zsh (if `~/.zshrc` exists) along with `zoxide`:
-- `eza` (replaces `ls`)
-- `bat` (replaces `cat` with syntax highlighting)
+### Modern CLI Tools (`shell.sh`)
+- `eza` (modern `ls` replacement)
+- `bat` (syntax-highlighting `cat`)
 - `fzf` (fuzzy finder)
-- `zoxide` (smart replacement for `cd`)
+- `zoxide` (smart `cd`)
 - `ripgrep` (`rg`, fast text search)
-- `fd` (simple replacement for `find`)
-- `duf` (visual replacement for `df`)
-- `dust` (disk space visualizer)
-- `procs` (modern replacement for `ps`)
-- `btop` (resource monitor)
-
-### Optional Starship Prompt (`starship.sh`)
-Easily enable or disable the **Starship** prompt in Bash (and Zsh if `~/.zshrc` exists):
-```bash
-# Install and enable Starship
-./Setup/starship.sh
-
-# Disable and restore native prompt
-./Setup/starship.sh --disable
-
-# Check current status
-./Setup/starship.sh --status
-```
-Configuration is copied from `Setup/starship.toml` to `~/.config/starship.toml`.
-
-### Development Fonts (Nerd Fonts)
-Downloads and installs fonts optimized for programming and terminal symbols (`JetBrainsMono`, `FiraCode`, `CascadiaCode`, `Meslo`, and `Hack`):
-```bash
-fc-cache -f
-```
-
-### Fastfetch
-Displays system information visually upon terminal startup. Installs `fastfetch` and copies `config.jsonc` to `~/.config/fastfetch/config.jsonc`.
+- `fd` (fast file search)
+- `btop` and `jq`
 
 ---
 
-## 3. Kitty Terminal (`kitty.sh`)
+## 3. Modern Terminals (`kitty.sh`, `ghostty.sh`, `ptyxis.sh`)
 
-Installs and optimizes **Kitty**, a modern GPU-accelerated terminal emulator, with GNOME and Nautilus integration.
-
-1. **Installation**:
-   ```bash
-   sudo dnf5 install -y kitty
-   ```
-
-2. **Aesthetic Configuration**:
-   - 75% opacity with blur (32)
-   - Catppuccin Mocha / Tokyo Night color scheme
-   - JetBrainsMono Nerd Font
-   - Powerline tab bar style
-
-3. **GNOME Integration**:
-   - Default terminal for GNOME (`org.gnome.desktop.default-applications.terminal`)
-   - Global shortcut Ctrl+Alt+T
-   - Nautilus context script: Scripts -> "Abrir en Kitty"
-
-4. **Keyboard Shortcuts**:
-   - `Ctrl+Alt+Up/Down`: Adjust opacity
-   - `Ctrl+Shift+F5`: Reload configuration
-   - `Ctrl+Shift+T`: New tab in same directory
+Deploys three GPU-accelerated terminal options integrated with GNOME Shell and Nautilus:
+- **Kitty**: GPU-accelerated, 75% opacity, blur 32, Catppuccin Mocha.
+- **Ghostty**: Native Wayland performance with GTK4 / Libadwaita rendering.
+- **Ptyxis**: GNOME container-oriented terminal for Podman with palette tabs.
 
 ---
 
-## 4. Security (`seguridad.sh`)
+## 4. System & GNOME Tuning (`laptop-setup.sh`, `gnome-settings.sh`, `apariencia.sh`)
 
-System hardening with exclusive Firewalld, DNS-over-TLS, and Podman/KVM support.
-
-- **Firewalld**: Default `home` zone with mdns, ssh (`trusted` for Podman, `libvirt` for virbr0; UFW removed)
-- **DNS-over-TLS**: Opportunistic with systemd-resolved
-- **Kernel hardening**: dmesg_restrict, kptr_restrict, syncookies
-- **Podman rootless**: user namespaces and unprivileged ports (>=80) enabled
+- **AMD Laptop**: Sets `power-profiles-daemon`, battery telemetry in Wh, AMD P-State EPP, and docked lid behavior without accidental suspension.
+- **GNOME Settings**: Dark mode default, 24-hour clock, Mutter VRR, Wayland window optimizations, and Nautilus Python extensions via `python-nautilus`.
+- **Appearance**: `adw-gtk3-dark` theme, `Papirus-Dark` icons, and `Bibata-Modern-Classic` cursors.
 
 ---
 
-## 5. Web Administration Panel Cockpit (`cockpit.sh`)
+## 5. Cockpit Web Console (`cockpit.sh`)
 
-Installs Cockpit for system administration via a web interface.
+Installs Cockpit for web-based system management:
 
 ```bash
-sudo dnf5 install -y cockpit cockpit-podman cockpit-machines
+sudo pacman -S --needed --noconfirm cockpit cockpit-podman cockpit-machines
 sudo systemctl enable --now cockpit.socket
 ```
 
@@ -138,159 +90,67 @@ Access: [https://localhost:9090](https://localhost:9090)
 
 ---
 
-## 6. Multimedia Support and yt-dlp (`yt-dlp-setup.sh`)
+## 6. Multimedia Support & yt-dlp (`yt-dlp-setup.sh`)
 
-Configures tools for video downloads and digital audio processing.
+Configures video downloading and digital audio extraction tools:
 
-1. **yt-dlp and FFMPEG Installation**:
-   ```bash
-   sudo dnf5 install -y yt-dlp ffmpeg
-   ```
+```bash
+sudo pacman -S --needed --noconfirm yt-dlp ffmpeg atomicparsley aria2 python-mutagen
+```
 
-2. **Fast JS Decryption Engine**:
-   Installs Deno via `mise` for `yt-dlp` to process streaming platform JavaScript logic.
+Includes Deno JS runtime via `mise` for uninterrupted stream extraction.
 
 ---
 
 ## 7. GNOME Shell Extensions (`gnome-extensions.sh`)
 
-Installs and manages official extensions directly from Fedora 45 Workstation repositories (`dnf5`):
-
-1. **Included Tools and Extensions**:
-   - `extension-manager`: Native GTK application to browse, install, and manage GNOME Shell extensions.
-   - `gnome-shell-extension-dash-to-dock`: Visible dock outside the overview with autohide.
-   - `gnome-shell-extension-appindicator`: System tray / AppIndicator support.
-   - `gnome-shell-extension-caffeine`: Quick toggle to inhibit auto-suspend and screensaver from the top bar.
-   - `gnome-shell-extension-weather-oclock`: Integrated weather conditions displayed next to the top-bar clock.
-   - `gnome-shell-extension-bing-wallpaper`: Daily Bing dynamic desktop wallpapers.
-   - `gnome-shell-extension-blur-my-shell`: Modern blur effect for top bar, menus, and overview.
-   - `gnome-shell-extension-logo-menu`: Quick access menu with distribution logo (integrated with Extension Manager).
-
-2. **Script Usage**:
-   ```bash
-   # Install and enable all extensions
-   ./Setup/gnome-extensions.sh
-
-   # Check extension status
-   ./Setup/gnome-extensions.sh --status
-
-   # Batch enable or disable
-   ./Setup/gnome-extensions.sh --enable
-   ./Setup/gnome-extensions.sh --disable
-   ```
+Installs and manages GNOME Shell extensions:
+- `extension-manager`: Native graphical app to discover and manage extensions.
+- Dash to Dock, AppIndicator, Caffeine, Blur my Shell, Tiling Shell, and GSConnect.
 
 ---
 
-## 8. Full Multimedia Stack & RPM Fusion (`multimedia.sh`)
+## 8. Full Multimedia (`multimedia.sh`)
 
-Configures all proprietary **RPM Fusion** repositories (Free, Nonfree, and Tainted) and swaps out Fedora's constrained FFmpeg with full unrestricted FFmpeg and hardware codecs:
-
-1. **Enabled Repositories**:
-   - `rpmfusion-free-release` and `rpmfusion-nonfree-release`
-   - `rpmfusion-free-release-tainted` and `rpmfusion-nonfree-release-tainted`
-   - Cisco OpenH264 repository
-
-2. **Codecs & Hardware Acceleration Stack**:
-   - **Full FFmpeg**: `dnf5 swap -y ffmpeg-free ffmpeg --allowerasing`
-   - **GStreamer**: `gstreamer1-plugins-bad-freeworld`, `gstreamer1-plugins-ugly`, `gstreamer1-libav`, `gstreamer1-vaapi`
-   - **Freeworld VA-API / VDPAU drivers**: `mesa-va-drivers-freeworld`, `mesa-vdpau-drivers-freeworld`
-   - **Proprietary formats**: `libdvdcss`, `lame`, `faac`, `faad2`, `x264`, `x265`, `libde265`
-
-3. **Usage**:
-   ```bash
-   ./Setup/multimedia.sh          # Full install and FFmpeg swap
-   ./Setup/multimedia.sh --status # Check repos and installed codecs
-   ```
+CachyOS provides complete multimedia packages without artificial patent/license restrictions:
+- Full FFmpeg with VA-API hardware acceleration and commercial codecs.
+- GStreamer complete plugin stack (base, good, bad, ugly).
+- Video thumbnails for Nautilus via `ffmpegthumbnailer`.
+- Wayland native media players (Showtime, Celluloid, VLC, MPV).
 
 ---
 
 ## 9. Google Chrome Browser (`chrome.sh`)
 
-Enables the official Google Chrome repository for Fedora and installs the native stable Google Chrome package:
-
-1. **Repository Configuration**:
-   - Downloads and imports the official Google public key (`RPM-GPG-KEY-google-chrome`).
-   - Configures `/etc/yum.repos.d/google-chrome.repo`.
-
-2. **Package Installation**:
-   - Installs `google-chrome-stable`.
-
-3. **Usage**:
-   ```bash
-   ./Setup/chrome.sh          # Setup repository and install browser
-   ./Setup/chrome.sh --status # Verify repository and binary status
-   ```
+Deploys native, precompiled Google Chrome from **Chaotic-AUR** with Wayland hardware acceleration flags:
+- Direct installation via `pacman` (from precompiled `[chaotic-aur]` repository) or `paru`, with Flatpak fallback.
+- Flags configured in `~/.config/chrome-flags.conf` (`--ozone-platform-hint=auto`, `--enable-features=VaapiVideoDecodeLinuxGL`).
 
 ---
 
 ## 10. Steam & Gaming (`steam.sh`)
 
-Prepares the system for native Linux gaming and Proton/Wine via Steam:
+Prepares the system for native gaming and Proton/Wine compatibility:
+- 32-bit multilib drivers enabled (`lib32-vulkan-radeon`, `lib32-mesa`, `lib32-pipewire`).
+- Execution packages: `steam`, `gamemode`, `mangohud`.
+- Proton-GE compatibility layer via Flathub.
 
-1. **Repositories and Components**:
-   - `rpmfusion-nonfree-steam` repository enabled.
-   - Runtime tooling: `steam`, `gamemode`, `mangohud`.
-   - **32-bit Vulkan libraries**: `mesa-vulkan-drivers.i686` and `mesa-dri-drivers.i686` for 32-bit game compatibility.
+---
 
-2. **Usage**:
-   ```bash
-   ./Setup/steam.sh          # Install Steam and 32-bit drivers
-   ./Setup/steam.sh --status # Check installation status
-   ```
+## 11. Decoupled Flatpak Catalog (`flatpak.sh`)
+
+Manages sandboxed user-space applications without polluting system dependencies:
+- Official system-wide Flathub remote.
+- Modular profiles: Flatseal, Podman Desktop, Warehouse, VLC, OBS Studio, LocalSend, etc.
+- Commands: `--status`, `--update`, `--clean`, `--all`, `--core`, `--multimedia`.
 
 ---
 
 ## Verification
 
-- **Terminal and Utilities**: Open a new terminal. You should see the **Starship** prompt and **Fastfetch** summary. Test with `eza` or `bat --version`.
-- **GNOME Extensions**: Run `./Setup/gnome-extensions.sh --status` or `gnome-extensions list --enabled`.
-- **Kitty**: Run `kitty --version`. Should open with opacity and Catppuccin theme.
-- **Cockpit**: Open browser and go to [https://localhost:9090](https://localhost:9090). Log in with system credentials.
+To verify that core components were installed and configured:
+- **Terminal & Utilities**: Open a new terminal. You should see the **Starship** prompt and **Fastfetch** banner. Test `eza` and `bat --version`.
+- **GNOME Extensions**: Run `./Setup/gnome-extensions.sh --status`.
+- **Cockpit**: Open [https://localhost:9090](https://localhost:9090) in your browser.
 - **Firewalld**: Verify with `sudo firewall-cmd --state`.
-- **Multimedia & Codecs**: Run `./Setup/multimedia.sh --status` and test `ffmpeg -codecs | grep -E "hevc|h264"`.
-- **Google Chrome**: Run `./Setup/chrome.sh --status` or `google-chrome --version`.
-- **Steam**: Run `./Setup/steam.sh --status` or `steam`.
-
-
----
-
-## 11. Decoupled Flatpak Software Catalog (`flatpak.sh`)
-
-Manages sandboxed desktop applications without cluttering base system packages:
-- Official Flathub repository configured system-wide.
-- Curated catalog: Flatseal, Podman Desktop, Warehouse, VLC, OBS Studio, LocalSend, etc.
-- CLI options: `--status`, `--update`, `--clean`, `--all`, `--core`, `--multimedia`.
-
----
-
-## 12. Mobile Integration with GSConnect (`gsconnect.sh`)
-
-Native KDE Connect implementation for GNOME Shell:
-- Automated Firewalld configuration opening ports 1714-1764 TCP/UDP and mDNS 5353 UDP.
-- Syncs notifications, clipboard, SMS, and enables SFTP browsing via `fuse-sshfs`.
-- CLI options: `--status`, `--devices`, `--connect <IP>`, `--firewall`.
-
----
-
-## 13. Fingerprint Biometrics (`fingerprint-setup.sh`)
-
-Enables biometric authentication across GDM, GNOME Shell lockscreen, terminal (`sudo`), and Polkit:
-- Native PAM integration via `authselect enable-feature with-fingerprint`.
-- Compatible with USB sensors (Synaptics, Elan, Goodix).
-- CLI options: `--status`, `--enroll [FINGER]`, `--verify`, `--delete`.
-
----
-
-## 14. HP LaserJet Printers (`hp-printer-setup.sh`)
-
-Complete support for monochrome and multifunction HP printers (LaserJet Pro M15w / M14 / M17):
-- Configures CUPS, Avahi, HPLIP, and proprietary binary plugin (`hp-plugin`).
-- Firewall rules for IPP and IPP-client.
-- CLI options: `--status`, `--plugin`, `--wifi`, `--usb`.
-
----
-
-## 15. Appearance, Themes and Ptyxis (`apariencia.sh` and `ptyxis.sh`)
-
-- `apariencia.sh`: GTK themes (Adwaita / Adw-gtk3), icon sets (Papirus), and modern cursors (Bibata).
-- `ptyxis.sh`: Container-aware GNOME terminal styling with dark mode, 85% opacity, and minimal hidden scrollbars.
+- **Hardware Acceleration**: Run `vainfo` to ensure VA-API on the Radeon Vega 8 is operational.

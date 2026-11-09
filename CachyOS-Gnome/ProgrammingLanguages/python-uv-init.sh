@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # python-uv-init.sh - Generador Profesional de Proyectos Python Aislados con 'uv'
-# Optimizado para Fedora 45 Workstation (GNOME Shell Wayland / PEP 668)
+# Optimizado para CachyOS Workstation (GNOME Shell Wayland / PEP 668)
 # Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (8C/16T) | 32 GB RAM | NVMe
 # ==============================================================================
 # Principios de Diseño:
@@ -75,7 +75,7 @@ fi
 # ------------------------------------------------------------------------------
 show_help() {
     cat <<EOF
-🚀 Inicializador de Proyectos Python con 'uv' - Fedora Workstation
+🚀 Inicializador de Proyectos Python con 'uv' - CachyOS Workstation
    Hardware: AMD Ryzen 7 7730U (16T) | 32GB RAM | NVMe Kioxia | Wayland
 
 Uso:
@@ -138,7 +138,7 @@ EOF
 
 show_status() {
     echo -e "${CYAN}=================================================================${NC}"
-    echo -e "${BOLD}🔍 DIAGNÓSTICO DE INICIALIZADOR UV (FEDORA WORKSTATION)${NC}"
+    echo -e "${BOLD}🔍 DIAGNÓSTICO DE INICIALIZADOR UV (CACHYOS WORKSTATION)${NC}"
     echo -e "${CYAN}=================================================================${NC}"
     if [ -n "$UV_CMD" ] && [ -x "$UV_CMD" ]; then
         local uv_ver
@@ -228,7 +228,7 @@ fi
 
 echo -e "${CYAN}=================================================================${NC}"
 echo -e "${BOLD}${GREEN}🚀 Generador de Proyectos Python Aislados con 'uv'${NC}"
-echo -e "   Fedora Workstation | AMD Ryzen 7 7730U | NVMe Kioxia"
+echo -e "   CachyOS Workstation | AMD Ryzen 7 7730U | NVMe Kioxia"
 echo -e "${CYAN}=================================================================${NC}"
 
 # ------------------------------------------------------------------------------
@@ -313,7 +313,7 @@ case "$TEMPLATE_OPT" in
         "$UV_CMD" add --dev httpx pytest ruff
 
         cat << 'EOF' > main.py
-"""API REST moderna construida con FastAPI y uv en Fedora Workstation."""
+"""API REST moderna construida con FastAPI y uv en CachyOS Workstation."""
 
 import os
 import platform
@@ -324,7 +324,7 @@ from pydantic import BaseModel, Field
 
 app = FastAPI(
     title="API REST Aislada con uv",
-    description="Microservicio desarrollado sobre Fedora Workstation Linux.",
+    description="Microservicio desarrollado sobre CachyOS Workstation Linux.",
     version="1.0.0",
 )
 
@@ -347,7 +347,7 @@ def raiz() -> Dict[str, Any]:
     return {
         "status": "success",
         "mensaje": "¡Bienvenido a tu API con FastAPI gestionada por uv!",
-        "entorno": "Fedora Linux Workstation",
+        "entorno": "CachyOS Linux Workstation",
     }
 
 @app.get("/health")
@@ -416,7 +416,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 app = typer.Typer(
-    help="CLI moderna creada con Typer y uv en Fedora Workstation",
+    help="CLI moderna creada con Typer y uv en CachyOS Workstation",
     add_completion=False,
 )
 console = Console()
@@ -428,8 +428,8 @@ def saludo(
     """Muestra un saludo estilizado en la terminal."""
     console.print(Panel.fit(
         f"[bold green]¡Hola, {nombre}![/bold green]\n"
-        "[cyan]Tu entorno aislado con 'uv' en Fedora Workstation está listo para producción.[/cyan]",
-        title="[bold yellow]Fedora Linux CLI[/bold yellow]",
+        "[cyan]Tu entorno aislado con 'uv' en CachyOS Workstation está listo para producción.[/cyan]",
+        title="[bold yellow]CachyOS Linux CLI[/bold yellow]",
         border_style="bright_blue",
     ))
 
@@ -487,7 +487,7 @@ import polars as pl
 
 def ejecutar_analisis():
     print("=" * 60)
-    print("📊 Pipeline de Análisis de Datos (Fedora Workstation)")
+    print("📊 Pipeline de Análisis de Datos (CachyOS Workstation)")
     print("=" * 60)
 
     # 1. Creación de datos con NumPy
@@ -559,7 +559,7 @@ async def consultar_endpoint(cliente: httpx.AsyncClient, url: str) -> dict:
     return respuesta.json()
 
 async def tarea_principal():
-    console.print("[bold cyan]Iniciando Worker Asíncrono en Fedora Workstation...[/bold cyan]")
+    console.print("[bold cyan]Iniciando Worker Asíncrono en CachyOS Workstation...[/bold cyan]")
     url_test = "https://httpbin.org/get"
 
     with Progress(
@@ -601,7 +601,7 @@ EOF
         "$UV_CMD" add --dev pytest ruff
 
         cat << 'EOF' > main.py
-"""Aplicación Python estándar aislada con uv en Fedora Workstation."""
+"""Aplicación Python estándar aislada con uv en CachyOS Workstation."""
 
 import os
 import platform
@@ -618,7 +618,7 @@ def main() -> None:
     print(f"• CPU Núcleos:   {os.cpu_count()}")
     print(f"• Cumplimiento:  PEP 668 Aislamiento Absoluto")
     print("=" * 60)
-    print("El sistema operativo Fedora permanece 100% limpio y protegido.")
+    print("El sistema operativo CachyOS permanece 100% limpio y protegido.")
 
 if __name__ == "__main__":
     main()
@@ -678,7 +678,7 @@ EOF
 cat << EOF > README.md
 # ${PROJECT_NAME}
 
-Proyecto Python aislado desarrollado con **\`uv\`** en **Fedora Workstation**.
+Proyecto Python aislado desarrollado con **\`uv\`** en **CachyOS Workstation**.
 
 - **Plantilla:** ${TEMPLATE_NAME}
 - **Python:** ${PYTHON_VERSION}

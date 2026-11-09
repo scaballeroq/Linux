@@ -1,5 +1,5 @@
 # =============================================================================
-# FUNCIONES DE SHELL (functions.sh) - Adaptado para Zsh y Bash en Fedora 45 Workstation
+# FUNCIONES DE SHELL (functions.sh) - Adaptado para Zsh y Bash en CachyOS Workstation
 # =============================================================================
 # Colección de funciones y utilidades para potenciar la terminal.
 #

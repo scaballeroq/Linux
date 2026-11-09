@@ -123,7 +123,7 @@ EOF
 # ------------------------------------------------------------------------------
 show_status() {
     echo -e "${BOLD}======================================================================${NC}"
-    echo -e "  💻 ${BOLD}ESTADO Y TELEMETRÍA DEL PORTÁTIL - FEDORA 45 WORKSTATION${NC}"
+    echo -e "  💻 ${BOLD}ESTADO Y TELEMETRÍA DEL PORTÁTIL - CACHYOS WORKSTATION${NC}"
     echo -e "${BOLD}======================================================================${NC}"
 
     # 1. Sistema Operativo y Hardware
