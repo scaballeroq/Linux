@@ -21,6 +21,9 @@ set -euo pipefail
 # ------------------------------------------------------------------------------
 # 1. CONSTANTES Y CONFIGURACIÓN ESTÉTICA
 # ------------------------------------------------------------------------------
+GIT_USER_NAME="NOMBRE"
+GIT_USER_EMAIL="EMAIL"
+
 BOLD=$'\033[1m'
 GREEN=$'\033[0;32m'
 BLUE=$'\033[0;34m'
@@ -89,6 +92,8 @@ ${BOLD}Opciones:${NC}
   (sin argumentos)    Verifica e instala herramientas de Git vía Pacman,
                       aplica configuración moderna, integración con GNOME Keyring,
                       Git-Delta y Lazygit.
+  -n, --name NOMBRE   Define el nombre de usuario global (user.name).
+  -e, --email CORREO  Define el correo electrónico global (user.email).
   --status, -s        Muestra el diagnóstico completo de Git, credenciales, Delta, Lazygit y gh.
   --help, -h          Muestra este mensaje de ayuda.
 
@@ -126,12 +131,16 @@ show_status() {
     echo "----------------------------------------------------------------------"
     echo -e "${BOLD}⚙️ Configuración Global de Git de $REAL_USER (~/.gitconfig):${NC}"
 
-    local cred_helper default_branch pull_rebase init_template
+    local user_name user_email cred_helper default_branch pull_rebase init_template
+    user_name=$(run_as_user git config --global --get user.name 2>/dev/null || echo "no configurado")
+    user_email=$(run_as_user git config --global --get user.email 2>/dev/null || echo "no configurado")
     cred_helper=$(run_as_user git config --global --get credential.helper 2>/dev/null || echo "no configurado")
     default_branch=$(run_as_user git config --global --get init.defaultBranch 2>/dev/null || echo "no configurado")
     pull_rebase=$(run_as_user git config --global --get pull.rebase 2>/dev/null || echo "no configurado")
     init_template=$(run_as_user git config --global --get init.templateDir 2>/dev/null || echo "no configurado")
 
+    echo -e "  • user.name:                 ${CYAN}$user_name${NC}"
+    echo -e "  • user.email:                ${CYAN}$user_email${NC}"
     echo -e "  • credential.helper:         ${CYAN}$cred_helper${NC}"
     echo -e "  • init.defaultBranch:        ${CYAN}$default_branch${NC}"
     echo -e "  • pull.rebase:               ${CYAN}$pull_rebase${NC}"
@@ -148,6 +157,8 @@ show_status() {
 ACTION="setup"
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        -n|--name)   GIT_USER_NAME="$2"; shift 2 ;;
+        -e|--email)  GIT_USER_EMAIL="$2"; shift 2 ;;
         -s|--status) ACTION="status"; shift ;;
         -h|--help)   show_help; exit 0 ;;
         *) log_err "Opción desconocida: $1"; echo ""; show_help; exit 1 ;;
@@ -198,6 +209,16 @@ fi
 # 5. CONFIGURACIÓN GLOBAL DE GIT PARA EL USUARIO
 # ------------------------------------------------------------------------------
 log_info "Aplicando configuración optimizada en ~/.gitconfig..."
+
+if [[ -n "$GIT_USER_NAME" ]]; then
+    run_as_user git config --global user.name "$GIT_USER_NAME"
+    log_ok "Identidad configurada: user.name = $GIT_USER_NAME"
+fi
+
+if [[ -n "$GIT_USER_EMAIL" ]]; then
+    run_as_user git config --global user.email "$GIT_USER_EMAIL"
+    log_ok "Identidad configurada: user.email = $GIT_USER_EMAIL"
+fi
 
 run_as_user git config --global init.defaultBranch main
 run_as_user git config --global pull.rebase false
