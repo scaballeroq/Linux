@@ -55,11 +55,13 @@
         {
             "type": "cpu",
             "key": "  󰻠 CPU",
+            "temp": true,
             "showPeCoreCount": true
         },
         {
             "type": "gpu",
-            "key": "  󰢮 GPU"
+            "key": "  󰢮 GPU",
+            "temp": true
         },
         {
             "type": "display",
@@ -76,7 +78,12 @@
         },
         {
             "type": "disk",
-            "key": "  󰋊 Disco (/)"
+            "key": "  󰋊 NVMe (/)",
+            "folders": "/"
+        },
+        {
+            "type": "battery",
+            "key": "  󰁹 Batería"
         },
         {
             "type": "custom",

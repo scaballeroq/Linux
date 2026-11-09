@@ -35,7 +35,7 @@ style = "bold #00d4aa"
 disabled = false
 
 [os.symbols]
-CachyOS = " "
+CachyOS = " "
 Arch = " "
 Fedora = " "
 Ubuntu = " "

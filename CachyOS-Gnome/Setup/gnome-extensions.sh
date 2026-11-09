@@ -37,17 +37,20 @@ REAL_UID=$(id -u "$REAL_USER" 2>/dev/null || echo "1000")
 run_as_user() {
     local runtime_dir="${XDG_RUNTIME_DIR:-/run/user/$REAL_UID}"
     local dbus_addr="${DBUS_SESSION_BUS_ADDRESS:-unix:path=$runtime_dir/bus}"
+    local data_dirs="${USER_HOME}/.local/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
     if [[ $EUID -eq 0 && "$REAL_USER" != "root" ]]; then
         sudo -u "$REAL_USER" env \
             HOME="$USER_HOME" \
             USER="$REAL_USER" \
             XDG_RUNTIME_DIR="$runtime_dir" \
             DBUS_SESSION_BUS_ADDRESS="$dbus_addr" \
+            XDG_DATA_DIRS="$data_dirs" \
             "$@"
     else
         env \
             XDG_RUNTIME_DIR="$runtime_dir" \
             DBUS_SESSION_BUS_ADDRESS="$dbus_addr" \
+            XDG_DATA_DIRS="$data_dirs" \
             "$@"
     fi
 }
@@ -64,23 +67,29 @@ APP_PKGS=(
     glib2                                   # Compilador de esquemas GSettings
 )
 
-# Extensiones disponibles en repositorios oficiales / AUR de Arch & CachyOS
+# Extensiones disponibles en repositorios oficiales / extra de Arch & CachyOS
 EXTENSION_PKGS=(
     gnome-shell-extension-appindicator      # Bandeja de iconos del sistema (AppIndicator/KStatusNotifierItem)
+    gnome-shell-extensions                  # Extensiones oficiales GNOME (user-theme, places-menu, etc.)
+    gnome-shell-extension-caffeine          # Inhibición de suspensión y bloqueo de pantalla
 )
 
-# Extensiones directas desde extensions.gnome.org (EGO) optimizadas para el portátil y triple pantalla
+# Extensiones desde extensions.gnome.org (EGO) optimizadas para HP ProBook y triple pantalla FHD
 EGO_EXTENSIONS=(
     "https://extensions.gnome.org/extension/8773/multi-monitor-bar/"             # Barra superior en monitores externos (DP-3, DP-4)
     "https://extensions.gnome.org/extension/7065/tiling-shell/"                 # Snap y layouts tiling multimonitor
-    "https://extensions.gnome.org/extension/5940/quick-settings-audio-panel/"   # Control rápido de audio PipeWire (auriculares / HP ALC236)
+    "https://extensions.gnome.org/extension/5940/quick-settings-audio-panel/"   # Control rápido de audio PipeWire (auriculares / HP ALC236 / DP)
     "https://extensions.gnome.org/extension/779/clipboard-indicator/"           # Historial del portapapeles en Wayland
     "https://extensions.gnome.org/extension/36/lock-keys/"                      # OSD / Estado de NumLock (HP ProBook 455 G10)
     "https://extensions.gnome.org/extension/4470/media-controls/"               # Controles multimedia MPRIS en barra superior
     "https://extensions.gnome.org/extension/355/status-area-horizontal-spacing/" # Densidad y espaciado de iconos en barra superior
+    "https://extensions.gnome.org/extension/3843/just-perfection/"              # Personalización avanzada del Shell y visibilidad UI
+    "https://extensions.gnome.org/extension/307/dash-to-dock/"                  # Dock personalizable en Wayland
+    "https://extensions.gnome.org/extension/3193/blur-my-shell/"                # Efecto blur optimizado para Mutter y Vega 8
+    "https://extensions.gnome.org/extension/1262/bing-wallpaper/"               # Fondo diario de Bing en alta resolución
 )
 
-# UUIDs gestionados para verificación y activación
+# UUIDs gestionados para verificación, activación y persistencia
 EXTENSION_UUIDS=(
     "dash-to-dock@micxgx.gmail.com"
     "appindicatorsupport@rgcjonas.gmail.com"
@@ -91,8 +100,8 @@ EXTENSION_UUIDS=(
     "just-perfection-desktop@just-perfection"
     "gsconnect@andyholmes.github.io"
     "tiling-assistant@leleat-on-github"
-    "multi-monitors-bar@frederykabryan"
     "tilingshell@ferrarodomenico.com"
+    "multi-monitors-bar@frederykabryan"
     "quick-settings-audio-panel@rayzeq.github.io"
     "clipboard-indicator@tudmotu.com"
     "lockkeys@vaina.lt"
@@ -109,7 +118,7 @@ sync_user_schemas() {
     local user_ext_dir="$USER_HOME/.local/share/gnome-shell/extensions"
     run_as_user mkdir -p "$user_schema_dir"
 
-    # Copiar esquemas xml de extensiones de usuario a glib-2.0/schemas para visibilidad en gsettings
+    # Copiar recursivamente esquemas xml de extensiones de usuario a glib-2.0/schemas
     if [[ -d "$user_ext_dir" ]]; then
         find "$user_ext_dir" -type f -name "*.gschema.xml" -exec cp -f {} "$user_schema_dir/" \; 2>/dev/null || true
     fi
@@ -270,7 +279,7 @@ install_ego_extensions() {
 }
 
 # ------------------------------------------------------------------------------
-# 7. ACTIVACIÓN Y HABILITACIÓN DE EXTENSIONES
+# 7. ACTIVACIÓN Y HABILITACIÓN DE EXTENSIONES CON PERSISTENCIA
 # ------------------------------------------------------------------------------
 enable_extensions() {
     log_info "[3/4] Activando extensiones gestionadas..."
@@ -283,49 +292,125 @@ enable_extensions() {
 
     for uuid in "${EXTENSION_UUIDS[@]}"; do
         if echo "$available_exts" | grep -qx "$uuid"; then
+            # Habilitar vía CLI de GNOME Shell
             run_as_user gnome-extensions enable "$uuid" 2>/dev/null || true
-            log_ok "Activada: $uuid"
+
+            # Garantizar persistencia directa en el array 'enabled-extensions' de GSettings
+            local current_enabled
+            current_enabled=$(run_as_user gsettings get org.gnome.shell enabled-extensions 2>/dev/null || echo "@as []")
+            if ! echo "$current_enabled" | grep -q "'$uuid'"; then
+                if [[ "$current_enabled" == "@as []" || "$current_enabled" == "[]" ]]; then
+                    run_as_user gsettings set org.gnome.shell enabled-extensions "['$uuid']" 2>/dev/null || true
+                else
+                    local new_list="${current_enabled%]*}, '$uuid']"
+                    run_as_user gsettings set org.gnome.shell enabled-extensions "$new_list" 2>/dev/null || true
+                fi
+            fi
+            log_ok "Activada y persistida: $uuid"
         fi
     done
 }
 
 # ------------------------------------------------------------------------------
-# 8. AJUSTES ÓPTIMOS DE EXTENSIONES CLAVE (DASH TO DOCK & MULTIMONITOR)
+# 8. AJUSTES ÓPTIMOS (DASH TO DOCK, TRIPLE PANTALLA, BLUR Y HARDWARE AMD)
 # ------------------------------------------------------------------------------
+set_gsetting() {
+    local schema="$1"
+    local key="$2"
+    local value="$3"
+    if run_as_user gsettings list-schemas 2>/dev/null | grep -qx "$schema"; then
+        run_as_user gsettings set "$schema" "$key" "$value" 2>/dev/null || true
+    fi
+}
+
 configure_extensions() {
-    log_info "[4/4] Aplicando configuración óptima para Dash to Dock y entorno de trabajo..."
+    log_info "[4/4] Aplicando configuración óptima para extensiones y hardware..."
     sync_user_schemas
 
+    # 1. Dash to Dock (Alineación inferior flotante, 44px para 1080p, triple pantalla)
     local DOCK_SCHEMA="org.gnome.shell.extensions.dash-to-dock"
-    local schema_dir="$USER_HOME/.local/share/glib-2.0/schemas"
-
-    if run_as_user gsettings list-schemas | grep -qx "$DOCK_SCHEMA" || [[ -f "$schema_dir/$DOCK_SCHEMA.gschema.xml" ]]; then
-        local gset_prefix="run_as_user gsettings"
-        if [[ -d "$schema_dir" && -f "$schema_dir/$DOCK_SCHEMA.gschema.xml" ]]; then
-            gset_prefix="run_as_user gsettings --schemadir $schema_dir"
-        fi
-
-        $gset_prefix set "$DOCK_SCHEMA" dock-position 'BOTTOM' 2>/dev/null || true
-        $gset_prefix set "$DOCK_SCHEMA" intellihide true 2>/dev/null || true
-        $gset_prefix set "$DOCK_SCHEMA" intellihide-mode 'FOCUS_APPLICATION_WINDOWS' 2>/dev/null || true
-        $gset_prefix set "$DOCK_SCHEMA" dash-max-icon-size 44 2>/dev/null || true
-        $gset_prefix set "$DOCK_SCHEMA" show-trash true 2>/dev/null || true
-        $gset_prefix set "$DOCK_SCHEMA" click-action 'minimize-or-previews' 2>/dev/null || true
-        $gset_prefix set "$DOCK_SCHEMA" custom-theme-shrink true 2>/dev/null || true
-        $gset_prefix set "$DOCK_SCHEMA" extend-height false 2>/dev/null || true
-        $gset_prefix set "$DOCK_SCHEMA" multi-monitor true 2>/dev/null || true
-        $gset_prefix set "$DOCK_SCHEMA" isolate-monitors false 2>/dev/null || true
-        log_ok "Dash to Dock configurado (posición inferior, 44px, intellihide, multimonitor activo)."
-    else
-        log_warn "Esquema Dash to Dock aún no disponible para configuración directa."
+    if run_as_user gsettings list-schemas 2>/dev/null | grep -qx "$DOCK_SCHEMA"; then
+        set_gsetting "$DOCK_SCHEMA" dock-position "'BOTTOM'"
+        set_gsetting "$DOCK_SCHEMA" intellihide "true"
+        set_gsetting "$DOCK_SCHEMA" intellihide-mode "'FOCUS_APPLICATION_WINDOWS'"
+        set_gsetting "$DOCK_SCHEMA" dash-max-icon-size "44"
+        set_gsetting "$DOCK_SCHEMA" show-trash "true"
+        set_gsetting "$DOCK_SCHEMA" show-mounts "false"
+        set_gsetting "$DOCK_SCHEMA" click-action "'minimize-or-previews'"
+        set_gsetting "$DOCK_SCHEMA" scroll-action "'cycle-windows'"
+        set_gsetting "$DOCK_SCHEMA" custom-theme-shrink "true"
+        set_gsetting "$DOCK_SCHEMA" extend-height "false"
+        set_gsetting "$DOCK_SCHEMA" multi-monitor "true"
+        set_gsetting "$DOCK_SCHEMA" preferred-monitor "-1"
+        set_gsetting "$DOCK_SCHEMA" isolate-monitors "false"
+        set_gsetting "$DOCK_SCHEMA" running-indicator-style "'DOTS'"
+        log_ok "Dash to Dock configurado (flotante, 44px, intellihide, multimonitor activo en DP-3, DP-4, eDP-1)."
     fi
 
-    # Configuración de Caffeine si está presente
+    # 2. Blur my Shell (Optimizado para APU AMD Ryzen 7 7730U y Radeon Vega 8)
+    local BLUR_SCHEMA="org.gnome.shell.extensions.blur-my-shell"
+    if run_as_user gsettings list-schemas 2>/dev/null | grep -qx "$BLUR_SCHEMA"; then
+        set_gsetting "$BLUR_SCHEMA.panel" blur "true"
+        set_gsetting "$BLUR_SCHEMA.overview" blur "true"
+        set_gsetting "$BLUR_SCHEMA.dash-to-dock" blur "true"
+        set_gsetting "$BLUR_SCHEMA.dash-to-dock" sigma "30"
+        set_gsetting "$BLUR_SCHEMA.appfolder" blur "true"
+        # Desactivar blur en ventanas activas para garantizar 60 fps constantes en triple monitor
+        set_gsetting "$BLUR_SCHEMA.window-list" blur "false"
+        log_ok "Blur my Shell configurado y optimizado para Radeon Vega 8."
+    fi
+
+    # 3. Caffeine (Estado siempre visible, persistente y silencioso)
     local CAFFEINE_SCHEMA="org.gnome.shell.extensions.caffeine"
-    if run_as_user gsettings list-schemas | grep -qx "$CAFFEINE_SCHEMA"; then
-        run_as_user gsettings set "$CAFFEINE_SCHEMA" show-indicator 'always' 2>/dev/null || true
-        run_as_user gsettings set "$CAFFEINE_SCHEMA" restore-state true 2>/dev/null || true
+    if run_as_user gsettings list-schemas 2>/dev/null | grep -qx "$CAFFEINE_SCHEMA"; then
+        set_gsetting "$CAFFEINE_SCHEMA" show-indicator "'always'"
+        set_gsetting "$CAFFEINE_SCHEMA" restore-state "true"
+        set_gsetting "$CAFFEINE_SCHEMA" show-notifications "false"
+        log_ok "Caffeine configurado (indicador visible, sin notificaciones invasivas)."
     fi
+
+    # 4. Clipboard Indicator (Wayland portapapeles)
+    local CLIP_SCHEMA="org.gnome.shell.extensions.clipboard-indicator"
+    if run_as_user gsettings list-schemas 2>/dev/null | grep -qx "$CLIP_SCHEMA"; then
+        set_gsetting "$CLIP_SCHEMA" history-size "50"
+        set_gsetting "$CLIP_SCHEMA" preview-size "30"
+        set_gsetting "$CLIP_SCHEMA" notify-on-copy "false"
+        set_gsetting "$CLIP_SCHEMA" confirm-clear "true"
+        log_ok "Clipboard Indicator configurado (historial 50 items, notificaciones silenciadas)."
+    fi
+
+    # 5. Lock Keys (Teclado HP ProBook 455 G10)
+    local LOCK_SCHEMA="org.gnome.shell.extensions.lockkeys"
+    if run_as_user gsettings list-schemas 2>/dev/null | grep -qx "$LOCK_SCHEMA"; then
+        set_gsetting "$LOCK_SCHEMA" style "'both'"
+        set_gsetting "$LOCK_SCHEMA" notification "true"
+        log_ok "Lock Keys configurado para teclado HP ProBook."
+    fi
+
+    # 6. Status Area Horizontal Spacing (Densidad visual en 1080p)
+    local SPACE_SCHEMA="org.gnome.shell.extensions.status-area-horizontal-spacing"
+    if run_as_user gsettings list-schemas 2>/dev/null | grep -qx "$SPACE_SCHEMA"; then
+        set_gsetting "$SPACE_SCHEMA" hpadding "4"
+        log_ok "Espaciado de la barra superior optimizado a 4px."
+    fi
+
+    # 7. Quick Settings Audio Panel (Control de PipeWire / ALC236 y DP)
+    local AUDIO_SCHEMA="org.gnome.shell.extensions.quick-settings-audio-panel"
+    if run_as_user gsettings list-schemas 2>/dev/null | grep -qx "$AUDIO_SCHEMA"; then
+        set_gsetting "$AUDIO_SCHEMA" always-show-input-slider "true"
+        log_ok "Quick Settings Audio Panel configurado para PipeWire."
+    fi
+
+    # 8. Multi-Monitor Bar (Barra de estado en pantallas externas DP-3 y DP-4)
+    local MMB_SCHEMA="org.gnome.shell.extensions.multi-monitors-bar"
+    if run_as_user gsettings list-schemas 2>/dev/null | grep -qx "$MMB_SCHEMA"; then
+        set_gsetting "$MMB_SCHEMA" show-activities-button "true"
+        log_ok "Multi-Monitor Bar configurado para monitores DP-3 y DP-4."
+    fi
+
+    # 9. Mutter (Espacios de trabajo en todas las pantallas de la estación de trabajo)
+    run_as_user gsettings set org.gnome.mutter workspaces-only-on-primary false 2>/dev/null || true
+    log_ok "Mutter configurado: Espacios de trabajo extendidos a pantallas externas."
 }
 
 # ------------------------------------------------------------------------------
@@ -335,6 +420,7 @@ show_status() {
     echo -e "${BOLD}======================================================================${NC}"
     echo -e "  🧩 ${BOLD}ESTADO DE EXTENSIONES DE GNOME SHELL - CACHYOS WORKSTATION${NC}"
     echo -e "      ${CYAN}HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8 / 32 GB RAM)${NC}"
+    echo -e "      ${CYAN}Topología: Triple Pantalla Full HD (DP-3, DP-4, eDP-1)${NC}"
     echo -e "${BOLD}======================================================================${NC}"
 
     local disabled_global gnome_ver version_validation
@@ -348,30 +434,42 @@ show_status() {
     echo -e "${BOLD}----------------------------------------------------------------------${NC}"
     echo -e "${BOLD}Catálogo de Extensiones Gestionadas:${NC}"
 
-    local available_list
+    local available_list enabled_list
     available_list=$(run_as_user gnome-extensions list 2>/dev/null || true)
+    enabled_list=$(run_as_user gnome-extensions list --enabled 2>/dev/null || true)
+
+    local total_count=0 installed_count=0 enabled_count=0
 
     for uuid in "${EXTENSION_UUIDS[@]}"; do
-        local state="No instalada ❌"
-        local origin=""
+        total_count=$((total_count + 1))
+        local state="${RED}No instalada ❌${NC}"
+        local origin="               "
 
         if echo "$available_list" | grep -qx "$uuid"; then
+            installed_count=$((installed_count + 1))
             if [[ -d "/usr/share/gnome-shell/extensions/$uuid" ]]; then
-                origin="(RPM / Sistema)"
+                origin="(Pacman/Sistema)"
             else
-                origin="(EGO / Usuario)"
+                origin="(EGO / Usuario) "
             fi
 
-            local info
-            info=$(run_as_user gnome-extensions info "$uuid" 2>/dev/null || echo "")
-            if echo "$info" | grep -q "State: ENABLED"; then
+            if echo "$enabled_list" | grep -qx "$uuid"; then
+                enabled_count=$((enabled_count + 1))
                 state="${GREEN}Habilitada ✅${NC}"
             else
-                state="${YELLOW}Deshabilitada ⏸️${NC}"
+                local info
+                info=$(LC_ALL=C run_as_user gnome-extensions info "$uuid" 2>/dev/null || echo "")
+                if echo "$info" | grep -qi "State: ERROR"; then
+                    state="${RED}Error ⚠️${NC}"
+                else
+                    state="${YELLOW}Deshabilitada ⏸️${NC}"
+                fi
             fi
         fi
         printf "  %-46s %-16s : %b\n" "$uuid" "$origin" "$state"
     done
+    echo -e "${BOLD}----------------------------------------------------------------------${NC}"
+    echo -e "  Resumen: ${GREEN}${enabled_count} activas${NC} / ${CYAN}${installed_count} instaladas${NC} / ${BOLD}${total_count} gestionadas${NC}"
     echo -e "${BOLD}======================================================================${NC}"
 }
 
@@ -387,13 +485,14 @@ ${BOLD}Uso:${NC}
   $0 [OPCIÓN]
 
 ${BOLD}Opciones:${NC}
-  (sin argumentos)    Instala paquetes oficiales vía Pacman, descarga desde EGO, activa y configura
-  -s, --status        Muestra el diagnóstico detallado de cada extensión gestionada
-  --enable-all        Activa todas las extensiones instaladas configuradas
-  --disable-all       Desactiva globalmente las extensiones de usuario
-  --config-dock       Aplica ajustes recomendados para Dash to Dock y multimonitor
-  --no-install        Solo activa y configura sin descargar paquetes ni extensiones
-  -h, --help          Muestra este mensaje de ayuda
+  (sin argumentos)           Instala paquetes Pacman, extensiones EGO, activa y configura
+  -s, --status, status       Muestra el diagnóstico detallado de cada extensión gestionada
+  --enable-all               Activa y persiste todas las extensiones instaladas configuradas
+  --disable-all              Desactiva globalmente las extensiones de usuario
+  --config, --tune           Aplica ajustes recomendados (Dash to Dock, Blur, Audio, Multimonitor)
+  --sync-schemas             Compila y enlaza esquemas GSettings en espacio de usuario
+  --no-install               Solo activa y configura sin descargar paquetes ni extensiones
+  -h, --help, help           Muestra este mensaje de ayuda
 EOF
 }
 
@@ -415,8 +514,14 @@ case "${1:-}" in
         log_ok "Extensiones desactivadas globalmente."
         exit 0
         ;;
-    --config-dock)
+    --config|--configure|--tune|--config-dock)
         configure_extensions
+        exit 0
+        ;;
+    --sync-schemas)
+        log_info "Sincronizando y compilando esquemas GSettings de usuario..."
+        sync_user_schemas
+        log_ok "Esquemas sincronizados."
         exit 0
         ;;
     --no-install)

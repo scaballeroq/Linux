@@ -64,11 +64,13 @@
         },
         {
             "type": "cpu",
-            "key": "󰻠 CPU     "
+            "key": "󰻠 CPU     ",
+            "temp": true
         },
         {
             "type": "gpu",
-            "key": "󰢮 GPU     "
+            "key": "󰢮 GPU     ",
+            "temp": true
         },
         {
             "type": "memory",
@@ -80,7 +82,12 @@
         },
         {
             "type": "disk",
-            "key": "󰋊 Disk    "
+            "key": "󰋊 NVMe (/) ",
+            "folders": "/"
+        },
+        {
+            "type": "battery",
+            "key": "󰁹 Battery "
         },
         "break",
         {

@@ -7,14 +7,19 @@
 # ==============================================================================
 # Características:
 #   - Activación bajo demanda por socket systemd (cockpit.socket): 0% CPU y 0 MB RAM en reposo.
-#   - Módulos integrados: Podman (contenedores rootless), Machines (KVM/QEMU Libvirt),
-#     Storaged (NVMe SMART / Btrfs), NetworkManager, PackageKit, Files y Sosreport.
+#   - Módulos nativos integrados:
+#     * cockpit-podman: Contenedores rootless del usuario y Quadlets systemd.
+#     * cockpit-machines: Máquinas virtuales KVM/QEMU Libvirt (vía libvirt-dbus).
+#     * cockpit-storaged: Almacenamiento, SMART NVMe, Btrfs y compresión zstd.
+#     * cockpit-pacman: Gestor nativo Arch/CachyOS en Rust (alpm.rs) sin bloqueos de PackageKit.
+#     * cockpit-files: Explorador web de archivos nativo de Cockpit.
+#     * NetworkManager y udisks2.
 #   - Optimización de batería y memoria para portátil HP ProBook 455 G10:
 #     * Desconexión por inactividad (/etc/cockpit/cockpit.conf -> IdleTimeout = 15 min).
-#     * Restricción y seguridad de orígenes HTTP/HTTPS (Origins / MaxStartups).
-#   - Integración nativa con Podman Rootless (podman.socket de usuario y persistencia linger).
+#     * Restricción y seguridad de orígenes HTTP/HTTPS (Origins / MaxStartups / LoginTitle).
+#   - Integración con Podman Rootless (podman.socket de usuario y persistencia linger).
 #   - Reglas automáticas en Firewalld exclusivo (puerto 9090 TCP en zona activa).
-#   - Integración GNOME Shell Wayland: acceso directo .desktop y cliente seguro rootless.
+#   - Integración GNOME Shell Wayland: acceso directo .desktop con actualización de caché.
 #   - Diagnóstico O(1) de solo lectura sin elevación forzada de sudo (--status).
 # ==============================================================================
 
@@ -84,32 +89,51 @@ is_pkg_installed() {
     pacman -Q "$1" >/dev/null 2>&1
 }
 
+get_aur_helper() {
+    if command -v paru &>/dev/null; then
+        echo "paru"
+    elif command -v yay &>/dev/null; then
+        echo "yay"
+    else
+        echo ""
+    fi
+}
+
 get_lan_ip() {
-    ip -4 route get 1.1.1.1 2>/dev/null | awk '{print $7}' | head -n1 || echo ""
+    local ip
+    ip=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{print $7}' | head -n1 || true)
+    if [ -z "$ip" ]; then
+        ip=$(ip -4 addr show scope global 2>/dev/null | awk '/inet /{print $2}' | cut -d/ -f1 | head -n1 || true)
+    fi
+    echo "$ip"
 }
 
 # ------------------------------------------------------------------------------
-# 3. LISTADO DE MÓDULOS Y PAQUETES
+# 3. LISTADO DE MÓDULOS Y PAQUETES OPTIMIZADOS PARA CACHYOS
 # ------------------------------------------------------------------------------
+# cockpit-pacman: Plugin nativo en Rust (alpm.rs) disponible en cachyos-extra-v3 / extra.
+# Reemplaza a packagekit evitando bloqueos de /var/lib/pacman/db.lck.
 CORE_PACKAGES=(
     "cockpit"
     "cockpit-podman"
     "cockpit-machines"
     "cockpit-storaged"
+    "cockpit-pacman"
+    "cockpit-files"
     "udisks2"
     "networkmanager"
-    "packagekit"
 )
 
 RECOMMENDED_PACKAGES=(
     "smartmontools"
+    "libvirt-dbus"
 )
 
 # ------------------------------------------------------------------------------
 # 4. INSTALACIÓN IDEMPOTENTE O(1) DE PAQUETES
 # ------------------------------------------------------------------------------
 install_cockpit() {
-    log_info "[1/6] Comprobando paquetes y módulos de Cockpit vía Pacman / Paru..."
+    log_info "[1/6] Comprobando paquetes y módulos nativos de Cockpit en CachyOS..."
 
     local all_pkgs=("${CORE_PACKAGES[@]}" "${RECOMMENDED_PACKAGES[@]}")
     local missing=()
@@ -123,16 +147,20 @@ install_cockpit() {
     if [ ${#missing[@]} -gt 0 ]; then
         require_root
         log_info "Instalando paquetes faltantes (${missing[*]}):"
-        $SUDO pacman -S --needed --noconfirm "${missing[@]}" 2>/dev/null || {
-            log_warn "Algunos módulos pueden residir en AUR o repositorios adicionales..."
-            $SUDO pacman -S --needed --noconfirm cockpit udisks2 networkmanager 2>/dev/null || true
-            if command -v paru &>/dev/null; then
-                run_as_user paru -S --needed --noconfirm cockpit-podman cockpit-machines 2>/dev/null || true
+        if ! $SUDO pacman -S --needed --noconfirm "${missing[@]}"; then
+            log_warn "Pacman reportó advertencias o faltan paquetes en repositorios oficiales..."
+            local aur_helper
+            aur_helper=$(get_aur_helper)
+            if [ -n "$aur_helper" ]; then
+                log_info "Intentando resolver paquetes restantes mediante $aur_helper..."
+                run_as_user "$aur_helper" -S --needed --noconfirm "${missing[@]}" || true
+            else
+                log_warn "Helper AUR (paru/yay) no detectado. Si algún paquete no se instaló, revisa pacman.conf."
             fi
-        }
-        log_ok "Paquetes de Cockpit instalados exitosamente."
+        fi
+        log_ok "Paquetes y módulos de Cockpit verificados/instalados exitosamente."
     else
-        log_ok "Todos los módulos de Cockpit y utilidades ya están instalados."
+        log_ok "Todos los módulos nativos de Cockpit y utilidades ya están instalados."
     fi
 }
 
@@ -147,36 +175,50 @@ configure_cockpit_conf() {
 
     local host_ip host_name origins_list
     host_ip=$(get_lan_ip)
-    host_name=$(hostname 2>/dev/null || echo "cachyos")
+    host_name=$(hostname 2>/dev/null || uname -n 2>/dev/null || echo "cachyos")
 
-    origins_list="https://localhost:9090 http://localhost:9090 https://127.0.0.1:9090 http://127.0.0.1:9090"
+    # Orígenes autorizados para protección contra Cross-Origin WebSocket Hijacking
+    origins_list="https://localhost:9090 https://127.0.0.1:9090 https://[::1]:9090"
     if [ -n "$host_ip" ] && [ "$host_ip" != "127.0.0.1" ]; then
-        origins_list="$origins_list https://$host_ip:9090 http://$host_ip:9090"
+        origins_list="$origins_list https://$host_ip:9090"
     fi
     if [ -n "$host_name" ]; then
-        origins_list="$origins_list https://$host_name:9090 http://$host_name:9090 https://$host_name.local:9090 http://$host_name.local:9090"
+        origins_list="$origins_list https://$host_name:9090 https://$host_name.local:9090"
     fi
 
     cat <<EOF | $SUDO tee /etc/cockpit/cockpit.conf > /dev/null
 # ==============================================================================
 # Configuración Optimizada de Cockpit - HP ProBook 455 G10 (CachyOS Workstation)
-# Hardware: AMD Ryzen 7 7730U / 32 GB RAM / NVMe Kioxia / Podman Rootless
+# Hardware: AMD Ryzen 7 7730U / 32 GB RAM DDR4 / NVMe Kioxia / Podman Rootless
 # ==============================================================================
 
 [WebService]
-# Permite conexiones locales y desde la red de desarrollo LAN
+# Título del portal de acceso en GNOME Wayland
+LoginTitle = CachyOS Workstation (HP ProBook 455 G10)
+
+# Orígenes WebSocket autorizados para desarrollo local y LAN
 Origins = $origins_list
+
+# Mitigación y rate-limiting contra ataques de fuerza bruta al socket 9090
 MaxStartups = 5:50:10
+
+# Obliga el uso estricto de cifrado TLS/HTTPS
 AllowUnencrypted = false
-# Habilita el cambio y administración de múltiples servidores/hosts desde una misma sesión
+
+# Habilita administración y monitorización de múltiples hosts remotos
 AllowMultiHost = true
 
+# Soporte de cabecera de protocolo para proxies inversos locales
+ProtocolHeader = X-Forwarded-Proto
+
 [Session]
-# Desconexión automática tras 15 min de inactividad: ahorra batería y CPU en el portátil
+# Desconexión automática tras 15 min de inactividad:
+# Ahorro térmico y de batería en el portátil AMD Ryzen 7 7730U (0% CPU / 0 MB RAM en reposo)
 IdleTimeout = 15
 EOF
 
-    log_ok "Archivo /etc/cockpit/cockpit.conf configurado (IdleTimeout=15 min, Origins seguros)."
+    $SUDO chmod 644 /etc/cockpit/cockpit.conf
+    log_ok "Archivo /etc/cockpit/cockpit.conf configurado (IdleTimeout=15 min, Origins seguros, LoginTitle)."
 }
 
 # ------------------------------------------------------------------------------
@@ -197,16 +239,15 @@ configure_firewall() {
     log_info "[4/6] Configurando reglas de red en Firewalld (puerto 9090 TCP)..."
     if command -v firewall-cmd &>/dev/null && systemctl is-active --quiet firewalld 2>/dev/null; then
         local active_zone
-        active_zone=$(firewall-cmd --get-default-zone 2>/dev/null || echo "home")
+        active_zone=$(firewall-cmd --get-default-zone 2>/dev/null || echo "public")
 
-        if ! firewall-cmd --zone="$active_zone" --list-services 2>/dev/null | grep -qw "cockpit"; then
+        if ! firewall-cmd --zone="$active_zone" --query-service=cockpit >/dev/null 2>&1; then
             require_root
-            $SUDO firewall-cmd --permanent --zone="$active_zone" --add-service=cockpit 2>/dev/null || \
-            $SUDO firewall-cmd --permanent --add-service=cockpit 2>/dev/null || true
-            $SUDO firewall-cmd --reload 2>/dev/null || true
-            log_ok "Servicio 'cockpit' añadido permanentemente a la zona Firewalld '$active_zone'."
+            $SUDO firewall-cmd --permanent --zone="$active_zone" --add-service=cockpit >/dev/null
+            $SUDO firewall-cmd --reload >/dev/null
+            log_ok "Servicio 'cockpit' (9090/tcp) añadido permanentemente a la zona Firewalld '$active_zone'."
         else
-            log_ok "Servicio 'cockpit' ya está habilitado en la zona Firewalld '$active_zone'."
+            log_ok "Servicio 'cockpit' (9090/tcp) ya está autorizado en la zona Firewalld '$active_zone'."
         fi
     else
         log_warn "Firewalld no está activo; omitiendo configuración de cortafuegos."
@@ -218,10 +259,6 @@ configure_firewall() {
 # ------------------------------------------------------------------------------
 enable_podman_integration() {
     log_info "[5/6] Configurando integración de Podman Rootless para el usuario $REAL_USER..."
-    if ! command -v podman &>/dev/null; then
-        log_warn "Podman no está instalado; omitiendo activación de socket de usuario."
-        return 0
-    fi
 
     # Persistencia de procesos de fondo y contenedores del usuario (Linger)
     if command -v loginctl &>/dev/null; then
@@ -231,11 +268,15 @@ enable_podman_integration() {
     fi
 
     # Socket de Podman a nivel de usuario para cockpit-podman
-    if [ -d "/run/user/$REAL_UID" ]; then
-        run_as_user systemctl --user enable --now podman.socket 2>/dev/null || true
-        log_ok "Socket Podman Rootless activo (systemctl --user enable --now podman.socket)."
+    if command -v podman &>/dev/null; then
+        if [ -d "/run/user/$REAL_UID" ]; then
+            run_as_user systemctl --user enable --now podman.socket 2>/dev/null || true
+            log_ok "Socket Podman Rootless activo (systemctl --user enable --now podman.socket)."
+        else
+            log_info "Sesión gráfica de usuario no activa en este instante; el socket se activará al iniciar sesión."
+        fi
     else
-        log_info "Sesión gráfica de usuario no detectada en este instante; el socket se activará al iniciar sesión."
+        log_warn "Podman aún no está instalado en el sistema. Una vez instalado, ejecuta: $0 --enable-podman"
     fi
 }
 
@@ -251,18 +292,24 @@ create_desktop_entry() {
         cat <<EOF | $SUDO tee "$desktop_file" > /dev/null
 [Desktop Entry]
 Name=Consola Web Cockpit
+Name[es]=Consola Web Cockpit
 GenericName=Administración del Sistema
-Comment=Consola web para monitorear hardware, contenedores Podman y almacenamiento
+GenericName[es]=Administración del Sistema
+Comment=Consola web para monitorear hardware AMD Ryzen, contenedores Podman, almacenamiento y Libvirt
+Comment[es]=Consola web para monitorear hardware AMD Ryzen, contenedores Podman, almacenamiento y Libvirt
 Exec=xdg-open https://localhost:9090
 Icon=utilities-system-monitor
 Terminal=false
 Type=Application
-Categories=System;Settings;Monitor;
-Keywords=cockpit;admin;system;monitor;podman;kvm;storage;nvme;hardware;
+Categories=System;Settings;Monitor;HardwareSettings;
+Keywords=cockpit;admin;system;monitor;podman;kvm;storage;nvme;hardware;ryzen;cachyos;
 StartupNotify=true
 EOF
         $SUDO chmod 644 "$desktop_file"
-        log_ok "Acceso directo creado: $desktop_file"
+        if command -v update-desktop-database &>/dev/null; then
+            $SUDO update-desktop-database /usr/share/applications 2>/dev/null || true
+        fi
+        log_ok "Acceso directo creado y actualizado en el sistema: $desktop_file"
     fi
 }
 
@@ -298,10 +345,12 @@ disable_cockpit() {
 
     if command -v firewall-cmd &>/dev/null && systemctl is-active --quiet firewalld 2>/dev/null; then
         local active_zone
-        active_zone=$(firewall-cmd --get-default-zone 2>/dev/null || echo "home")
-        $SUDO firewall-cmd --permanent --zone="$active_zone" --remove-service=cockpit 2>/dev/null || \
-        $SUDO firewall-cmd --permanent --remove-service=cockpit 2>/dev/null || true
-        $SUDO firewall-cmd --reload 2>/dev/null || true
+        active_zone=$(firewall-cmd --get-default-zone 2>/dev/null || echo "public")
+        if firewall-cmd --zone="$active_zone" --query-service=cockpit >/dev/null 2>&1; then
+            $SUDO firewall-cmd --permanent --zone="$active_zone" --remove-service=cockpit >/dev/null 2>&1 || true
+            $SUDO firewall-cmd --reload >/dev/null 2>&1 || true
+            log_ok "Regla 'cockpit' retirada de la zona Firewalld '$active_zone'."
+        fi
     fi
     log_ok "Cockpit deshabilitado completamente."
 }
@@ -365,7 +414,7 @@ show_status() {
 
     echo -e "${BOLD}=================================================================${NC}"
     echo -e "${BOLD}${CYAN}🔍 DIAGNÓSTICO DE CONSOLA WEB COCKPIT - CACHYOS WORKSTATION${NC}"
-    echo -e "💻 ${BOLD}Hardware:${NC} HP ProBook 455 G10 | AMD Ryzen 7 7730U (16T) | 32 GB RAM"
+    echo -e "💻 ${BOLD}Hardware:${NC} HP ProBook 455 G10 | AMD Ryzen 7 7730U (8C/16T) | 32 GB RAM"
     echo -e "${BOLD}=================================================================${NC}"
 
     echo -e "• Socket Systemd:        $([ "$sock_stat" = "active" ] && echo -e "${GREEN}✅ Activo (bajo demanda / 0% CPU)${NC}" || echo -e "${RED}❌ Inactivo${NC}")"
@@ -373,11 +422,11 @@ show_status() {
     echo -e "• Habilitado al inicio:  $([ "$enab_stat" = "enabled" ] && echo -e "${GREEN}✅ Habilitado${NC}" || echo -e "${RED}❌ Deshabilitado${NC}")"
     echo -e "• Puerto de escucha:     $port_stat"
 
-    # Cortafuegos Firewalld
+    # Cortafuegos Firewalld (Consulta rápida O(1))
     if command -v firewall-cmd &>/dev/null && systemctl is-active --quiet firewalld 2>/dev/null; then
         local active_zone
-        active_zone=$(firewall-cmd --get-default-zone 2>/dev/null || echo "home")
-        if firewall-cmd --zone="$active_zone" --list-services 2>/dev/null | grep -qw "cockpit"; then
+        active_zone=$(firewall-cmd --get-default-zone 2>/dev/null || echo "public")
+        if firewall-cmd --zone="$active_zone" --query-service=cockpit >/dev/null 2>&1; then
             fw_stat="${GREEN}✅ Permitido (Zona: $active_zone - puerto 9090/tcp)${NC}"
         else
             fw_stat="${RED}❌ No permitido en zona '$active_zone'${NC}"
@@ -392,50 +441,82 @@ show_status() {
     local podman_stat="${RED}❌ Inactivo${NC}"
     if [ -S "/run/user/$REAL_UID/podman/podman.sock" ] || run_as_user systemctl --user is-active --quiet podman.socket 2>/dev/null; then
         podman_stat="${GREEN}✅ Activo (/run/user/$REAL_UID/podman/podman.sock)${NC}"
+    elif command -v podman &>/dev/null; then
+        podman_stat="${YELLOW}⚪ Instalado pero inactivo (actívalo con: $0 --enable-podman)${NC}"
     else
-        podman_stat="${YELLOW}⚪ Inactivo (actívalo con: $0 --enable-podman)${NC}"
+        podman_stat="${YELLOW}⚪ Podman no instalado${NC}"
     fi
     echo -e "  - Socket Podman Rootless: $podman_stat"
 
     local linger_stat="${RED}❌ Deshabilitado${NC}"
-    if command -v loginctl &>/dev/null && loginctl show-user "$REAL_USER" 2>/dev/null | grep -q "Linger=yes"; then
+    if command -v loginctl &>/dev/null && loginctl show-user "$REAL_USER" -p Linger 2>/dev/null | grep -q "Linger=yes"; then
         linger_stat="${GREEN}✅ Habilitado (contenedores persistentes tras logout)${NC}"
     fi
     echo -e "  - Persistencia Linger:    $linger_stat"
 
     local libvirt_stat="${RED}❌ Inactivo${NC}"
-    if systemctl is-active --quiet virtqemud 2>/dev/null || systemctl is-active --quiet libvirtd 2>/dev/null; then
+    if systemctl is-active --quiet virtqemud 2>/dev/null || systemctl is-active --quiet libvirtd 2>/dev/null || systemctl is-active --quiet virtqemud.socket 2>/dev/null; then
         libvirt_stat="${GREEN}✅ Activo (KVM / QEMU)${NC}"
     elif command -v virsh &>/dev/null; then
         libvirt_stat="${YELLOW}⚪ Instalado pero inactivo${NC}"
     fi
     echo -e "  - Hipervisor Libvirt:     $libvirt_stat"
 
-    # Almacenamiento NVMe y SMART
-    echo -e "\n${BOLD}💾 Telemetría de Almacenamiento y Batería:${NC}"
+    local libvirt_dbus_stat="${RED}❌ No instalado (recomendado para cockpit-machines)${NC}"
+    if is_pkg_installed "libvirt-dbus"; then
+        libvirt_dbus_stat="${GREEN}✅ Instalado (comunicación D-Bus con Libvirt activa)${NC}"
+    fi
+    echo -e "  - Conector libvirt-dbus:  $libvirt_dbus_stat"
+
+    # Almacenamiento NVMe, SMART y Telemetría Térmica
+    echo -e "\n${BOLD}💾 Telemetría de Almacenamiento, Memoria y Batería:${NC}"
     local nvme_stat="${YELLOW}⚪ No detectado${NC}"
     if [ -b "/dev/nvme0n1" ]; then
         if is_pkg_installed "smartmontools"; then
-            nvme_stat="${GREEN}✅ SSD NVMe Kioxia detectado (smartmontools activo para cockpit-storaged)${NC}"
+            nvme_stat="${GREEN}✅ SSD NVMe Kioxia KBG50ZNV512G detectado (smartmontools activo para cockpit-storaged)${NC}"
         else
-            nvme_stat="${YELLOW}⚠️ SSD NVMe detectado (instala smartmontools para telemetría SMART)${NC}"
+            nvme_stat="${YELLOW}⚠️ SSD NVMe Kioxia detectado (instala smartmontools para telemetría SMART)${NC}"
         fi
     fi
     echo -e "  - Unidad NVMe Kioxia:     $nvme_stat"
+
+    # Telemetría de sensores si están disponibles
+    if command -v sensors &>/dev/null; then
+        local cpu_t nvme_t
+        cpu_t=$(sensors 2>/dev/null | awk '/k10temp/{flag=1; next} flag && /Tctl/{print $2; exit}' || echo "")
+        nvme_t=$(sensors 2>/dev/null | awk '/nvme-pci/{flag=1; next} flag && /Composite/{print $2; exit}' || echo "")
+        if [ -n "$cpu_t" ] || [ -n "$nvme_t" ]; then
+            echo -e "  - Sensores Térmicos:      CPU AMD Ryzen: ${CYAN}${cpu_t:-N/A}${NC} | SSD NVMe: ${CYAN}${nvme_t:-N/A}${NC}"
+        fi
+    fi
+
+    # ZRAM Swap y Batería
+    local zram_info bat_info
+    zram_info=$(swapon --show 2>/dev/null | grep -i zram | awk '{print $1 " (" $3 " total, " $4 " usado)"}' || echo "")
+    if [ -n "$zram_info" ]; then
+        echo -e "  - ZRAM Swap:              ${GREEN}✅ $zram_info${NC}"
+    fi
+
+    if [ -d "/sys/class/power_supply/BAT0" ]; then
+        local bat_pct bat_st
+        bat_pct=$(cat /sys/class/power_supply/BAT0/capacity 2>/dev/null || echo "N/A")
+        bat_st=$(cat /sys/class/power_supply/BAT0/status 2>/dev/null || echo "N/A")
+        echo -e "  - Estado de Batería:      ${CYAN}$bat_pct% ($bat_st)${NC}"
+    fi
 
     # Configuración /etc/cockpit/cockpit.conf
     if [ -f /etc/cockpit/cockpit.conf ]; then
         local idle_to
         idle_to=$(grep -E '^[[:space:]]*IdleTimeout' /etc/cockpit/cockpit.conf 2>/dev/null | cut -d= -f2 | tr -d ' ' || echo "no configurado")
-        echo -e "  - Perfil de Energía:      ${GREEN}✅ IdleTimeout = ${idle_to} min (ahorro de batería en portátil)${NC}"
+        echo -e "  - Perfil de Energía:      ${GREEN}✅ IdleTimeout = ${idle_to} min (ahorro térmico y batería en reposo)${NC}"
     else
         echo -e "  - Perfil de Energía:      ${YELLOW}⚠️ Sin archivo /etc/cockpit/cockpit.conf${NC}"
     fi
 
     # Módulos instalados
-    echo -e "\n${BOLD}📦 Módulos de Cockpit instalados:${NC}"
+    echo -e "\n${BOLD}📦 Módulos y Extensiones de Cockpit instalados:${NC}"
     local installed_mods
-    installed_mods=$(pacman -Q 2>/dev/null | grep -E "cockpit|udisks2" | awk '{print "  ✓ " $1 "-" $2}' || true)
+    installed_mods=$(pacman -Q 2>/dev/null | grep -E "cockpit|udisks2|libvirt-dbus|smartmontools" | awk '{print "  ✓ " $1 " (" $2 ")"}' || true)
     if [ -n "$installed_mods" ]; then
         echo "$installed_mods"
     else
@@ -451,6 +532,7 @@ show_status() {
         echo -e "🌐 ${BOLD}Acceso Red LAN:${NC}         ${CYAN}https://$host_ip:9090${NC}"
     fi
     echo -e "💡 Inicia sesión con tus credenciales de usuario de CachyOS (${BOLD}$REAL_USER${NC})."
+    echo -e "🔒 Nota: El primer acceso mostrará aviso de certificado TLS autofirmado seguro."
     echo -e "🚀 Abrir en navegador:      ${CYAN}$0 --open${NC}"
     echo -e "🖥️  Abrir en cliente:        ${CYAN}$0 --client${NC}"
     echo -e "${BOLD}=================================================================${NC}"
@@ -468,7 +550,7 @@ ${BOLD}Uso:${NC}
   $0 [OPCIÓN]
 
 ${BOLD}Opciones de Diagnóstico e Interfaz:${NC}
-  (sin argumentos)       Instala Cockpit y módulos, optimiza cockpit.conf, activa socket y Firewalld.
+  (sin argumentos)       Instala Cockpit y módulos nativos, optimiza cockpit.conf, activa socket y Firewalld.
   --status, -s           Muestra diagnóstico completo (sin pedir sudo) de socket, módulos y red.
   --open, -o             Abre la interfaz web de Cockpit en el navegador (https://localhost:9090).
   --client, -c           Lanza Cockpit Client (Flatpak o nativo) o el navegador predeterminado.
@@ -486,9 +568,12 @@ ${BOLD}Control de Servicios (requiere privilegios):${NC}
 ${BOLD}Optimizaciones de Hardware para HP ProBook 455 G10:${NC}
   • Activación bajo demanda: cockpit.socket mantiene cockpit-ws inactivo hasta que se contacta el puerto 9090.
   • Ahorro de batería: Cierre de sesión automático por inactividad tras 15 min (IdleTimeout = 15).
-  • Podman Rootless: Soporte directo con cockpit-podman vía socket de usuario /run/user/$REAL_UID/podman/podman.sock.
+  • cockpit-pacman nativo: Gestión de paquetes Arch/CachyOS en Rust (alpm.rs), sustituyendo packagekit.
+  • cockpit-files nativo: Explorador web de archivos integrado directamente en Cockpit.
+  • Podman Rootless: Soporte directo con cockpit-podman vía socket /run/user/$REAL_UID/podman/podman.sock.
+  • KVM / Libvirt: Soporte de máquinas virtuales con cockpit-machines y libvirt-dbus.
   • NVMe SMART: Monitoreo de salud y temperatura del SSD NVMe Kioxia KBG50ZNV512G con smartmontools.
-  • Cortafuegos Firewalld: Regla de red exclusiva y permanente en la zona activa.
+  • Cortafuegos Firewalld: Regla de red exclusiva y permanente en la zona activa (puerto 9090/tcp).
 EOF
 }
 
