@@ -603,6 +603,12 @@ else
     GTK_PREFER_DARK=1
 fi
 
+# Validar que el cursor exista en disco para evitar el bug del cursor cuadrado blanco en Wayland
+if ! has_bibata_cursor "$MODE_CURSOR" && [[ ! -d "/usr/share/icons/$MODE_CURSOR" && ! -d "$USER_HOME/.local/share/icons/$MODE_CURSOR" && ! -d "$USER_HOME/.icons/$MODE_CURSOR" ]]; then
+    log_warn "El tema de cursor '$MODE_CURSOR' no existe en disco. Usando 'Adwaita' para evitar cursores corruptos."
+    MODE_CURSOR="Adwaita"
+fi
+
 log_info "Aplicando apariencia en GNOME Wayland ($COLOR_SCHEME_VAL | $GTK_THEME_VAL | $MODE_ICONS | $MODE_CURSOR ${CURSOR_SIZE}px)..."
 
 # GSettings: Temas, Iconos y Cursor
@@ -644,11 +650,9 @@ fi
 # ------------------------------------------------------------------------------
 log_info "Sincronizando configuraciones de GTK3, GTK4, systemd y XWayland..."
 
-# Sincronizar archivos settings.ini de GTK 3.0 y GTK 4.0
-for gtk_ver in gtk-3.0 gtk-4.0; do
-    cfg_dir="$USER_HOME/.config/$gtk_ver"
-    mkdir -p "$cfg_dir"
-    cat << EOF > "$cfg_dir/settings.ini"
+# Configuración GTK 3.0 (aplica tema adw-gtk3 para compatibilidad visual)
+mkdir -p "$USER_HOME/.config/gtk-3.0"
+cat << EOF > "$USER_HOME/.config/gtk-3.0/settings.ini"
 [Settings]
 gtk-application-prefer-dark-theme=${GTK_PREFER_DARK}
 gtk-theme-name=${GTK_THEME_VAL}
@@ -656,7 +660,15 @@ gtk-icon-theme-name=${MODE_ICONS}
 gtk-cursor-theme-name=${MODE_CURSOR}
 gtk-cursor-theme-size=${CURSOR_SIZE}
 EOF
-done
+
+# Configuración GTK 4.0 (Libadwaita nativo: NUNCA inyectar adw-gtk3 para no corromper widgets GTK4)
+mkdir -p "$USER_HOME/.config/gtk-4.0"
+cat << EOF > "$USER_HOME/.config/gtk-4.0/settings.ini"
+[Settings]
+gtk-icon-theme-name=${MODE_ICONS}
+gtk-cursor-theme-name=${MODE_CURSOR}
+gtk-cursor-theme-size=${CURSOR_SIZE}
+EOF
 
 # Configurar índice de cursor de compatibilidad Wayland/XWayland en ~/.icons/default/index.theme
 mkdir -p "$USER_HOME/.icons/default"
