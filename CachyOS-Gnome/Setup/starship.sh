@@ -212,6 +212,9 @@ show_status() {
 
     if command -v starship &>/dev/null; then
         echo -e "  • Binario Starship:   ${GREEN}✅ $(command -v starship) ($(starship --version 2>/dev/null | head -n1))${NC}"
+        local active_os_sym
+        active_os_sym=$(starship module os 2>/dev/null || true)
+        echo -e "  • Símbolo SO activo:  $active_os_sym${GREEN}(CachyOS oficial)${NC}"
     else
         echo -e "  • Binario Starship:   ${RED}❌ No instalado${NC}"
     fi
