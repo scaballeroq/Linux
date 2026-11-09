@@ -4,10 +4,10 @@
 set -euo pipefail
 
 CONTAINER_NAME="wordpress-dev"
-NETWORK_NAME="devfed-net"
+NETWORK_NAME="cachy-net"
 PORT="8080:80"
 IMAGE="docker.io/library/wordpress:latest"
-VOLUME_NAME="devfed-wordpress-data"
+VOLUME_NAME="cachy-wordpress-data"
 
 ensure_network() {
     if ! podman network exists "$NETWORK_NAME" 2>/dev/null; then

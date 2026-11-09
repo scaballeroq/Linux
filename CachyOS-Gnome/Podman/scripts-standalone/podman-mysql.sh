@@ -4,10 +4,10 @@
 set -euo pipefail
 
 CONTAINER_NAME="mysql-dev"
-NETWORK_NAME="devfed-net"
+NETWORK_NAME="cachy-net"
 PORT="3306:3306"
 IMAGE="docker.io/library/mysql:latest"
-VOLUME_NAME="devfed-mysql-data"
+VOLUME_NAME="cachy-mysql-data"
 
 ensure_network() {
     if ! podman network exists "$NETWORK_NAME" 2>/dev/null; then

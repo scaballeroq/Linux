@@ -4,10 +4,10 @@
 set -euo pipefail
 
 CONTAINER_NAME="portainer-dev"
-NETWORK_NAME="devfed-net"
+NETWORK_NAME="cachy-net"
 PORT="9443:9443"
 IMAGE="docker.io/portainer/portainer-ce:latest"
-VOLUME_NAME="devfed-portainer-data"
+VOLUME_NAME="cachy-portainer-data"
 SOCKET_PATH="/run/user/$(id -u)/podman/podman.sock"
 
 ensure_network() {

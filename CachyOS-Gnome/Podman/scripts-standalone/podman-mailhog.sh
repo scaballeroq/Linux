@@ -4,7 +4,7 @@
 set -euo pipefail
 
 CONTAINER_NAME="mailhog-dev"
-NETWORK_NAME="devfed-net"
+NETWORK_NAME="cachy-net"
 IMAGE="docker.io/mailhog/mailhog:latest"
 
 ensure_network() {

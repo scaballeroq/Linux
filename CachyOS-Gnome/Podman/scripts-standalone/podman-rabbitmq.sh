@@ -4,9 +4,9 @@
 set -euo pipefail
 
 CONTAINER_NAME="rabbitmq-dev"
-NETWORK_NAME="devfed-net"
+NETWORK_NAME="cachy-net"
 IMAGE="docker.io/library/rabbitmq:3-management"
-VOLUME_NAME="devfed-rabbitmq-data"
+VOLUME_NAME="cachy-rabbitmq-data"
 
 ensure_network() {
     if ! podman network exists "$NETWORK_NAME" 2>/dev/null; then

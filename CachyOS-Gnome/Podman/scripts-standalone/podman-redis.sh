@@ -4,10 +4,10 @@
 set -euo pipefail
 
 CONTAINER_NAME="redis-dev"
-NETWORK_NAME="devfed-net"
+NETWORK_NAME="cachy-net"
 PORT="6379:6379"
 IMAGE="docker.io/library/redis:7-alpine"
-VOLUME_NAME="devfed-redis-data"
+VOLUME_NAME="cachy-redis-data"
 
 ensure_network() {
     if ! podman network exists "$NETWORK_NAME" 2>/dev/null; then

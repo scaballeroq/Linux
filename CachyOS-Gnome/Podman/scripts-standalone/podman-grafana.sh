@@ -4,10 +4,10 @@
 set -euo pipefail
 
 CONTAINER_NAME="grafana-dev"
-NETWORK_NAME="devfed-net"
+NETWORK_NAME="cachy-net"
 PORT="3000:3000"
 IMAGE="docker.io/grafana/grafana:latest"
-VOLUME_NAME="devfed-grafana-data"
+VOLUME_NAME="cachy-grafana-data"
 
 ensure_network() {
     if ! podman network exists "$NETWORK_NAME" 2>/dev/null; then

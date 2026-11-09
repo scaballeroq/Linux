@@ -4,7 +4,7 @@
 set -euo pipefail
 
 CONTAINER_NAME="nginx-dev"
-NETWORK_NAME="devfed-net"
+NETWORK_NAME="cachy-net"
 PORT="8082:80"
 IMAGE="docker.io/library/nginx:alpine"
 

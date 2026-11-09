@@ -4,7 +4,7 @@
 set -euo pipefail
 
 CONTAINER_NAME="dozzle-dev"
-NETWORK_NAME="devfed-net"
+NETWORK_NAME="cachy-net"
 PORT="8888:8080"
 IMAGE="docker.io/amir20/dozzle:latest"
 SOCKET_PATH="/run/user/$(id -u)/podman/podman.sock"

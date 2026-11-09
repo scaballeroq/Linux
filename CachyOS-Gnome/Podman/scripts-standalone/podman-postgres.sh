@@ -4,10 +4,10 @@
 set -euo pipefail
 
 CONTAINER_NAME="postgres-dev"
-NETWORK_NAME="devfed-net"
+NETWORK_NAME="cachy-net"
 PORT="5432:5432"
 IMAGE="docker.io/library/postgres:17-alpine"
-VOLUME_NAME="devfed-postgres-data"
+VOLUME_NAME="cachy-postgres-data"
 
 ensure_network() {
     if ! podman network exists "$NETWORK_NAME" 2>/dev/null; then

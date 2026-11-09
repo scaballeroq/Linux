@@ -338,6 +338,9 @@ podman:
     ./Podman/install/podman-install.sh
     ./Podman/install/quadlets-setup.sh
 
+# Alias para configuración de Podman y Quadlets
+podman-setup: podman
+
 # Estado de Podman Rootless y Quadlets
 podman-status:
     ./Podman/install/podman-install.sh --status

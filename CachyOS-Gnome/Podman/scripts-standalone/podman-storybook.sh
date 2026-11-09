@@ -4,7 +4,7 @@
 set -euo pipefail
 
 CONTAINER_NAME="storybook-dev"
-NETWORK_NAME="devfed-net"
+NETWORK_NAME="cachy-net"
 PORT="6006:6006"
 IMAGE="docker.io/storybooks/storybook:latest"
 

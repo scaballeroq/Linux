@@ -4,7 +4,8 @@
 # Uso:
 #   ./quadlets-setup.sh              -> Prepara los directorios de Quadlets e inicializa systemd user
 #   ./quadlets-setup.sh --install-shared -> Instala todos los servicios compartidos (.container, .volume, .network)
-#   ./quadlets-setup.sh --status     -> Comprueba las unidades Quadlets generadas en systemd user
+#   ./quadlets-setup.sh --clean-shared   -> Detiene y desinstala servicios compartidos de systemd user
+#   ./quadlets-setup.sh --status     -> Comprueba las unidades Quadlets generadas y el estado de systemd user
 #   ./quadlets-setup.sh --help       -> Muestra la ayuda interactiva
 
 set -euo pipefail
@@ -34,7 +35,7 @@ require_podman() {
 
 show_help() {
     cat <<EOF
-⚙️ Gestor de Quadlets para Podman - CachyOS (GNOME)
+⚙️ Gestor de Systemd Quadlets para Podman - CachyOS Workstation (GNOME Wayland)
 
 Uso:
   $0 [OPCIÓN]
@@ -42,8 +43,8 @@ Uso:
 Opciones:
   (sin argumentos)       Crea directorios de systemd para Quadlets y verifica el generador.
   --install-shared       Instala todos los servicios globales compartidos (.container, .volume, .network) en systemd user.
-  --clean-shared         Elimina los servicios globales compartidos instalados en systemd user.
-  --status, -s           Muestra el estado de los Quadlets y servicios de usuario de systemd.
+  --clean-shared         Detiene y elimina los servicios globales compartidos en systemd user.
+  --status, -s           Muestra el estado de los Quadlets, sintaxis del generador y servicios activos.
   --help, -h             Muestra este mensaje de ayuda.
 
 Directorios gestionados:
@@ -58,11 +59,16 @@ show_status() {
     echo "🔍 ESTADO DE SYSTEMD QUADLETS - CACHYOS WORKSTATION"
     echo "================================================================="
     echo "• Directorio Quadlets: $HOME/.config/containers/systemd"
-    echo "• Generador Quadlet:   $(if [ -f /usr/lib/systemd/user-generators/podman-user-generator ]; then echo 'Presente (/usr/lib/systemd/user-generators/podman-user-generator)'; else echo 'No detectado'; fi)"
+    local generator_path="/usr/lib/systemd/user-generators/podman-user-generator"
+    if [ -x "$generator_path" ] || [ -L "$generator_path" ]; then
+        echo "• Generador Quadlet:   Presente ($generator_path)"
+    else
+        echo "• Generador Quadlet:   No detectado"
+    fi
     echo ""
-    echo "📋 Archivos Quadlets principales (~/.config/containers/systemd/):"
+    echo "📋 Archivos Quadlets de proyectos (~/.config/containers/systemd/):"
     if [ -d "$HOME/.config/containers/systemd" ] && [ -n "$(find "$HOME/.config/containers/systemd" -maxdepth 1 -type f -o -type l 2>/dev/null)" ]; then
-        ls -la "$HOME/.config/containers/systemd" 2>/dev/null
+        find "$HOME/.config/containers/systemd" -maxdepth 1 \( -type f -o -type l \) -exec ls -la {} + 2>/dev/null
     else
         echo "  (Sin archivos en el directorio raíz de Quadlets)"
     fi
@@ -74,8 +80,19 @@ show_status() {
         echo "  (Sin servicios globales instalados)"
     fi
     echo ""
-    echo "📋 Unidades de servicio activas gestionadas por Podman Quadlets:"
-    systemctl --user list-units "*podman*" "*global*" --no-pager 2>/dev/null || echo "  (Ninguna unidad activa)"
+    echo "🩺 Validación de sintaxis Quadlet (dry-run):"
+    if [ -x "/usr/lib/podman/quadlet" ]; then
+        local dry_output
+        dry_output=$(/usr/lib/podman/quadlet -user -dryrun 2>&1 || true)
+        if echo "$dry_output" | grep -qi "error"; then
+            echo -e "${RED}$dry_output${NC}"
+        else
+            echo "  [OK] Sintaxis de Quadlets válida (sin errores de generación detectados)."
+        fi
+    fi
+    echo ""
+    echo "📋 Unidades de servicio activas gestionadas por Quadlets:"
+    systemctl --user list-units "*podman*" "*global*" "*.service" --state=active --no-pager 2>/dev/null | grep -E "(podman|global|\.container)" || echo "  (Ninguna unidad activa en este momento)"
     echo "================================================================="
 }
 
@@ -85,14 +102,14 @@ setup_systemd_dirs() {
     mkdir -p "$HOME/.config/containers/systemd/global"
     mkdir -p "$HOME/.config/systemd/user"
 
-    log_ok "Directorios creados:"
-    echo "  ~/.config/containers/systemd/        -> Proyectos activos (Quadlets)"
-    echo "  ~/.config/containers/systemd/global/ -> Servicios compartidos globales"
-    echo "  ~/.config/systemd/user/              -> Targets y unidades nativas systemd"
+    log_ok "Directorios creados / verificados:"
+    echo "  • ~/.config/containers/systemd/        -> Proyectos activos (Quadlets)"
+    echo "  • ~/.config/containers/systemd/global/ -> Servicios compartidos globales"
+    echo "  • ~/.config/systemd/user/              -> Targets y unidades nativas systemd"
 }
 
 setup_podman_dirs() {
-    log_info "Creando estructura de directorios de proyectos..."
+    log_info "Creando estructura de directorios de proyectos locales..."
     mkdir -p "$PODMAN_DIR/projects"
     mkdir -p "$PODMAN_DIR/services-shared"
     touch "$PODMAN_DIR/projects/.gitkeep"
@@ -136,30 +153,36 @@ install_global_services() {
 
 clean_global_services() {
     local systemd_global="$HOME/.config/containers/systemd/global"
-    log_info "Limpiando servicios compartidos de ~/.config/containers/systemd/global/..."
+    log_info "Deteniendo y limpiando servicios compartidos de ~/.config/containers/systemd/global/..."
     if [ -d "$systemd_global" ]; then
+        for f in "$systemd_global"/*.container; do
+            [ -f "$f" ] || continue
+            local sname
+            sname="$(basename "$f" .container)"
+            systemctl --user stop "${sname}.service" 2>/dev/null || true
+        done
         rm -rf "${systemd_global:?}"/*
         systemctl --user daemon-reload
-        log_ok "Servicios compartidos eliminados de systemd user."
+        log_ok "Servicios compartidos detenidos y eliminados de systemd user."
     fi
 }
 
 verify_quadlets() {
-    log_info "Verificando compatibilidad de Quadlets..."
+    log_info "Verificando compatibilidad nativa de Quadlets..."
     local podman_version
-    podman_version=$(podman --version | grep -oP '\d+\.\d+' | head -1 || echo "6.1")
+    podman_version=$(podman --version | grep -oP '\d+\.\d+(\.\d+)?' | head -1 || echo "6.1.4")
     
     log_ok "Quadlets soportado nativamente (Podman $podman_version en CachyOS)."
     echo ""
     echo "============================================"
-    log_ok "Quadlets configurado correctamente"
+    log_ok "Quadlets listo para su uso."
     echo "============================================"
-    echo ""
-    echo "Uso rápido de podman-utils:"
-    echo "  podman-utils create python-postgres mi-api"
-    echo "  podman-utils start mi-api"
-    echo "  podman-utils status mi-api"
-    echo "  podman-utils install-global <servicio>   (para servicios compartidos)"
+    echo "Comandos rápidos:"
+    echo "  • Crear proyecto:   podman-utils create python-postgres mi-api"
+    echo "  • Iniciar proyecto: podman-utils start mi-api"
+    echo "  • Estado proyecto:  podman-utils status mi-api"
+    echo "  • Instalar global:  podman-utils install-global <postgres-global|redis-global|traefik|all>"
+    echo "  • Recargar daemon:  systemctl --user daemon-reload"
     echo ""
 }
 

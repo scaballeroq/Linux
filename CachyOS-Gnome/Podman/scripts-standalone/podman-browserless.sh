@@ -4,7 +4,7 @@
 set -euo pipefail
 
 CONTAINER_NAME="browserless-dev"
-NETWORK_NAME="devfed-net"
+NETWORK_NAME="cachy-net"
 PORT="3003:3000"
 IMAGE="docker.io/browserless/chrome:latest"
 

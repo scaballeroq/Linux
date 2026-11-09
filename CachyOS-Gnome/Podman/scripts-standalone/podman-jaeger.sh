@@ -4,7 +4,7 @@
 set -euo pipefail
 
 CONTAINER_NAME="jaeger-dev"
-NETWORK_NAME="devfed-net"
+NETWORK_NAME="cachy-net"
 IMAGE="docker.io/jaegertracing/all-in-one:latest"
 
 ensure_network() {

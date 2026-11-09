@@ -491,7 +491,7 @@ cmd_doctor() {
         log_ok "DOCKER_HOST: $DOCKER_HOST"
     else
         local reload_hint="source ~/.bashrc"
-        if [ -n "${ZSH_VERSION:-}" ]; then
+        if [ -n "${ZSH_VERSION:-}" ] || [[ "${SHELL:-}" == *"zsh"* ]]; then
             reload_hint="source ~/.zshrc"
         fi
         log_info "DOCKER_HOST: No exportado en el shell actual (Carga con: $reload_hint)"
@@ -505,12 +505,12 @@ cmd_doctor() {
     fi
 
     # 7. Red y Cortafuegos Firewalld
-    if command -v firewall-cmd &>/dev/null; then
-        if firewall-cmd --zone=trusted --list-interfaces 2>/dev/null | grep -qw "podman+"; then
-            log_ok "Firewalld: Interfaz podman+ autorizada en la zona trusted"
-        else
-            log_info "Firewalld: Interfaz podman+ pendiente de agregar a la zona trusted"
-        fi
+    if [ -f /etc/firewalld/zones/trusted.xml ] && grep -q 'name="podman+"' /etc/firewalld/zones/trusted.xml 2>/dev/null; then
+        log_ok "Firewalld: Interfaz podman+ autorizada en la zona trusted (/etc/firewalld/zones/trusted.xml)"
+    elif command -v firewall-cmd &>/dev/null && timeout 2 firewall-cmd --zone=trusted --list-interfaces 2>/dev/null | grep -qw "podman+"; then
+        log_ok "Firewalld: Interfaz podman+ autorizada en la zona trusted"
+    else
+        log_info "Firewalld: Interfaz podman+ pendiente de agregar a la zona trusted"
     fi
 
     # 8. Backend y Almacenamiento

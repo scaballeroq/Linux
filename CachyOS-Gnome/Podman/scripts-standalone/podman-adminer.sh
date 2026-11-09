@@ -4,7 +4,7 @@
 set -euo pipefail
 
 CONTAINER_NAME="adminer-dev"
-NETWORK_NAME="devfed-net"
+NETWORK_NAME="cachy-net"
 PORT="8081:8080"
 IMAGE="docker.io/library/adminer:latest"
 

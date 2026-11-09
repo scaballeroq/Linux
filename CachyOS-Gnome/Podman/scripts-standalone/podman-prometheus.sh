@@ -4,10 +4,10 @@
 set -euo pipefail
 
 CONTAINER_NAME="prometheus-dev"
-NETWORK_NAME="devfed-net"
+NETWORK_NAME="cachy-net"
 PORT="9090:9090"
 IMAGE="docker.io/prom/prometheus:latest"
-VOLUME_NAME="devfed-prom-data"
+VOLUME_NAME="cachy-prom-data"
 
 ensure_network() {
     if ! podman network exists "$NETWORK_NAME" 2>/dev/null; then

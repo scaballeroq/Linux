@@ -4,9 +4,9 @@
 set -euo pipefail
 
 CONTAINER_NAME="minio-dev"
-NETWORK_NAME="devfed-net"
+NETWORK_NAME="cachy-net"
 IMAGE="docker.io/minio/minio:latest"
-VOLUME_NAME="devfed-minio-data"
+VOLUME_NAME="cachy-minio-data"
 
 ensure_network() {
     if ! podman network exists "$NETWORK_NAME" 2>/dev/null; then

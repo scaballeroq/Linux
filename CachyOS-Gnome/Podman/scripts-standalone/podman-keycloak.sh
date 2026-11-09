@@ -4,7 +4,7 @@
 set -euo pipefail
 
 CONTAINER_NAME="keycloak-dev"
-NETWORK_NAME="devfed-net"
+NETWORK_NAME="cachy-net"
 PORT="8083:8080"
 IMAGE="quay.io/keycloak/keycloak:26"
 

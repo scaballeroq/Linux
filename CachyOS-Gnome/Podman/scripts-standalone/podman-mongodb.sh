@@ -4,10 +4,10 @@
 set -euo pipefail
 
 CONTAINER_NAME="mongo-dev"
-NETWORK_NAME="devfed-net"
+NETWORK_NAME="cachy-net"
 PORT="27017:27017"
 IMAGE="docker.io/library/mongo:latest"
-VOLUME_NAME="devfed-mongo-data"
+VOLUME_NAME="cachy-mongo-data"
 
 ensure_network() {
     if ! podman network exists "$NETWORK_NAME" 2>/dev/null; then
