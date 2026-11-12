@@ -1,12 +1,12 @@
 #!/bin/bash
 # ==============================================================================
 # NEOVIM SETUP (neovim.sh) - Omarchy (Arch Linux + Hyprland)
-# Instalación de Neovim, utilidades Wayland nativas y LazyVim Starter
+# Verificación de Neovim y utilidades Wayland nativas
 # ==============================================================================
 
 set -euo pipefail
 
-echo "ℹ️ Instalando Neovim y herramientas de compilación/búsqueda..."
+echo "ℹ️ Verificando Neovim y herramientas nativas Wayland..."
 
 # En Wayland nativo utilizamos wl-clipboard (Prohibido xclip)
 sudo pacman -S --needed --noconfirm \
@@ -19,15 +19,17 @@ sudo pacman -S --needed --noconfirm \
     tree-sitter \
     tree-sitter-cli
 
-if [ ! -d "$HOME/.config/nvim" ]; then
-    echo "ℹ️ Instalando configuración base LazyVim..."
+# Omarchy ya incluye una configuración curada y optimizada para Neovim por defecto
+if [ -d "$HOME/.config/nvim" ]; then
+    echo "✔️ Configuración de Neovim detectada en ~/.config/nvim."
+    echo "💡 Omarchy 4.5 incluye su propia configuración 'omakase' de Neovim preintegrada con omarchy-launch-editor."
+    echo "   Se preserva la configuración oficial por defecto de Omarchy."
+else
+    echo "ℹ️ No se detectó configuración previa. Instalando configuración base LazyVim..."
     git clone https://github.com/LazyVim/starter "$HOME/.config/nvim"
     rm -rf "$HOME/.config/nvim/.git"
     echo "  ✅ LazyVim configurado en ~/.config/nvim."
-else
-    echo "⚠️ $HOME/.config/nvim ya existe. Saltando clonación de LazyVim."
 fi
 
 echo ""
-echo "✅ Neovim instalado y listo para Wayland."
-echo "💡 Ejecuta 'nvim' y escribe ':LazyHealth' para comprobar el estado."
+echo "✅ Neovim listo para Wayland."

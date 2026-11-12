@@ -60,6 +60,9 @@ Dependiendo de si tu instalación de Omarchy utiliza módulos en **Lua** (`~/.co
 -- ~/.config/hypr/monitors.lua
 -- Topología Triple Monitor para HP ProBook 455 G10 en Omarchy 4.5
 
+-- Desactivar sobreescritura del panel GUI para respetar estrictamente las coordenadas Lua
+omarchy_monitor_panel_settings = false
+
 local omarchy_monitor_scale = 1
 local omarchy_gdk_scale = 1
 
