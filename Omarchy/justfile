@@ -75,6 +75,14 @@ mise:
 languages: node python rust dotnet java
     @echo "✅ Lenguajes instalados."
 
+# Diagnóstico de estado de lenguajes y runtimes
+lang-status:
+    ./ProgrammingLanguages/mise.sh --status
+    ./ProgrammingLanguages/python.sh --status
+    ./ProgrammingLanguages/nodejs.sh --status
+    ./ProgrammingLanguages/java.sh --status
+    ./ProgrammingLanguages/rust.sh --status
+
 # Node.js LTS
 node:
     ./ProgrammingLanguages/nodejs.sh
@@ -118,6 +126,13 @@ antigravity-ai:
 # Todos los IDEs
 ides: nvim vscode antigravity antigravity-cli antigravity-ide opencode
     @echo "✅ IDEs instalados."
+
+# Diagnóstico de estado de la suite de IDEs
+ide-status:
+    ./IDE/antigravity.sh --status
+    ./IDE/antigravity-cli.sh --status
+    ./IDE/antigravity-ide.sh --status
+    ./IDE/opencode.sh --status
 
 # Neovim + LazyVim (Wayland nativo)
 nvim:
