@@ -236,8 +236,13 @@ enable_socket() {
 # 7. CONFIGURACIÓN DE FIREWALLD EXCLUSIVO (REGLA MANDATORIA)
 # ------------------------------------------------------------------------------
 configure_firewall() {
-    log_info "[4/6] Configurando reglas de red en Firewalld (puerto 9090 TCP)..."
-    if command -v firewall-cmd &>/dev/null && systemctl is-active --quiet firewalld 2>/dev/null; then
+    log_info "[4/6] Configurando reglas de red en cortafuegos (puerto 9090 TCP)..."
+    if command -v ufw &>/dev/null && (systemctl is-active --quiet ufw 2>/dev/null || [ -f /etc/ufw/user.rules ]); then
+        require_root
+        $SUDO ufw allow 9090/tcp comment 'Cockpit Web Console' >/dev/null 2>&1 || true
+        $SUDO ufw reload >/dev/null 2>&1 || true
+        log_ok "Puerto 9090/tcp autorizado en UFW."
+    elif command -v firewall-cmd &>/dev/null && systemctl is-active --quiet firewalld 2>/dev/null; then
         local active_zone
         active_zone=$(firewall-cmd --get-default-zone 2>/dev/null || echo "public")
 
@@ -250,7 +255,7 @@ configure_firewall() {
             log_ok "Servicio 'cockpit' (9090/tcp) ya está autorizado en la zona Firewalld '$active_zone'."
         fi
     else
-        log_warn "Firewalld no está activo; omitiendo configuración de cortafuegos."
+        log_warn "Cortafuegos no activo; omitiendo configuración de red."
     fi
 }
 
@@ -340,8 +345,14 @@ restart_cockpit() {
 
 disable_cockpit() {
     require_root
-    log_info "Deshabilitando Cockpit de systemd y retirando regla de Firewalld..."
+    log_info "Deshabilitando Cockpit de systemd y retirando regla del cortafuegos..."
     $SUDO systemctl disable --now cockpit.socket cockpit.service 2>/dev/null || true
+
+    if command -v ufw &>/dev/null; then
+        $SUDO ufw delete allow 9090/tcp >/dev/null 2>&1 || true
+        $SUDO ufw reload >/dev/null 2>&1 || true
+        log_ok "Regla 9090/tcp retirada de UFW."
+    fi
 
     if command -v firewall-cmd &>/dev/null && systemctl is-active --quiet firewalld 2>/dev/null; then
         local active_zone
@@ -422,8 +433,14 @@ show_status() {
     echo -e "• Habilitado al inicio:  $([ "$enab_stat" = "enabled" ] && echo -e "${GREEN}✅ Habilitado${NC}" || echo -e "${RED}❌ Deshabilitado${NC}")"
     echo -e "• Puerto de escucha:     $port_stat"
 
-    # Cortafuegos Firewalld (Consulta rápida O(1))
-    if command -v firewall-cmd &>/dev/null && systemctl is-active --quiet firewalld 2>/dev/null; then
+    # Cortafuegos (UFW prioritario en Omarchy o Firewalld)
+    if command -v ufw &>/dev/null && (systemctl is-active --quiet ufw 2>/dev/null || [ -f /etc/ufw/user.rules ]); then
+        if grep -q "9090" /etc/ufw/user.rules 2>/dev/null; then
+            fw_stat="${GREEN}✅ Permitido en UFW (puerto 9090/tcp)${NC}"
+        else
+            fw_stat="${YELLOW}⚠️ Puerto 9090/tcp no encontrado en UFW${NC}"
+        fi
+    elif command -v firewall-cmd &>/dev/null && systemctl is-active --quiet firewalld 2>/dev/null; then
         local active_zone
         active_zone=$(firewall-cmd --get-default-zone 2>/dev/null || echo "public")
         if firewall-cmd --zone="$active_zone" --query-service=cockpit >/dev/null 2>&1; then
@@ -432,7 +449,7 @@ show_status() {
             fw_stat="${RED}❌ No permitido en zona '$active_zone'${NC}"
         fi
     else
-        fw_stat="${YELLOW}⚠️ Firewalld no está activo${NC}"
+        fw_stat="${YELLOW}⚠️ Cortafuegos no activo${NC}"
     fi
     echo -e "• Cortafuegos (Firewall):$fw_stat"
 

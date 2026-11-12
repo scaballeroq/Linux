@@ -85,13 +85,15 @@ just monitors
 
 ---
 
-## 🔒 Arquitectura de Seguridad (Firewalld Exclusivo)
+## 🔒 Arquitectura de Seguridad (UFW por Defecto)
 
-Siguiendo el estándar del monorepo, **UFW y reglas crudas de iptables están estrictamente descartados**:
-- Motor: `firewalld` con zona por defecto `home`.
-- Servicios expuestos localmente: SSH (22), Cockpit (9090), Vite (5173), Next.js (3000), FastAPI (8000), Omarchy/KDE Connect (1714-1764 tcp/udp).
-- Redes de virtualización y contenedores: `virbr0` en zona `libvirt` y `docker0`/`podman+` en zona `trusted`.
-- Privacidad: DNS-over-TLS mediante `systemd-resolved` con Quad9 y Cloudflare.
+Omarchy integra **UFW (Uncomplicated Firewall)** como cortafuegos predeterminado del sistema:
+- **Motor:** `ufw` (`ufw.service`) con políticas base `deny incoming`, `allow outgoing` y reenvío `DEFAULT_FORWARD_POLICY="ACCEPT"` para contenedores.
+- **Servicios expuestos en LAN:** LocalSend (53317 tcp/udp), GSConnect / KDE Connect (1714-1764 tcp/udp), mDNS (5353 udp), SSH (22 tcp).
+- **Contenedores y Virtualización:** Enrutamiento DNS de Docker/Podman hacia host 172.17.0.1:53 y reenvío para `podman+` / `virbr0`.
+- **Desarrollo Modular (`--dev-ports`):** Apertura bajo demanda de puertos Next.js (3000), Vite (5173), FastAPI (8000) y Web (8080).
+- **Privacidad:** DNS-over-TLS oportunista mediante `systemd-resolved` con Quad9 y Cloudflare.
+- **Script de Gestión:** `Setup/seguridad.sh` permite auditar el estado (`--status`), abrir/cerrar puertos (`--allow-port`, `--deny-port`, `--delete-port`, `--dev-ports`) y aplicar endurecimiento de Kernel `sysctl`.
 
 ---
 

@@ -42,6 +42,14 @@ security:
 fonts:
     ./Setup/fonts.sh
 
+# Configuración multi-monitor (LG 32" Principal, TV Sony 32" Derecha, Portátil Abajo)
+monitors:
+    ./Setup/monitors-setup.sh --apply
+
+# Diagnóstico de estado de monitores y sesión Wayland/Hyprland
+monitors-status:
+    ./Setup/monitors-setup.sh --status
+
 # Configuración modular de Bash (Aliases, Funciones, Entorno)
 bash-setup:
     ./Bash.Setup/setup.sh
