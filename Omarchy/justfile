@@ -14,7 +14,7 @@ setup-all: post-install security fonts bash-setup virtualization mise cockpit id
 # CONFIGURACIÓN BASE DEL SISTEMA
 # =============================================================================
 
-# Configuración base post-instalación (AMD Ryzen/Radeon, ZRAM, Wayland, Codecs)
+# Mantenimiento y verificación del sistema (Chaotic-AUR y fstrim SSD)
 post-install:
     ./Setup/post-install.sh
 
