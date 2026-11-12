@@ -18,6 +18,22 @@ setup-all: post-install security fonts bash-setup virtualization mise cockpit id
 post-install:
     ./Setup/post-install.sh
 
+# Repositorio precompilado Chaotic-AUR y optimizaciones de Pacman
+chaotic-aur:
+    ./Setup/chaotic-aur.sh
+
+# Diagnóstico de integración de Chaotic-AUR, repositorios y pacman.conf
+chaotic-status:
+    ./Setup/chaotic-aur.sh --status
+
+# Refresco e inicialización de firmas digitales (Arch Linux y Chaotic-AUR)
+chaotic-keys:
+    ./Setup/chaotic-aur.sh --keys
+
+# Actualización completa del sistema sincronizada
+chaotic-update:
+    ./Setup/chaotic-aur.sh --update
+
 # Seguridad de red y cortafuegos (Firewalld exclusivo)
 security:
     ./Setup/seguridad.sh

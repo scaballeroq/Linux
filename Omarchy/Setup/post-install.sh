@@ -12,43 +12,19 @@ echo "================================================================="
 echo "🚀 Configuración Post-Instalación de Omarchy para HP ProBook 455 G10"
 echo "================================================================="
 
-# 1. Optimización de pacman.conf
-echo "ℹ️ [1/8] Optimizando /etc/pacman.conf (Color, ParallelDownloads, ILoveCandy)..."
-sudo sed -i 's/^#Color/Color/' /etc/pacman.conf || true
-sudo sed -i 's/^#ParallelDownloads = .*/ParallelDownloads = 10/' /etc/pacman.conf || true
-if ! grep -q "^Color" /etc/pacman.conf; then
-    sudo sed -i '/\[options\]/a Color' /etc/pacman.conf
-fi
-if ! grep -q "^ParallelDownloads" /etc/pacman.conf; then
-    sudo sed -i '/\[options\]/a ParallelDownloads = 10' /etc/pacman.conf
-fi
-if ! grep -q "ILoveCandy" /etc/pacman.conf; then
-    sudo sed -i '/ParallelDownloads/a ILoveCandy' /etc/pacman.conf
-fi
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# 2. Configuración del repositorio Chaotic-AUR (opcional e idempotente)
-echo "ℹ️ [2/8] Verificando repositorio Chaotic-AUR..."
-if ! grep -q "^\[chaotic-aur\]" /etc/pacman.conf; then
-    echo "  🔑 Añadiendo llaves y repositorios de Chaotic-AUR..."
-    sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com || true
-    sudo pacman-key --lsign-key 3056513887B78AEB || true
-
-    sudo pacman -U --needed --noconfirm \
-        'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' \
-        'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst' || true
-
-    sudo tee -a /etc/pacman.conf > /dev/null << 'EOF'
-
-[chaotic-aur]
-Include = /etc/pacman.d/chaotic-mirrorlist
-EOF
-    sudo pacman -Sy
+# 1. Configuración de Repositorio Chaotic-AUR y Optimización de Pacman
+echo "ℹ️ [1/8] Configurando repositorio Chaotic-AUR y optimizaciones de Pacman..."
+if [ -f "$SCRIPT_DIR/chaotic-aur.sh" ]; then
+    bash "$SCRIPT_DIR/chaotic-aur.sh"
 else
-    echo "  ✔️ El repositorio Chaotic-AUR ya está configurado."
+    sudo sed -i 's/^#Color/Color/' /etc/pacman.conf || true
+    sudo sed -i 's/^#ParallelDownloads = .*/ParallelDownloads = 8/' /etc/pacman.conf || true
 fi
 
-# 3. CPU Microcode y Drivers Gráficos AMD (Ryzen 7 7730U + Radeon Graphics)
-echo "ℹ️ [3/8] Instalando Microcode AMD, Mesa RADV Vulkan y aceleración VA-API por Hardware..."
+# 2. CPU Microcode y Drivers Gráficos AMD (Ryzen 7 7730U + Radeon Graphics)
+echo "ℹ️ [2/8] Instalando Microcode AMD, Mesa RADV Vulkan y aceleración VA-API por Hardware..."
 sudo pacman -S --needed --noconfirm \
     amd-ucode \
     mesa \
@@ -63,8 +39,8 @@ sudo pacman -S --needed --noconfirm \
     lib32-mesa-vdpau \
     libva-utils
 
-# 4. Optimización de Hardware Portátil (HP ProBook: brillo, energía, bluetooth)
-echo "ℹ️ [4/8] Instalando utilidades de hardware para portátil (brillo, perfiles de energía)..."
+# 3. Optimización de Hardware Portátil (HP ProBook: brillo, energía, bluetooth)
+echo "ℹ️ [3/8] Instalando utilidades de hardware para portátil (brillo, perfiles de energía)..."
 sudo pacman -S --needed --noconfirm \
     brightnessctl \
     power-profiles-daemon \
@@ -76,8 +52,8 @@ sudo pacman -S --needed --noconfirm \
 sudo systemctl enable --now power-profiles-daemon.service 2>/dev/null || true
 sudo systemctl enable --now bluetooth.service 2>/dev/null || true
 
-# 5. Audio PipeWire & WirePlumber
-echo "ℹ️ [5/8] Verificando servidor de sonido PipeWire y WirePlumber..."
+# 4. Audio PipeWire & WirePlumber
+echo "ℹ️ [4/8] Verificando servidor de sonido PipeWire y WirePlumber..."
 sudo pacman -S --needed --noconfirm \
     pipewire \
     wireplumber \
@@ -86,8 +62,8 @@ sudo pacman -S --needed --noconfirm \
     pipewire-alsa \
     pipewire-jack
 
-# 6. Optimización de Memoria (ZRAM para 32 GB RAM) y Mantenimiento de SSD NVMe
-echo "ℹ️ [6/8] Configurando ZRAM swap (zstd) y temporizador TRIM para SSD NVMe..."
+# 5. Optimización de Memoria (ZRAM para 32 GB RAM) y Mantenimiento de SSD NVMe
+echo "ℹ️ [5/8] Configurando ZRAM swap (zstd) y temporizador TRIM para SSD NVMe..."
 sudo pacman -S --needed --noconfirm zram-generator
 
 sudo mkdir -p /etc/systemd
@@ -102,8 +78,8 @@ sudo systemctl start /dev/zram0 2>/dev/null || true
 # Habilitar fstrim semanal para SSD NVMe Kioxia
 sudo systemctl enable --now fstrim.timer
 
-# 7. Herramientas nativas Wayland y utilidades esenciales de terminal
-echo "ℹ️ [7/8] Instalando herramientas de escritorio Wayland y utilidades modernas..."
+# 6. Herramientas nativas Wayland y utilidades esenciales de terminal
+echo "ℹ️ [6/8] Instalando herramientas de escritorio Wayland y utilidades modernas..."
 sudo pacman -S --needed --noconfirm \
     wl-clipboard \
     grim \
@@ -123,14 +99,20 @@ sudo pacman -S --needed --noconfirm \
     unrar \
     gparted
 
-# 8. Codecs Multimedia extendidos (GStreamer)
-echo "ℹ️ [8/8] Configurando codecs multimedia extendidos..."
+# 7. Codecs Multimedia extendidos (GStreamer)
+echo "ℹ️ [7/8] Configurando codecs multimedia extendidos..."
 sudo pacman -S --needed --noconfirm \
     gst-plugins-base \
     gst-plugins-good \
     gst-plugins-bad \
     gst-plugins-ugly \
     gst-libav
+
+# 8. Verificación y diagnóstico de repositorios y paquetes
+echo "ℹ️ [8/8] Verificando estado final de repositorios y Chaotic-AUR..."
+if [ -f "$SCRIPT_DIR/chaotic-aur.sh" ]; then
+    bash "$SCRIPT_DIR/chaotic-aur.sh" --status
+fi
 
 echo ""
 echo "================================================================="

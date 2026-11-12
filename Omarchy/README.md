@@ -70,6 +70,8 @@ just monitors
 | Comando | Descripción |
 | :--- | :--- |
 | `just post-install` | Microcode AMD, Mesa RADV, aceleración VA-API, ZRAM, brillo y utilidades |
+| `just chaotic-aur` | Repositorio precompilado Chaotic-AUR, firmas digitales y optimización Pacman |
+| `just chaotic-status` | Diagnóstico de integración de Chaotic-AUR, repositorios y makepkg |
 | `just security` | Cortafuegos Firewalld exclusivo, DNS-over-TLS y endurecimiento sysctl |
 | `just fonts` | Instalación de Nerd Fonts (JetBrainsMono, FiraCode, CascadiaCode...) |
 | `just bash-setup` | Integración de módulos de Bash (`~/.bashrc.d`) |
