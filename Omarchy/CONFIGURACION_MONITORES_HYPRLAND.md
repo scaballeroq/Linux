@@ -14,7 +14,7 @@ La estación de trabajo opera con una topología de tres pantallas Full HD 1080p
                |        (Principal)        |  |        (Secundaria)       |
                |      1920x1080 @ 60Hz     |  |      1920x1080 @ 60Hz     |
                |      Posición: 0,0        |  |      Posición: 1920,0     |
-               |   [ Workspaces: 1..5 ]    |  |   [ Workspaces: 6 y 7 ]   |
+               |   [ Workspaces: 1..4 ]    |  |   [ Workspaces: 5..7 ]    |
                +---------------------------+  +---------------------------+
                |    PORTÁTIL 15.6" (eDP-1) |
                |      1920x1080 @ 60Hz     |
@@ -27,8 +27,8 @@ La estación de trabajo opera con una topología de tres pantallas Full HD 1080p
 
 | Monitor | Conector | Resolución / Refresco | Posición `(X, Y)` | Workspaces Asignados | Rol Principal |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **LG 32"** | `DP-3` | 1920x1080 @ 60Hz | `0x0` (`0,0`) | `1`, `2`, `3`, `4`, `5` | Monitor Principal (Código, IDE, Navegación activa) |
-| **Sony 32"** | `DP-4` | 1920x1080 @ 60Hz | `1920x0` (`1920,0`) | `6`, `7` | Monitor Secundario Lateral (Docs, Chat, Logs) |
+| **LG 32"** | `DP-3` | 1920x1080 @ 60Hz | `0x0` (`0,0`) | `1`, `2`, `3`, `4` | Monitor Principal (Código, IDE, Navegación activa) |
+| **Sony 32"** | `DP-4` | 1920x1080 @ 60Hz | `1920x0` (`1920,0`) | `5`, `6`, `7` | Monitor Secundario Lateral (Docs, Chat, Logs) |
 | **Portátil 15.6"** | `eDP-1` | 1920x1080 @ 60Hz | `0x1080` (`0,1080`) | `8`, `9` | Pantalla Integrada Inferior (Terminales, Monitorización) |
 
 ---
@@ -103,15 +103,15 @@ hl.monitor({ output = "", mode = "preferred", position = "auto", scale = omarchy
 -- 2. REGLAS DE WORKSPACES
 -- =============================================================================
 
--- DP-3 (Principal) -> Workspaces 1..5
+-- DP-3 (Principal) -> Workspaces 1..4
 hl.workspace_rule({ workspace = "1", monitor = "DP-3", default = true, persistent = true })
 hl.workspace_rule({ workspace = "2", monitor = "DP-3", persistent = true })
 hl.workspace_rule({ workspace = "3", monitor = "DP-3", persistent = true })
 hl.workspace_rule({ workspace = "4", monitor = "DP-3", persistent = true })
-hl.workspace_rule({ workspace = "5", monitor = "DP-3", persistent = true })
 
--- DP-4 (Lateral) -> Workspaces 6, 7
-hl.workspace_rule({ workspace = "6", monitor = "DP-4", default = true, persistent = true })
+-- DP-4 (Lateral) -> Workspaces 5..7
+hl.workspace_rule({ workspace = "5", monitor = "DP-4", default = true, persistent = true })
+hl.workspace_rule({ workspace = "6", monitor = "DP-4", persistent = true })
 hl.workspace_rule({ workspace = "7", monitor = "DP-4", persistent = true })
 
 -- eDP-1 (Portátil) -> Workspaces 8, 9

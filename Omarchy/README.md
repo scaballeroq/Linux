@@ -25,7 +25,7 @@ Perfil de aprovisionamiento, dotfiles y optimización de **Omarchy 4.5** para el
                |        (Principal)        |  |        (Secundaria)       |
                |      1920x1080 @ 60Hz     |  |      1920x1080 @ 60Hz     |
                |      Posición: 0,0        |  |      Posición: 1920,0     |
-               |   [ Workspaces: 1..5 ]    |  |   [ Workspaces: 6 y 7 ]   |
+               |   [ Workspaces: 1..4 ]    |  |   [ Workspaces: 5..7 ]    |
                +---------------------------+  +---------------------------+
                |    PORTÁTIL 15.6" (eDP-1) |
                |      1920x1080 @ 60Hz     |

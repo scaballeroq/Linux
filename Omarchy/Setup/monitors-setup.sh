@@ -4,9 +4,9 @@
 # Hardware: HP ProBook 455 G10 (AMD Ryzen 7 7730U + Radeon Graphics Vega 8)
 #
 # Topología:
-#   - DP-3:  LG 32" (Principal, 1920x1080 @ 60Hz, Pos: 0x0) -> Workspaces 1..5
-#   - DP-4:  SONY 32" TV (Lateral derecha, 1920x1080 @ 60Hz, Pos: 1920x0) -> Workspaces 6, 7
-#   - eDP-1: Portátil 15.6" (Inferior, 1920x1080 @ 60Hz, Pos: 0x1080) -> Workspaces 8, 9
+#   - DP-3:  LG 32" (Principal, 1920x1080 @ 60Hz, Pos: 0x0) -> Workspaces 1..4
+#   - DP-4:  SONY 32" TV (Lateral derecha, 1920x1080 @ 60Hz, Pos: 1920x0) -> Workspaces 5..7
+#   - eDP-1: Portátil 15.6" (Inferior, 1920x1080 @ 60Hz, Pos: 0x1080) -> Workspaces 8..9
 # =============================================================================
 
 set -euo pipefail
@@ -131,18 +131,18 @@ hl.monitor({
 hl.monitor({ output = "", mode = "preferred", position = "auto", scale = omarchy_monitor_scale })
 
 -- =============================================================================
--- 2. ASIGNACIÓN ESTRICTA DE WORKSPACES
+-- 2. ASIGNACIÓN ESTRICTA DE WORKSPACES (NÚMEROS ÚNICOS POR PANTALLA)
 -- =============================================================================
 
--- DP-3 (LG 32" Principal) -> Workspaces 1..5
+-- DP-3 (LG 32" Principal) -> Workspaces 1..4
 hl.workspace_rule({ workspace = "1", monitor = "DP-3", default = true, persistent = true })
 hl.workspace_rule({ workspace = "2", monitor = "DP-3", persistent = true })
 hl.workspace_rule({ workspace = "3", monitor = "DP-3", persistent = true })
 hl.workspace_rule({ workspace = "4", monitor = "DP-3", persistent = true })
-hl.workspace_rule({ workspace = "5", monitor = "DP-3", persistent = true })
 
--- DP-4 (Sony 32" Derecha) -> Workspaces 6 y 7
-hl.workspace_rule({ workspace = "6", monitor = "DP-4", default = true, persistent = true })
+-- DP-4 (Sony 32" Derecha) -> Workspaces 5..7
+hl.workspace_rule({ workspace = "5", monitor = "DP-4", default = true, persistent = true })
+hl.workspace_rule({ workspace = "6", monitor = "DP-4", persistent = true })
 hl.workspace_rule({ workspace = "7", monitor = "DP-4", persistent = true })
 
 -- eDP-1 (Portátil 15.6" Abajo) -> Workspaces 8 y 9
