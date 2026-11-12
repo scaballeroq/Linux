@@ -1,19 +1,24 @@
 # Omarchy Environment Configuration Justfile
-# (Arch Linux + Omarchy)
+# (Arch Linux + Hyprland - Omarchy 4.5 Quattro RS)
+# Optimizado para HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8)
+
+# Muestra ayuda por defecto
+default:
+    @just --list
 
 # Instala todo el entorno por defecto
 setup-all: post-install security fonts bash-setup virtualization mise cockpit ides git-setup languages yt-dlp fastfetch
-    echo "🚀 Entorno completo de Omarchy (Arch Linux) configurado. Por favor, reinicia el sistema."
+    @echo "🚀 Entorno completo de Omarchy 4.5 configurado. Por favor, reinicia el sistema."
 
 # =============================================================================
 # CONFIGURACIÓN BASE DEL SISTEMA
 # =============================================================================
 
-# Configuración base post-instalación (Pacman, AUR, Flatpak, Codecs)
+# Configuración base post-instalación (AMD Ryzen/Radeon, ZRAM, Wayland, Codecs)
 post-install:
     ./Setup/post-install.sh
 
-# Seguridad básica (UFW firewall)
+# Seguridad de red y cortafuegos (Firewalld exclusivo)
 security:
     ./Setup/seguridad.sh
 
@@ -68,13 +73,13 @@ mise:
 
 # Todos los lenguajes
 languages: node python rust dotnet java
-    echo "✅ Lenguajes instalados."
+    @echo "✅ Lenguajes instalados."
 
 # Node.js LTS
 node:
     ./ProgrammingLanguages/nodejs.sh
 
-# Python
+# Python & uv
 python:
     ./ProgrammingLanguages/python.sh
 
@@ -104,7 +109,7 @@ angular:
 
 # Antigravity CLI
 antigravity-ai:
-    ./AI/antigravity-CLI.sh
+    ./IDE/antigravity-cli.sh
 
 # =============================================================================
 # ENTORNOS DE DESARROLLO (IDEs)
@@ -112,13 +117,13 @@ antigravity-ai:
 
 # Todos los IDEs
 ides: nvim vscode antigravity antigravity-cli antigravity-ide opencode
-    echo "✅ IDEs instalados."
+    @echo "✅ IDEs instalados."
 
-# Neovim + LazyVim
+# Neovim + LazyVim (Wayland nativo)
 nvim:
     ./IDE/neovim.sh
 
-# Visual Studio Code
+# Visual Studio Code (Wayland nativo)
 vscode:
     ./IDE/vscode.sh
 
@@ -142,7 +147,7 @@ opencode:
 # JUEGOS
 # =============================================================================
 
-# Steam y herramientas de juegos
+# Steam y herramientas de juegos (Vulkan RADV, GameMode, MangoHud)
 steam:
     ./Juegos/steam.sh
 
@@ -186,3 +191,24 @@ lazydocker:
 lzd:
     lazydocker
 
+# =============================================================================
+# TELEMETRÍA Y CONTROL DE HARDWARE (HP ProBook 455 G10)
+# =============================================================================
+
+# Diagnóstico de hardware, cortafuegos, pantallas y memoria ZRAM
+status:
+    @echo "================================================================="
+    @echo "💻 TELEMETRÍA: HP ProBook 455 G10 (Omarchy 4.5)"
+    @echo "================================================================="
+    @echo "🔹 CPU:       $$(lscpu | grep 'Model name:' | sed 's/Model name:[ \t]*//')"
+    @echo "🔹 GPU:       $$(lspci | grep -i 'vga\|3d' | cut -d: -f3)"
+    @echo "🔹 Kernel:    $$(uname -r)"
+    @echo "🔹 Wayland:   $$XDG_SESSION_TYPE ($$WAYLAND_DISPLAY)"
+    @echo "🔹 Firewalld: $$(sudo firewall-cmd --state 2>/dev/null || echo 'inactivo')"
+    @echo "🔹 ZRAM Swap: $$(swapon --show | grep -E 'zram|Type' || echo 'Sin ZRAM')"
+    @echo "🔹 Audio:     $$(wpctl status 2>/dev/null | grep -E 'Default|Sink' | head -n2 || echo 'PipeWire OK')"
+    @echo "================================================================="
+
+# Consulta de topología de monitores en Hyprland
+monitors:
+    @command -v hyprctl >/dev/null 2>&1 && hyprctl monitors || echo "⚠️ hyprctl no disponible fuera de sesión Hyprland"

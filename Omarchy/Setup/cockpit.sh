@@ -18,13 +18,13 @@ sudo pacman -S --needed --noconfirm \
 echo "ℹ️ Habilitando socket de Cockpit en systemd..."
 sudo systemctl enable --now cockpit.socket
 
-# 3. Configurar Firewall (UFW) para permitir acceso a la interfaz web (puerto 9090)
-if command -v ufw >/dev/null 2>&1; then
-    echo "ℹ️ Configurando regla en UFW para Cockpit (puerto 9090/tcp)..."
-    sudo ufw allow 9090/tcp comment "Cockpit Web Admin"
+# 3. Configurar Firewall (Firewalld exclusivo) para permitir acceso a la interfaz web (puerto 9090)
+if command -v firewall-cmd >/dev/null 2>&1; then
+    echo "ℹ️ Configurando regla en Firewalld para Cockpit (servicio cockpit / puerto 9090/tcp)..."
+    sudo firewall-cmd --permanent --add-service=cockpit 2>/dev/null || sudo firewall-cmd --permanent --add-port=9090/tcp
+    sudo firewall-cmd --reload
 fi
 
 echo ""
-echo "✅ Cockpit instalado y configurado correctamente."
+echo "✅ Cockpit instalado y configurado correctamente con Firewalld."
 echo "🔗 Accede desde tu navegador en: https://localhost:9090"
-

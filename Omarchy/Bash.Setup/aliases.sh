@@ -130,3 +130,28 @@ alias update-antigravity='sudo /usr/local/bin/update-antigravity'
 alias update-antigravity-ide='sudo /usr/local/bin/update-antigravity-ide'
 alias update-antigravity-cli='$HOME/.local/bin/update-antigravity-cli'
 
+# -----------------------------------------------------------------------------
+# 9. CORTAFUEGOS (FIREWALLD EXCLUSIVO)
+# -----------------------------------------------------------------------------
+alias fw='sudo firewall-cmd'
+alias fw-status='sudo firewall-cmd --state'
+alias fw-list='sudo firewall-cmd --list-all'
+alias fw-reload='sudo firewall-cmd --reload'
+
+# -----------------------------------------------------------------------------
+# 10. WAYLAND / HYPRLAND / OMARCHY 4.5
+# -----------------------------------------------------------------------------
+alias hypr-reload='hyprctl reload'
+alias hypr-monitors='hyprctl monitors'
+alias hypr-workspaces='hyprctl workspaces'
+alias omarchy-restart-shell='omarchy restart shell'
+alias omarchy-menu='omarchy'
+
+# -----------------------------------------------------------------------------
+# 11. HARDWARE HP PROBOOK 455 G10 (AMD RYZEN / RADEON / BATERÍA)
+# -----------------------------------------------------------------------------
+alias bright='brightnessctl set'
+alias battery='upower -i $(upower -e | grep BAT) | grep -E "state|to\ full|percentage"'
+alias va-info='vainfo'
+
+

@@ -91,13 +91,13 @@ echo "ℹ️ Configurando pool de almacenamiento por defecto..."
 sudo virsh pool-start default 2>/dev/null || true
 sudo virsh pool-autostart default 2>/dev/null || true
 
-# 8. Compatibilidad con Firewall (UFW) de Omarchy
-if command -v ufw >/dev/null 2>&1; then
-    echo "ℹ️ Configurando reglas de UFW para permitir tráfico en virbr0 (DHCP/DNS para VMs)..."
-    sudo ufw allow in on virbr0 comment "libvirt virbr0 in" 2>/dev/null || true
-    sudo ufw allow out on virbr0 comment "libvirt virbr0 out" 2>/dev/null || true
-    sudo ufw route allow in on virbr0 2>/dev/null || true
-    sudo ufw route allow out on virbr0 2>/dev/null || true
+# 8. Compatibilidad con Firewall (Firewalld exclusivo) de Omarchy
+if command -v firewall-cmd >/dev/null 2>&1; then
+    echo "ℹ️ Configurando reglas de Firewalld para libvirt (virbr0)..."
+    sudo firewall-cmd --permanent --zone=libvirt --add-interface=virbr0 2>/dev/null || true
+    sudo firewall-cmd --permanent --zone=libvirt --add-forward 2>/dev/null || true
+    sudo firewall-cmd --permanent --zone=public --add-masquerade 2>/dev/null || true
+    sudo firewall-cmd --reload 2>/dev/null || true
 fi
 
 # 9. Configuración de Bridge Linux (br0) solo para interfaces Ethernet cableadas
