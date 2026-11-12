@@ -58,9 +58,25 @@ bash-setup:
 fastfetch:
     ./Setup/fastfetch.sh
 
-# Multimedia (yt-dlp, ffmpeg)
+# Multimedia (yt-dlp, FFmpeg y aceleración hardware)
 yt-dlp:
     ./Setup/yt-dlp-setup.sh
+
+# Diagnóstico multimedia y estado de yt-dlp
+yt-dlp-status:
+    ./Setup/yt-dlp-setup.sh --status
+
+# Actualizar yt-dlp, dependencias y motores JS
+yt-dlp-update:
+    ./Setup/yt-dlp-setup.sh --update
+
+# Limpieza de caché de tokens y descifrado de yt-dlp
+yt-dlp-clean:
+    ./Setup/yt-dlp-setup.sh --clean-cache
+
+# Prueba de extracción y descifrado JS de yt-dlp
+yt-dlp-test:
+    ./Setup/yt-dlp-setup.sh --test
 
 # =============================================================================
 # CONFIGURACIÓN DE RED Y VIRTUALIZACIÓN

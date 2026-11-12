@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# python.sh - Verificación de Python Nativo (Omarchy) y Gestor 'uv' vía Mise
-# Omarchy Workstation (Arch Linux + Hyprland Wayland)
+# python.sh - Verificación de Python Nativo (Omarchy 4.5) y Gestor 'uv' vía Mise
+# Omarchy 4.5 Workstation | Escritorio: Hyprland (Wayland)
 # Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3, 8C/16T) | 32 GB RAM
 # ==============================================================================
 # Principios de Diseño:
 # - Cumplimiento estricto de PEP 668: Python NO se instala globalmente a través
 #   de gestores de versiones (Mise/Pyenv) para garantizar la integridad absoluta
-#   de las herramientas del sistema Arch Linux (Pacman, Firewalld, systemd, Hyprland).
-# - Se valida que el sistema disponga del Python 3 nativo de Omarchy y sus paquetes base.
-# - Para proyectos que requieran versiones específicas de Python (3.11, 3.12, 3.13, etc.),
+#   de las herramientas del sistema Omarchy (Pacman, Firewalld, systemd, Hyprland).
+# - Se valida que el sistema disponga del Python 3 nativo de Omarchy (/usr/bin/python3 v3.14).
+# - Para proyectos que requieran versiones específicas de Python (3.11, 3.12, 3.13),
 #   se utiliza 'uv' de forma aislada por proyecto (per-project) sin alterar el sistema.
-# - Optimización con UV_LINK_MODE="copy" para compatibilidad con snapshots y clonado Btrfs/NVMe.
+# - Optimización con UV_LINK_MODE="copy" para compatibilidad con NVMe ext4/btrfs.
 # - Ajuste de paralelismo y compilación a los 16 hilos de la CPU AMD Ryzen 7 7730U (-j16).
-# - Integración nativa con Sesión Wayland (environment.d) y Shells (Bash y Zsh).
+# - Integración nativa con Hyprland (environment.d) y Shells (Bash y Zsh).
 # - Generación automática de autocompletados nativos para 'uv' y 'uvx'.
 # - Comandos CLI: --status / -s, --update / -u, --help / -h.
 # ==============================================================================
@@ -79,7 +79,9 @@ run_as_user() {
 }
 
 get_mise_bin() {
-    if command -v mise &>/dev/null; then
+    if [ -x "/usr/bin/mise" ]; then
+        echo "/usr/bin/mise"
+    elif command -v mise &>/dev/null; then
         command -v mise
     elif [ -x "$USER_HOME/.local/bin/mise" ]; then
         echo "$USER_HOME/.local/bin/mise"
@@ -89,10 +91,10 @@ get_mise_bin() {
 }
 
 get_uv_bin() {
-    if command -v uv &>/dev/null; then
-        command -v uv
-    elif [ -x "$USER_HOME/.local/share/mise/shims/uv" ]; then
+    if [ -x "$USER_HOME/.local/share/mise/shims/uv" ]; then
         echo "$USER_HOME/.local/share/mise/shims/uv"
+    elif command -v uv &>/dev/null; then
+        command -v uv
     elif [ -x "$USER_HOME/.local/bin/uv" ]; then
         echo "$USER_HOME/.local/bin/uv"
     else
@@ -101,10 +103,10 @@ get_uv_bin() {
 }
 
 get_uvx_bin() {
-    if command -v uvx &>/dev/null; then
-        command -v uvx
-    elif [ -x "$USER_HOME/.local/share/mise/shims/uvx" ]; then
+    if [ -x "$USER_HOME/.local/share/mise/shims/uvx" ]; then
         echo "$USER_HOME/.local/share/mise/shims/uvx"
+    elif command -v uvx &>/dev/null; then
+        command -v uvx
     elif [ -x "$USER_HOME/.local/bin/uvx" ]; then
         echo "$USER_HOME/.local/bin/uvx"
     else
@@ -117,15 +119,15 @@ get_uvx_bin() {
 # ------------------------------------------------------------------------------
 show_help() {
     cat <<EOF
-🐍 Gestor de Entorno Python & Gestor 'uv' - Omarchy Workstation
-   Hardware: AMD Ryzen 7 7730U (16 hilos) | 32 GB RAM | NVMe Kioxia | Hyprland Wayland
+🐍 Gestor de Entorno Python & Gestor 'uv' - Omarchy 4.5 Workstation
+   Hardware: AMD Ryzen 7 7730U (16 hilos) | 32 GB RAM | NVMe | Hyprland (Wayland)
 
 Filosofía de Aislamiento (PEP 668):
   • El sistema operativo utiliza exclusivamente el Python nativo de Omarchy (/usr/bin/python3).
   • Python NO se instala globalmente en Mise para garantizar la integridad del sistema
     (Pacman, Firewalld, Hyprland, PipeWire).
   • Los proyectos que requieran versiones específicas de Python se gestionan de forma
-    aislada mediante 'uv' (ej: 'uv init', 'uv venv --python 3.13').
+    aislada mediante 'uv' (ej: 'uv init', 'uv venv --python 3.12').
 
 Uso:
   $0 [OPCIÓN]
@@ -137,16 +139,12 @@ Opciones:
                       módulo venv, gestor 'uv', concurrencia y aislamiento de Mise.
   --update, -u        Actualiza 'uv' a la última versión disponible en Mise.
   --help, -h          Muestra este mensaje de ayuda.
-
-Herramienta de Creación Rápida de Proyectos:
-  Para inicializar un proyecto Python moderno aislado con 'uv':
-    ./ProgrammingLanguages/python-uv-init.sh (o 'just python-uv')
 EOF
 }
 
 show_status() {
     echo -e "${CYAN}=================================================================${NC}"
-    echo -e "${BOLD}🔍 DIAGNÓSTICO DEL ENTORNO PYTHON (NATIVO ARCH/OMARCHY + GESTOR UV)${NC}"
+    echo -e "${BOLD}🔍 DIAGNÓSTICO DEL ENTORNO PYTHON (NATIVO OMARCHY 4.5 + GESTOR UV)${NC}"
     echo -e "${CYAN}=================================================================${NC}"
 
     local py_bin py_ver py_pkg venv_status pip_status mise_py uv_status uvx_status
@@ -157,7 +155,7 @@ show_status() {
     py_pkg=$(pacman -Q python 2>/dev/null || echo "Paquete nativo")
 
     if python3 -m venv --help &>/dev/null; then
-        venv_status="${GREEN}✅ Operativo (módulo venv nativo)${NC}"
+        venv_status="${GREEN}✅ Operativo (módulo venv nativo de Python)${NC}"
     else
         venv_status="${RED}❌ No disponible${NC}"
     fi
@@ -165,14 +163,14 @@ show_status() {
     if python3 -m pip --version &>/dev/null; then
         local pip_ver
         pip_ver=$(python3 -m pip --version 2>/dev/null | awk '{print $2}')
-        pip_status="${GREEN}✅ v$pip_ver (paquete Pacman de Omarchy)${NC}"
+        pip_status="${GREEN}✅ v$pip_ver (paquete Pacman)${NC}"
     else
-        pip_status="${YELLOW}⚠️  No instalado a nivel de sistema (cumple aislamiento PEP 668)${NC}"
+        pip_status="${YELLOW}ℹ️ No instalado a nivel de sistema (cumple aislamiento PEP 668, gestionado con uv)${NC}"
     fi
 
     mise_cmd=$(get_mise_bin)
     if [ -n "$mise_cmd" ] && run_as_user "$mise_cmd" which python &>/dev/null; then
-        mise_py="${YELLOW}⚠️  Detectado shim de Python en Mise (se recomienda eliminar para proteger el sistema)${NC}"
+        mise_py="${YELLOW}⚠️ Detectado shim de Python en Mise (se recomienda eliminar para proteger el sistema)${NC}"
     else
         mise_py="${GREEN}✅ Ninguno (El sistema corre 100% nativo con /usr/bin/python3)${NC}"
     fi
@@ -183,7 +181,7 @@ show_status() {
         uv_v=$(run_as_user "$uv_cmd" --version 2>/dev/null || echo "instalado")
         uv_status="${GREEN}✅ $uv_v ($uv_cmd)${NC}"
     else
-        uv_status="${RED}❌ No instalado${NC}"
+        uv_status="${RED}❌ No instalado (ejecuta './ProgrammingLanguages/python.sh')${NC}"
     fi
 
     uvx_cmd=$(get_uvx_bin)
@@ -195,17 +193,17 @@ show_status() {
         uvx_status="${RED}❌ No instalado${NC}"
     fi
 
-    echo -e "${BOLD}1. Python Nativo del Sistema (Omarchy Workstation):${NC}"
+    echo -e "${BOLD}1. Python Nativo del Sistema (Omarchy 4.5):${NC}"
     echo -e "  • Binario ejecutable:    $py_bin"
     echo -e "  • Versión activa:        ${CYAN}$py_ver${NC}"
     echo -e "  • Paquete Pacman:        $py_pkg"
-    echo -e "  • Módulo python3-venv:   $venv_status"
+    echo -e "  • Módulo python-venv:    $venv_status"
     echo -e "  • Gestor pip de sistema: $pip_status"
     echo -e "-----------------------------------------------------------------"
     echo -e "${BOLD}2. Hardware y Concurrencia (AMD Ryzen 7 7730U):${NC}"
     echo -e "  • Hilos de compilación:  ${GREEN}$NPROC hilos activos${NC} (MAKEFLAGS=\"-j$NPROC\")"
     echo -e "  • Concurrencia de uv:    UV_CONCURRENT_DOWNLOADS=$NPROC"
-    echo -e "  • Modo de enlace:        UV_LINK_MODE=$UV_LINK_MODE (seguro para Btrfs/NVMe)"
+    echo -e "  • Modo de enlace:        UV_LINK_MODE=$UV_LINK_MODE (seguro para NVMe)"
     echo -e "-----------------------------------------------------------------"
     echo -e "${BOLD}3. Aislamiento y Gestores de Paquetes:${NC}"
     echo -e "  • Shims de Mise:         $mise_py"
@@ -213,7 +211,7 @@ show_status() {
     echo -e "  • Ejecutor 'uvx':        $uvx_status"
     echo -e "-----------------------------------------------------------------"
     echo -e "${BOLD}4. Integración en el Entorno:${NC}"
-    echo -e "  • Sesión environment.d:   $([ -f "$USER_HOME/.config/environment.d/10-python.conf" ] && echo -e "${GREEN}✅ Activo (~/.config/environment.d/10-python.conf)${NC}" || echo -e "${RED}❌ Ausente${NC}")"
+    echo -e "  • Hyprland environment:  $([ -f "$USER_HOME/.config/environment.d/10-python.conf" ] && echo -e "${GREEN}✅ Activo (~/.config/environment.d/10-python.conf)${NC}" || echo -e "${RED}❌ Ausente${NC}")"
     echo -e "  • Shell Bash (~/.bashrc.d): $([ -f "$USER_HOME/.bashrc.d/python.sh" ] && echo -e "${GREEN}✅ Activo (~/.bashrc.d/python.sh)${NC}" || echo -e "${RED}❌ Ausente${NC}")"
     echo -e "  • Autocompletado Bash:   $([ -f "$USER_HOME/.local/share/bash-completion/completions/uv" ] && echo -e "${GREEN}✅ Configurado (uv & uvx)${NC}" || echo -e "${RED}❌ Ausente${NC}")"
     if [ -f "$USER_HOME/.zshrc" ] || [ -d "$USER_HOME/.zshrc.d" ]; then
@@ -240,11 +238,10 @@ update_uv() {
         if uv self update 2>/dev/null; then
             log_ok "'uv' actualizado vía 'uv self update'."
         else
-            log_warn "No se pudo actualizar directamente con 'uv self update'. Instalando con Mise..."
+            log_warn "Instalando uv con Mise..."
             ensure_mise_and_uv
         fi
     else
-        log_warn "Mise no está configurado. Ejecutando instalación de Mise..."
         ensure_mise_and_uv
     fi
 }
@@ -257,7 +254,7 @@ ensure_mise_and_uv() {
         local script_dir
         script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
         if [ -f "$script_dir/mise.sh" ]; then
-            log_info "Ejecutando aprovisionamiento de Mise ($script_dir/mise.sh)..."
+            log_info "Ejecutando configuración de Mise ($script_dir/mise.sh)..."
             bash "$script_dir/mise.sh"
             mise_cmd=$(get_mise_bin)
         fi
@@ -269,7 +266,7 @@ ensure_mise_and_uv() {
         run_as_user "$mise_cmd" reshim 2>/dev/null || true
         log_ok "'uv' y 'uvx' aprovisionados en Mise."
     else
-        log_error "No se pudo encontrar ni instalar 'mise'. Ejecuta './mise.sh' primero."
+        log_error "No se pudo encontrar 'mise'. Ejecuta './ProgrammingLanguages/mise.sh' primero."
         exit 1
     fi
 }
@@ -294,40 +291,26 @@ case "${1:-}" in
 esac
 
 echo -e "${CYAN}=================================================================${NC}"
-echo -e "${BOLD}🐍 Configurando Python Nativo de Omarchy y Gestor 'uv' (Mise)${NC}"
+echo -e "${BOLD}🐍 Configurando Python Nativo de Omarchy 4.5 y Gestor 'uv' (Mise)${NC}"
 echo -e "   Hardware: AMD Ryzen 7 7730U (16T) | 32GB RAM | Omarchy Workstation"
 echo -e "${CYAN}=================================================================${NC}"
 
 # ------------------------------------------------------------------------------
-# 6. VERIFICAR PYTHON NATIVO DE CACHYOS
+# 6. VERIFICAR PYTHON NATIVO DE OMARCHY
 # ------------------------------------------------------------------------------
 log_step "[1/4] Comprobando integridad del Python nativo de Omarchy..."
-MISSING_PKGS=()
-for pkg in python python-pip; do
-    if ! pacman -Q "$pkg" &>/dev/null; then
-        MISSING_PKGS+=("$pkg")
-    fi
-done
-
-if [ ${#MISSING_PKGS[@]} -gt 0 ]; then
-    log_info "Instalando paquetes nativos faltantes vía Pacman: ${MISSING_PKGS[*]}..."
-    if [ -n "$SUDO" ] && ! command -v sudo &>/dev/null; then
-        log_warn "No se dispone de 'sudo' para instalar paquetes del sistema: ${MISSING_PKGS[*]}"
-    else
-        $SUDO pacman -S --needed --noconfirm "${MISSING_PKGS[@]}" 2>/dev/null || true
-    fi
-    log_ok "Paquetes nativos de Omarchy asegurados."
-else
+if pacman -Q python &>/dev/null; then
     local_ver=$(python3 --version 2>/dev/null || echo "Python 3")
-    log_ok "Python nativo de Omarchy ($local_ver) y cabeceras intactas."
+    log_ok "Python nativo de Omarchy ($local_ver) y cabeceras verificadas."
+else
+    log_info "Instalando paquete python nativo vía Pacman..."
+    $SUDO pacman -S --needed --noconfirm python 2>/dev/null || true
 fi
 
 # Validar módulo venv
 if ! python3 -m venv --help &>/dev/null; then
     log_warn "El módulo python3-venv no responde. Asegurando paquetes del sistema..."
-    if [ -n "$SUDO" ] && command -v sudo &>/dev/null; then
-        $SUDO pacman -S --needed --noconfirm python 2>/dev/null || true
-    fi
+    $SUDO pacman -S --needed --noconfirm python 2>/dev/null || true
 fi
 
 # ------------------------------------------------------------------------------
@@ -351,7 +334,7 @@ log_step "[3/4] Verificando gestor 'uv' para gestión aislada per-project..."
 ensure_mise_and_uv
 
 # ------------------------------------------------------------------------------
-# 9. INTEGRACIÓN CON Hyprland SHELL, SHELLS Y AUTOCOMPLETADOS
+# 9. INTEGRACIÓN CON HYPRLAND, SHELLS Y AUTOCOMPLETADOS
 # ------------------------------------------------------------------------------
 log_step "[4/4] Configurando variables de entorno y autocompletados..."
 
@@ -363,14 +346,14 @@ run_as_user mkdir -p "$ENV_DIR" "$BASHRC_D" "$BASH_COMPLETIONS_DIR"
 
 # 9.1. Integración con sesión gráfica Hyprland (systemd user)
 cat << 'EOF' | run_as_user tee "$ENV_DIR/10-python.conf" > /dev/null
-# Integración de Python & uv para Wayland / Hyprland (Omarchy Workstation)
+# Integración de Python & uv para Wayland / Hyprland (Omarchy 4.5)
 PYTHONUNBUFFERED=1
 UV_LINK_MODE=copy
 EOF
 
-# 9.2. Shell Bash (predeterminada)
+# 9.2. Shell Bash
 cat << 'EOF' | run_as_user tee "$BASHRC_D/python.sh" > /dev/null
-# Python & uv Environment Settings (Omarchy Workstation)
+# Python & uv Environment Settings (Omarchy 4.5)
 export PYTHONUNBUFFERED=1
 export UV_LINK_MODE=copy
 EOF
@@ -380,13 +363,13 @@ if [ -f "$USER_HOME/.zshrc" ] || [ -d "$USER_HOME/.zshrc.d" ]; then
     ZSHRC_D="$USER_HOME/.zshrc.d"
     run_as_user mkdir -p "$ZSHRC_D"
     cat << 'EOF' | run_as_user tee "$ZSHRC_D/python.zsh" > /dev/null
-# Python & uv Environment Settings (Omarchy Workstation)
+# Python & uv Environment Settings (Omarchy 4.5)
 export PYTHONUNBUFFERED=1
 export UV_LINK_MODE=copy
 EOF
 fi
 
-# 9.4. Generación de Autocompletados (uv y uvx) de forma segura como usuario
+# 9.4. Generación de Autocompletados (uv y uvx)
 UV_BIN=$(get_uv_bin)
 UVX_BIN=$(get_uvx_bin)
 
@@ -420,17 +403,16 @@ fi
 # 10. RESUMEN FINAL
 # ------------------------------------------------------------------------------
 PYTHON_VER=$(python3 --version 2>/dev/null || echo "Python nativo del sistema")
-UV_VER="uv pendiente de carga"
+UV_VER="uv disponible vía Mise"
 if [ -n "$UV_BIN" ] && [ -x "$UV_BIN" ]; then
     UV_VER=$(run_as_user "$UV_BIN" --version 2>/dev/null || echo "uv disponible")
 fi
 
 echo -e "${CYAN}=================================================================${NC}"
-echo -e "${GREEN}${BOLD}✅ Entorno Python & uv listo para Omarchy Workstation y Hyprland:${NC}"
+echo -e "${GREEN}${BOLD}✅ Entorno Python & uv listo para Omarchy 4.5 y Hyprland:${NC}"
 echo -e "  • Python Sistema: ${CYAN}$PYTHON_VER${NC} (/usr/bin/python3 nativo)"
 echo -e "  • Gestor uv:      ${GREEN}$UV_VER${NC} (gestión per-project en espacio de usuario)"
 echo -e "  • Optimización:   UV_LINK_MODE=copy | MAKEFLAGS=\"-j$NPROC\" (AMD Ryzen 7 7730U)"
-echo -e "  • Hyprland:    ~/.config/environment.d/10-python.conf"
+echo -e "  • Hyprland:       ~/.config/environment.d/10-python.conf"
 echo -e "  • Shells:         Bash (~/.bashrc.d/python.sh)$([ -f "$USER_HOME/.zshrc" ] && echo " & Zsh (~/.zshrc.d/python.zsh)")"
-echo -e "  • Inicializador:  Ejecuta '${BOLD}./ProgrammingLanguages/python-uv-init.sh${NC}' o '${BOLD}just python-uv${NC}'"
 echo -e "${CYAN}=================================================================${NC}"

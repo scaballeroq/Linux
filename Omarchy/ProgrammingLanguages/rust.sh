@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# rust.sh - Instalación, Optimización y Diagnóstico de Rust en Omarchy Workstation
-# Sistema: Omarchy Linux Workstation (Hyprland 51 / Wayland)
+# rust.sh - Instalación, Optimización y Diagnóstico de Rust en Omarchy 4.5
+# Sistema: Omarchy 4.5 Workstation (Arch Linux) | Escritorio: Hyprland (Wayland)
 # Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3, 8C/16T) | 32 GB RAM | NVMe
 # ==============================================================================
 # Características de Alto Rendimiento:
@@ -12,12 +12,12 @@
 #   reduciendo tiempos de enlazado incremental entre 3x y 5x.
 # - Caché compartida con sccache (15 GB asignados en SSD NVMe) para ahorrar ciclos de CPU
 #   y reducir drásticamente el desgaste por reescritura.
-# - Optimización multicore ajustada dinámicamente a los 16 hilos del procesador AMD Ryzen 7 7730U.
+# - Optimización multicore ajustada a los 16 hilos del procesador AMD Ryzen 7 7730U.
 # - Componentes de desarrollo esenciales integrados (rust-analyzer, clippy, rustfmt, rust-src).
 # - Gestor binario 'cargo-binstall' para descargas instantáneas de herramientas sin recompilar.
 # - Herramientas de productividad profesional opcionales (cargo-watch, cargo-nextest, cargo-audit).
-# - Integración de entorno con Sesión Wayland (environment.d), Bash (~/.bashrc.d), Zsh (~/.zshrc.d)
-#   y shims de Mise (~/.local/bin/mise).
+# - Integración de entorno con Hyprland (environment.d), Bash (~/.bashrc.d), Zsh (~/.zshrc.d)
+#   y shims de Mise.
 # - Autocompletados nativos generados para Bash y Zsh.
 # - Soporte CLI avanzado: --status / -s, --update / -u, --tools / -t, --clean / -c, --help / -h.
 # ==============================================================================
@@ -73,7 +73,6 @@ export CARGO_HOME RUSTUP_HOME
 # Inyectar rutas de Cargo, Mise y usuario en el PATH local del proceso
 export PATH="$CARGO_HOME/bin:$USER_HOME/.local/bin:$USER_HOME/.local/share/mise/shims:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:$PATH"
 
-# Ejecutor aislado en el contexto del usuario real
 run_as_user() {
     if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
         sudo -u "$REAL_USER" env HOME="$USER_HOME" \
@@ -99,8 +98,8 @@ check_pkg() {
 # ------------------------------------------------------------------------------
 show_help() {
     cat <<EOF
-🦀 Instalador, Optimizador y Diagnóstico de Rust - Omarchy Workstation
-   Hardware: AMD Ryzen 7 7730U (16 hilos) | 32 GB RAM | NVMe Kioxia | Hyprland Wayland
+🦀 Instalador, Optimizador y Diagnóstico de Rust - Omarchy 4.5 Workstation
+   Hardware: AMD Ryzen 7 7730U (16 hilos) | 32 GB RAM | NVMe | Hyprland (Wayland)
 
 Uso:
   $0 [OPCIÓN]
@@ -123,14 +122,14 @@ Características de Rendimiento Configuradas:
   • Caché de build:   sccache (15 GB máx en NVMe) para evitar recompilaciones y ciclos de CPU.
   • Extensiones IDE:  rust-analyzer (LSP), clippy (linter), rustfmt (formateador) y rust-src.
   • Gestor binario:   cargo-binstall para desplegar crates precompilados de forma instantánea.
-  • Integración:      Sesión Wayland (environment.d), Bash (~/.bashrc.d), Zsh (~/.zshrc.d) y Mise.
+  • Integración:      Hyprland (environment.d), Bash (~/.bashrc.d), Zsh (~/.zshrc.d) y Mise.
 EOF
 }
 
 show_status() {
     echo "================================================================="
-    echo "🔍 ESTADO DEL ENTORNO RUST - OMARCHY WORKSTATION"
-    echo "   AMD Ryzen 7 7730U (16 hilos) | 32 GB RAM | NVMe | Omarchy Workstation"
+    echo "🔍 ESTADO DEL ENTORNO RUST - OMARCHY 4.5 WORKSTATION"
+    echo "   AMD Ryzen 7 7730U (16 hilos) | 32 GB RAM | NVMe | Hyprland"
     echo "================================================================="
 
     local rustc_ver cargo_ver rustup_ver mold_ver sccache_ver binstall_ver mise_stat
@@ -226,7 +225,7 @@ show_status() {
 
     echo "-----------------------------------------------------------------"
     echo "5. Integración en Shells y Sesión Wayland:"
-    echo "  • Sesión environment.d:   $([ -f "$USER_HOME/.config/environment.d/10-rust.conf" ] && echo '✅ Activo (~/.config/environment.d/10-rust.conf)' || echo '❌ Ausente')"
+    echo "  • Hyprland environment.d: $([ -f "$USER_HOME/.config/environment.d/10-rust.conf" ] && echo '✅ Activo (~/.config/environment.d/10-rust.conf)' || echo '❌ Ausente')"
     echo "  • Shell Bash (~/.bashrc.d): $([ -f "$USER_HOME/.bashrc.d/rust.sh" ] && echo '✅ Activo (~/.bashrc.d/rust.sh)' || echo '❌ Ausente')"
     echo "  • Shell Zsh (~/.zshrc.d):   $([ -f "$USER_HOME/.zshrc.d/rust.zsh" ] && echo '✅ Activo (~/.zshrc.d/rust.zsh)' || echo '❌ Ausente')"
     echo "  • Autocompletados:       $([ -f "$USER_HOME/.local/share/bash-completion/completions/cargo" ] && echo '✅ Configurados' || echo '❌ Ausentes')"
@@ -240,7 +239,6 @@ install_system_deps() {
     log_info "Comprobando dependencias de compilación y enlazado nativo en Omarchy..."
     local pkgs_to_install=()
 
-    # Dependencias base para compilar C/C++, bindgen y crates nativos en Omarchy
     local core_deps=(
         base-devel
         clang
@@ -320,7 +318,7 @@ configure_cargo_optimizations() {
 
     cat <<EOF > "$temp_config"
 # ==============================================================================
-# Cargo Configuration - Omarchy Workstation
+# Cargo Configuration - Omarchy 4.5 Workstation
 # Hardware: AMD Ryzen 7 7730U (Zen 3, 16 hilos) | 32 GB RAM | NVMe Kioxia
 # ==============================================================================
 
@@ -421,7 +419,7 @@ install_productivity_tools() {
 }
 
 # ------------------------------------------------------------------------------
-# 8. INTEGRACIÓN CON Hyprland SHELL, SHELLS (BASH / ZSH) Y AUTOCOMPLETADOS
+# 8. INTEGRACIÓN CON HYPRLAND, SHELLS (BASH / ZSH) Y AUTOCOMPLETADOS
 # ------------------------------------------------------------------------------
 configure_environment() {
     log_info "Configurando variables de entorno, shells y autocompletados..."
@@ -435,7 +433,7 @@ configure_environment() {
 
     run_as_user mkdir -p "$env_dir" "$bashrc_d" "$zshrc_d" "$bash_comp_dir" "$zsh_comp_dir" "$zfunc_dir"
 
-    # 8.1. Integración con sesión gráfica Hyprland / Mutter Wayland (systemd user)
+    # 8.1. Integración con sesión gráfica Hyprland (systemd user)
     cat <<EOF | run_as_user tee "$env_dir/10-rust.conf" > /dev/null
 CARGO_HOME=$CARGO_HOME
 RUSTUP_HOME=$RUSTUP_HOME
@@ -447,7 +445,7 @@ EOF
 
     # 8.2. Shell Bash modular (~/.bashrc.d/rust.sh)
     cat <<EOF | run_as_user tee "$bashrc_d/rust.sh" > /dev/null
-# Rust & Cargo Environment - Omarchy Workstation (AMD Ryzen 7 7730U)
+# Rust & Cargo Environment - Omarchy 4.5 Workstation (AMD Ryzen 7 7730U)
 export CARGO_HOME="$CARGO_HOME"
 export RUSTUP_HOME="$RUSTUP_HOME"
 export CARGO_BUILD_JOBS=$NPROC
@@ -461,9 +459,10 @@ elif [ -d "$CARGO_HOME/bin" ] && [[ ":\$PATH:" != *":$CARGO_HOME/bin:"* ]]; then
 fi
 EOF
 
-    # 8.3. Shell Zsh modular (~/.zshrc.d/rust.zsh)
-    cat <<EOF | run_as_user tee "$zshrc_d/rust.zsh" > /dev/null
-# Rust & Cargo Environment - Omarchy Workstation (AMD Ryzen 7 7730U)
+    # 8.3. Shell Zsh modular (~/.zshrc.d/rust.zsh si existe)
+    if [ -f "$USER_HOME/.zshrc" ] || [ -d "$USER_HOME/.zshrc.d" ]; then
+        cat <<EOF | run_as_user tee "$zshrc_d/rust.zsh" > /dev/null
+# Rust & Cargo Environment - Omarchy 4.5 Workstation (AMD Ryzen 7 7730U)
 export CARGO_HOME="$CARGO_HOME"
 export RUSTUP_HOME="$RUSTUP_HOME"
 export CARGO_BUILD_JOBS=$NPROC
@@ -476,16 +475,19 @@ elif [ -d "$CARGO_HOME/bin" ] && [[ ":\$PATH:" != *":$CARGO_HOME/bin:"* ]]; then
     export PATH="$CARGO_HOME/bin:\$PATH"
 fi
 EOF
+    fi
 
     # 8.4. Autocompletados nativos para Bash y Zsh
     if command -v rustup &>/dev/null || [ -x "$CARGO_HOME/bin/rustup" ]; then
         run_as_user rustup completions bash > "$bash_comp_dir/rustup" 2>/dev/null || true
         run_as_user rustup completions bash cargo > "$bash_comp_dir/cargo" 2>/dev/null || true
 
-        run_as_user rustup completions zsh > "$zsh_comp_dir/_rustup" 2>/dev/null || true
-        run_as_user rustup completions zsh cargo > "$zsh_comp_dir/_cargo" 2>/dev/null || true
-        run_as_user cp "$zsh_comp_dir/_rustup" "$zfunc_dir/_rustup" 2>/dev/null || true
-        run_as_user cp "$zsh_comp_dir/_cargo" "$zfunc_dir/_cargo" 2>/dev/null || true
+        if [ -f "$USER_HOME/.zshrc" ] || [ -d "$USER_HOME/.zshrc.d" ]; then
+            run_as_user rustup completions zsh > "$zsh_comp_dir/_rustup" 2>/dev/null || true
+            run_as_user rustup completions zsh cargo > "$zsh_comp_dir/_cargo" 2>/dev/null || true
+            run_as_user cp "$zsh_comp_dir/_rustup" "$zfunc_dir/_rustup" 2>/dev/null || true
+            run_as_user cp "$zsh_comp_dir/_cargo" "$zfunc_dir/_cargo" 2>/dev/null || true
+        fi
     fi
 
     # 8.5. Sincronización con Mise si está disponible
@@ -500,18 +502,17 @@ EOF
 # 9. ACTUALIZACIÓN (--update)
 # ------------------------------------------------------------------------------
 update_rust() {
-    log_info "Actualizando entorno completo de Rust..."
+    log_info "Comprobando y aplicando actualizaciones del ecosistema Rust..."
     if command -v rustup &>/dev/null || [ -x "$CARGO_HOME/bin/rustup" ]; then
-        log_step "Actualizando Rustup y toolchains activos..."
-        run_as_user rustup self update
-        run_as_user rustup update
-        run_as_user rustup component add rust-analyzer clippy rustfmt rust-src 2>/dev/null || true
+        log_step "Actualizando Rustup y toolchain Stable..."
+        run_as_user rustup update stable
     else
-        log_warn "Rustup no está instalado. Ejecuta el script sin parámetros para instalarlo."
+        log_warn "Rustup no se encuentra instalado. Ejecuta './ProgrammingLanguages/rust.sh' primero."
+        exit 1
     fi
 
     if [ -x "$CARGO_HOME/bin/cargo-install-update" ]; then
-        log_step "Actualizando crates instalados..."
+        log_step "Actualizando crates binarios instalados con cargo-update..."
         run_as_user "$CARGO_HOME/bin/cargo-install-update" install-update -a 2>/dev/null || true
     fi
 
@@ -519,38 +520,32 @@ update_rust() {
         run_as_user mise reshim 2>/dev/null || true
     fi
 
-    log_ok "Actualización de Rust finalizada."
+    log_ok "Actualización completada."
 }
 
 # ------------------------------------------------------------------------------
-# 10. LIMPIEZA DE CACHÉS Y ARTEFACTOS (--clean)
+# 10. LIMPIEZA DE CACHÉ (--clean)
 # ------------------------------------------------------------------------------
-clean_rust_caches() {
-    log_info "Limpiando cachés de compilación y artefactos temporales..."
+clean_caches() {
+    log_info "Limpiando cachés de compilación..."
     if command -v sccache &>/dev/null; then
-        log_step "Vaciando estadísticas y caché de sccache..."
-        run_as_user sccache --clear-cache 2>/dev/null || true
-        run_as_user sccache --zero-stats 2>/dev/null || true
-        log_ok "Caché de sccache reiniciada."
+        log_step "Limpiando sccache..."
+        sccache --stop-server 2>/dev/null || true
+        sccache --zero-stats 2>/dev/null || true
     fi
 
-    if [ -d "$CARGO_HOME/registry/cache" ]; then
-        log_step "Eliminando archivos de caché de crates antiguos..."
-        run_as_user rm -rf "$CARGO_HOME/registry/cache"/* 2>/dev/null || true
-        log_ok "Caché de descargas de crates limpiada."
+    if [ -d "$SCCACHE_CACHE_DIR" ]; then
+        rm -rf "${SCCACHE_CACHE_DIR:?}"/*
+        log_ok "Directorio sccache vaciado ($SCCACHE_CACHE_DIR)."
     fi
 
-    log_ok "Proceso de limpieza completado con éxito."
+    log_ok "Limpieza finalizada con éxito."
 }
 
 # ------------------------------------------------------------------------------
-# 11. ENRUTADOR DE COMANDOS CLI
+# FLUJO PRINCIPAL
 # ------------------------------------------------------------------------------
 case "${1:-}" in
-    --help|-h|help)
-        show_help
-        exit 0
-        ;;
     --status|-s|status)
         show_status
         exit 0
@@ -568,28 +563,31 @@ case "${1:-}" in
         exit 0
         ;;
     --clean|-c|clean)
-        clean_rust_caches
+        clean_caches
+        exit 0
+        ;;
+    --help|-h|help)
+        show_help
         exit 0
         ;;
     "")
         echo "================================================================="
-        echo "🦀 OPTIMIZADOR Y CONFIGURADOR DE RUST - OMARCHY WORKSTATION"
-        echo "   AMD Ryzen 7 7730U (16 hilos) | 32 GB RAM | NVMe | Omarchy Workstation"
+        echo "🦀 INSTALACIÓN Y OPTIMIZACIÓN DE RUST - OMARCHY 4.5 WORKSTATION"
+        echo "   Hardware: AMD Ryzen 7 7730U (16 hilos) | 32 GB RAM | Hyprland"
         echo "================================================================="
         install_system_deps
         install_rustup
         configure_cargo_optimizations
-        install_binstall
         configure_environment
         echo ""
         show_status
         echo "================================================================="
-        echo "✅ Rust configurado y optimizado con éxito para Omarchy Workstation."
-        echo "💡 Inicia una nueva terminal o ejecuta: source ~/.bashrc"
+        echo -e "${GREEN}✅ Rust ha sido configurado y optimizado con éxito para Omarchy 4.5.${NC}"
+        echo -e "💡 Para cargar el entorno de inmediato, ejecuta: ${CYAN}source ~/.bashrc${NC}"
         echo "================================================================="
         ;;
     *)
-        echo "❌ Opción no reconocida: $1"
+        log_error "Opción no reconocida: $1"
         show_help
         exit 1
         ;;

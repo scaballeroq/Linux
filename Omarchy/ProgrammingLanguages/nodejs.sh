@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# nodejs.sh - Instalación y Optimización de Node.js (Última LTS) vía Mise
-# Sistema: Omarchy Workstation | Escritorio: Hyprland (Wayland)
+# nodejs.sh - Instalación, Optimización y Diagnóstico de Node.js (LTS) vía Mise
+# Sistema: Omarchy 4.5 Workstation (Arch Linux) | Escritorio: Hyprland (Wayland)
 # Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3, 8C/16T) | 32 GB RAM
 # ==============================================================================
-# Características:
+# Características de Alto Rendimiento:
+# - Coexistencia no destructiva: Mantiene el Node.js nativo del sistema (/usr/bin/node v26)
+#   para herramientas del OS (ej. yt-dlp) mientras activa Node.js LTS en espacio de usuario.
 # - Despliegue idempotente y rootless en espacio de usuario vía Mise.
-# - Detección inteligente de dependencias del sistema (make, gcc-c++, curl, python3)
-#   para compilación de módulos nativos C++ (node-gyp).
-# - Optimización multinúcleo para AMD Ryzen 7 7730U (-j16, JOBS=16, npm_config_jobs=16).
-# - Habilitación de Corepack (pnpm, yarn) con descargas desatendidas (COREPACK_ENABLE_DOWNLOAD_PROMPT=0).
+# - Habilitación de gestores de paquetes modernos: Corepack, pnpm, yarn y npm.
+# - Optimización multinúcleo para AMD Ryzen 7 7730U (-j16, JOBS=16, npm_config_jobs=16)
+#   acelerando drásticamente la compilación de módulos C++ nativos (node-gyp).
 # - Integración nativa con Hyprland (~/.config/environment.d) y Shells (Bash / Zsh).
 # - Generación automática de autocompletados nativos para npm y pnpm (Bash / Zsh).
 # - Comandos CLI: --status / -s, --update / -u, --help / -h.
@@ -76,12 +77,12 @@ run_as_user() {
 }
 
 get_mise_bin() {
-    if [ -x "$USER_HOME/.local/bin/mise" ]; then
-        echo "$USER_HOME/.local/bin/mise"
+    if [ -x "/usr/bin/mise" ]; then
+        echo "/usr/bin/mise"
     elif command -v mise &>/dev/null; then
         command -v mise
-    elif [ -x "/usr/bin/mise" ]; then
-        echo "/usr/bin/mise"
+    elif [ -x "$USER_HOME/.local/bin/mise" ]; then
+        echo "$USER_HOME/.local/bin/mise"
     elif [ -x "/usr/local/bin/mise" ]; then
         echo "/usr/local/bin/mise"
     else
@@ -103,8 +104,14 @@ run_mise() {
 # 3. AYUDA Y ESTADO
 # ------------------------------------------------------------------------------
 show_help() {
-    echo -e "${BOLD}🟢 Instalador y Optimizador de Node.js (LTS) - Omarchy Workstation (Mise)${NC}"
-    echo -e "Hardware objetivo: AMD Ryzen 7 7730U (${NPROC} hilos) | Hyprland 51 Wayland"
+    echo -e "${BOLD}🟢 Instalador y Optimizador de Node.js (LTS) - Omarchy 4.5 Workstation (Mise)${NC}"
+    echo -e "Hardware: AMD Ryzen 7 7730U (${NPROC} hilos) | Hyprland (Wayland)"
+    echo ""
+    echo -e "${BOLD}Filosofía de Coexistencia:${NC}"
+    echo -e "  • Omarchy trae preinstalado Node.js en /usr/bin/node (Current v26) para herramientas"
+    echo -e "    del sistema (ej. yt-dlp). Este binario permanece intacto."
+    echo -e "  • Este script despliega Node.js LTS en espacio de usuario vía Mise para desarrollo,"
+    echo -e "    proporcionando npm, pnpm y yarn con estabilidad total y sin romper el sistema."
     echo ""
     echo -e "${BOLD}Uso:${NC}"
     echo -e "  $0 [OPCIÓN]"
@@ -120,24 +127,33 @@ show_help() {
 
 show_status() {
     echo -e "${CYAN}=================================================================${NC}"
-    echo -e "${BOLD}🔍 DIAGNÓSTICO DE NODE.JS & GESTORES DE PAQUETES (MISE + OMARCHY)${NC}"
-    echo -e "   Hardware: AMD Ryzen 7 7730U (${NPROC} hilos) | Hyprland Wayland"
+    echo -e "${BOLD}🔍 DIAGNÓSTICO DE NODE.JS & GESTORES DE PAQUETES (OMARCHY 4.5)${NC}"
+    echo -e "   Hardware: AMD Ryzen 7 7730U (${NPROC} hilos) | Hyprland (Wayland)"
     echo -e "${CYAN}=================================================================${NC}"
 
-    local node_path node_ver npm_ver pnpm_ver yarn_ver corepack_status
-
-    if [ -x "$USER_HOME/.local/share/mise/shims/node" ]; then
-        node_path="$USER_HOME/.local/share/mise/shims/node"
-        node_ver=$(run_as_user "$node_path" --version 2>/dev/null || echo "No disponible")
-    elif command -v node &>/dev/null; then
-        node_path=$(command -v node)
-        node_ver=$(node --version 2>/dev/null || echo "No disponible")
+    # 1. Detección de Node.js del Sistema
+    local sys_node_ver sys_node_path
+    if [ -x "/usr/bin/node" ]; then
+        sys_node_path="/usr/bin/node"
+        sys_node_ver=$(/usr/bin/node --version 2>/dev/null || echo "Desconocida")
+        echo -e "• ${BOLD}Node.js del Sistema (Omarchy):${NC} ${GREEN}✅ $sys_node_ver ($sys_node_path - Paquete Pacman)${NC}"
     else
-        node_path="No instalado"
-        node_ver="No disponible"
+        echo -e "• ${BOLD}Node.js del Sistema (Omarchy):${NC} ${YELLOW}ℹ️ No presente en /usr/bin/node${NC}"
     fi
 
-    local npm_bin pnpm_bin yarn_bin corepack_bin
+    # 2. Detección de Node.js en Mise (Espacio de Usuario)
+    local dev_node_ver dev_node_path
+    local mise_node_shim="$USER_HOME/.local/share/mise/shims/node"
+    if [ -x "$mise_node_shim" ]; then
+        dev_node_path="$mise_node_shim"
+        dev_node_ver=$(run_as_user "$dev_node_path" --version 2>/dev/null || echo "No disponible")
+        echo -e "• ${BOLD}Node.js de Desarrollo (Mise LTS):${NC} ${GREEN}✅ $dev_node_ver ($dev_node_path)${NC}"
+    else
+        echo -e "• ${BOLD}Node.js de Desarrollo (Mise LTS):${NC} ${YELLOW}ℹ️ No inicializado en Mise (usando binario del sistema)${NC}"
+    fi
+
+    # 3. Gestores de paquetes
+    local npm_bin pnpm_bin yarn_bin corepack_bin npm_ver pnpm_ver yarn_ver corepack_status
     npm_bin="$USER_HOME/.local/share/mise/shims/npm"
     pnpm_bin="$USER_HOME/.local/share/mise/shims/pnpm"
     yarn_bin="$USER_HOME/.local/share/mise/shims/yarn"
@@ -175,8 +191,7 @@ show_status() {
         corepack_status="${YELLOW}ℹ️ No instalado / Deshabilitado${NC}"
     fi
 
-    echo -e "• ${BOLD}Node.js:${NC}                $([ "$node_ver" != "No disponible" ] && echo -e "${GREEN}✅ $node_ver ($node_path)${NC}" || echo -e "${RED}❌ $node_ver${NC}")"
-    echo -e "• ${BOLD}npm:${NC}                    $([ "$npm_ver" != "No disponible" ] && echo -e "${GREEN}✅ $npm_ver${NC}" || echo -e "${RED}❌ $npm_ver${NC}")"
+    echo -e "• ${BOLD}npm:${NC}                    $([ "$npm_ver" != "No disponible" ] && echo -e "${GREEN}✅ $npm_ver${NC}" || echo -e "${YELLOW}ℹ️ $npm_ver (requiere instalar Node LTS en Mise)${NC}")"
     echo -e "• ${BOLD}pnpm (Corepack):${NC}        $([ "$pnpm_ver" != "No disponible" ] && echo -e "${GREEN}✅ $pnpm_ver${NC}" || echo -e "${YELLOW}ℹ️ $pnpm_ver${NC}")"
     echo -e "• ${BOLD}yarn (Corepack):${NC}        $([ "$yarn_ver" != "No disponible" ] && echo -e "${GREEN}✅ $yarn_ver${NC}" || echo -e "${YELLOW}ℹ️ $yarn_ver${NC}")"
     echo -e "• ${BOLD}Corepack:${NC}               $corepack_status"
@@ -191,7 +206,7 @@ show_status() {
     echo -e "  - Shell Bash (~/.bashrc.d): $([ -f "$USER_HOME/.bashrc.d/nodejs.sh" ] && echo -e "${GREEN}✅ Activo (~/.bashrc.d/nodejs.sh)${NC}" || echo -e "${RED}❌ Ausente${NC}")"
     echo -e "  - Autocompletado npm:    $([ -f "$USER_HOME/.local/share/bash-completion/completions/npm" ] && echo -e "${GREEN}✅ Configurado${NC}" || echo -e "${RED}❌ Ausente${NC}")"
     echo -e "  - Autocompletado pnpm:   $([ -f "$USER_HOME/.local/share/bash-completion/completions/pnpm" ] && echo -e "${GREEN}✅ Configurado${NC}" || echo -e "${RED}❌ Ausente${NC}")"
-    if [ -f "$USER_HOME/.zshrc" ]; then
+    if [ -f "$USER_HOME/.zshrc" ] || [ -d "$USER_HOME/.zshrc.d" ]; then
         echo -e "  - Shell Zsh (~/.zshrc.d):   $([ -f "$USER_HOME/.zshrc.d/nodejs.zsh" ] && echo -e "${GREEN}✅ Activo (~/.zshrc.d/nodejs.zsh)${NC}" || echo -e "${RED}❌ Ausente${NC}")"
         echo -e "  - Autocompletado Zsh:    $([ -f "$USER_HOME/.local/share/zsh/site-functions/_pnpm" ] || [ -f "$USER_HOME/.zfunc/_pnpm" ] && echo -e "${GREEN}✅ Configurado${NC}" || echo -e "${RED}❌ Ausente${NC}")"
     fi
@@ -218,7 +233,7 @@ update_nodejs() {
         run_mise reshim 2>/dev/null || true
         log_ok "Node.js y gestores de paquetes actualizados con éxito."
     else
-        log_error "'mise' no está instalado. Ejecuta '$0' primero."
+        log_error "'mise' no está instalado en el sistema."
         exit 1
     fi
 }
@@ -243,7 +258,7 @@ ensure_native_build_deps() {
             }
         else
             log_warn "Faltan paquetes de compilación C++ nativos en el sistema: ${missing_pkgs[*]}."
-            log_warn "Para compilar módulos node-gyp nativos en C++, ejecuta cuando puedas: sudo pacman -S --needed ${missing_pkgs[*]}"
+            log_warn "Para compilar módulos node-gyp nativos en C++, ejecuta: sudo pacman -S --needed ${missing_pkgs[*]}"
         fi
     else
         log_ok "Todas las dependencias nativas del sistema ya están presentes."
@@ -280,7 +295,7 @@ install_nodejs_lts() {
     log_info "[3/5] Desplegando Node.js LTS de forma rootless vía Mise..."
     run_mise use --global node@lts
     run_mise reshim 2>/dev/null || true
-    log_ok "Node.js LTS activo."
+    log_ok "Node.js LTS activo en Mise."
 }
 
 # ------------------------------------------------------------------------------
@@ -289,15 +304,14 @@ install_nodejs_lts() {
 configure_package_managers() {
     log_info "[4/5] Configurando gestores de paquetes modernos (Corepack, pnpm, yarn)..."
 
-    # En Node.js 22/24/26+, Corepack puede no venir preempaquetado.
-    # Verificamos si corepack existe en el entorno Node activo; si no, lo instalamos limpiamente en Node.
+    # En Node.js recientes, Corepack puede requerir npm install -g corepack si no viene preempaquetado
     if ! run_mise exec node@lts -- command -v corepack &>/dev/null; then
-        log_step "Instalando Corepack en el entorno Node.js global..."
+        log_step "Instalando Corepack en el entorno Node.js global de Mise..."
         run_mise exec node@lts -- npm install -g corepack 2>/dev/null || true
         run_mise reshim 2>/dev/null || true
     fi
 
-    # Activar Corepack y preparar pnpm / yarn de forma desatendida sin bloqueos interactivos
+    # Activar Corepack y preparar pnpm / yarn de forma desatendida
     if run_mise exec node@lts -- command -v corepack &>/dev/null; then
         log_step "Habilitando Corepack y activando pnpm / yarn..."
         COREPACK_ENABLE_DOWNLOAD_PROMPT=0 run_mise exec node@lts -- corepack enable pnpm yarn 2>/dev/null || true
@@ -305,15 +319,14 @@ configure_package_managers() {
         run_mise reshim 2>/dev/null || true
         log_ok "Corepack y pnpm activados correctamente."
     else
-        # Fallback alternativo: instalación directa de pnpm en Mise si Corepack falla
-        log_step "Configurando pnpm global en Mise..."
+        log_step "Configurando pnpm global alternativo en Mise..."
         run_mise use --global pnpm@latest 2>/dev/null || true
         run_mise reshim 2>/dev/null || true
     fi
 }
 
 # ------------------------------------------------------------------------------
-# 9. INTEGRACIÓN CON Hyprland SHELL, SHELLS Y AUTOCOMPLETADOS
+# 9. INTEGRACIÓN CON HYPRLAND, SHELLS Y AUTOCOMPLETADOS
 # ------------------------------------------------------------------------------
 configure_environment() {
     log_info "[5/5] Configurando variables de entorno de alto rendimiento y autocompletados..."
@@ -335,19 +348,19 @@ EOF
 
     # 9.2. Shell Bash (~/.bashrc.d/nodejs.sh)
     cat << EOF | run_as_user tee "$bashrc_d/nodejs.sh" > /dev/null
-# Node.js & npm/pnpm Multithreaded Build Settings (Omarchy Workstation - AMD Ryzen 7 7730U)
+# Node.js & npm/pnpm Multithreaded Build Settings (Omarchy 4.5 - AMD Ryzen 7 7730U)
 export MAKEFLAGS="-j$NPROC"
 export JOBS="$NPROC"
 export npm_config_jobs="$NPROC"
 export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 EOF
 
-    # 9.3. Shell Zsh (~/.zshrc.d/nodejs.zsh si existe ~/.zshrc)
-    if [ -f "$USER_HOME/.zshrc" ]; then
+    # 9.3. Shell Zsh (~/.zshrc.d/nodejs.zsh si existe)
+    if [ -f "$USER_HOME/.zshrc" ] || [ -d "$USER_HOME/.zshrc.d" ]; then
         local zshrc_d="$USER_HOME/.zshrc.d"
         run_as_user mkdir -p "$zshrc_d"
         cat << EOF | run_as_user tee "$zshrc_d/nodejs.zsh" > /dev/null
-# Node.js & npm/pnpm Multithreaded Build Settings (Omarchy Workstation - AMD Ryzen 7 7730U)
+# Node.js & npm/pnpm Multithreaded Build Settings (Omarchy 4.5 - AMD Ryzen 7 7730U)
 export MAKEFLAGS="-j$NPROC"
 export JOBS="$NPROC"
 export npm_config_jobs="$NPROC"
@@ -369,8 +382,8 @@ EOF
         COREPACK_ENABLE_DOWNLOAD_PROMPT=0 run_as_user "$pnpm_bin" completion bash > "$bash_comp_dir/pnpm" 2>/dev/null || true
     fi
 
-    # 9.5. Autocompletados para Zsh (si existe ~/.zshrc)
-    if [ -f "$USER_HOME/.zshrc" ]; then
+    # 9.5. Autocompletados para Zsh
+    if [ -f "$USER_HOME/.zshrc" ] || [ -d "$USER_HOME/.zshrc.d" ]; then
         log_step "Generando autocompletados para Zsh..."
         local zsh_comp_dir="$USER_HOME/.local/share/zsh/site-functions"
         local zfunc_dir="$USER_HOME/.zfunc"
@@ -405,8 +418,8 @@ case "${1:-}" in
         ;;
     "")
         echo -e "${CYAN}=================================================================${NC}"
-        echo -e "${BOLD}🟢 CONFIGURACIÓN DE NODE.JS LTS & PNPM - OMARCHY WORKSTATION${NC}"
-        echo -e "   Hardware: AMD Ryzen 7 7730U (${NPROC} hilos) | Hyprland Wayland"
+        echo -e "${BOLD}🟢 CONFIGURACIÓN DE NODE.JS LTS & PNPM - OMARCHY 4.5 WORKSTATION${NC}"
+        echo -e "   Hardware: AMD Ryzen 7 7730U (${NPROC} hilos) | Hyprland (Wayland)"
         echo -e "${CYAN}=================================================================${NC}"
         ensure_native_build_deps
         ensure_mise
@@ -416,7 +429,7 @@ case "${1:-}" in
         echo ""
         show_status
         echo -e "${BOLD}=================================================================${NC}"
-        echo -e "${GREEN}✅ Node.js LTS y pnpm configurados con éxito para Omarchy Workstation.${NC}"
+        echo -e "${GREEN}✅ Node.js LTS y pnpm configurados con éxito para Omarchy 4.5.${NC}"
         echo -e "💡 Abre una nueva terminal o ejecuta: ${CYAN}source ~/.bashrc${NC}"
         echo -e "${BOLD}=================================================================${NC}"
         ;;

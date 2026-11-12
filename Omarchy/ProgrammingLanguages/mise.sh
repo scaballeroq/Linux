@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# mise.sh - Instalador, Optimizador y Diagnóstico de Mise (Language Runtime Manager)
-# Sistema: Arch Linux | Escritorio: Hyprland (Wayland)
+# mise.sh - Optimizador, Integrador y Diagnóstico de Mise (Runtime Manager)
+# Sistema: Omarchy 4.5 Workstation (Arch Linux) | Escritorio: Hyprland (Wayland)
 # Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3, 8C/16T) | 32 GB RAM
 # ==============================================================================
-# Características:
-# - Despliegue idempotente y rootless en espacio de usuario (~/.local/bin/mise).
-# - Optimización multinúcleo para AMD Ryzen 7 7730U (jobs = 16) en ~/.config/mise/config.toml.
+# Características de Alto Rendimiento:
+# - Detección nativa de Mise preinstalado en el sistema (/usr/bin/mise vía Pacman).
+# - Despliegue idempotente y configuración en espacio de usuario (~/.config/mise/config.toml).
+# - Optimización multinúcleo para AMD Ryzen 7 7730U (jobs = 16).
 # - Despliegue de shims y activación nativa en Bash (~/.bashrc.d) y Zsh (~/.zshrc.d).
 # - Integración nativa con la sesión gráfica Wayland de Hyprland (~/.config/environment.d).
 # - Generación automática de autocompletados nativos para Bash y Zsh.
-# - Diagnóstico integral del gestor, herramientas, shims y 'mise doctor' (--status).
+# - Diagnóstico integral del gestor, herramientas, shims y salud ('mise doctor' con --status).
 # - Comandos CLI: --status / -s, --update / -u, --help / -h.
 # ==============================================================================
 
@@ -68,12 +69,12 @@ run_as_user() {
 }
 
 get_mise_bin() {
-    if [ -x "$USER_HOME/.local/bin/mise" ]; then
-        echo "$USER_HOME/.local/bin/mise"
+    if [ -x "/usr/bin/mise" ]; then
+        echo "/usr/bin/mise"
     elif command -v mise &>/dev/null; then
         command -v mise
-    elif [ -x "/usr/bin/mise" ]; then
-        echo "/usr/bin/mise"
+    elif [ -x "$USER_HOME/.local/bin/mise" ]; then
+        echo "$USER_HOME/.local/bin/mise"
     elif [ -x "/usr/local/bin/mise" ]; then
         echo "/usr/local/bin/mise"
     else
@@ -85,18 +86,19 @@ get_mise_bin() {
 # 3. AYUDA Y ESTADO
 # ------------------------------------------------------------------------------
 show_help() {
-    echo -e "${BOLD}⚡ Gestor de Runtimes Mise - Omarchy Workstation${NC}"
-    echo -e "Hardware objetivo: AMD Ryzen 7 7730U (${NPROC} hilos) | Hyprland Wayland"
+    echo -e "${BOLD}⚡ Gestor de Runtimes Mise - Omarchy 4.5 Workstation${NC}"
+    echo -e "Hardware: AMD Ryzen 7 7730U (${NPROC} hilos) | Hyprland (Wayland)"
     echo ""
     echo -e "${BOLD}Uso:${NC}"
     echo -e "  $0 [OPCIÓN]"
     echo ""
     echo -e "${BOLD}Opciones:${NC}"
-    echo -e "  (sin argumentos)    Instala Mise en espacio de usuario, optimiza hilos (-j$NPROC),"
-    echo -e "                      configura shims e integración con Hyprland, Bash y Zsh."
+    echo -e "  (sin argumentos)    Verifica Mise (preinstalado en Omarchy o espacio de usuario),"
+    echo -e "                      optimiza hilos (-j$NPROC), configura shims e integración con"
+    echo -e "                      Hyprland, Bash y Zsh."
     echo -e "  -s, --status        Muestra diagnóstico detallado del estado de Mise, herramientas,"
     echo -e "                      shims y diagnóstico de integridad ('mise doctor')."
-    echo -e "  -u, --update        Actualiza el binario de Mise (self-update) y herramientas gestionadas."
+    echo -e "  -u, --update        Actualiza herramientas gestionadas en Mise y shims."
     echo -e "  -h, --help          Muestra este mensaje de ayuda."
 }
 
@@ -105,17 +107,22 @@ show_status() {
     mise_cmd=$(get_mise_bin)
 
     echo -e "${CYAN}=================================================================${NC}"
-    echo -e "${BOLD}🔍 DIAGNÓSTICO DE MISE (RUNTIME MANAGER) - OMARCHY WORKSTATION${NC}"
-    echo -e "   Hardware: AMD Ryzen 7 7730U (${NPROC} hilos) | Hyprland Wayland"
+    echo -e "${BOLD}🔍 DIAGNÓSTICO DE MISE (RUNTIME MANAGER) - OMARCHY 4.5${NC}"
+    echo -e "   Hardware: AMD Ryzen 7 7730U (${NPROC} hilos) | Hyprland (Wayland)"
     echo -e "${CYAN}=================================================================${NC}"
 
     if [ -n "$mise_cmd" ] && [ -x "$mise_cmd" ]; then
-        local version_str
-        version_str=$(run_as_user "$mise_cmd" --version 2>/dev/null | head -n 1 || echo "Desconocida")
-        echo -e "• ${BOLD}Binario Mise:${NC}          ${GREEN}✅ Instalado ($mise_cmd)${NC}"
+        local version_str pkg_info
+        version_str=$(run_as_user "$mise_cmd" --version 2>/dev/null | grep -E "^[0-9]" | head -n 1 || echo "Instalado")
+        if pacman -Qo "$mise_cmd" &>/dev/null; then
+            pkg_info=" ($(pacman -Qo "$mise_cmd" 2>/dev/null | awk '{print $5, $6}'))"
+        else
+            pkg_info=" (binario de usuario)"
+        fi
+        echo -e "• ${BOLD}Binario Mise:${NC}          ${GREEN}✅ $mise_cmd$pkg_info${NC}"
         echo -e "• ${BOLD}Versión activa:${NC}        ${GREEN}${version_str}${NC}"
     else
-        echo -e "• ${BOLD}Binario Mise:${NC}          ${RED}❌ No instalado${NC}"
+        echo -e "• ${BOLD}Binario Mise:${NC}          ${RED}❌ No encontrado${NC}"
     fi
 
     local data_dir="$USER_HOME/.local/share/mise"
@@ -126,18 +133,18 @@ show_status() {
     echo -e "• ${BOLD}Configuración Global:${NC}  $([ -f "$config_dir/config.toml" ] && echo -e "${GREEN}✅ Configurado ($config_dir/config.toml)${NC}" || echo -e "${YELLOW}ℹ️ Por defecto / Sin config.toml manual${NC}")"
 
     local env_d_file="$USER_HOME/.config/environment.d/10-mise.conf"
-    echo -e "• ${BOLD}Sesión environment.d:${NC}   $([ -f "$env_d_file" ] && echo -e "${GREEN}✅ Activo ($env_d_file)${NC}" || echo -e "${RED}❌ Ausente${NC}")"
+    echo -e "• ${BOLD}Hyprland environment.d:${NC} $([ -f "$env_d_file" ] && echo -e "${GREEN}✅ Activo ($env_d_file)${NC}" || echo -e "${RED}❌ Ausente${NC}")"
 
     local bashrc_d_file="$USER_HOME/.bashrc.d/mise.sh"
     echo -e "• ${BOLD}Shell Bash (~/.bashrc.d):${NC} $([ -f "$bashrc_d_file" ] && echo -e "${GREEN}✅ Activo ($bashrc_d_file)${NC}" || echo -e "${RED}❌ Ausente${NC}")"
 
-    if [ -f "$USER_HOME/.zshrc" ]; then
+    if [ -f "$USER_HOME/.zshrc" ] || [ -d "$USER_HOME/.zshrc.d" ]; then
         local zshrc_d_file="$USER_HOME/.zshrc.d/mise.zsh"
         echo -e "• ${BOLD}Shell Zsh (~/.zshrc.d):${NC}   $([ -f "$zshrc_d_file" ] && echo -e "${GREEN}✅ Activo ($zshrc_d_file)${NC}" || echo -e "${RED}❌ Ausente${NC}")"
     fi
 
     echo -e "• ${BOLD}Autocompletado Bash:${NC}   $([ -f "$USER_HOME/.local/share/bash-completion/completions/mise" ] && echo -e "${GREEN}✅ Configurado${NC}" || echo -e "${RED}❌ Ausente${NC}")"
-    if [ -f "$USER_HOME/.zshrc" ]; then
+    if [ -f "$USER_HOME/.zshrc" ] || [ -d "$USER_HOME/.zshrc.d" ]; then
         echo -e "• ${BOLD}Autocompletado Zsh:${NC}    $([ -f "$USER_HOME/.local/share/zsh/site-functions/_mise" ] || [ -f "$USER_HOME/.zfunc/_mise" ] && echo -e "${GREEN}✅ Configurado${NC}" || echo -e "${RED}❌ Ausente${NC}")"
     fi
 
@@ -149,7 +156,7 @@ show_status() {
         if [ -n "$tool_list" ]; then
             echo "$tool_list" | sed 's/^/  /'
         else
-            echo -e "  ${YELLOW}ℹ️ Ninguna herramienta instalada aún.${NC}"
+            echo -e "  ${YELLOW}ℹ️ Ninguna herramienta de desarrollo instalada aún vía Mise.${NC}"
         fi
 
         echo -e "${CYAN}-----------------------------------------------------------------${NC}"
@@ -167,21 +174,20 @@ show_status() {
 }
 
 # ------------------------------------------------------------------------------
-# 4. INSTALACIÓN ROOTLESS DE MISE
+# 4. INSTALACIÓN / VERIFICACIÓN DE MISE
 # ------------------------------------------------------------------------------
 install_mise() {
     local existing_bin
     existing_bin=$(get_mise_bin)
 
     if [ -n "$existing_bin" ] && [ -x "$existing_bin" ]; then
-        log_ok "Mise ya está instalado en el sistema ($("$existing_bin" --version | head -n 1))."
+        log_ok "Mise ya está disponible en Omarchy ($existing_bin)."
         return 0
     fi
 
-    log_info "Instalando Mise en espacio de usuario rootless (~/.local/bin/mise)..."
+    log_info "Instalando Mise en espacio de usuario (~/.local/bin/mise)..."
     run_as_user mkdir -p "$USER_HOME/.local/bin"
 
-    # Instalación oficial rootless vía curl hacia ~/.local/bin/mise
     if command -v curl &>/dev/null; then
         MISE_INSTALL_PATH="$USER_HOME/.local/bin/mise" curl -fsSL "$MISE_INSTALL_URL" | run_as_user sh
     else
@@ -191,7 +197,7 @@ install_mise() {
 
     existing_bin=$(get_mise_bin)
     if [ -n "$existing_bin" ] && [ -x "$existing_bin" ]; then
-        log_ok "Mise instalado con éxito ($("$existing_bin" --version | head -n 1))."
+        log_ok "Mise instalado con éxito ($existing_bin)."
     else
         log_error "Error al verificar la instalación de Mise en $USER_HOME/.local/bin/mise."
         exit 1
@@ -208,16 +214,15 @@ configure_mise_hardware() {
     log_step "Optimizando configuración de Mise para AMD Ryzen 7 7730U (${NPROC} hilos)..."
     run_as_user mkdir -p "$config_dir"
 
-    # Si no existe el config.toml o no tiene bloque settings, creamos/actualizamos
     if [ ! -f "$config_file" ]; then
         cat <<EOF | run_as_user tee "$config_file" > /dev/null
 # ==============================================================================
-# Mise Configuration - Omarchy Workstation (Hyprland Wayland)
+# Mise Configuration - Omarchy 4.5 Workstation (Hyprland Wayland)
 # Hardware: AMD Ryzen 7 7730U (8C/16T) | 32 GB RAM | SSD NVMe Kioxia
 # ==============================================================================
 
 [settings]
-# Paralelismo adaptado a los ${NPROC} hilos lógicos del procesador
+# Paralelismo adaptado a los ${NPROC} hilos lógicos del procesador AMD Ryzen
 jobs = ${NPROC}
 raw = false
 idiomatic_version_file = true
@@ -228,7 +233,6 @@ not_found_auto_install = false
 EOF
         log_ok "Archivo de configuración global creado: $config_file"
     else
-        # Asegurar que jobs esté configurado de forma óptima
         if ! grep -q "^jobs =" "$config_file" 2>/dev/null; then
             if grep -q "\[settings\]" "$config_file" 2>/dev/null; then
                 sed -i "/\[settings\]/a jobs = ${NPROC}" "$config_file"
@@ -268,13 +272,13 @@ configure_environment() {
 
     # 6.1. Sesión gráfica Wayland / Hyprland (systemd --user)
     cat << 'EOF' | run_as_user tee "$env_dir/10-mise.conf" > /dev/null
-# Mise Runtime Manager Environment (Omarchy Workstation - Hyprland Wayland)
+# Mise Runtime Manager Environment (Omarchy 4.5 - Hyprland Wayland)
 PATH=${HOME}/.local/share/mise/shims:${HOME}/.local/bin:${PATH}
 EOF
 
     # 6.2. Shell Bash (~/.bashrc.d/mise.sh)
     cat << 'EOF' | run_as_user tee "$bashrc_d/mise.sh" > /dev/null
-# Mise Runtime Manager Environment (Bash)
+# Mise Runtime Manager Environment (Bash - Omarchy 4.5)
 if [ -d "$HOME/.local/bin" ] && [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
     export PATH="$HOME/.local/bin:$PATH"
 fi
@@ -291,14 +295,14 @@ fi
 EOF
 
     # 6.3. Shell Zsh (~/.zshrc.d/mise.zsh si existe ~/.zshrc)
-    if [ -f "$USER_HOME/.zshrc" ]; then
+    if [ -f "$USER_HOME/.zshrc" ] || [ -d "$USER_HOME/.zshrc.d" ]; then
         local zshrc_d="$USER_HOME/.zshrc.d"
         local zsh_comp_dir="$USER_HOME/.local/share/zsh/site-functions"
         local zfunc_dir="$USER_HOME/.zfunc"
         run_as_user mkdir -p "$zshrc_d" "$zsh_comp_dir" "$zfunc_dir"
 
         cat << 'EOF' | run_as_user tee "$zshrc_d/mise.zsh" > /dev/null
-# Mise Runtime Manager Environment (Zsh)
+# Mise Runtime Manager Environment (Zsh - Omarchy 4.5)
 if [ -d "$HOME/.local/bin" ] && [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
     export PATH="$HOME/.local/bin:$PATH"
 fi
@@ -319,7 +323,7 @@ EOF
     log_step "Generando autocompletados para Bash y Zsh..."
     run_as_user "$mise_cmd" completion bash > "$bash_comp_dir/mise" 2>/dev/null || true
 
-    if [ -f "$USER_HOME/.zshrc" ]; then
+    if [ -f "$USER_HOME/.zshrc" ] || [ -d "$USER_HOME/.zshrc.d" ]; then
         run_as_user "$mise_cmd" completion zsh > "$USER_HOME/.local/share/zsh/site-functions/_mise" 2>/dev/null || true
         run_as_user "$mise_cmd" completion zsh > "$USER_HOME/.zfunc/_mise" 2>/dev/null || true
     fi
@@ -338,14 +342,21 @@ update_mise() {
     mise_cmd=$(get_mise_bin)
 
     if [ -z "$mise_cmd" ]; then
-        log_error "Error: Mise no está instalado. Ejecuta '$0' primero."
+        log_error "Error: Mise no está disponible en el sistema."
         return 1
     fi
 
-    log_info "Actualizando binario de Mise (self-update) y herramientas gestionadas..."
-    run_as_user "$mise_cmd" self-update -y 2>/dev/null || true
+    log_info "Actualizando herramientas gestionadas con Mise..."
     run_as_user "$mise_cmd" upgrade -y 2>/dev/null || true
     run_as_user "$mise_cmd" reshim 2>/dev/null || true
+
+    # Si fue instalado en espacio de usuario, puede autovariar con self-update
+    if [ "$mise_cmd" = "$USER_HOME/.local/bin/mise" ]; then
+        log_step "Actualizando binario Mise de usuario..."
+        run_as_user "$mise_cmd" self-update -y 2>/dev/null || true
+    else
+        log_info "El binario Mise está gestionado por el sistema Pacman ($mise_cmd). Se actualiza vía: yay -Syu"
+    fi
     log_ok "Actualización completada."
 }
 
@@ -369,8 +380,8 @@ case "${1:-}" in
         ;;
     "")
         echo -e "${CYAN}=================================================================${NC}"
-        echo -e "${BOLD}⚡ CONFIGURACIÓN DE MISE (RUNTIME MANAGER) - OMARCHY WORKSTATION${NC}"
-        echo -e "   Hardware: AMD Ryzen 7 7730U (${NPROC} hilos) | Hyprland Wayland"
+        echo -e "${BOLD}⚡ CONFIGURACIÓN DE MISE (RUNTIME MANAGER) - OMARCHY 4.5${NC}"
+        echo -e "   Hardware: AMD Ryzen 7 7730U (${NPROC} hilos) | Hyprland (Wayland)"
         echo -e "${CYAN}=================================================================${NC}"
         install_mise
         configure_mise_hardware
@@ -378,7 +389,7 @@ case "${1:-}" in
         echo ""
         show_status
         echo -e "${BOLD}=================================================================${NC}"
-        echo -e "${GREEN}✅ Mise está listo para su uso en Omarchy Workstation y Hyprland.${NC}"
+        echo -e "${GREEN}✅ Mise está listo para su uso en Omarchy 4.5 Workstation y Hyprland.${NC}"
         echo -e "💡 Abre una nueva terminal o ejecuta: ${CYAN}source ~/.bashrc${NC}"
         echo -e "${BOLD}=================================================================${NC}"
         ;;

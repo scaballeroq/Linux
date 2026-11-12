@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # java.sh - Instalación, Optimización y Diagnóstico de OpenJDK y Maven
-# Sistema: Omarchy Linux (x86-64-v3 / Hyprland Wayland)
+# Sistema: Omarchy 4.5 Workstation (Arch Linux) | Escritorio: Hyprland (Wayland)
 # Hardware: HP ProBook 455 G10 | AMD Ryzen 7 7730U (Zen 3, 8C/16T) | 32 GB RAM
 # ==============================================================================
 # Características de Alto Rendimiento:
-# - Despliegue idempotente del JDK LTS de referencia desde repositorios oficiales de Omarchy/Arch (Pacman).
+# - Despliegue idempotente del JDK LTS de referencia desde repositorios oficiales de Arch (Pacman).
 # - Detección dinámica y resiliente de la versión de OpenJDK (21 LTS / 25 LTS por defecto,
 #   con soporte para 17 LTS o versiones personalizadas).
 # - Instalación completa del kit de desarrollo: JDK, JRE, maven, nss y pcsclite.
 # - Integración nativa con Apache Maven y optimización multinúcleo para AMD Ryzen (16 hilos).
 # - Resolución canónica de JAVA_HOME (/usr/lib/jvm/default o /usr/lib/jvm/java-<ver>-openjdk).
-# - Compatibilidad gráfica para Mutter Wayland (_JAVA_AWT_WM_NONREPARENTING=1).
-# - Integración desacoplada con Sesión Wayland (environment.d) y Shells (Bash / Zsh).
+# - Compatibilidad gráfica para Hyprland Wayland (_JAVA_AWT_WM_NONREPARENTING=1).
+# - Integración desacoplada con Hyprland (environment.d) y Shells (Bash / Zsh).
 # - Diagnóstico en tiempo real (--status) con soporte para coexistencia con Mise.
 # - Comandos CLI: --status / -s, --update / -u, --version / -v <n>, --help / -h.
 # ==============================================================================
@@ -62,7 +62,9 @@ run_as_user() {
 }
 
 get_mise_bin() {
-    if command -v mise &>/dev/null; then
+    if [ -x "/usr/bin/mise" ]; then
+        echo "/usr/bin/mise"
+    elif command -v mise &>/dev/null; then
         command -v mise
     elif [ -x "$USER_HOME/.local/bin/mise" ]; then
         echo "$USER_HOME/.local/bin/mise"
@@ -95,7 +97,7 @@ detect_target_openjdk() {
         fi
     fi
 
-    # 3. Priorizar LTS disponible en Omarchy/Arch
+    # 3. Priorizar LTS disponible en Arch
     for v in 25 21 17; do
         if pacman -Si "jdk${v}-openjdk" &>/dev/null; then
             echo "$v"
@@ -110,7 +112,7 @@ resolve_java_home() {
     local candidate=""
     local cur_target="${1:-${TARGET_VER:-21}}"
 
-    # 1. Enlace por defecto oficial de Arch/Omarchy
+    # 1. Enlace por defecto oficial de Arch Linux
     if [ -d "/usr/lib/jvm/default" ] && [ -f "/usr/lib/jvm/default/bin/javac" ]; then
         candidate="/usr/lib/jvm/default"
     fi
@@ -181,7 +183,7 @@ configure_shells() {
     run_as_user mkdir -p "$bashrc_d"
 
     run_as_user bash -c "cat > '$bash_file'" <<EOF
-# OpenJDK & Java Tools Environment (Omarchy Workstation)
+# OpenJDK & Java Tools Environment (Omarchy 4.5 Workstation)
 export JAVA_HOME="$jhome"
 export JDK_HOME="$jhome"
 
@@ -189,7 +191,7 @@ if [ -d "\$JAVA_HOME/bin" ] && [[ ":\$PATH:" != *":\$JAVA_HOME/bin:"* ]]; then
     export PATH="\$JAVA_HOME/bin:\$PATH"
 fi
 
-# Compatibilidad de aplicaciones GUI AWT/Swing con Mutter Wayland
+# Compatibilidad de aplicaciones GUI AWT/Swing con Hyprland Wayland
 export _JAVA_AWT_WM_NONREPARENTING=1
 
 # Integración con Apache Maven y optimización multinúcleo AMD Ryzen
@@ -202,7 +204,7 @@ EOF
 
     log_ok "Módulo Bash configurado en $bash_file."
 
-    # Configurar Zsh si el usuario tiene Zsh o directorio ~/.zshrc.d
+    # Configurar Zsh si existe
     if [ -f "$USER_HOME/.zshrc" ] || [ -d "$USER_HOME/.zshrc.d" ]; then
         local zshrc_d="$USER_HOME/.zshrc.d"
         local zsh_file="$zshrc_d/java.zsh"
@@ -210,7 +212,7 @@ EOF
         run_as_user mkdir -p "$zshrc_d"
 
         run_as_user bash -c "cat > '$zsh_file'" <<EOF
-# OpenJDK & Java Tools Environment (Omarchy Workstation - Zsh)
+# OpenJDK & Java Tools Environment (Omarchy 4.5 Workstation - Zsh)
 export JAVA_HOME="$jhome"
 export JDK_HOME="$jhome"
 
@@ -218,7 +220,7 @@ if [ -d "\$JAVA_HOME/bin" ] && [[ ":\$PATH:" != *":\$JAVA_HOME/bin:"* ]]; then
     export PATH="\$JAVA_HOME/bin:\$PATH"
 fi
 
-# Compatibilidad de aplicaciones GUI AWT/Swing con Mutter Wayland
+# Compatibilidad de aplicaciones GUI AWT/Swing con Hyprland Wayland
 export _JAVA_AWT_WM_NONREPARENTING=1
 
 # Integración con Apache Maven y optimización multinúcleo AMD Ryzen
@@ -240,8 +242,8 @@ show_status() {
     target_ver=$(detect_target_openjdk)
 
     echo -e "${CYAN}=================================================================${NC}"
-    echo -e "${BOLD}☕ ESTADO DEL ENTORNO OPENJDK & MAVEN - OMARCHY WORKSTATION${NC}"
-    echo -e "   ${CYAN}Hardware:${NC} AMD Ryzen 7 7730U (8C/16T) | 32 GB RAM | Hyprland Wayland"
+    echo -e "${BOLD}☕ ESTADO DEL ENTORNO OPENJDK & MAVEN - OMARCHY 4.5 WORKSTATION${NC}"
+    echo -e "   ${CYAN}Hardware:${NC} AMD Ryzen 7 7730U (8C/16T) | 32 GB RAM | Hyprland (Wayland)"
     echo -e "${CYAN}=================================================================${NC}"
 
     local java_bin java_ver javac_bin javac_ver java_home env_conf bash_conf zsh_conf
@@ -293,214 +295,154 @@ show_status() {
         if run_as_user "$mise_bin" which java 2>/dev/null >/dev/null; then
             mise_java="${YELLOW}⚠️ Shim de Java activo en Mise ($(run_as_user "$mise_bin" current java 2>/dev/null))${NC}"
         else
-            mise_java="${GREEN}✅ Mise activo (utilizando OpenJDK del sistema Omarchy)${NC}"
+            mise_java="${GREEN}✅ Mise activo (utilizando OpenJDK del sistema Arch/Omarchy)${NC}"
         fi
     else
         mise_java="${CYAN}ℹ️ Mise no detectado${NC}"
     fi
 
-    echo -e "${BOLD}1. Runtimes y Herramientas del JDK:${NC}"
-    echo -e "  • Runtime 'java':        $java_status"
-    echo -e "  • Compilador 'javac':    $javac_status"
-    echo -e "  • Gestor 'maven':        $mvn_status"
-    echo -e "  • Módulos JDK (jmods):   $([ -d "${java_home}/jmods" ] && echo -e "${GREEN}✅ Presentes${NC}" || echo -e "${YELLOW}⚠️ No detectados${NC}")"
-    echo -e "-----------------------------------------------------------------"
-    echo -e "${BOLD}2. Variables de Entorno y Rutas Canónicas:${NC}"
-    echo -e "  • JAVA_HOME canónico:    $home_status"
-    echo -e "  • Wayland Non-Reparent:  ${GREEN}✅ _JAVA_AWT_WM_NONREPARENTING=1${NC}"
-    echo -e "  • Optimización Maven:    ${GREEN}-Xms512m -Xmx2048m (16 hilos AMD Ryzen)${NC}"
-    echo -e "-----------------------------------------------------------------"
-    echo -e "${BOLD}3. Integración en el Escritorio y Shells:${NC}"
-    echo -e "  • Sesión environment.d:   $([ -f "$env_conf" ] && echo -e "${GREEN}✅ Configurado ($env_conf)${NC}" || echo -e "${RED}❌ Ausente${NC}")"
-    echo -e "  • Shell Bash:            $([ -f "$bash_conf" ] && echo -e "${GREEN}✅ Configurado ($bash_conf)${NC}" || echo -e "${RED}❌ Ausente${NC}")"
+    echo -e "• ${BOLD}Runtime Java:${NC}          $java_status"
+    echo -e "• ${BOLD}Compilador javac:${NC}      $javac_status"
+    echo -e "• ${BOLD}Apache Maven:${NC}          $mvn_status"
+    echo -e "• ${BOLD}JAVA_HOME Canónico:${NC}    $home_status"
+    echo -e "• ${BOLD}Gestor Mise:${NC}           $mise_java"
+    echo -e "${CYAN}-----------------------------------------------------------------${NC}"
+    echo -e "• ${BOLD}Integración en el Sistema:${NC}"
+    echo -e "  - Sesión Hyprland (environment.d): $([ -f "$env_conf" ] && echo -e "${GREEN}✅ Activo ($env_conf)${NC}" || echo -e "${RED}❌ Ausente${NC}")"
+    echo -e "  - Shell Bash (~/.bashrc.d):         $([ -f "$bash_conf" ] && echo -e "${GREEN}✅ Activo ($bash_conf)${NC}" || echo -e "${RED}❌ Ausente${NC}")"
     if [ -f "$USER_HOME/.zshrc" ] || [ -d "$USER_HOME/.zshrc.d" ]; then
-        echo -e "  • Shell Zsh:             $([ -f "$zsh_conf" ] && echo -e "${GREEN}✅ Configurado ($zsh_conf)${NC}" || echo -e "${RED}❌ Ausente${NC}")"
+        echo -e "  - Shell Zsh (~/.zshrc.d):          $([ -f "$zsh_conf" ] && echo -e "${GREEN}✅ Activo ($zsh_conf)${NC}" || echo -e "${RED}❌ Ausente${NC}")"
     fi
-    echo -e "  • Coexistencia Mise:     $mise_java"
+    echo -e "  - Compatibilidad GUI Wayland:       ${GREEN}✅ _JAVA_AWT_WM_NONREPARENTING=1 (Hyprland)${NC}"
     echo -e "${CYAN}=================================================================${NC}"
 }
 
 # ------------------------------------------------------------------------------
-# 6. INSTALACIÓN Y CONFIGURACIÓN COMPLETA
+# 6. INSTALACIÓN / ACTUALIZACIÓN (--update o ejecución directa)
 # ------------------------------------------------------------------------------
-install_java() {
-    TARGET_VER=$(detect_target_openjdk)
-
-    echo -e "${CYAN}=================================================================${NC}"
-    echo -e "${BOLD}☕ INSTALACIÓN Y CONFIGURACIÓN DE OPENJDK & MAVEN (OMARCHY)${NC}"
-    echo -e "   ${CYAN}Hardware:${NC} AMD Ryzen 7 7730U | Hyprland Wayland"
-    echo -e "${CYAN}=================================================================${NC}"
-
-    log_info "Versión objetivo de OpenJDK detectada: ${BOLD}Java ${TARGET_VER}${NC}"
-
-    # Paquetes requeridos en Omarchy/Arch
-    local required_pkgs=()
-    if pacman -Si "jdk${TARGET_VER}-openjdk" &>/dev/null; then
-        required_pkgs+=("jdk${TARGET_VER}-openjdk" "jre${TARGET_VER}-openjdk")
-    else
-        required_pkgs+=("jdk-openjdk" "jre-openjdk")
-    fi
-    required_pkgs+=("maven" "nss" "pcsclite")
-
-    # Filtrar paquetes no instalados con pacman -T
-    local missing_pkgs
-    missing_pkgs=$(pacman -T "${required_pkgs[@]}" 2>/dev/null || true)
-
-    if [ -n "$missing_pkgs" ]; then
-        log_step "Instalando paquetes faltantes vía pacman: ${BOLD}${missing_pkgs}${NC}..."
-        if [ "$EUID" -ne 0 ]; then
-            log_warn "Se requieren privilegios administrativos para instalar paquetes con pacman."
-        fi
-        $SUDO pacman -S --needed --noconfirm $missing_pkgs
-        log_ok "Paquetes OpenJDK y dependencias instalados con éxito."
-    else
-        log_ok "Todos los paquetes necesarios de OpenJDK ${TARGET_VER} y Maven ya están instalados."
-    fi
-
-    # Configurar JVM por defecto con archlinux-java si está disponible
-    if command -v archlinux-java &>/dev/null; then
-        local lts_jvm
-        lts_jvm=$(archlinux-java status 2>/dev/null | grep -E "java-(${TARGET_VER}|25|21)-openjdk" | tail -n1 | awk '{print $1}' || true)
-        if [ -n "$lts_jvm" ]; then
-            log_step "Estableciendo JVM por defecto a $lts_jvm con archlinux-java..."
-            $SUDO archlinux-java set "$lts_jvm" 2>/dev/null || true
-        fi
-    fi
-
-    # Resolver JAVA_HOME
-    local resolved_home
-    resolved_home=$(resolve_java_home "$TARGET_VER")
-
-    if [ -z "$resolved_home" ] || [ ! -d "$resolved_home" ]; then
-        log_warn "No se pudo resolver automáticamente JAVA_HOME, usando /usr/lib/jvm/default."
-        resolved_home="/usr/lib/jvm/default"
-    fi
-
-    log_ok "JAVA_HOME resuelto canónicamente: ${BOLD}$resolved_home${NC}"
-
-    # Configurar environment.d para Hyprland y Wayland
-    configure_environment_d "$resolved_home"
-
-    # Configurar shells (Bash y Zsh)
-    configure_shells "$resolved_home"
-
-    echo ""
-    log_ok "Entorno OpenJDK ${TARGET_VER} configurado y optimizado correctamente."
-    echo ""
-    show_status
-}
-
-# ------------------------------------------------------------------------------
-# 7. ACTUALIZACIÓN DE PAQUETES (--update)
-# ------------------------------------------------------------------------------
-update_java() {
+install_openjdk() {
     local target_ver
     target_ver=$(detect_target_openjdk)
 
-    echo -e "${CYAN}=================================================================${NC}"
-    echo -e "${BOLD}🔄 ACTUALIZANDO PAQUETES OPENJDK Y MAVEN VÍA PACMAN${NC}"
-    echo -e "${CYAN}=================================================================${NC}"
+    log_info "Preparando aprovisionamiento de OpenJDK ${target_ver} LTS y herramientas..."
 
-    local update_pkgs=("jdk${target_ver}-openjdk" "jre${target_ver}-openjdk" "maven")
+    local pkgs_to_install=()
+    local candidates=(
+        "jdk${target_ver}-openjdk"
+        "jre${target_ver}-openjdk"
+        "maven"
+        "nss"
+        "pcsclite"
+    )
 
-    log_step "Ejecutando actualización de paquetes: ${BOLD}${update_pkgs[*]}${NC}..."
-    if [ "$EUID" -ne 0 ]; then
-        log_warn "Se requieren privilegios administrativos para actualizar paquetes con pacman."
+    for pkg in "${candidates[@]}"; do
+        if ! pacman -Q "$pkg" &>/dev/null; then
+            pkgs_to_install+=("$pkg")
+        fi
+    done
+
+    if [ ${#pkgs_to_install[@]} -gt 0 ]; then
+        log_step "Instalando paquetes vía Pacman: ${pkgs_to_install[*]}..."
+        $SUDO pacman -S --needed --noconfirm "${pkgs_to_install[@]}"
+        log_ok "Paquetes instalados correctamente."
+    else
+        log_ok "Todos los paquetes necesarios de OpenJDK y Maven ya están presentes."
     fi
 
-    $SUDO pacman -S --needed --noconfirm "${update_pkgs[@]}"
-    log_ok "Actualización completada exitosamente."
-    echo ""
-    show_status
+    # Configurar default en archlinux-java si está disponible
+    if command -v archlinux-java &>/dev/null; then
+        local current_default
+        current_default=$(archlinux-java get 2>/dev/null || true)
+        local target_env="java-${target_ver}-openjdk"
+
+        if [ "$current_default" != "$target_env" ]; then
+            if archlinux-java status 2>/dev/null | grep -q "$target_env"; then
+                log_step "Estableciendo $target_env como Java por defecto en archlinux-java..."
+                $SUDO archlinux-java set "$target_env"
+                log_ok "Versión por defecto de Java fijada a: $target_env"
+            fi
+        fi
+    fi
+
+    # Resolver JAVA_HOME y generar archivos de integración
+    local jhome
+    jhome=$(resolve_java_home "$target_ver")
+
+    if [ -n "$jhome" ] && [ -d "$jhome" ]; then
+        configure_environment_d "$jhome"
+        configure_shells "$jhome"
+    else
+        log_warn "No se pudo determinar un directorio canónico para JAVA_HOME."
+    fi
+
+    # Reshim en Mise si aplica
+    local mise_bin
+    mise_bin=$(get_mise_bin)
+    if [ -n "$mise_bin" ]; then
+        run_as_user "$mise_bin" reshim 2>/dev/null || true
+    fi
 }
 
-# ------------------------------------------------------------------------------
-# 8. AYUDA (--help)
-# ------------------------------------------------------------------------------
 show_help() {
     cat <<EOF
-☕ Gestor y Optimizador de OpenJDK & Maven - Omarchy Workstation
-   Hyprland Wayland | AMD Ryzen 7 7730U | 32 GB RAM
+☕ Gestor y Optimizador de OpenJDK & Maven - Omarchy 4.5 Workstation
+   Hardware: AMD Ryzen 7 7730U (16T) | 32 GB RAM | Hyprland (Wayland)
 
 Uso:
   $0 [OPCIÓN]
 
 Opciones:
-  (sin argumentos)    Verifica e instala OpenJDK (Java LTS por defecto en Omarchy),
-                      compilador javac, dependencias de seguridad y Apache Maven.
-                      Resuelve JAVA_HOME de forma canónica e inyecta la configuración en
-                      environment.d, ~/.bashrc.d y ~/.zshrc.d de forma modular e idempotente.
-  --install, -i       Fuerza la ejecución del proceso de instalación y configuración.
-  --version, -v <num> Selecciona la versión específica de OpenJDK (ej. 25, 21, 17).
-  --status, -s        Muestra diagnóstico detallado del Runtime, Compilador javac,
-                      Maven, JAVA_HOME, variables Wayland e integración en shells.
-  --update, -u        Actualiza los paquetes de OpenJDK y Maven vía Pacman.
-  --help, -h          Muestra este mensaje de ayuda.
-
-Ejemplos:
-  $0                  # Instala y optimiza OpenJDK según la versión del sistema
-  $0 --version 21     # Fuerza la instalación de OpenJDK 21
-  $0 --status         # Muestra el estado actual del entorno Java
-  $0 --update         # Actualiza OpenJDK y Maven a las últimas versiones disponibles
+  (sin argumentos)       Instala y optimiza OpenJDK LTS (versión detectada) y Maven.
+  --status, -s           Diagnóstico completo del estado del entorno Java y variables.
+  --update, -u           Actualiza los paquetes de OpenJDK, JRE y Maven del sistema.
+  --version, -v <num>    Fuerza la instalación de una versión específica (ej: -v 21, -v 17, -v 25).
+  --help, -h             Muestra este mensaje de ayuda.
 EOF
 }
 
 # ------------------------------------------------------------------------------
-# 9. PROCESAMIENTO DE ARGUMENTOS CLI
+# 7. PROCESAMIENTO DE ARGUMENTOS CLI
 # ------------------------------------------------------------------------------
-TARGET_VER="${JAVA_TARGET_VER:-}"
-ACTION="install"
+TARGET_VER=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --status|-s|status)
-            ACTION="status"
-            shift
-            ;;
-        --update|-u|update)
-            ACTION="update"
-            shift
+            show_status
+            exit 0
             ;;
         --help|-h|help)
-            ACTION="help"
-            shift
+            show_help
+            exit 0
+            ;;
+        --update|-u|update)
+            install_openjdk
+            echo ""
+            show_status
+            exit 0
             ;;
         --version|-v)
-            if [ -n "${2:-}" ] && [[ "$2" =~ ^[0-9]+$ || "$2" == "latest" ]]; then
+            if [ -n "${2:-}" ] && [[ "$2" =~ ^[0-9]+$ ]]; then
                 TARGET_VER="$2"
                 shift 2
             else
-                log_error "Debe especificar una versión válida para Java (ej. 25, 21, 17)"
+                log_error "Debe especificar un número de versión válido (ej: -v 21)."
                 exit 1
             fi
             ;;
-        --install|-i|install)
-            ACTION="install"
-            shift
-            ;;
         *)
             log_error "Opción no reconocida: $1"
-            echo "Ejecute '$0 --help' para ver las opciones disponibles."
+            show_help
             exit 1
             ;;
     esac
 done
 
-case "$ACTION" in
-    status)
-        show_status
-        exit 0
-        ;;
-    update)
-        update_java
-        exit 0
-        ;;
-    help)
-        show_help
-        exit 0
-        ;;
-    install)
-        install_java
-        exit 0
-        ;;
-esac
+# Ejecución por defecto
+install_openjdk
+echo ""
+show_status
+echo -e "${BOLD}=================================================================${NC}"
+echo -e "${GREEN}✅ Entorno Java & Maven preparado y optimizado para Omarchy 4.5.${NC}"
+echo -e "💡 Aplica los cambios de inmediato con: ${CYAN}source ~/.bashrc${NC}"
+echo -e "${BOLD}=================================================================${NC}"
