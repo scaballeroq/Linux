@@ -1,25 +1,54 @@
 # Omarchy Environment Configuration Justfile
-# (Arch Linux + Omarchy)
+# (Arch Linux + Hyprland - Omarchy 4.5 Quattro RS)
+# Optimizado para HP ProBook 455 G10 (AMD Ryzen 7 7730U / Radeon Vega 8)
+
+# Muestra ayuda por defecto
+default:
+    @just --list
 
 # Instala todo el entorno por defecto
 setup-all: post-install security fonts bash-setup virtualization mise cockpit ides git-setup languages yt-dlp fastfetch
-    echo "🚀 Entorno completo de Omarchy (Arch Linux) configurado. Por favor, reinicia el sistema."
+    @echo "🚀 Entorno completo de Omarchy 4.5 configurado. Por favor, reinicia el sistema."
 
 # =============================================================================
 # CONFIGURACIÓN BASE DEL SISTEMA
 # =============================================================================
 
-# Configuración base post-instalación (Pacman, AUR, Flatpak, Codecs)
+# Mantenimiento y verificación del sistema (Chaotic-AUR y fstrim SSD)
 post-install:
     ./Setup/post-install.sh
 
-# Seguridad básica (UFW firewall)
+# Repositorio precompilado Chaotic-AUR y optimizaciones de Pacman
+chaotic-aur:
+    ./Setup/chaotic-aur.sh
+
+# Diagnóstico de integración de Chaotic-AUR, repositorios y pacman.conf
+chaotic-status:
+    ./Setup/chaotic-aur.sh --status
+
+# Refresco e inicialización de firmas digitales (Arch Linux y Chaotic-AUR)
+chaotic-keys:
+    ./Setup/chaotic-aur.sh --keys
+
+# Actualización completa del sistema sincronizada
+chaotic-update:
+    ./Setup/chaotic-aur.sh --update
+
+# Seguridad de red y cortafuegos (Firewalld exclusivo)
 security:
     ./Setup/seguridad.sh
 
 # Fuentes de desarrollo (Nerd Fonts: JetBrainsMono, FiraCode, CascadiaCode...)
 fonts:
     ./Setup/fonts.sh
+
+# Configuración multi-monitor (LG 32" Principal, TV Sony 32" Derecha, Portátil Abajo)
+monitors:
+    ./Setup/monitors-setup.sh --apply
+
+# Diagnóstico de estado de monitores y sesión Wayland/Hyprland
+monitors-status:
+    ./Setup/monitors-setup.sh --status
 
 # Configuración modular de Bash (Aliases, Funciones, Entorno)
 bash-setup:
@@ -29,9 +58,25 @@ bash-setup:
 fastfetch:
     ./Setup/fastfetch.sh
 
-# Multimedia (yt-dlp, ffmpeg)
+# Multimedia (yt-dlp, FFmpeg y aceleración hardware)
 yt-dlp:
     ./Setup/yt-dlp-setup.sh
+
+# Diagnóstico multimedia y estado de yt-dlp
+yt-dlp-status:
+    ./Setup/yt-dlp-setup.sh --status
+
+# Actualizar yt-dlp, dependencias y motores JS
+yt-dlp-update:
+    ./Setup/yt-dlp-setup.sh --update
+
+# Limpieza de caché de tokens y descifrado de yt-dlp
+yt-dlp-clean:
+    ./Setup/yt-dlp-setup.sh --clean-cache
+
+# Prueba de extracción y descifrado JS de yt-dlp
+yt-dlp-test:
+    ./Setup/yt-dlp-setup.sh --test
 
 # =============================================================================
 # CONFIGURACIÓN DE RED Y VIRTUALIZACIÓN
@@ -68,13 +113,21 @@ mise:
 
 # Todos los lenguajes
 languages: node python rust dotnet java
-    echo "✅ Lenguajes instalados."
+    @echo "✅ Lenguajes instalados."
+
+# Diagnóstico de estado de lenguajes y runtimes
+lang-status:
+    ./ProgrammingLanguages/mise.sh --status
+    ./ProgrammingLanguages/python.sh --status
+    ./ProgrammingLanguages/nodejs.sh --status
+    ./ProgrammingLanguages/java.sh --status
+    ./ProgrammingLanguages/rust.sh --status
 
 # Node.js LTS
 node:
     ./ProgrammingLanguages/nodejs.sh
 
-# Python
+# Python & uv
 python:
     ./ProgrammingLanguages/python.sh
 
@@ -104,7 +157,7 @@ angular:
 
 # Antigravity CLI
 antigravity-ai:
-    ./AI/antigravity-CLI.sh
+    ./IDE/antigravity-cli.sh
 
 # =============================================================================
 # ENTORNOS DE DESARROLLO (IDEs)
@@ -112,13 +165,20 @@ antigravity-ai:
 
 # Todos los IDEs
 ides: nvim vscode antigravity antigravity-cli antigravity-ide opencode
-    echo "✅ IDEs instalados."
+    @echo "✅ IDEs instalados."
 
-# Neovim + LazyVim
+# Diagnóstico de estado de la suite de IDEs
+ide-status:
+    ./IDE/antigravity.sh --status
+    ./IDE/antigravity-cli.sh --status
+    ./IDE/antigravity-ide.sh --status
+    ./IDE/opencode.sh --status
+
+# Neovim + LazyVim (Wayland nativo)
 nvim:
     ./IDE/neovim.sh
 
-# Visual Studio Code
+# Visual Studio Code (Wayland nativo)
 vscode:
     ./IDE/vscode.sh
 
@@ -142,7 +202,7 @@ opencode:
 # JUEGOS
 # =============================================================================
 
-# Steam y herramientas de juegos
+# Steam y herramientas de juegos (Vulkan RADV, GameMode, MangoHud)
 steam:
     ./Juegos/steam.sh
 
@@ -186,3 +246,24 @@ lazydocker:
 lzd:
     lazydocker
 
+# =============================================================================
+# TELEMETRÍA Y CONTROL DE HARDWARE (HP ProBook 455 G10)
+# =============================================================================
+
+# Diagnóstico de hardware, cortafuegos, pantallas y memoria ZRAM
+status:
+    @echo "================================================================="
+    @echo "💻 TELEMETRÍA: HP ProBook 455 G10 (Omarchy 4.5)"
+    @echo "================================================================="
+    @echo "🔹 CPU:       $$(lscpu | grep 'Model name:' | sed 's/Model name:[ \t]*//')"
+    @echo "🔹 GPU:       $$(lspci | grep -i 'vga\|3d' | cut -d: -f3)"
+    @echo "🔹 Kernel:    $$(uname -r)"
+    @echo "🔹 Wayland:   $$XDG_SESSION_TYPE ($$WAYLAND_DISPLAY)"
+    @echo "🔹 Firewalld: $$(sudo firewall-cmd --state 2>/dev/null || echo 'inactivo')"
+    @echo "🔹 ZRAM Swap: $$(swapon --show | grep -E 'zram|Type' || echo 'Sin ZRAM')"
+    @echo "🔹 Audio:     $$(wpctl status 2>/dev/null | grep -E 'Default|Sink' | head -n2 || echo 'PipeWire OK')"
+    @echo "================================================================="
+
+# Consulta de topología de monitores en Hyprland
+monitors:
+    @command -v hyprctl >/dev/null 2>&1 && hyprctl monitors || echo "⚠️ hyprctl no disponible fuera de sesión Hyprland"

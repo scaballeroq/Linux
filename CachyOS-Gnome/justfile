@@ -1,0 +1,418 @@
+# ==============================================================================
+#  Justfile - Orquestador de Configuración para CachyOS Workstation (GNOME Wayland)
+#  Gestor de Paquetes: Pacman / Paru + Repositorios CachyOS (x86-64-v3) + Flatpak
+# ==============================================================================
+
+set shell := ["bash", "-euo", "pipefail", "-c"]
+
+# Mostrar lista de recetas disponibles por defecto
+default:
+    @just --list --unsorted
+
+# ==============================================================================
+#  1. PERFILES DE DESPLIEGUE COMPLETO
+# ==============================================================================
+
+# Ejecuta la instalación completa para estación de trabajo CachyOS Workstation
+setup-all: post-install cachyos-repos zram tuning laptop fingerprint printer security fonts shell zsh starship fastfetch kitty ghostty ptyxis apariencia gnome-setup gnome-extensions gsconnect multimedia flatpak chrome firefox steam virtualization podman git mise languages ide
+    @echo "✅ Despliegue integral de CachyOS Workstation (GNOME Wayland) completado."
+
+# Perfil optimizado para Portátil de Desarrollo AMD Ryzen (HP ProBook 455 G10)
+setup-laptop-amd: post-install-amd cachyos-repos zram tuning laptop fingerprint printer security fonts shell zsh starship fastfetch kitty ghostty ptyxis apariencia gnome-setup gnome-extensions gsconnect multimedia flatpak chrome firefox virtualization podman git mise languages ide
+    @echo "✅ Perfil Portátil Desarrollo AMD Ryzen en CachyOS Workstation completado."
+
+# Perfil para Sobremesa / Media Center Intel Core
+setup-media-desktop: post-install-intel cachyos-repos zram tuning security fonts shell starship fastfetch kitty apariencia gnome-setup gnome-extensions multimedia flatpak chrome firefox
+    @echo "✅ Perfil Sobremesa Multimedia Intel en CachyOS Workstation completado."
+
+# ==============================================================================
+#  2. DIAGNÓSTICO GLOBAL (--status)
+# ==============================================================================
+
+# Muestra el estado global de todos los componentes de CachyOS Workstation
+status:
+    ./Setup/post-install-amd.sh --status
+    ./Setup/cachyos-repos.sh --status
+    ./Setup/zram-setup.sh --status
+    ./Setup/cachyos-tuning.sh --status
+    ./Setup/laptop-setup.sh --status
+    ./Setup/seguridad.sh --status
+    ./Setup/apariencia.sh --status
+    ./Setup/gnome-settings.sh --status
+    ./Setup/gnome-extensions.sh --status
+    ./Setup/multimedia.sh --status
+    ./Setup/flatpak.sh --status
+    ./Podman/install/podman-install.sh --status
+    ./Virtualizacion/virtualization.sh --status
+
+# ==============================================================================
+#  3. SISTEMA BASE, REPOSITORIOS CACHYOS, KERNEL Y HARDWARE
+# ==============================================================================
+
+# Configura y optimiza los repositorios de CachyOS (v3, multilib, chaotic-aur) y pacman.conf
+cachyos-repos:
+    ./Setup/cachyos-repos.sh
+
+# Diagnóstico de los repositorios y espejos de CachyOS
+cachyos-repos-status:
+    ./Setup/cachyos-repos.sh --status
+
+# Calibra y clasifica los espejos más rápidos con cachyos-rate-mirrors
+rate-mirrors:
+    ./Setup/cachyos-repos.sh --rate-mirrors
+
+# Post-instalación base con auto-detección de CPU (AMD Ryzen vs Intel Core)
+post-install:
+    ./Setup/post-install.sh
+
+# Post-instalación específica para AMD Ryzen y gráficos Radeon (Mesa RADV + VA-API)
+post-install-amd:
+    ./Setup/post-install-amd.sh
+
+# Post-instalación específica para Intel Core
+post-install-intel:
+    ./Setup/post-install-intel.sh
+
+# Configura Swap en ZRAM (zstd, 50-100% RAM, prioridad 100)
+zram:
+    ./Setup/zram-setup.sh
+
+# Muestra el estado actual de ZRAM y dispositivos de swap
+zram-status:
+    ./Setup/zram-setup.sh --status
+
+# Aplica optimizaciones de Kernel (sysctl), Ananicy-CPP, UKSMD y exclusiones de Tracker
+tuning:
+    ./Setup/cachyos-tuning.sh
+
+# Muestra el diagnóstico de optimización del sistema (sysctl, límites, Tracker)
+tuning-status:
+    ./Setup/cachyos-tuning.sh --status
+
+# Optimización para portátil (energía, Touchpad Wayland, multimonitor, logind y Bluetooth)
+laptop:
+    ./Setup/laptop-setup.sh
+
+# Muestra telemetría de batería, CPU EPP y pantallas DRM del portátil
+laptop-status:
+    ./Setup/laptop-setup.sh --status
+
+# Configura lector de huella dactilar (fprintd + PAM)
+fingerprint:
+    ./Setup/fingerprint-setup.sh
+
+# Estado del lector de huella dactilar
+fingerprint-status:
+    ./Setup/fingerprint-setup.sh --status
+
+# Configura impresora HP (CUPS, HPLIP, colas IPP Everywhere y Firewalld)
+printer *args:
+    ./Setup/hp-printer-setup.sh {{args}}
+
+# Estado del subsistema de impresión HP
+printer-status:
+    ./Setup/hp-printer-setup.sh --status
+
+# Endurecimiento de red con Firewalld exclusivo, DNS-over-TLS y sysctl
+security:
+    ./Setup/seguridad.sh
+
+# Habilita puertos de desarrollo local en Firewalld (3000, 5173, 8000, 8080)
+security-dev-ports:
+    ./Setup/seguridad.sh --dev-ports
+
+# Estado del cortafuegos Firewalld y reglas de seguridad
+security-status:
+    ./Setup/seguridad.sh --status
+
+# Instala e integra la consola web de administración Cockpit (socket bajo demanda)
+cockpit:
+    ./Setup/cockpit.sh
+
+# Estado de la consola web Cockpit
+cockpit-status:
+    ./Setup/cockpit.sh --status
+
+# ==============================================================================
+#  4. ESCRITORIO GNOME, APARIENCIA Y WAYLAND
+# ==============================================================================
+
+# Configuración global de GNOME Shell (Luz nocturna, fuentes subpixel, botones y VRR)
+gnome-setup:
+    ./Setup/gnome-settings.sh
+
+# Asistente interactivo de configuración de GNOME
+gnome-interactive:
+    ./Setup/gnome-settings.sh --interactive
+
+# Aplica configuración de GNOME sin reinstalar paquetes
+gnome-config-only:
+    ./Setup/gnome-settings.sh --config
+
+# Estado de la configuración de GNOME Shell
+gnome-status:
+    ./Setup/gnome-settings.sh --status
+
+# Aplica tema oscuro Catppuccin Mocha, acentos Libadwaita y fuentes
+apariencia:
+    ./Setup/apariencia.sh
+
+# Cambia la apariencia al tema claro (Light)
+apariencia-light:
+    ./Setup/apariencia.sh --light
+
+# Cambia la apariencia al tema oscuro (Dark)
+apariencia-dark:
+    ./Setup/apariencia.sh --dark
+
+# Estado de la apariencia del escritorio y temas aplicados
+apariencia-status:
+    ./Setup/apariencia.sh --status
+
+# Instala y activa extensiones de GNOME Shell recomendadas (Dash to Dock, Blur, etc.)
+gnome-extensions:
+    ./Setup/gnome-extensions.sh
+
+# Activa todas las extensiones instaladas
+gnome-extensions-enable:
+    ./Setup/gnome-extensions.sh --enable-all
+
+# Estado de las extensiones de GNOME Shell
+gnome-extensions-status:
+    ./Setup/gnome-extensions.sh --status
+
+# Instala y configura GSConnect (integración móvil KDE Connect) y Firewalld
+gsconnect:
+    ./Setup/gsconnect.sh
+
+# Estado de GSConnect y puertos de red (1714-1764 TCP/UDP)
+gsconnect-status:
+    ./Setup/gsconnect.sh --status
+
+# Instala fuentes de desarrollo recomendadas (JetBrainsMono Nerd Font, FiraCode)
+fonts:
+    ./Setup/fonts.sh
+
+# Estado de fuentes del sistema
+fonts-status:
+    ./Setup/fonts.sh --status
+
+# ==============================================================================
+#  5. TERMINALES Y SHELL (BASH / ZSH)
+# ==============================================================================
+
+# Instala y optimiza utilidades modernas de terminal (eza, bat, fd, ripgrep, btop, zoxide)
+shell:
+    ./Setup/shell.sh
+
+# Estado de utilidades modernas de terminal
+shell-status:
+    ./Setup/shell.sh --status
+
+# Configura Zsh como shell avanzada con plugins, autocompletados y Starship
+zsh:
+    ./Setup/zsh-setup.sh
+
+# Estado de la configuración de Zsh
+zsh-status:
+    ./Setup/zsh-setup.sh --status
+
+# Instala y configura Kitty (terminal acelerada por GPU) con tema Catppuccin
+kitty:
+    ./Setup/kitty.sh
+
+# Aplica configuración de Kitty sin reinstalar
+kitty-config:
+    ./Setup/kitty.sh --config-only
+
+# Estado de la terminal Kitty
+kitty-status:
+    ./Setup/kitty.sh --status
+
+# Instala y configura Ghostty (terminal nativa moderna)
+ghostty:
+    ./Setup/ghostty.sh
+
+# Estado de la terminal Ghostty
+ghostty-status:
+    ./Setup/ghostty.sh --status
+
+# Instala y configura Ptyxis (terminal nativa de GNOME con soporte de contenedores)
+ptyxis:
+    ./Setup/ptyxis.sh
+
+# Aplica la paleta Catppuccin Mocha a Ptyxis
+ptyxis-theme:
+    ./Setup/ptyxis.sh --theme-only
+
+# Estado de la terminal Ptyxis
+ptyxis-status:
+    ./Setup/ptyxis.sh --status
+
+# Instala y configura el prompt Starship con paleta CachyOS
+starship:
+    ./Setup/starship.sh
+
+# Estado del prompt Starship
+starship-status:
+    ./Setup/starship.sh --status
+
+# Instala y aplica el tema Hero de Fastfetch para CachyOS Workstation
+fastfetch:
+    ./Setup/fastfetch.sh
+
+# Selector interactivo de temas para Fastfetch
+fastfetch-menu:
+    ./Setup/fastfetch.sh --menu
+
+# Estado de Fastfetch
+fastfetch-status:
+    ./Setup/fastfetch.sh --status
+
+# ==============================================================================
+#  6. MULTIMEDIA, FLATPAK, NAVEGADORES Y GAMING
+# ==============================================================================
+
+# Instala códecs completos, aceleración HW AMD VA-API, GStreamer y reproductores Wayland
+multimedia:
+    ./Setup/multimedia.sh
+
+# Instala únicamente códecs multimedia, drivers VA-API y plugins GStreamer
+multimedia-codecs:
+    ./Setup/multimedia.sh --codecs
+
+# Instala únicamente reproductores multimedia Wayland (Celluloid, MPV, VLC, Loupe)
+multimedia-players:
+    ./Setup/multimedia.sh --players
+
+# Estado de códecs multimedia, aceleración VA-API y MPV
+multimedia-status:
+    ./Setup/multimedia.sh --status
+
+# Configura yt-dlp, FFmpeg, aria2 y Deno
+yt-dlp:
+    ./Setup/yt-dlp-setup.sh
+
+# Instala el perfil estándar de aplicaciones Flatpak desde Flathub
+flatpak:
+    ./Setup/flatpak.sh
+
+# Instala el catálogo completo de aplicaciones Flatpak
+flatpak-all:
+    ./Setup/flatpak.sh --all
+
+# Estado de aplicaciones Flatpak instaladas
+flatpak-status:
+    ./Setup/flatpak.sh --status
+
+# Instala Google Chrome con aceleración Wayland Ozone y VA-API
+chrome:
+    ./Setup/chrome.sh
+
+# Estado de Google Chrome
+chrome-status:
+    ./Setup/chrome.sh --status
+
+# Instala y optimiza Mozilla Firefox nativo con soporte VA-API y Wayland
+firefox:
+    ./Setup/firefox.sh
+
+# Estado de Mozilla Firefox
+firefox-status:
+    ./Setup/firefox.sh --status
+
+# Instala Steam vía multilib, drivers Vulkan 32-bit, GameMode, MangoHud y Proton-GE
+steam:
+    ./Setup/steam.sh
+
+# Estado de Steam y herramientas de gaming
+steam-status:
+    ./Setup/steam.sh --status
+
+# ==============================================================================
+#  7. CONTENEDORES (PODMAN ROOTLESS) Y VIRTUALIZACIÓN (KVM/QEMU)
+# ==============================================================================
+
+# Configura Podman Rootless, socket de usuario, linger y systemd Quadlets
+podman:
+    ./Podman/install/podman-install.sh
+    ./Podman/install/quadlets-setup.sh
+
+# Alias para configuración de Podman y Quadlets
+podman-setup: podman
+
+# Estado de Podman Rootless y Quadlets
+podman-status:
+    ./Podman/install/podman-install.sh --status
+    ./Podman/install/quadlets-setup.sh --status
+
+# Instala y optimiza KVM/QEMU, Libvirt modular y virt-manager
+virtualization:
+    ./Virtualizacion/virtualization.sh
+
+# Estado de KVM/QEMU y Libvirt
+virtualization-status:
+    ./Virtualizacion/virtualization.sh --status
+
+# ==============================================================================
+#  8. DESARROLLO, LENGUAJES (MISE / UV) E IDEs
+# ==============================================================================
+
+# Configura Git, Delta, Lazygit y GitHub CLI (gh)
+git:
+    ./IDE/git.sh
+
+# Estado de Git, Delta, Lazygit y GitHub CLI
+git-status:
+    ./IDE/git.sh --status
+
+# Instala y configura Mise (gestor de runtimes polyglot)
+mise:
+    ./ProgrammingLanguages/mise.sh
+
+# Instala y optimiza el entorno de Rust
+rust:
+    ./ProgrammingLanguages/rust.sh
+
+# Diagnóstico de Rust
+rust-status:
+    ./ProgrammingLanguages/rust.sh --status
+
+# Instala los entornos de programación (Python + uv, Node.js, Rust, Java, .NET, Angular)
+languages:
+    ./ProgrammingLanguages/python.sh
+    ./ProgrammingLanguages/nodejs.sh
+    ./ProgrammingLanguages/rust.sh
+    ./ProgrammingLanguages/java.sh
+    ./ProgrammingLanguages/dotnet.sh
+    ./ProgrammingLanguages/angular.sh
+
+# Instala la suite de IDEs (Google Antigravity Desktop, CLI, IDE Engine y OpenCode)
+ide:
+    ./IDE/antigravity.sh
+    ./IDE/antigravity-cli.sh
+    ./IDE/antigravity-ide.sh
+    ./IDE/opencode.sh
+
+# Estado de la suite Antigravity y OpenCode
+ide-status:
+    ./IDE/antigravity.sh --status
+    ./IDE/antigravity-cli.sh --status
+    ./IDE/antigravity-ide.sh --status
+    ./IDE/opencode.sh --status
+
+# ==============================================================================
+#  9. MANTENIMIENTO DEL SISTEMA (PACMAN / PARU + FLATPAK + MISE)
+# ==============================================================================
+
+# Actualiza todo el sistema CachyOS (Pacman/Paru, Flatpak y Mise)
+upgrade:
+    @if command -v paru &>/dev/null; then paru -Syu --noconfirm; else sudo pacman -Syu --noconfirm; fi
+    flatpak update -y
+    ~/.local/bin/mise upgrade || true
+
+# Limpia paquetes huérfanos, caché de Pacman y runtimes Flatpak no utilizados
+clean:
+    sudo pacman -Rns $(pacman -Qtdq) 2>/dev/null || true
+    sudo paccache -r 2>/dev/null || sudo pacman -Sc --noconfirm
+    flatpak uninstall --unused -y
