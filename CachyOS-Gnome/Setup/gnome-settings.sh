@@ -206,17 +206,18 @@ show_status() {
     echo -e "  • Espacios de trabajo:       Dinámicos (${dynamic_ws}) | Solo primaria: ${CYAN}${workspaces_primary}${NC}"
     echo -e "  • Escala XWayland:           ${CYAN}${xwayland_scale}${NC}"
 
-    local tap_click natural_scroll mouse_natural dwt numlock_state remember_numlock
+    local tap_click natural_scroll mouse_natural dwt numlock_state remember_numlock click_method
     tap_click=$(run_as_user gsettings get org.gnome.desktop.peripherals.touchpad tap-to-click 2>/dev/null || echo "N/A")
     natural_scroll=$(run_as_user gsettings get org.gnome.desktop.peripherals.touchpad natural-scroll 2>/dev/null || echo "N/A")
     mouse_natural=$(run_as_user gsettings get org.gnome.desktop.peripherals.mouse natural-scroll 2>/dev/null || echo "N/A")
     dwt=$(run_as_user gsettings get org.gnome.desktop.peripherals.touchpad disable-while-typing 2>/dev/null || echo "N/A")
     numlock_state=$(run_as_user gsettings get org.gnome.desktop.peripherals.keyboard numlock-state 2>/dev/null || echo "N/A")
     remember_numlock=$(run_as_user gsettings get org.gnome.desktop.peripherals.keyboard remember-numlock-state 2>/dev/null || echo "N/A")
+    click_method=$(run_as_user gsettings get org.gnome.desktop.peripherals.touchpad click-method 2>/dev/null || echo "N/A")
 
     echo ""
     echo -e "${BOLD}🖐️  Periféricos del Portátil (HP ProBook 455 G10):${NC}"
-    echo -e "  • Touchpad Tap-to-Click:     ${CYAN}${tap_click}${NC} | Scroll Natural: ${CYAN}${natural_scroll}${NC}"
+    echo -e "  • Touchpad Tap-to-Click:     ${CYAN}${tap_click}${NC} | Scroll Natural: ${CYAN}${natural_scroll}${NC} | Clic Físico: ${CYAN}${click_method}${NC}"
     echo -e "  • Ratón Tradicional Externo: Scroll Natural: ${CYAN}${mouse_natural}${NC} (Desacoplado)"
     echo -e "  • Rechazo de Palma (DWT):    ${CYAN}${dwt}${NC}"
     echo -e "  • Teclado NumPad Físico:     NumLock Activo: ${CYAN}${numlock_state}${NC} | Recordar: ${CYAN}${remember_numlock}${NC}"
@@ -394,7 +395,7 @@ apply_touchpad() {
     run_as_user gsettings set "$tp_schema" tap-to-click true 2>/dev/null || true
     run_as_user gsettings set "$tp_schema" natural-scroll true 2>/dev/null || true
     run_as_user gsettings set "$tp_schema" two-finger-scrolling-enabled true 2>/dev/null || true
-    run_as_user gsettings set "$tp_schema" click-method 'fingers' 2>/dev/null || true
+    run_as_user gsettings set "$tp_schema" click-method 'areas' 2>/dev/null || true
     run_as_user gsettings set "$tp_schema" tap-and-drag true 2>/dev/null || true
     run_as_user gsettings set "$tp_schema" disable-while-typing true 2>/dev/null || true
     run_as_user gsettings set "$tp_schema" speed 0.15 2>/dev/null || true

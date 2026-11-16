@@ -354,13 +354,14 @@ show_status() {
         echo -e "  • Wi-Fi MT7921 Power-Save:   ${YELLOW}Predeterminado de NetworkManager${NC}"
     fi
 
-    local tap_click nat_scroll tap_drag mouse_scroll numlock
+    local tap_click nat_scroll tap_drag mouse_scroll numlock click_method
     tap_click=$(run_as_user gsettings get org.gnome.desktop.peripherals.touchpad tap-to-click 2>/dev/null || echo "N/A")
     nat_scroll=$(run_as_user gsettings get org.gnome.desktop.peripherals.touchpad natural-scroll 2>/dev/null || echo "N/A")
     tap_drag=$(run_as_user gsettings get org.gnome.desktop.peripherals.touchpad tap-and-drag 2>/dev/null || echo "N/A")
+    click_method=$(run_as_user gsettings get org.gnome.desktop.peripherals.touchpad click-method 2>/dev/null || echo "N/A")
     mouse_scroll=$(run_as_user gsettings get org.gnome.desktop.peripherals.mouse natural-scroll 2>/dev/null || echo "N/A")
     numlock=$(run_as_user gsettings get org.gnome.desktop.peripherals.keyboard remember-numlock-state 2>/dev/null || echo "N/A")
-    echo -e "  • Touchpad Wayland:          Tap: ${CYAN}${tap_click}${NC} | Scroll Natural: ${CYAN}${nat_scroll}${NC} | Arrastre: ${CYAN}${tap_drag}${NC}"
+    echo -e "  • Touchpad Wayland:          Tap: ${CYAN}${tap_click}${NC} | Scroll Natural: ${CYAN}${nat_scroll}${NC} | Clic Físico: ${CYAN}${click_method}${NC} | Arrastre: ${CYAN}${tap_drag}${NC}"
     echo -e "  • Ratón Tradicional:         Scroll Natural: ${CYAN}${mouse_scroll}${NC} (Independiente)"
     echo -e "  • Teclado NumLock Memoria:   ${CYAN}${numlock}${NC}"
 
@@ -500,7 +501,7 @@ setup_touchpad() {
     run_as_user gsettings set org.gnome.desktop.peripherals.touchpad natural-scroll true 2>/dev/null || true
     run_as_user gsettings set org.gnome.desktop.peripherals.touchpad two-finger-scrolling-enabled true 2>/dev/null || true
     run_as_user gsettings set org.gnome.desktop.peripherals.touchpad tap-and-drag true 2>/dev/null || true
-    run_as_user gsettings set org.gnome.desktop.peripherals.touchpad click-method 'fingers' 2>/dev/null || true
+    run_as_user gsettings set org.gnome.desktop.peripherals.touchpad click-method 'areas' 2>/dev/null || true
     run_as_user gsettings set org.gnome.desktop.peripherals.touchpad disable-while-typing true 2>/dev/null || true
 
     # Ratón tradicional externo (mantiene scroll estándar mientras touchpad usa natural)
